@@ -2184,6 +2184,7 @@ def site_deploy_files():
             out.add(extra_fn)
     out.update(os.path.relpath(f, ROOT).replace(os.sep, '/') for f in sorted(_g.glob(os.path.join(DATA, 'visual_cezma.*.part-*'))))
     out.update(os.path.relpath(f, ROOT).replace(os.sep, '/') for f in sorted(_g.glob(os.path.join(DATA, 'zz_cezma_index', '*.json'))))
+    out.update(os.path.relpath(f, ROOT).replace(os.sep, '/') for f in sorted(_g.glob(os.path.join(DATA, 'cezma_buckets', 'b_*.json'))))
     return out
 
 def ftp_upload(files, cleanup_source_shards=True):
@@ -2214,13 +2215,14 @@ def ftp_upload(files, cleanup_source_shards=True):
         return priority, manifest_last, rel
     ordered_files = sorted(files, key=_upload_order)
     for rel in ordered_files:
-        if (rel.startswith('data/cezma_shards/') or rel.startswith('data/zz_cezma_index/')) and 'data/catalog_counts.json' in failed:
+        if (rel.startswith('data/cezma_shards/') or rel.startswith('data/zz_cezma_index/') or rel.startswith('data/cezma_buckets/')) and 'data/catalog_counts.json' in failed:
             failed.append(rel)
-            log('⏭️ skipped Cezma source/index because catalog signature did not upload:', rel)
+            log('⏭️ skipped Cezma source/index/buckets because catalog signature did not upload:', rel)
             continue
         if rel == 'data/zz_cezma_index/zz_manifest.json':
             blockers = [name for name in failed if name.startswith('data/cezma_shards/') or
-                        (name.startswith('data/zz_cezma_index/') and name != rel)]
+                        (name.startswith('data/zz_cezma_index/') and name != rel) or
+                        name.startswith('data/cezma_buckets/')]
             if blockers:
                 failed.append(rel)
                 log('⏭️ skipped Cezma index manifest because a source/index file failed')
@@ -2288,6 +2290,19 @@ def ftp_upload(files, cleanup_source_shards=True):
                         ftp.delete('data/' + _base); log('🗑️ removed stale visual index part', _base)
                     except Exception as e:
                         log('❌ could not remove visual index part', _base, str(e)[:120])
+            _local_buckets = {os.path.basename(f) for f in _glob_mod.glob(os.path.join(ROOT, 'data', 'cezma_buckets', 'b_*.json'))}
+            if _local_buckets:
+                try:
+                    _remote_b = ftp.nlst('data/cezma_buckets')
+                except Exception:
+                    _remote_b = []
+                for _name in _remote_b:
+                    _base = os.path.basename(_name)
+                    if re.match(r'^b_[0-9a-f]{2}\.json$', _base) and _base not in _local_buckets:
+                        try:
+                            ftp.delete('data/cezma_buckets/' + _base); log('🗑️ removed stale cezma bucket', _base)
+                        except Exception as e:
+                            log('❌ could not remove cezma bucket', _base, str(e)[:120])
         except Exception as e:
             log('⚠️ shard/visual cleanup skipped:', str(e)[:160])
     else:
@@ -2942,6 +2957,63 @@ def _cezma_write_shards(rows):
             with open(pth, 'w', encoding='utf-8') as f: f.write(new)
             changed_files.add(f'data/cezma_shards/{name}')
 
+def rebuild_cezma_buckets():
+    """Split Cezma shards into id-hash buckets (data/cezma_buckets/b_<md5(id)[:2]>.json).
+
+    Each bucket is a small JSON object keyed by product id and orig_id, so PHP can
+    answer a single-product lookup with one ~200KB read instead of scanning all
+    shards (39.7MB) on the slow shared-hosting disk.
+    """
+    import glob as _g, hashlib
+    bdir = os.path.join(DATA, 'cezma_buckets'); os.makedirs(bdir, exist_ok=True)
+    rows = []
+    for f in sorted(_g.glob(os.path.join(DATA, 'cezma_shards', 'lite_cezma_*.json'))):
+        try:
+            with open(f, encoding='utf-8') as stream:
+                part = json.load(stream)
+            if isinstance(part, list):
+                rows.extend(part)
+        except Exception:
+            pass
+    buckets = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        keys = []
+        rid = str(row.get('id') or '').strip()
+        oid = str(row.get('orig_id') or '').strip()
+        for k in (rid, oid):
+            if k and k not in keys:
+                keys.append(k)
+        for k in keys:
+            h = hashlib.md5(k.encode('utf-8')).hexdigest()[:2]
+            buckets.setdefault(h, {})[k] = row
+    keep = {f'b_{h}.json' for h in buckets}
+    for name in sorted(_g.glob(os.path.join(bdir, 'b_*.json'))):
+        if os.path.basename(name) not in keep:
+            try:
+                os.remove(name)
+                changed_files.discard('data/cezma_buckets/' + os.path.basename(name))
+            except OSError:
+                pass
+    for h, mapping in sorted(buckets.items()):
+        pth = os.path.join(bdir, f'b_{h}.json')
+        new = json.dumps(mapping, ensure_ascii=False, separators=(',', ':'))
+        old = None
+        if os.path.exists(pth):
+            try:
+                with open(pth, encoding='utf-8') as _old:
+                    old = _old.read()
+            except OSError:
+                old = None
+        if old != new:
+            tmp = pth + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f: f.write(new)
+            os.replace(tmp, pth)
+            changed_files.add(f'data/cezma_buckets/b_{h}.json')
+    summary['cezma_buckets'] = {'buckets': len(buckets), 'keys': sum(len(m) for m in buckets.values())}
+    return len(buckets)
+
 def remove_low_price_cezma():
     """Permanently remove Cezma products below the EGP floor from every shard."""
     import glob as _g
@@ -3268,6 +3340,11 @@ if __name__ == '__main__':
     except Exception as _ce:
         log('❌ visual_cezma failed:', str(_ce)[:200])
         summary['visual_cezma'] = {'error': str(_ce)[:200]}
+    try:
+        rebuild_cezma_buckets()
+    except Exception as _be:
+        log('❌ cezma buckets failed:', str(_be)[:200])
+        summary['cezma_buckets'] = {'error': str(_be)[:200]}
     jsave('price_history.json', history)
     jsave('catalog_update.json', {'at': NOW, 'summary': summary, 'changed': sorted(changed_files)})
     # الأمان: التشغيل المجدول (cron) يحدّث البيانات والأسعار بس — من غير ملفات الكود.

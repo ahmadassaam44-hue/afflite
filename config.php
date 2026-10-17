@@ -1902,8 +1902,26 @@ function wf_json_object_slice($raw, $start) {
 function wf_catalog_find_record($plat, $id) {
     if ($plat === 'manual') return manual_product_find($id);
     if ($plat === 'cezma') {
-        // Per-request raw-shard cache: scan shards once per request instead of
-        // re-reading every shard file from disk on each product lookup.
+        // Fast path: id-hash buckets (data/cezma_buckets/b_<md5(id)[:2]>.json).
+        // One small read per lookup instead of scanning all shards (slow host disk).
+        $cands = [];
+        $v = trim((string)$id);
+        if ($v !== '') $cands[] = $v;
+        if (preg_match('/^(?:cezma-)?(\d+)$/', $v, $mm)) {
+            $cands[] = 'cezma-' . $mm[1];
+            $cands[] = $mm[1];
+        }
+        $cands = array_values(array_unique(array_filter($cands, function ($x) { return $x !== ''; })));
+        foreach ($cands as $c) {
+            $rel = 'cezma_buckets/b_' . md5($c) . '.json';
+            if (!is_readable(DATA_DIR . '/' . $rel)) continue;
+            $bdata = jload($rel, [], false);
+            if (isset($bdata[$c]) && is_array($bdata[$c])) {
+                unset($GLOBALS['__cezma_raw_override']);
+                return $bdata[$c];
+            }
+        }
+        // Fallback: scan shards (per-request raw-shard cache) for records not in buckets.
         static $shard_cache = [];
         foreach (cezma_shard_files() as $f) {
             if (!array_key_exists($f, $shard_cache)) {
