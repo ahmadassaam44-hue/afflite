@@ -23,8 +23,13 @@ function usr_http($method, $url, array $headers, $body = null, $timeout = 8) {
     $code = 0;     $resp = false;
     $out = [];
     if (function_exists('curl_init')) {
-        $ch = curl_init($url);
+        // إعادة استعمال handle واحد لكل الطلبات في نفس PHPِّ الطلب: يوفر TCP+TLS handshake
+        // (~150-250ms) مع كل مكالمة Supabase — الصفحة بتلمس 4-7 مكالمات.
+        if (!isset($GLOBALS['_USR_CURL'])) $GLOBALS['_USR_CURL'] = curl_init();
+        $ch = $GLOBALS['_USR_CURL'];
+        if (function_exists('curl_reset')) curl_reset($ch);
         $opts = [
+            CURLOPT_URL => $url,
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_RETURNTRANSFER => true,
@@ -35,7 +40,24 @@ function usr_http($method, $url, array $headers, $body = null, $timeout = 8) {
         curl_setopt_array($ch, $opts);
         $resp = curl_exec($ch);
         $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+        if ($code === 0 || $code >= 500) {
+            // فشل اتصال: handle معطوب/الجلسة انقطعت — ننشئه من جديد في الطلب القادم
+            curl_close($ch);
+            unset($GLOBALS['_USR_CURL']);
+            $ch2 = curl_init($url);
+            $opts2 = [
+                CURLOPT_CUSTOMREQUEST => $method,
+                CURLOPT_HTTPHEADER => $headers,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_CONNECTTIMEOUT => min(4, $timeout),
+                CURLOPT_TIMEOUT => $timeout,
+            ];
+            if ($payload !== null) $opts2[CURLOPT_POSTFIELDS] = $payload;
+            curl_setopt_array($ch2, $opts2);
+            $resp = curl_exec($ch2);
+            $code = (int)curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+            curl_close($ch2);
+        }
     } elseif (ini_get('allow_url_fopen')) {
         $ctx = stream_context_create(['http' => [
             'method' => $method,
