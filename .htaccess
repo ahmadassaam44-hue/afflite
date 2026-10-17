@@ -1,0 +1,110 @@
+# ============================================================================
+#  حماية الموقع — WAFIRINHALK
+# ============================================================================
+
+# ── 1. منع الوصول المباشر لأي ملف بيانات أو إعدادات ──────────────────────────
+<FilesMatch "(?i)^(config|supabase|secrets|amazon_lib|jumia_lib|db|env)\.(php|inc|bak|old|txt)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ── 2. منع عرض أي ملف JSON / SQL / LOG / نسخة قديمة ─────────────────────────
+<FilesMatch "(?i)^(?!manifest\.json$).*\.(json|sql|log|bak|old|swp|~|ini|yml|yaml|env|git|lock|md|zip|rar|7z|tar|gz)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ── 3. إخفاء مجلد data بالكامل (أهم ملف: users.json / resets.json) ───────────
+RedirectMatch 404 ^/data(/|$)?
+
+# ── 4. منع تصفح المجلدات ───────────────────────────────────────────────────
+Options -Indexes
+Options +FollowSymLinks
+
+# ── 5. منع تنفيذ الملفات التنفيذية داخل مجلد الرفع ───────────────────────────
+# DirectoryMatch غير مسموح داخل .htaccess؛ نمنع المسارات التنفيذية عبر mod_rewrite.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^assets/uploads/.*\.(php[0-9]?|phtml|pht|phar|cgi|pl|py|sh|asp|aspx|jsp)$ - [F,L,NC]
+
+    # ── 6. فرض HTTPS ────────────────────────────────────────────────────────
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # ── 7. حجب محاولات الوصول للملفات الحساسة ──────────────────────────────
+    RewriteRule ^(data|config\.php|supabase\.php|secrets\.php) - [F,L]
+</IfModule>
+
+# ── 8. Headers أمنية ───────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+    # منع تخمين نوع الملف (MIME sniffing)
+    Header always set X-Content-Type-Options "nosniff"
+    # منع عرض الموقع داخل iframe من موقع تاني (Clickjacking)
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # تقليل تسريب مصدر الزيارة
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    # تعطيل واجهات المتصفح الحساسة
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()"
+    # حماية XSS مدمجة في المتصفحات الحديثة
+    Header always set X-XSS-Protection "1; mode=block"
+    # تلميح للمتصفح باستخدام HTTPS دائماً (سنة)
+    Header always set Strict-Transport-Security "max-age=86400"
+    # سياسة محتوى متساهلة نسبياً (الموقع بيحمل صور من منصات خارجية)
+    Header always set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; img-src 'self' data: blob: https: http:; font-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'self'"
+</IfModule>
+
+# ── 9. ملفات PHP الافتراضية ────────────────────────────────────────────────
+DirectoryIndex index.php
+
+<IfModule mod_mime.c>
+    AddType application/json .json
+</IfModule>
+
+# ── 10. ضغط الملفات النصية وتخزين الأصول الثابتة مؤقتاً ─────────────────────
+# لا نضع HTML صفحات PHP في كاش عام لأنها تعتمد على الجلسة والسلة والمفضلة.
+<IfModule mod_deflate.c>
+    <IfModule mod_filter.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/xml image/svg+xml
+    </IfModule>
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 day"
+    ExpiresByType text/javascript "access plus 1 day"
+    ExpiresByType application/javascript "access plus 1 day"
+    ExpiresByType image/svg+xml "access plus 1 day"
+    ExpiresByType image/png "access plus 1 day"
+    ExpiresByType image/jpeg "access plus 1 day"
+    ExpiresByType image/webp "access plus 1 day"
+    ExpiresByType image/gif "access plus 1 day"
+    ExpiresByType image/x-icon "access plus 1 day"
+    ExpiresByType font/woff2 "access plus 30 days"
+    ExpiresByType font/woff "access plus 30 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|svg|png|jpe?g|webp|gif|ico)$">
+        Header set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+    <FilesMatch "\.(woff2?|ttf|otf)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+</IfModule>
+
+# صفحات أخطاء مخصصة
+ErrorDocument 403 /error.php?c=403
+ErrorDocument 404 /error.php?c=404
+ErrorDocument 500 /error.php?c=500

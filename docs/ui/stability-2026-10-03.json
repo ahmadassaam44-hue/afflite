@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-03",
+  "environment": "Isolated PHP 8.3 Zend via php-wasm; copied catalogues and synthetic user/order data; external images blocked",
+  "php_lint": {
+    "files": 44,
+    "failures": 0
+  },
+  "javascript_syntax": "passed",
+  "flows": [
+    "Affiliate home/shipping removed; old/unknown tab URLs render a useful page",
+    "Affiliate catalogue/category/store inventory counts removed, without removing products",
+    "Real Back navigation and persisted pageshow release drawers, nested dialogs, inertness and scroll locks",
+    "Public homepage and independent store category/result counts removed",
+    "All Egyptian supplier modal tables match untouched shipping data; local server orders retain 120/95 fees, qty and ref",
+    "Existing CSRF rejection remains 403 JSON",
+    "Uncaught-error fallback is private, navigable HTML / valid JSON, without automatic POST retry",
+    "PHP-rendered tables stay visible when the UI script is blocked",
+    "14 targeted views × 6 widths: no overflow, Axe WCAG findings or JavaScript errors"
+  ],
+  "supplier_shipping_examples": [
+    {
+      "platform": "angazny",
+      "governorate": "البحر الأحمر",
+      "fee": 120
+    },
+    {
+      "platform": "timehand",
+      "governorate": "أسوان",
+      "fee": 95
+    },
+    {
+      "platform": "safqa",
+      "governorate": "قنا",
+      "fee": 95
+    },
+    {
+      "platform": "vendoor",
+      "governorate": "القاهرة",
+      "fee": 80
+    }
+  ],
+  "shipping_json_changed": false,
+  "responsive": {
+    "views": 14,
+    "widths": [
+      360,
+      390,
+      768,
+      1024,
+      1280,
+      1536
+    ],
+    "overflow": 0,
+    "axe_findings": 0,
+    "javascript_errors": 0
+  },
+  "missing_product_memory": {
+    "before_peak_bytes_at_128M": 106954752,
+    "before_at_64M": {
+      "http": 500,
+      "response_bytes": 0
+    },
+    "after_peak_bytes_at_64M": 50135040,
+    "after_at_64M": {
+      "http": 200,
+      "view": "Original not-found view, no blank response"
+    }
+  },
+  "backend_contracts": {
+    "configFunctionsUnchanged": 171,
+    "payoutHandlerUnchanged": true,
+    "constantsUnchanged": true,
+    "runtimeFixesReviewedSeparately": [
+      "jload",
+      "find_product_by_id"
+    ]
+  },
+  "limits": [
+    "Actual historical production failure was not matched to a private hosting log.",
+    "Intentionally constraining the full homepage to 32M still produces OOM; output buffers can be discarded in OOM.",
+    "No new production Lighthouse scores."
+  ],
+  "deployment": {
+    "branch": "arena/01a0fb2f-afflite",
+    "status": "success",
+    "commit": "1796006455acfbb1df464fa0a0b46d481c0ce3f3",
+    "catalog_bot_commit": "a29ca8f",
+    "workflow_run": 37099080965,
+    "workflow_url": "https://github.com/hamama44/afflite/actions/runs/37099080965",
+    "ftp_step": "success",
+    "completed_at_utc": "2026-10-03T05:14:57Z",
+    "live_read_only_checks": [
+      "Homepage hero/category/result inventory counts absent.",
+      "Unknown product renders its not-found view, not an empty page."
+    ]
+  },
+  "redeployment": {
+    "status": "success",
+    "branch": "arena/01a0fb2f-afflite",
+    "commit": "7b7bce56ac85826299e4e813bf5a6ddd35902157",
+    "cache_version": "20261003-deploy2",
+    "workflow_run": 37099660902,
+    "workflow_url": "https://github.com/hamama44/afflite/actions/runs/37099660902",
+    "ftp_step": "success",
+    "completed_at_utc": "2026-10-03T05:26:04Z",
+    "changes": "Static asset URL cache-version replacements only; application logic and prices unchanged."
+  }
+}

@@ -1,0 +1,246 @@
+name: تحديث الكتالوج والأسعار
+
+on:
+  push:
+    branches:
+      - main
+      - 'arena/**'
+      - arena/01a0fb2f-afflite
+      - arena/01a0f7e4-afflite
+      - arena/6be51696-afflite
+    paths:
+      - '*.php'
+      - 'dashboard/**'
+      - 'assets/**'
+      - 'data/id_index.json'
+      - 'updater/update_catalog.py'
+      - 'updater/category_overrides.json'
+      - 'updater/visual_cezma.py'
+      - 'updater/visual_features.py'
+      - '.github/workflows/update-catalog.yml'
+  schedule:
+    - cron: '17 */6 * * *'        # كل 6 ساعات
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'المصادر (deploy index-only clean hevo g2g gamsgo gamsgo_probe safqa vendoor m5zoon angazny timehand sources shopmart shopmart_probe) — index-only deploy يبني/يرفع الفهرس من الشظايا الحية فقط دون تعديل المنتجات'
+        required: false
+        default: ''
+      shopmart_user:
+        description: 'بريد حساب Aff Shopmart — يُستخدم مرة واحدة لتشخيص الـ API (اختياري إن كان السر SHOPMART_USER مضافاً)'
+        required: false
+        default: ''
+      shopmart_pass:
+        description: 'كلمة مرور Aff Shopmart — تُستخدم مرة واحدة لتشخيص الـ API (اختياري)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catalog-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: تثبيت Pillow (فهرس البحث بالصورة)
+        if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}
+        run: pip install --quiet pillow
+
+      - name: استرجاع فهرس سيزما من الكاش (بيكمّل من آخر تشغيل)
+        if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/visual_cezma.bin
+            data/visual_cezma.idx
+            data/visual_cezma.bin.part-*
+            data/visual_cezma.idx.part-*
+          key: visual-cezma-${{ github.run_id }}
+          restore-keys: |
+            visual-cezma-
+
+      - name: تشغيل المحدّث + رفع FTP
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+          ONLY_INPUT: ${{ github.event.inputs.only }}
+          USD_EGP: ${{ vars.USD_EGP || '56' }}
+          VISUAL_FEATURES_BUDGET: '900'
+          VISUAL_CEZMA_BUDGET: '1800'
+          SAFQA_API_KEY: ${{ secrets.SAFQA_API_KEY }}
+          VENDOOR_USER: ${{ secrets.VENDOOR_USER }}
+          VENDOOR_PASS: ${{ secrets.VENDOOR_PASS }}
+          M5ZOON_USER: ${{ secrets.M5ZOON_USER }}
+          M5ZOON_PASS: ${{ secrets.M5ZOON_PASS }}
+          ANGAZNY_USER: ${{ secrets.ANGAZNY_USER }}
+          ANGAZNY_PASS: ${{ secrets.ANGAZNY_PASS }}
+          TIMEHAND_USER: ${{ secrets.TIMEHAND_USER }}
+          TIMEHAND_PASS: ${{ secrets.TIMEHAND_PASS }}
+          SAFQA_COOKIE: ${{ secrets.SAFQA_COOKIE }}
+          TIMEHAND_COOKIE: ${{ secrets.TIMEHAND_COOKIE }}
+          ANGAZNY_COOKIE: ${{ secrets.ANGAZNY_COOKIE }}
+          M5ZOON_COOKIE: ${{ secrets.M5ZOON_COOKIE }}
+          SHOPMART_USER: ${{ secrets.SHOPMART_USER || github.event.inputs.shopmart_user }}
+          SHOPMART_PASS: ${{ secrets.SHOPMART_PASS || github.event.inputs.shopmart_pass }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            python updater/update_catalog.py deploy
+          else
+            read -r -a only_args <<< "$ONLY_INPUT"
+            python updater/update_catalog.py "${only_args[@]}"
+          fi
+
+      - name: ✅ تحقّق وصول ملفات الموقع للاستضافة (تقرير)
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          python - <<'PY'
+          import os, json, ftplib
+          host, user, pw = os.environ.get('FTP_HOST'), os.environ.get('FTP_USER'), os.environ.get('FTP_PASS')
+          root = os.environ.get('FTP_ROOT', '/htdocs')
+          targets = ['config.php', 'index.php', 'data/catalog_counts.json', '.htaccess', 'amazon_lib.php', 'amz.php', 'amazon_check.php',
+                     'jumia_lib.php', 'jmi.php', 'jumia_check.php', 'dashboard/jumia.php',
+                     'dashboard/amazon.php', 'dashboard/admin.php', 'dashboard/layout.php', 'dashboard/marketer.php',
+                     'assets/style.css']
+          rep = {'ftp_configured': bool(host and user and pw), 'root': root, 'files': {}}
+          if not rep['ftp_configured']:
+              rep['note'] = 'بيانات FTP مش مضافة في Secrets — مفيش رفع حصل'
+          else:
+              f = ftplib.FTP(host, timeout=60)
+              f.login(user, pw)
+              f.cwd(root)
+              for t in targets:
+                  d = os.path.dirname(t) or '.'
+                  n = os.path.basename(t)
+                  info = {}
+                  try:
+                      rs = f.size(t)
+                      info['remote_size'] = int(rs) if rs is not None else None
+                  except Exception as e:
+                      info['remote_size'] = None
+                  info['on_server'] = info['remote_size'] is not None
+                  lp = os.path.join(os.getcwd(), t)
+                  info['local_size'] = os.path.getsize(lp) if os.path.isfile(lp) else None
+                  info['match'] = (info.get('on_server') is True and info.get('remote_size') is not None
+                                   and info['local_size'] is not None
+                                   and int(info['remote_size']) == int(info['local_size']))
+                  rep['files'][t] = info
+              try: f.quit()
+              except Exception: pass
+          os.makedirs('data', exist_ok=True)
+          open('data/_deploy_report.json', 'w', encoding='utf-8').write(json.dumps(rep, ensure_ascii=False, indent=1))
+          print(json.dumps(rep, ensure_ascii=False, indent=1))
+          PY
+          git config user.name  "catalog-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/_deploy_report.json || true
+          git diff --cached --quiet && echo "لا تغيير في التقرير" || (git commit -m "📡 تقرير رفع الملفات للاستضافة [skip ci]" && git push)
+
+      - name: 🔍 فحص نسخة الاستضافة الحية (تدقيق)
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          python - <<'PY'
+          import os, json, ftplib, hashlib, io
+          from datetime import datetime, timezone
+          host, user, pw = os.environ.get('FTP_HOST'), os.environ.get('FTP_USER'), os.environ.get('FTP_PASS')
+          root = os.environ.get('FTP_ROOT', '/htdocs')
+          rep = {'at': datetime.now(timezone.utc).isoformat(timespec='seconds'), 'root': root, 'listing': [], 'files': {}}
+          f = ftplib.FTP(host, timeout=60)
+          f.login(user, pw)
+          f.cwd(root)
+          try:
+              lst = sorted(f.nlst())
+              if not lst:
+                  lines = []
+                  f.retrlines('LIST', lines.append)
+                  lst = lines
+              rep['listing'] = lst
+          except Exception as e:
+              rep['listing_error'] = str(e)[:120]
+          # صور التفاصيل: كل الملفات المحلية موجودة على السيرفر فعلًا؟
+          try:
+              remote_detail = set(n.split('/')[-1] for n in f.nlst('assets/detail'))
+              remote_detail.discard('.'); remote_detail.discard('..')
+              local_detail = sorted(os.listdir('assets/detail'))
+              rep['detail_images'] = {
+                  'local_count': len(local_detail),
+                  'remote_count': len(remote_detail),
+                  'missing_on_server': sorted(set(local_detail) - remote_detail)[:20],
+                  'extra_on_server': sorted(remote_detail - set(local_detail))[:20],
+              }
+          except Exception as e:
+              rep['detail_images'] = {'error': str(e)[:120]}
+          for t in ['index.php', 'index.html', 'store.php', 'digital.php', 'landing.php', '.htaccess', 'assets/style.css', 'assets/icon-512.png', 'data/catalog_counts.json']:
+              info = {}
+              try:
+                  buf = io.BytesIO()
+                  f.retrbinary('RETR ' + t, buf.write)
+                  data = buf.getvalue()
+                  info['remote_size'] = len(data)
+                  info['remote_md5'] = hashlib.md5(data).hexdigest()
+                  lp = os.path.join(os.getcwd(), t)
+                  if os.path.isfile(lp):
+                      lb = open(lp, 'rb').read()
+                      info['local_size'] = len(lb)
+                      info['local_md5'] = hashlib.md5(lb).hexdigest()
+                      info['same_as_git'] = (info['remote_md5'] == info['local_md5'])
+                  else:
+                      info['local'] = 'missing_in_git'
+              except Exception as e:
+                  info['error'] = str(e)[:100]
+              rep['files'][t] = info
+          _checked = [v for v in rep['files'].values() if 'same_as_git' in v]
+          rep['all_same_as_git'] = bool(_checked) and all(v['same_as_git'] for v in _checked)
+          print('AUDIT all_same_as_git =', rep['all_same_as_git'], '| files checked =', len(_checked))
+          try: f.quit()
+          except Exception: pass
+          os.makedirs('data', exist_ok=True)
+          open('data/_live_audit.json', 'w', encoding='utf-8').write(json.dumps(rep, ensure_ascii=False, indent=1))
+          print(json.dumps(rep, ensure_ascii=False, indent=1))
+          PY
+
+      - name: حفظ التغييرات في الريبو (تاريخ الأسعار)
+        run: |
+          git config user.name  "catalog-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data/*.json || true
+          git add data/cezma_shards/*.json || true
+          git add -u data/cezma_shards/ || true
+          git diff --cached --quiet && echo "لا تغييرات" || git commit -m "🤖 تحديث الكتالوج $(date -u +'%Y-%m-%d %H:%M UTC')" && git push
+
+      - name: تأكيد اكتمال رفع FTP
+        run: |
+          python - <<'PY'
+          import json, os
+          path = 'data/_deploy_log.json'
+          if not os.path.isfile(path):
+              raise SystemExit('FTP deployment log is missing; upload was not confirmed')
+          with open(path, encoding='utf-8') as f:
+              report = json.load(f)
+          failed = report.get('failed') or []
+          failed_count = int(report.get('failed_count') or 0)
+          if failed_count or failed:
+              print('FTP upload incomplete:', json.dumps(failed[:80], ensure_ascii=False))
+              raise SystemExit(1)
+          print('FTP upload verified:', report.get('uploaded_ok'), '/', report.get('files_to_upload'), 'files')
+          PY

@@ -1,0 +1,120 @@
+{
+  "php_lint": {
+    "engine": "PHP 8.3 (Zend via php-wasm)",
+    "files": 43,
+    "failures": 0
+  },
+  "responsive": {
+    "views": 54,
+    "widths": [
+      360,
+      390,
+      768,
+      1024,
+      1280,
+      1536
+    ],
+    "horizontal_overflow": 0,
+    "php_notices_warnings": 0,
+    "javascript_errors": 0,
+    "axe_wcag_findings": 0
+  },
+  "flow_checks": [
+    "Mobile drawer focus trap, scroll lock, Escape and focus restore",
+    "Desktop collapse persists in localStorage",
+    "Store live preview and accessible theme contrast, without saving",
+    "Payout validates, explains amount/account/effect, and cancel sends no request",
+    "Tables paginate and filter the current loaded dataset locally",
+    "Admin status change requires confirmation; cancel restores displayed status and sends no POST",
+    "Store → landing stays a landing page; clean URL preserves ref metadata/session",
+    "Landing purchase modal retains ref and restores focus",
+    "Wishlist AJAX uses original wish/ajax endpoint and updates its accessible state",
+    "Lead modal submits existing fields/CSRF, qty=2 and ref; server returns a real local order",
+    "Cart delayed deletion is undoable before the original delete URL is sent",
+    "Cart → checkout uses unchanged field names and CSRF and places an isolated test order",
+    "Password show/hide and strength feedback match the server rules"
+  ],
+  "additional_checks": [
+    "Admin-only style guide and demo components render",
+    "Subfolder URLs resolve stylesheet/JS correctly",
+    "Compact catalog retains markup preview/order payload and ref hooks",
+    "Invalid CSRF still returns 403 without placing an order",
+    "Clipboard fallback reports a result without native alert",
+    {
+      "existingResetBug": true
+    }
+  ],
+  "backend_contracts": {
+    "configFunctionsUnchanged": 173,
+    "payoutHandlerUnchanged": true,
+    "constantsUnchanged": true
+  },
+  "css_validation": {
+    "declarations": 4302,
+    "bad": []
+  },
+  "lighthouse": {
+    "environment": "Local PHP 8.3, synthetic fixtures; external images/analytics blocked by sandbox",
+    "results": [
+      {
+        "name": "marketer-overview",
+        "path": "/dashboard/marketer.php?mtab=performance",
+        "performance": 92,
+        "accessibility": 100,
+        "cls": 0.03134857419633143,
+        "lcp": 3028.278,
+        "tbt": 116,
+        "failed": []
+      },
+      {
+        "name": "customer-orders",
+        "path": "/dashboard/orders.php",
+        "performance": 89,
+        "accessibility": 100,
+        "cls": 0,
+        "lcp": 3155.1924,
+        "tbt": 183,
+        "failed": []
+      },
+      {
+        "name": "marketer-catalog",
+        "path": "/dashboard/marketer.php?mtab=browse",
+        "performance": 82,
+        "accessibility": 100,
+        "cls": 0,
+        "lcp": 4353.62655,
+        "tbt": 62,
+        "failed": []
+      },
+      {
+        "name": "store-builder",
+        "path": "/dashboard/marketer.php?mtab=store",
+        "performance": 92,
+        "accessibility": 100,
+        "cls": 0,
+        "lcp": 2931.0268499999997,
+        "tbt": 31.991050000000087,
+        "failed": []
+      },
+      {
+        "name": "admin-orders",
+        "path": "/dashboard/admin.php?tab=orders",
+        "performance": 83,
+        "accessibility": 100,
+        "cls": 0,
+        "lcp": 3307.6839,
+        "tbt": 293,
+        "failed": []
+      }
+    ]
+  },
+  "deployment": {
+    "status": "success",
+    "commit": "4017e4885bef63e4a8cb10716bed121c14740258",
+    "workflow_run": 37095099552,
+    "url": "https://github.com/hamama44/afflite/actions/runs/37095099552",
+    "ftp_step": "success",
+    "completed_at": "2026-10-03T04:04:06Z",
+    "verification_note": "Workflow and FTP step succeeded. Detailed FTP log download unavailable because sandbox TLS egress to GitHub log storage returned EOF; no direct production browser verification."
+  }
+}

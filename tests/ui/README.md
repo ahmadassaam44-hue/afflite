@@ -1,0 +1,84 @@
+# UI regression checks
+
+Run from the repository root. Production remains plain PHP, CSS and Vanilla JS; these are optional development checks, **not a hosting build step**.
+
+```bash
+# PHP on a normal development machine
+find . -maxdepth 1 -name '*.php' -print0 | xargs -0 -n1 php -l
+find dashboard -name '*.php' -print0 | xargs -0 -n1 php -l
+node --check assets/ui.js
+
+# Optional test dependencies remain outside Git
+npm install --prefix .cache/ui-tools playwright axe-core postcss php-parser
+node tests/ui/backend-contracts.cjs
+node tests/ui/static-audit.cjs
+```
+
+The completed browser checks used isolated current/baseline sites on ports 8080/8081, real PHP 8.3 through php-wasm, and deliberately synthetic users/orders under `.cache/`. No fixtures were written to production data. `matrix.cjs` checks 54 views at six widths; `flows.cjs` checks request fields, CSRF/ref, drawers, modals, cart/checkout and cancel behaviour.
+
+Before using these browser scripts, prepare equivalent local test fixtures and the test-only `_ui_fixture_login.php` in a copied document root, **never in production**. Set the Chromium executable path appropriate to your machine instead of `/tmp/chromium`. External images/analytics were blocked in this sandbox; actual hosting Lighthouse scores require a separate post-deployment audit.
+
+Saved results: `docs/ui/validation-results.json`. Backend comparison base: `5abb787`, configurable with `UI_BASE_REF`. No business/security functions may change during a UI-only update.
+
+## 2026-10-03 cleanup / white-page regressions
+
+With the **local isolated** fixture site ready:
+
+```bash
+npm install --prefix .cache/ui-tools playwright axe-core php-parser
+UI_BASE_REF=1548bec UI_RUNTIME_FIXES=1 node tests/ui/backend-contracts.cjs
+# Set CHROMIUM_PATH / LD_LIBRARY_PATH if your local Chromium needs them.
+node tests/ui/stability.cjs
+```
+
+`UI_RUNTIME_FIXES=1` explicitly allows only the reviewed `jload` / `find_product_by_id` memory changes; all other non-UI functions, payout logic and monetary constants still require AST equality. Without this flag the original strict UI-only check remains intact.
+
+The stability test refuses a non-local server URL and submits two **synthetic local** checkout orders. Prepare `_ui_fixture_login.php` as above and an isolated `_ui_fatal.php` containing `require __DIR__ . '/config.php';`, an optional `json=1` Content-Type header and `throw new RuntimeException('PRIVATE_DIAGNOSTIC_NOT_FOR_VISITORS');`. Never deploy either fixture file. The store fixture needs `MKT-TEST` with at least two category products (e.g. Vendoor 6029 / Angazny 2955). Keep the copied supplier/shipping JSON current.
+
+Saved summary: `docs/ui/stability-2026-10-03.json`. The report distinguishes the reproduced 64M lookup fix from intentionally insufficient 32M homepage memory and does not claim that an output callback can recover every OOM.
+
+## 2026-10-03 colour/size and portable commission links
+
+The new functional request authorizes colour/size order metadata and correct landing-link arguments. It does **not** authorize changed pricing, commission caps, referral-credit policies, payouts or shipping rules. Compare unchanged config functions directly with the preceding deployment:
+
+```bash
+UI_BASE_REF=d921b95 node tests/ui/backend-contracts.cjs
+```
+
+A reproducible, synthetic local fixture builder/server is now included. Everything it creates stays in `.cache/`, which is excluded from Git and FTP:
+
+```bash
+npm install --prefix .cache/ui-tools @php-wasm/node playwright axe-core php-parser postcss
+node tests/ui/local-fixtures.cjs
+UI_FIXTURE_ROOT=.cache/variant-baseline UI_FIXTURE_BASE=d921b95 node tests/ui/local-fixtures.cjs
+# Run each server in a separate terminal (or the Agent process tools).
+node tests/ui/local-runtime.cjs
+PORT=8081 UI_FIXTURE_ROOT=.cache/variant-baseline node tests/ui/local-runtime.cjs
+# Supply your locally installed browser; in this sandbox Chromium also needed LD_LIBRARY_PATH.
+CHROMIUM_PATH=/path/to/chromium node tests/ui/variants.cjs
+CHROMIUM_PATH=/path/to/chromium node tests/ui/stability.cjs
+```
+
+The WASM server was tested with `@php-wasm/node` 3.1.54 / PHP 8.3.33. It binds `0.0.0.0`, accepts preview hosts and forwards their actual host/protocol to PHP. `cookieStore:false` prevents separate browser contexts from sharing server-side test cookies. The builder refuses a root outside this repository's `.cache/`; the order tests refuse non-local server URLs. Do **not** upload or use `_ui_fixture_login.php`, `_ui_probe.php`, `_ui_fatal.php`, test accounts or copied JSON on hosting. `variants.cjs` reproduces three bugs against the old local copy, then verifies the repaired flows against the current copy; set `UI_TEST_BASELINE_URL=skip` when a baseline server isn't available.
+
+Results and limitations are summarized in `docs/ui/variants-2026-10-03.md` and `.json`. This is not a production build step or an authenticated production test. The legacy CSV-after-shell issue is not repaired here; coverage checks that the selected values are in export payloads, not that every historical CSV formatting defect is fixed.
+
+## Affiliate catalogue / M5zoon / bottom drawer tools
+
+```bash
+# Prepare the copied .cache/site using local-fixtures.cjs, then start local-runtime.cjs.
+UI_BASE_REF=c735c65 node tests/ui/backend-contracts.cjs
+CHROMIUM_PATH=/path/to/chromium node tests/ui/catalogue.cjs
+```
+
+`catalogue.cjs` requires a localhost URL and a copied `.cache/` site. It augments only that copy with synthetic M5zoon products / sales / views and a readonly expected-order helper; it compares filters/sort/pagination against the unchanged homepage collection rules. Filtering/navigation must make zero POSTs; one synthetic saved-commission POST checks the original marketer endpoint. It also checks the removed store box, exact single bottom links, no-JS GET forms, and six-width Axe/overflow coverage. Never upload the generated `_ui_catalog_expected.php` helper or any copied/private test data. Reset with `local-fixtures.cjs` before other suites; run mutating suites serially. Actual results/limits: `docs/ui/catalogue-2026-10-03.md` / `.json`.
+
+## Source media / public navigation / product detail UX
+
+```bash
+UI_BASE_REF=0f9ca6d node tests/ui/backend-contracts.cjs
+# With fresh local-fixtures.cjs / local-runtime.cjs copied site:
+CHROMIUM_PATH=/path/to/chromium node tests/ui/product-experience.cjs
+```
+
+This local-only script adds media to synthetic `UI-CHOICES` records, generates only a copied-site media probe, and checks original Drive fields, invalid-host rejection, missing-link/no-JS fallback, public-login-link removal with auth handlers intact, hidden supplier controls with supplier data intact, gallery/focus/selection/quantity controls and guest/marketer radio/standard detail pages at six widths. Presentation interactions must send zero POSTs. Reset the copied site before other mutating suites. The catalogue test's supplier-selector/tab assertions now enforce their removal, as requested, while preserving its country/source/filter/sort/save/order checks. Results and limits: `docs/ui/product-experience-2026-10-03.md` / `.json`. No Drive API/upload endpoint or hosting build dependency was added.

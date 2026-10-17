@@ -1,0 +1,744 @@
+{
+  "date": "2026-10-03",
+  "generated_at": "2026-10-03T07:27:17.956779+00:00",
+  "branch": "arena/01a0fb2f-afflite",
+  "baseline": "c735c65",
+  "asset_version": "20261003-catalog1",
+  "scope": "M5zoon affiliate supplier and full-catalogue country/sort filters matching homepage source rules; remove store/ref/copy box and relocate two existing sidebar links. No inventory totals or financial-rule changes.",
+  "environment": {
+    "php": "8.3.33",
+    "browser_package": "@sparticuz/chromium",
+    "synthetic_local_only": true,
+    "production_transactions": false,
+    "external_integrations_blocked": true
+  },
+  "checks": {
+    "php_lints": 44,
+    "backend_contracts": {
+      "configFunctionsUnchanged": 175,
+      "payoutHandlerUnchanged": true,
+      "constantsUnchanged": true,
+      "runtimeFixesReviewedSeparately": []
+    },
+    "catalogue_groups": 11,
+    "variants_groups": 18,
+    "stability_groups": 9,
+    "existing_flow_groups": 13,
+    "static_css": true,
+    "js_syntax": true,
+    "whitespace": true
+  },
+  "catalogue": {
+    "flows": [
+      "Removed store/ref/copy box; exactly one management and request link at the bottom, with working destinations/current state",
+      "M5zoon present in mixed affiliate feed, dedicated tab and permanent platform selector; country chips match the homepage",
+      "Every homepage country filters the full source feed on the server, including all four M5zoon destination countries",
+      "All four requested sort options match unchanged homepage collections / actual order-quantity best sort before pagination",
+      "Country/category/search/sort/platform/pagination retain one another; changing a filter resets page rather than filtering only its old cards",
+      "Existing price/added-commission sorts now cover all matching records and use saved extra without changing price formulas or converting currencies",
+      "Digital/social modes remain distinct; empty/invalid filter URLs remain useful and recoverable",
+      "Filtering, sort, page links and relocated navigation send zero POST requests",
+      "M5zoon card save persists through the original endpoint; generated commission link and existing order hook retain source/ref",
+      "Native GET filter form works with JavaScript disabled",
+      "Egypt/M5zoon/empty/digital catalogues pass six-width overflow/Axe checks without JS errors"
+    ],
+    "responsive": [
+      {
+        "params": {
+          "country": "مصر"
+        },
+        "widths": [
+          360,
+          390,
+          768,
+          1024,
+          1280,
+          1536
+        ]
+      },
+      {
+        "params": {
+          "plat": "m5zoon",
+          "country": "الإمارات"
+        },
+        "widths": [
+          360,
+          390,
+          768,
+          1024,
+          1280,
+          1536
+        ]
+      },
+      {
+        "params": {
+          "plat": "m5zoon",
+          "country": "مصر"
+        },
+        "widths": [
+          360,
+          390,
+          768,
+          1024,
+          1280,
+          1536
+        ]
+      },
+      {
+        "params": {
+          "mmode": "digital"
+        },
+        "widths": [
+          360,
+          390,
+          768,
+          1024,
+          1280,
+          1536
+        ]
+      }
+    ],
+    "errors": [],
+    "filterPosts": 1
+  },
+  "variant_flows": [
+    "Product colour/size are independent in either click order; modal POST/JSON/storage/confirmation retain both",
+    "Grouped colour/size choices initialize the shared modal correctly",
+    "Angazny model/colour/size description survives transfer (legacy variant details retained)",
+    "Latest detailed radio choice is not replaced by the first checked row; later colour selection retains size",
+    "Landing chips survive modal and inline orders; portable address preserves store, platform, campaign and hash",
+    "Main shop and independent created shop orders persist both choices; public visitors cannot see owner-only controls",
+    "Marketer product, catalogue and saved-store client orders expose and persist colour AND size",
+    "Cart keeps separate size lines; checkout copies both fields and preserves the existing first-line shipping rule",
+    "Long legacy variant descriptions differing after character 60 no longer merge in the cart",
+    "Logged-in customer ordering also retains both choices",
+    "Saved commission is read from persistent store data with no comm parameter and no cookies; copied clean address works in another fresh context",
+    "Explicit zero-commission preview is not replaced by the previously saved positive commission",
+    "Catalogue commission save updates the same durable price used by fresh landing visits",
+    "Selected values are visible without expanding admin/owner order rows; both export payloads include them; other-store orders stay private",
+    "An authenticated different marketer gets neither the store-owner link nor another marketer’s customer orders",
+    "Reopening a no-choice product clears/omits earlier colour and size rather than leaking them into a new order",
+    "Order metadata changes retain the existing CSRF rejection",
+    "Four changed views at six widths have no overflow, Axe WCAG findings or JavaScript errors"
+  ],
+  "stability_flows": [
+    "Affiliate home/shipping removed; old/unknown tab URLs render a useful page",
+    "Affiliate catalogue/category/store inventory counts removed, without removing products",
+    "Real Back navigation and persisted pageshow release drawers, nested dialogs, inertness and scroll locks",
+    "Public homepage and independent store category/result counts removed",
+    "All Egyptian supplier modal tables match untouched shipping data; local server orders retain 120/95 fees, qty and ref",
+    "Existing CSRF rejection remains 403 JSON",
+    "Uncaught-error fallback is private, navigable HTML / valid JSON, without automatic POST retry",
+    "PHP-rendered tables stay visible when the UI script is blocked",
+    "14 targeted views × 6 widths: no overflow, Axe WCAG findings or JavaScript errors"
+  ],
+  "existing_flows": [
+    "Mobile drawer focus trap, scroll lock, Escape and focus restore",
+    "Desktop collapse persists in localStorage",
+    "Store live preview and accessible theme contrast, without saving",
+    "Payout validates, explains amount/account/effect, and cancel sends no request",
+    "Tables paginate and filter the current loaded dataset locally",
+    "Admin status change requires confirmation; cancel restores displayed status and sends no POST",
+    "Store → landing stays a landing page; clean URL preserves ref metadata/session",
+    "Landing purchase modal retains ref and restores focus",
+    "Wishlist AJAX uses original wish/ajax endpoint and updates its accessible state",
+    "Lead modal submits existing fields/CSRF, qty=2 and ref; server returns a real local order",
+    "Cart delayed deletion is undoable before the original delete URL is sent",
+    "Cart → checkout uses unchanged field names and CSRF and places an isolated test order",
+    "Password show/hide and strength feedback match the server rules"
+  ],
+  "variant_responsive": [
+    {
+      "url": "/landing.php?id=UI-CHOICES&plat=vendoor&store=MKT-TEST",
+      "axeViolations": 0,
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/store.php?store=MKT-TEST",
+      "axeViolations": 0,
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/marketer.php?mtab=orders",
+      "axeViolations": 0,
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/admin.php?tab=orders",
+      "axeViolations": 0,
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    }
+  ],
+  "stability_responsive": [
+    {
+      "url": "/index.php",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/index.php?mode=digital",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/index.php?mode=social",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/store.php?store=MKT-TEST",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/landing.php?id=6029&plat=vendoor&ref=MKT-TEST",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/product.php?id=not-present&plat=vendoor",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/marketer.php?mtab=performance",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/marketer.php?mtab=store",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/marketer.php?mtab=browse",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/marketer.php?mtab=browse&mmode=digital",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/marketer.php?mtab=browse&mmode=social",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/marketer.php?mtab=orders",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/admin_shipping.php",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    },
+    {
+      "url": "/dashboard/shipping.php",
+      "axe": [],
+      "widths": [
+        {
+          "viewport": 360,
+          "document": 360
+        },
+        {
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "viewport": 768,
+          "document": 768
+        },
+        {
+          "viewport": 1024,
+          "document": 1024
+        },
+        {
+          "viewport": 1280,
+          "document": 1280
+        },
+        {
+          "viewport": 1536,
+          "document": 1536
+        }
+      ]
+    }
+  ],
+  "shipping": [
+    {
+      "platform": "angazny",
+      "governorate": "البحر الأحمر",
+      "fee": 120
+    },
+    {
+      "platform": "timehand",
+      "governorate": "أسوان",
+      "fee": 95
+    },
+    {
+      "platform": "safqa",
+      "governorate": "قنا",
+      "fee": 95
+    },
+    {
+      "platform": "vendoor",
+      "governorate": "القاهرة",
+      "fee": 80
+    }
+  ],
+  "limits": [
+    "No authenticated production browser / checkout test or real-network Lighthouse claim.",
+    "Not exhaustive every-product-ID or universal OOM recovery coverage.",
+    "Existing CSV/security/backend/financial defects remain out of scope."
+  ],
+  "deployment": {
+    "code_commit": "17b38637eb7d9edd2d024cc644b1b53513a3100e",
+    "metadata_commit": "b4d5346",
+    "run_id": 37106458168,
+    "url": "https://github.com/hamama44/afflite/actions/runs/37106458168",
+    "conclusion": "success",
+    "job_id": 111155842211,
+    "started_at": "2026-10-03T07:28:31Z",
+    "completed_at": "2026-10-03T07:30:48Z",
+    "duration_seconds": 137,
+    "ftp_step_conclusion": "success",
+    "public_read_only_checks": [
+      {
+        "url": "https://wafirinhalk.ct.ws/index.php?plat=m5zoon&country=الإمارات&release=17b3863",
+        "result": "Rendered UAE M5zoon product cards, native AED prices and homepage country/category chips."
+      },
+      {
+        "url": "https://wafirinhalk.ct.ws/store.php?store=MK-DA-86&release=17b3863",
+        "result": "Public store rendered its existing products/landing links; no owner login, saves or orders."
+      }
+    ],
+    "verification_level": "Run/job/FTP-step success plus public read-only renders; no authenticated production catalogue/transaction test or individual-file FTP log audit."
+  }
+}

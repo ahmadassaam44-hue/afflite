@@ -1,0 +1,26 @@
+[
+ {
+  "plat": "timehand",
+  "url": "",
+  "headers": {},
+  "env_headers": {
+   "Cookie": "TIMEHAND_COOKIE"
+  }
+ },
+ {
+  "plat": "angazny",
+  "url": "",
+  "headers": {},
+  "env_headers": {
+   "Cookie": "ANGAZNY_COOKIE"
+  }
+ },
+ {
+  "plat": "m5zoon",
+  "url": "",
+  "headers": {},
+  "env_headers": {
+   "Cookie": "M5ZOON_COOKIE"
+  }
+ }
+]
