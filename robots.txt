@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/admin.php
+Disallow: /dashboard/admin_shipping.php
+Disallow: /dashboard/cart.php
+Disallow: /dashboard/checkout_cart.php
+Disallow: /data/
+Disallow: /api_
+Disallow: /go.php
+Sitemap: https://wafirinhalk.com/sitemap.php

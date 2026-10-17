@@ -1,0 +1,88 @@
+# ============================================================================
+#  ملفات لا يجب رفعها على أي مستودع عام (Git)
+# ============================================================================
+
+# الأسرار
+secrets.php
+config.local.php
+.env
+*.env
+
+# بيانات المستخدمين والطلبات (معلومات حساسة)
+data/users.json
+data/orders.json
+data/resets.json
+data/tickets.json
+data/payouts.json
+data/notifications.json
+data/support_chats.json
+data/product_requests.json
+data/analytics.json
+data/events.json
+data/visitors.json
+data/wishlist.json
+data/cart_log.json
+data/love_log.json
+data/ratelimit.json
+data/fraud_alerts.json
+data/audit_logs.json
+data/marketer_clicks.json
+data/views.json
+data/amazon_links.json
+data/noon_codes.json
+data/customer_requests.json
+data/noon_products.json
+data/noon_sales.json
+data/amazon_clicks.json
+data/amazon_orders.json
+data/amazon_requests.json
+data/jumia_links.json
+data/jumia_clicks.json
+data/jumia_orders.json
+data/jumia_requests.json
+
+# الكاش
+data/cache_*.json
+
+# الرفع
+assets/uploads/*
+!assets/uploads/.htaccess
+
+# ملفات النظام
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*~
+*.bak
+*.old
+
+# مجلدات التطوير
+node_modules/
+.git/
+.idea/
+.vscode/
+data/logs/
+data/cache_sitemap.xml
+
+# ملفات يولّدها المحدّث لكن نحتفظ بها في الريبو للتاريخ: data/price_history.json و data/*.json الكتالوجات (مش متجاهَلة)
+
+# Isolated UI test runtimes, dependencies, sessions and synthetic data
+.cache/
+
+# Python development bytecode
+__pycache__/
+*.py[cod]
+
+# npm محلي (أداة اختبار PHP-WASM فقط — مش جزء من الموقع)
+package.json
+package-lock.json
+# سكربت حماية مؤقت (محلي بس)
+tests/ui_deploy_guard.sh
+
+# فهرس البحث بالصورة لسيزما (كبير — بيتحفظ على السيرفر مش في الريبو)
+data/visual_cezma.bin
+data/visual_cezma.idx
+data/visual_cezma.bin.part-*
+data/visual_cezma.idx.part-*
+data/zz_cezma_index/
