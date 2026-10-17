@@ -169,6 +169,25 @@
     canvas.width = w;
     canvas.height = h;
     ctx.drawImage(imgEl, 0, 0, w, h);
+    // كشف خلفية موحدة من إطار الصورة الكامل (مش القصاصة الداخلية بس)
+    var bdata = ctx.getImageData(0, 0, w, h).data;
+    var edgeChips = [];
+    for (var bi = 0; bi < bdata.length; bi += 4) {
+      var bpx = bi / 4;
+      var bx = bpx % w,
+        by = Math.floor(bpx / w);
+      if (bx === 0 || by === 0 || bx === w - 1 || by === h - 1) edgeChips.push([bdata[bi], bdata[bi + 1], bdata[bi + 2]]);
+    }
+    var bgSkip = null;
+    if (edgeChips.length > 100) {
+      var er = edgeChips.map(function (c) { return c[0]; }).sort(function (a, b) { return a - b; });
+      var eg = edgeChips.map(function (c) { return c[1]; }).sort(function (a, b) { return a - b; });
+      var eb = edgeChips.map(function (c) { return c[2]; }).sort(function (a, b) { return a - b; });
+      function mid(a) { return a[Math.floor(a.length / 2)]; }
+      var mr = mid(er), mg = mid(eg), mb = mid(eb);
+      var spread = Math.max(mid(er) - er[Math.floor(er.length * 0.25)], mid(eg) - eg[Math.floor(eg.length * 0.25)], mid(eb) - eb[Math.floor(eb.length * 0.25)]);
+      if (spread < 18) bgSkip = [mr, mg, mb];
+    }
     var data = ctx.getImageData(10, 10, 44, 44).data;
     var buckets = {};
     for (var i = 0; i < data.length; i += 4) {
@@ -179,6 +198,7 @@
       if (a < 128) continue;
       // تجاهل الخلفيات البيضاء الناصعة جداً حول المنتج
       if (r > 244 && g > 244 && b > 244) continue;
+      if (bgSkip && Math.abs(r - bgSkip[0]) + Math.abs(g - bgSkip[1]) + Math.abs(b - bgSkip[2]) < 120) continue;
       var qr = Math.round(r / 32) * 32;
       var qg = Math.round(g / 32) * 32;
       var qb = Math.round(b / 32) * 32;
@@ -209,6 +229,8 @@
   // ميزات بصرية (لون + شكل) — لازم تطابق updater/visual_features.py بالظبط
   // h: هستوجرام 64 خانة (4 مستويات لكل قناة) متطبّع لمجموع 255
   // t: شبكة رمادية 8×8 (الخلفية البيضا = 255)
+  // + اكتشاف خلفية موحدة من الحواف: صور الجوال/السوبار (خلفية رمادية/بيج/داكنة)
+  //   ما كانتش بتتعتب كسلفة وكانت بتلوّث هستوجرام اللون → نتايج عشوائية.
   function extractVisualFeatures(imgEl) {
     var G = 64,
       C = 8,
@@ -221,6 +243,27 @@
     ctx.fillRect(0, 0, G, G);
     ctx.drawImage(imgEl, 0, 0, G, G);
     var data = ctx.getImageData(0, 0, G, G).data;
+    var bgMode = 0, bgr = 255, bgg = 255, bgb = 255;
+    var chips = [];
+    for (var i = 0; i < data.length; i += 4) {
+      var px = i / 4;
+      var x = px % G,
+        y = Math.floor(px / G);
+      var edge = (x === 0 || y === 0 || x === G - 1 || y === G - 1);
+      if (edge) chips.push([data[i], data[i + 1], data[i + 2]]);
+    }
+    if (chips.length > 100) {
+      var rs = chips.map(function (c) { return c[0]; }).sort(function (a, b) { return a - b; });
+      var gs = chips.map(function (c) { return c[1]; }).sort(function (a, b) { return a - b; });
+      var bs = chips.map(function (c) { return c[2]; }).sort(function (a, b) { return a - b; });
+      function mid(a) { return a[Math.floor(a.length / 2)]; }
+      var mr = mid(rs), mg = mid(gs), mb = mid(bs);
+      // نسند بس لو الحواف فعلاً موحدة (خلفية واحدة) — وإلا الاستعلام صورة مكسورة نسيبة
+      var spread = Math.max(mid(rs) - rs[Math.floor(rs.length * 0.25)], mid(gs) - gs[Math.floor(gs.length * 0.25]), mid(bs) - bs[Math.floor(bs.length * 0.25)]);
+      if (spread < 18) {
+        bgMode = 1; bgr = mr; bgg = mg; bgb = mb;
+      }
+    }
     var hist = new Array(64).fill(0);
     var graySum = new Array(C * C).fill(0);
     var total = 0;
@@ -232,7 +275,13 @@
       var r = data[i],
         g = data[i + 1],
         b = data[i + 2];
-      if (r > 244 && g > 244 && b > 244) {
+      var isBg = (r > 244 && g > 244 && b > 244);
+      if (bgMode && !isBg) {
+        // الخلفية الموحدة المكتشفة: أي بكسل قريب منها = سلفة حتى لو مش أبيض
+        var dd = Math.abs(r - bgr) + Math.abs(g - bgg) + Math.abs(b - bgb);
+        if (dd < 120) isBg = true;
+      }
+      if (isBg) {
         graySum[cell] += 255;
         continue;
       }

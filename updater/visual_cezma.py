@@ -34,6 +34,8 @@ WORKERS = 12
 CHUNK = 200
 MIN_PRICE_EGP = 100.0
 FTP_PART_BYTES = 8 * 1024 * 1024
+# لازم يطابق visual_features.FEAT_VERSION — بيدبّر إعادة حساب من الصفر وقت تغيير خوارزمية الميزات
+FEAT_VERSION = 3
 
 
 def _clean(s):
@@ -192,6 +194,18 @@ def build(shards_dir, bin_path, idx_path, budget=1500.0, log=print):
     except (TypeError, ValueError):
         budget = 1500.0
     rows = _collect(shards_dir)
+
+    # إعادة بناء من الصفر بقت تغيير خوارزمية الميزات (ملف الإصدار)
+    ver_file = os.path.join(os.path.dirname(os.path.abspath(bin_path)), 'visual_cezma.ver')
+    if not os.path.isfile(ver_file) or (open(ver_file).read().strip() != str(FEAT_VERSION)):
+        for p in (bin_path, idx_path):
+            try:
+                os.remove(p)
+            except FileNotFoundError:
+                pass
+        with open(ver_file, 'w') as fh:
+            fh.write(str(FEAT_VERSION))
+        log('visual_cezma: feature v%d - index reset for full recompute' % FEAT_VERSION)
 
     # Reuse old records by the product id AND URL so adding a gallery photo does
     # not invalidate the already-computed primary image.

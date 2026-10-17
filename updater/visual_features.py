@@ -27,6 +27,7 @@ GRID = 64          # thumbnail size before extracting features
 THUMB = 8          # 8x8 shape grid
 CELL = GRID // THUMB
 BG_MIN = 244       # nearly-white pixels are treated as background
+FEAT_VERSION = 3   # v3: detect any uniform photo backdrop (grey/wood/flat-lay), not only white
 MAX_BYTES = 4_000_000
 WORKERS = 8
 CHUNK = 64
@@ -36,12 +37,34 @@ UA = {'User-Agent': 'Mozilla/5.0 (compatible; afflite-visual/1.0)'}
 PLACEHOLDER_MARKERS = ('placeholder', 'place-holder', 'image-place-holder', 'no-image', '/default.png', '/def.png')
 
 
+def _border_bg(px):
+    """Median border colour when the frame edge is one uniform backdrop."""
+    chips = []
+    for i, (r, g, b) in enumerate(px):
+        x = i % GRID
+        y = i // GRID
+        if x == 0 or y == 0 or x == GRID - 1 or y == GRID - 1:
+            chips.append((r, g, b))
+    if len(chips) < GRID * 2:
+        return None
+    rs = sorted(c[0] for c in chips)
+    gs = sorted(c[1] for c in chips)
+    bs = sorted(c[2] for c in chips)
+    mr, mg, mb = rs[len(rs) // 2], gs[len(gs) // 2], bs[len(bs) // 2]
+    q1r, q1g, q1b = rs[len(rs) // 4], gs[len(gs) // 4], bs[len(bs) // 4]
+    spread = max(mr - q1r, mg - q1g, mb - q1b)
+    if spread >= 18:
+        return None
+    return (mr, mg, mb)
+
+
 def features_from_pil(im):
     """Return `{'h': [64 ints], 't': [64 ints]}` for a PIL image."""
     im = im.convert('RGBA')
     white = Image.new('RGBA', im.size, (255, 255, 255, 255))
     rgb = Image.alpha_composite(white, im).convert('RGB').resize((GRID, GRID), Image.BILINEAR)
     px = list(rgb.getdata())
+    bg = _border_bg(px)
     hist = [0] * 64
     gray_sum = [0.0] * (THUMB * THUMB)
     total = 0
@@ -49,7 +72,11 @@ def features_from_pil(im):
         x = i % GRID
         y = i // GRID
         cell = (y // CELL) * THUMB + (x // CELL)
-        if r > BG_MIN and g > BG_MIN and b > BG_MIN:
+        is_bg = r > BG_MIN and g > BG_MIN and b > BG_MIN
+        # v3: خلفية موحدة بأي لون (رمادي/بيج/خشبي) — أي بكسل قريب منها يعتبر سلفة
+        if bg and not is_bg and abs(r - bg[0]) + abs(g - bg[1]) + abs(b - bg[2]) < 120:
+            is_bg = True
+        if is_bg:
             gray_sum[cell] += 255
             continue
         gray_sum[cell] += 0.299 * r + 0.587 * g + 0.114 * b
@@ -148,7 +175,7 @@ def _record_photos(record):
         return found
     primary_url = str(record.get('u') or record.get('img') or '').strip()
     if primary_url and _valid_features(record):
-        found[primary_url] = {'h': record['h'], 't': record['t']}
+        found[primary_url] = {'h': record['h'], 't': record['t'], 'fv': record.get('fv')}
     gallery = record.get('gallery')
     if isinstance(gallery, list):
         for photo in gallery:
@@ -156,7 +183,7 @@ def _record_photos(record):
                 continue
             url = str(photo.get('u') or photo.get('img') or '').strip()
             if url:
-                found[url] = {'h': photo['h'], 't': photo['t']}
+                found[url] = {'h': photo['h'], 't': photo['t'], 'fv': photo.get('fv')}
     return found
 
 
@@ -218,8 +245,12 @@ def build(data_dir, out_path, log=print, budget=900.0):
         try:
             with open(out_path, encoding='utf-8') as f:
                 previous = json.load(f) or {}
-            old_items = previous.get('items') or {}
-            old_bad = previous.get('bad') or {}
+            if int(previous.get('fv') or 0) == FEAT_VERSION:
+                old_items = previous.get('items') or {}
+                old_bad = previous.get('bad') or {}
+            else:
+                log('visual: feature version bumped to %d - rebuilding from scratch' % FEAT_VERSION)
+                old_items, old_bad = {}, {}
             if not isinstance(old_items, dict):
                 old_items = {}
             if not isinstance(old_bad, dict):
@@ -233,7 +264,10 @@ def build(data_dir, out_path, log=print, budget=900.0):
     for key, meta in catalog.items():
         existing = cached.get(key, {})
         for url in meta['urls']:
-            if url in existing or _was_bad(old_bad, key, url):
+            prev = existing.get(url)
+            if prev is not None and prev.get('fv') == FEAT_VERSION:
+                continue
+            if _was_bad(old_bad, key, url) and prev is None:
                 continue
             todo.append((key, url))
     log('visual: %d products, %d photos to compute' % (len(catalog), len(todo)))
@@ -260,7 +294,7 @@ def build(data_dir, out_path, log=print, budget=900.0):
             if feat is None:
                 feat = previous_photos.get(url)
             if _valid_features(feat):
-                photos.append({'u': url, 'img': url, 'h': feat['h'], 't': feat['t']})
+                photos.append({'u': url, 'img': url, 'h': feat['h'], 't': feat['t'], 'fv': FEAT_VERSION})
                 photo_count += 1
                 if identity in computed:
                     success_count += 1
@@ -282,7 +316,7 @@ def build(data_dir, out_path, log=print, budget=900.0):
     log('visual: computed %d photos, failed %d; indexed %d photos across %d products' %
         (success_count, fail_count, photo_count, len(items)))
     payload = {
-        'v': 2, 'grid': GRID, 'thumb': THUMB, 'count': len(items),
+        'v': 2, 'fv': FEAT_VERSION, 'grid': GRID, 'thumb': THUMB, 'count': len(items),
         'images_count': photo_count, 'items': items, 'bad': bad,
     }
     new = json.dumps(payload, ensure_ascii=False, separators=(',', ':'))

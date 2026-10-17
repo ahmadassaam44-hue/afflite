@@ -370,8 +370,9 @@ function manual_image_bytes($src) {
     return null;
 }
 
-// نفس الحساب بتاع visual_features.py: شبكة 64×64، خلفية بيضا (>244) تتجاهل،
-// هستوجرام 64 خانة (4 مستويات لكل قناة) متطبّع لـ 255، وشبكة رمادية 8×8.
+// نفس الحساب بتاع visual_features.py (v3): شبكة 64×64، خلفية بيضا (>244) أو
+// خلفية موحدة مكتشفة من الحواف (رمادي/بيج/خشبي) تتجاهل، هستوجرام 64 خانة
+// (4 مستويات لكل قناة) متطبّع لـ 255، وشبكة رمادية 8×8.
 function manual_visual_features_from_string($bin) {
     if (!function_exists('imagecreatefromstring') || !function_exists('imagecopyresampled')) return null;
     $src = @imagecreatefromstring($bin);
@@ -383,16 +384,32 @@ function manual_visual_features_from_string($bin) {
     imagealphablending($dst, true);
     imagecopyresampled($dst, $src, 0, 0, 0, 0, $G, $G, imagesx($src), imagesy($src));
     imagedestroy($src);
+    // كشف خلفية موحدة من حواف الإطار (وسيط كل قناة + مدى الربع الربيعي)
+    $rs = []; $gs = []; $bs = [];
+    for ($x = 0; $x < $G; $x++) {
+        foreach ([0, $G - 1] as $yy) {
+            $c = imagecolorat($dst, $x, $yy);
+            $rs[] = ($c >> 16) & 255; $gs[] = ($c >> 8) & 255; $bs[] = $c & 255;
+            $c = imagecolorat($dst, $yy, $x);
+            $rs[] = ($c >> 16) & 255; $gs[] = ($c >> 8) & 255; $bs[] = $c & 255;
+        }
+    }
+    sort($rs); sort($gs); sort($bs);
+    $mr = $rs[intdiv(count($rs), 2)]; $mg = $gs[intdiv(count($gs), 2)]; $mb = $bs[intdiv(count($bs), 2)];
+    $q1r = $rs[intdiv(count($rs), 4)]; $q1g = $gs[intdiv(count($gs), 4)]; $q1b = $bs[intdiv(count($bs), 4)];
+    $bg = (max($mr - $q1r, $mg - $q1g, $mb - $q1b) < 18) ? [$mr, $mg, $mb] : null;
     $hist = array_fill(0, 64, 0);
-    $gs = array_fill(0, $C * $C, 0.0);
+    $gs_i = array_fill(0, $C * $C, 0.0);
     $total = 0;
     for ($y = 0; $y < $G; $y++) {
         for ($x = 0; $x < $G; $x++) {
             $c = imagecolorat($dst, $x, $y);
             $r = ($c >> 16) & 255; $g = ($c >> 8) & 255; $b = $c & 255;
             $cell = intdiv($y, $CELL) * $C + intdiv($x, $CELL);
-            if ($r > 244 && $g > 244 && $b > 244) { $gs[$cell] += 255; continue; }
-            $gs[$cell] += 0.299 * $r + 0.587 * $g + 0.114 * $b;
+            $is_bg = ($r > 244 && $g > 244 && $b > 244);
+            if ($bg && !$is_bg && abs($r - $bg[0]) + abs($g - $bg[1]) + abs($b - $bg[2]) < 120) $is_bg = true;
+            if ($is_bg) { $gs_i[$cell] += 255; continue; }
+            $gs_i[$cell] += 0.299 * $r + 0.587 * $g + 0.114 * $b;
             $hist[($r >> 6) * 16 + ($g >> 6) * 4 + ($b >> 6)]++;
             $total++;
         }
@@ -401,7 +418,7 @@ function manual_visual_features_from_string($bin) {
     $h = [];
     foreach ($hist as $cnt) $h[] = $total ? (int)floor($cnt * 255 / $total + 0.5) : 0;
     $t = [];
-    foreach ($gs as $sum) $t[] = (int)floor($sum / ($CELL * $CELL) + 0.5);
+    foreach ($gs_i as $sum) $t[] = (int)floor($sum / ($CELL * $CELL) + 0.5);
     return ['h' => $h, 't' => $t];
 }
 

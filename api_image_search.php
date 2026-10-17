@@ -110,7 +110,7 @@ function vs_bin_dist($ia, $ib) {
 // بنرجّعها في الاتجاهين ونحسب التنكر (Dice) — القيمة 1 = تطابق كامل.
 function vs_hist_soft(array $ha, array $hb) {
     $sa = array_sum($ha); $sb = array_sum($hb);
-    if ($sa <= 0 || $sb <= 0) return 0.0;
+    if ($sa <= 0 || $sb <= 0) return [0.0, 0.0, 0.0];
     $tops = [];
     foreach ([[$ha, $sa, 'a'], [$hb, $sb, 'b']] as $side) {
         $h = $side[0]; $tot = $side[1];
@@ -121,23 +121,30 @@ function vs_hist_soft(array $ha, array $hb) {
     }
     // عقوبة المسافة اللونية 0..3 (شيفرون على شبكة 4×4×4)
     $decay = [1.0, 0.55, 0.28, 0.05];
+    $res = [];
+    $top_cov = 0.0; $top_mass = 0.0;
     foreach (['a', 'b'] as $s) {
         $other = $s === 'a' ? 'b' : 'a';
         $m = 0.0;
+        $first = true;
         foreach ($tops[$s] as $ia => $ma) {
+            $bin_m = 0.0;
             foreach ($tops[$other] as $ib => $mb) {
                 if ($ma * $mb < 0.0004) continue;
                 $d = vs_bin_dist((int)$ia, (int)$ib);
+                $bin_m += $mb * ($decay[$d] ?? 0.0);
                 $m += $ma * $mb * ($decay[$d] ?? 0.0);
             }
+            // أقوى خانة في جهة الاستعلام (أ) — تغطيتها في المستهدف مؤشر تعريف اللون المميز
+            if ($s === 'a' && $first) { $top_cov = $bin_m; $top_mass = $ma; $first = false; }
         }
         $res[$s] = $m;
     }
     // منح مطابقة "عالية" بكتل صغيرة جدًا (دجاج بلا لحمة): التنكُر لوحده مش كفاية
     $mn = min($res['a'], $res['b']);
-    if ($mn <= 0) return 0.0;
+    if ($mn <= 0) return [0.0, $top_cov, $top_mass];
     $dice = 2.0 * $mn / ($res['a'] + $res['b']);
-    return $dice * min(1.0, $mn / 0.30);
+    return [$dice * min(1.0, $mn / 0.30), $top_cov, $top_mass];
 }
 
 // أفضل ارتباط شكل من 4 نافذات (كامل/مركز 6×6/زاوية يمين-أعلى/زاوية شمال-أسفل):
@@ -170,7 +177,10 @@ function vs_hist_exact(array $ha, array $hb) {
 }
 
 function vs_pair_score(array $qh, array $qt, array $ph, array $pt) {
-    $hist = 0.55 * vs_hist_soft($qh, $ph) + 0.45 * vs_hist_exact($qh, $ph);
+    list($soft, $top_cov, $top_mass) = vs_hist_soft($qh, $ph);
+    $hist = 0.55 * $soft + 0.45 * vs_hist_exact($qh, $ph);
+    // اللون المميز في الاستعلام (كتلة >30%) لو مش موجود في المستهدف → تشابة مصطنع، نخفف الدرجة
+    if ($top_mass >= 0.30 && $top_cov < 0.25) $hist *= 0.70;
     $shape = vs_best_shape($qt, $pt);
     return [0.52 * $hist + 0.48 * max(0.0, $shape), $hist, $shape];
 }
