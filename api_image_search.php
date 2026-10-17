@@ -160,8 +160,17 @@ function vs_best_shape(array $qt, array $tt) {
 }
 
 // الدرجة المدمجة الجديدة (بتتعامل مع أعداد صحيحة 0..255)
+// اللون = مزيج ناعم (تسامح إضاءة) + صارم (تفريق المنتجات المتشابهة في اللون العام)
+function vs_hist_exact(array $ha, array $hb) {
+    $sa = array_sum($ha); $sb = array_sum($hb);
+    if ($sa <= 0 || $sb <= 0) return 0.0;
+    $inter = 0;
+    for ($i = 0; $i < 64; $i++) $inter += min((int)$ha[$i], (int)$hb[$i]);
+    return 2.0 * $inter / ($sa + $sb);
+}
+
 function vs_pair_score(array $qh, array $qt, array $ph, array $pt) {
-    $hist = vs_hist_soft($qh, $ph);
+    $hist = 0.55 * vs_hist_soft($qh, $ph) + 0.45 * vs_hist_exact($qh, $ph);
     $shape = vs_best_shape($qt, $pt);
     return [0.52 * $hist + 0.48 * max(0.0, $shape), $hist, $shape];
 }
@@ -287,7 +296,7 @@ function vs_scan_cezma(array $qh, array $qt, $cat_filter, $kw_hint, array $detec
             'img_url' => asset_url($img),
             'link' => (strpos($_SERVER['HTTP_REFERER'] ?? '', '/dashboard/') !== false ? 'product.php?id=' : 'dashboard/product.php?id=') . urlencode($id),
             '_s' => $score,
-            'match_pct' => (int)max(1, min(99, round($score * 100))),
+            'match_pct' => (int)max(1, min(97, round($score * 100))),
         ];
     }
     fclose($fh);
@@ -351,7 +360,7 @@ if ($use_feat) {
             'name' => (string)($it['name'] ?? ''),
             'cat' => (string)($it['cat'] ?? ''),
             '_s' => $score,
-            'match_pct' => (int)max(1, min(99, round($score * 100))),
+            'match_pct' => (int)max(1, min(97, round($score * 100))),
             'img_url' => asset_url($matched_photo['img'] ?? ($matched_photo['u'] ?? ($it['img'] ?? ($it['u'] ?? '')))),
             'link' => (strpos($_SERVER['HTTP_REFERER'] ?? '', '/dashboard/') !== false ? 'product.php?id=' : 'dashboard/product.php?id=') . urlencode((string)($it['id'] ?? '')),
         ];
