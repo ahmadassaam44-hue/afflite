@@ -47,6 +47,24 @@ function docs_fetch($f, $timeout = 8) {
     return ['ok' => true, 'found' => true, 'data' => $rows[0]['data'] ?? null, 'rev' => $rows[0]['updated_at'] ?? null];
 }
 
+// كاش قراءة قصيرة لملفات Supabase: أي صفحة معمولة بعد قراءة أخيرة بـ≤ DOCS_CACHE_TTL ثانية
+// بتقرأ من كاش القراءة المحلي بدل طلب HTTP جديد (4-8 ثواني في كل صفحة كانت تعطل).
+// لو Supabase تعثّر: بنرجع آخر نسخة حتى لو قديمة (DOCS_CACHE_STALE) بدل تفشيل الصفحة.
+// الكتابة تمسح/تحثّ الكاش — متضمن مشكلة أمان، والقيم المالية ليست قديمة أكتر من 30 ثانية.
+define('DOCS_CACHE_TTL', 30);
+define('DOCS_CACHE_STALE', 300);
+function docs_fetch_cached($f, $timeout = 8) {
+    $c = docs_cache_read($f, DOCS_CACHE_TTL);
+    if ($c !== null && isset($c['ok'])) return $c;
+    $r = docs_fetch($f, $timeout);
+    if ($r['ok']) {
+        docs_cache_write($f, $r);
+        return $r;
+    }
+    $old = docs_cache_read($f, null);
+    return ($old !== null && isset($old['ok'])) ? $old : $r;
+}
+
 // كتابة صف. rev = null → إنشاء. rev موجود → تحديث بشرط إن الصف لسه بنفس الـ rev.
 // بترجع: ['status' => 'ok'|'conflict'|'error', 'rev' => ...]
 // ---- كاش إعدادات الموقع على الاستضافة ----
@@ -70,10 +88,10 @@ function docs_cache_clear($f) {
     @unlink(docs_cache_path($f));
 }
 
-// كتابة صف + مسح الكاش بتاعه
+// كتابة صف + مسح الكاش بتاعه (أي ملف: تعديل مهم لازم يوصل باقي الطلبات فوراً)
 function docs_store($f, $value, $rev) {
     $st = docs_store_raw($f, $value, $rev);
-    if ($f === 'settings.json') docs_cache_clear($f);
+    docs_cache_clear($f);
     return $st;
 }
 
@@ -98,28 +116,10 @@ function docs_store_raw($f, $value, $rev) {
 }
 
 function docs_jload($f, $def, $memoize) {
-    if ($f === 'settings.json') {
-        // كاش طازة: من غير ما نكلم Supabase
-        $c = docs_cache_read($f, DOCS_SETTINGS_CACHE_TTL);
-        if ($c !== null) { if ($memoize) $GLOBALS['_JMEM'][$f] = $c; return $c; }
-        // Supabase بيرد بسرعة ولا يتقطعش الطلب
-        $r = docs_fetch($f, 3);
-        if ($r['ok']) {
-            $res = is_array($r['data']) ? $r['data'] : $def;
-            $GLOBALS['_DOCREV'][$f] = $r['found'] ? $r['rev'] : null;
-            if ($r['found'] && is_array($r['data'])) docs_cache_write($f, $r['data']);
-            if ($memoize) $GLOBALS['_JMEM'][$f] = $res;
-            return $res;
-        }
-        // Supabase مش متاح: آخر نسخة نجحت (حتى لو قديمة) أحسن من إعدادات فاضية
-        $old = docs_cache_read($f, null);
-        if ($old !== null) { if ($memoize) $GLOBALS['_JMEM'][$f] = $old; return $old; }
-        return $def;
-    }
-    $r = docs_fetch($f);
+    $r = docs_fetch_cached($f, $f === 'settings.json' ? 3 : 8);
     if (!$r['ok']) return $def;
-    $GLOBALS['_DOCREV'][$f] = $r['found'] ? $r['rev'] : null;
-    $res = is_array($r['data']) ? $r['data'] : $def;
+    $GLOBALS['_DOCREV'][$f] = $r['found'] ? ($r['rev'] ?? null) : null;
+    $res = is_array($r['data'] ?? null) ? $r['data'] : $def;
     if ($memoize) $GLOBALS['_JMEM'][$f] = $res;
     return $res;
 }
@@ -134,12 +134,13 @@ function docs_jsave($f, $data) {
     for ($try = 0; $try < 4; $try++) {
         $st = docs_store($f, $data, $GLOBALS['_DOCREV'][$f]);
         if ($st['status'] === 'ok') {
+            docs_cache_clear($f);
             $GLOBALS['_DOCREV'][$f] = $st['rev'];
             $GLOBALS['_JMEM'][$f] = $data;
             return true;
         }
         if ($st['status'] !== 'conflict') return false;
-        // اتغير من طلب تاني: نجيب أحدث نسخة ونكتب تاني (نفس سلوك الملف المحلي: آخر كتابة بتكسب)
+        // اتغير من طلب تاني: نجيب أحدث نسخة مباشرة من Supabase (بدون كاش قراءة) ونكتب تاني
         $r = docs_fetch($f);
         if (!$r['ok']) return false;
         $GLOBALS['_DOCREV'][$f] = $r['found'] ? $r['rev'] : null;

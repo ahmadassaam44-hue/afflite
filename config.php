@@ -2445,12 +2445,15 @@ function my_notifications($email) { return array_values(array_filter(jload('noti
 function admin_notifications() { return array_values(array_filter(jload('notifications.json', []), function ($n) { return $n['for'] === 'admin' || $n['for'] === 'all'; })); }
 function find_user($email) { return find_user_row($email); }
 function find_marketer_by_code($code) {
+    static $by_code = [];
     $code = trim((string)$code);
     if ($code === '') return null;
+    if (array_key_exists($code, $by_code)) return $by_code[$code];
+    $found = null;
     foreach (users() as $u) {
-        if (!empty($u['ref_code']) && strcasecmp((string)$u['ref_code'], $code) === 0) return $u;
+        if (!empty($u['ref_code']) && strcasecmp((string)$u['ref_code'], $code) === 0) { $found = $u; break; }
     }
-    return null;
+    return $by_code[$code] = $found;
 }
 
 // ============================================================================
