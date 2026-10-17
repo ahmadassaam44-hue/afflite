@@ -3,9 +3,9 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 316611,
+   "remote_size": 318248,
    "on_server": true,
-   "local_size": 316611,
+   "local_size": 318248,
    "match": true
   },
   "index.php": {
@@ -87,9 +87,9 @@
    "match": true
   },
   "dashboard/marketer.php": {
-   "remote_size": 110327,
+   "remote_size": 110536,
    "on_server": true,
-   "local_size": 110327,
+   "local_size": 110536,
    "match": true
   },
   "assets/style.css": {
