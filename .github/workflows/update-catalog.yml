@@ -19,7 +19,7 @@ on:
       - 'updater/visual_features.py'
       - '.github/workflows/update-catalog.yml'
   schedule:
-    - cron: '17 */6 * * *'        # كل 6 ساعات
+    - cron: '17 */12 * * *'        # كل 12 ساعة
   workflow_dispatch:
     inputs:
       only:
