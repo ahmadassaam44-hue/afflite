@@ -944,10 +944,34 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITU
 // قراءة/كتابة JSON آمنة مع قفل ملف (flock) لمنع تلاشي البيانات في الطلبات المتزامنة
 // ============================================================================
 $GLOBALS['_JMEM'] = [];
+$GLOBALS['_JLOAD_MS'] = [];
+if (!function_exists('wfp')) {
+    function wfp($label) {}
+}
+
+// ===== زمن العناصر (تشخيص مؤقت): لا يعمل إلا مع ?perf=<WF_PERF_TOKEN> في تحقق session =====
+if (!defined('WF_PERF_TOKEN')) define('WF_PERF_TOKEN', 'perft0k17');
+(function () {
+    if (($_GET['perf'] ?? '') !== WF_PERF_TOKEN) return;
+    $GLOBALS['_WFP_TIMES'] = [];
+    $GLOBALS['_WFP_T0'] = microtime(true);
+    $GLOBALS['_WFP'] = [];
+})();
+function wfp($label) {
+    if (!isset($GLOBALS['_WFP'])) { return; }
+    $GLOBALS['_WFP'][] = sprintf('%s t=%.3f mem=%.1fM', $label, microtime(true) - $GLOBALS['_WFP_T0'], memory_get_usage(true) / 1048576);
+}
+register_shutdown_function(function () {
+    if (empty($GLOBALS['_WFP']) || !isset($GLOBALS['_WFP_T0'])) return;
+    $t = sprintf("%.3fs", microtime(true) - $GLOBALS['_WFP_T0']);
+    error_log('WFPERF uri=' . ($_SERVER['REQUEST_URI'] ?? '') . ' total=' . $t . ' | ' . implode(' | ', $GLOBALS['_WFP']));
+    echo "\n<!--WFPERF total=" . htmlspecialchars($t) . "\n" . htmlspecialchars(implode("\n", $GLOBALS['_WFP'])) . "\n-->\n";
+});
 
 function jload($f, $def = [], $memoize = true) {
     if (isset($GLOBALS['_JMEM'][$f])) return $GLOBALS['_JMEM'][$f];
     if (docs_is_remote($f)) return docs_jload($f, $def, $memoize);
+    $t0 = microtime(true);
     $p = DATA_DIR . '/' . $f;
     if (!file_exists($p)) return $def;
     $fp = @fopen($p, 'rb');
@@ -958,6 +982,8 @@ function jload($f, $def = [], $memoize = true) {
     @fclose($fp);
     $d = json_decode($raw ?: '', true);
     $res = is_array($d) ? $d : $def;
+    $GLOBALS['_JLOAD_MS'][$f] = [round((microtime(true) - $t0) * 1000), strlen((string)$raw), count(is_array($res) ? $res : [])];
+    if ($GLOBALS['_JLOAD_MS'][$f][0] > 80) wfp('SLOWFILE ' . $f . ' ' . $GLOBALS['_JLOAD_MS'][$f][0] . 'ms ' . round(strlen((string)$raw) / 1024) . 'KB');
     if ($memoize) $GLOBALS['_JMEM'][$f] = $res;
     return $res;
 }
@@ -2037,6 +2063,7 @@ function mix_by_platform($items, $order = ['timehand', 'safqa', 'vendoor', 'anga
 // بناء القوائم والأقسام الخاصة (كل المنتجات / أحدث المنتجات / الأكثر مبيعاً / الأكثر مشاهدة / المنتجات المميزة)
 // بحيث يحتوي كل قسم على منتج من كل أفلييت بجانب الآخر بالتناوب
 function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q = '', $plat_filter = 'all', $shuffle_seed = null, $source_limit = null) {
+    wfp('physCOL start ' . $type . '/' . $country . '/' . $cat . '/' . substr((string)$q, 0, 20));
     $gulf = ['الإمارات', 'السعودية', 'الأردن', 'عُمان'];
     if ($plat_filter !== '' && $plat_filter !== 'all') {
         $plats = [$plat_filter];
@@ -2150,6 +2177,7 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         }
         if ($source_limit !== null) $arr = array_slice($arr, 0, max(1, (int)$source_limit));
         $by_plat[$pk] = $arr;
+        wfp('physCOL plat ' . $pk . ': ' . count($arr));
     }
 
     // دمج بالتناوب (منتج من كل منصة جنب بعضه)
@@ -2157,7 +2185,9 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
     foreach ($by_plat as $pk => $arr) {
         foreach ($arr as $it) $flat[] = $it;
     }
-    return mix_by_platform($flat, $plats);
+    $out = mix_by_platform($flat, $plats);
+    wfp('physCOL end: ' . count($out));
+    return $out;
 }
 
 // إرجاع التصنيفات الخاصة بكل نوع منفصلاً (فيزيكال فقط / رقمي فقط / سوشيال فقط)

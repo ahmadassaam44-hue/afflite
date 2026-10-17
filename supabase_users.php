@@ -16,9 +16,12 @@ function usr_sb_ready() {
 
 // طلب HTTP للـ Supabase: curl، ومعاه fallback لـ stream لو curl مش متاح على الاستضافة
 function usr_http($method, $url, array $headers, $body = null, $timeout = 8) {
+    if (function_exists('wfp')) wfp('SB> ' . $method . ' ' . substr(strtok($url, '?'), -40));
+    $t0 = microtime(true);
     $headers[] = 'Content-Type: application/json';
     $payload = $body === null ? null : json_encode($body, JSON_UNESCAPED_UNICODE);
-    $code = 0; $resp = false;
+    $code = 0;     $resp = false;
+    $out = [];
     if (function_exists('curl_init')) {
         $ch = curl_init($url);
         $opts = [
@@ -49,6 +52,7 @@ function usr_http($method, $url, array $headers, $body = null, $timeout = 8) {
         return [0, null];
     }
     $data = json_decode((string)$resp, true);
+    if (function_exists('wfp')) wfp('SB< ' . $method . ' ' . (int)round((microtime(true) - $t0) * 1000) . 'ms code=' . $code . ' len=' . strlen((string)$resp));
     return [$code, $data];
 }
 

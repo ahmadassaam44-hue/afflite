@@ -183,7 +183,7 @@ if (($me['status'] ?? '') === 'suspended') {
 }
 echo '<p class="affiliate-disclosure">' . wf_svg_icon('info', 16) . 'العمولات مرتبطة بحالة الطلب.</p>';
 
-if ($mtab === 'performance') {
+if ($mtab === 'performance') { wfp('MTAB performance');
     echo '<div class="mut" data-ui="u-9eb4e939 dc d7h">تحليل حسب:</div><div class="tabs" data-ui="u-c767c453 d62">';
     foreach (['all' => 'كل الوقت', 'today' => 'تحليل اليوم', '7d' => '7 أيام', '30d' => '30 يوم', 'month' => 'تحليل هذا الشهر'] as $k => $n) echo '<a href="?mtab=' . $mtab . '&per=' . $k . '"' . ($per === $k ? ' class="on"' : '') . '>' . $n . '</a>';
     echo '</div><br>';
@@ -196,7 +196,7 @@ if ($mtab === 'performance') {
 }
 
 // ===== PERFORMANCE =====
-if ($mtab === 'performance') {
+if ($mtab === 'performance') { wfp('MTAB performance');
     echo '<div class="alert">' . wf_svg_icon('store') . '<div><b>خطوتك التالية</b><p>' . (empty($my_store_cfg['products']) ? '<a href="?mtab=browse">أضف أول منتج لمتجرك وحدد عمولته</a>' : '<a href="?mtab=store">راجع هوية متجرك وروابط منتجاتك</a>') . '</p></div></div>';
     $exp = $ern = 0;
     foreach ($forders as $o) {
@@ -428,7 +428,7 @@ if ($mtab === 'performance') {
     echo '</div></div>';
 }
 // ===== STORE (Marketer Store & Landing Pages) =====
-elseif ($mtab === 'store') {
+elseif ($mtab === 'store') { wfp('MTAB store');
     $st_cfg = marketer_store_get($code);
     $st_prods = $st_cfg['products'] ?? [];
     echo '<div class="card" data-ui="u-a980d1b7 d1r d81 d82">';
@@ -566,7 +566,7 @@ elseif ($mtab === 'store') {
     echo '</div>';
 }
 // ===== ORDERS =====
-elseif ($mtab === 'orders') {
+elseif ($mtab === 'orders') { wfp('MTAB orders');
     echo wf_ui_currency_notice($forders) . wf_ui_shipping_currency_notice($forders);
     echo '<div data-ui="u-b27a4db8 dh d1o d1p dj d1q d54"><h2 data-ui="u-c35cd038 d26 d1 d19"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> طلباتي ومبيعاتي (' . count($forders) . ')</h2><div data-ui="u-3ecc8ff6 dh d1s"><a href="?mtab=orders&export=csv" class="btn sm outline"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-download></use></svg> تصدير Excel / CSV</a><a href="?mtab=browse" class="btn sm" data-ui="u-8254dc57 d4e d3v"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-plus></use></svg> تسجيل طلب جديد لعميل</a></div></div>';
     echo '<div class="card" data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف</th><th>المحافظة والعنوان</th><th>كمية</th><th>سعر البيع</th><th>الشحن</th><th>الإجمالي</th><th>عمولتي</th><th>الحالة</th></tr>';
@@ -590,7 +590,7 @@ elseif ($mtab === 'orders') {
     echo '</table></div>';
 }
 // ===== BROWSE PRODUCTS (FULL MARKETER DATA HUB) =====
-elseif ($mtab === 'browse') {
+elseif ($mtab === 'browse') { wfp('MTAB browse');
     // The filters operate on the entire catalogue before pagination, not only 24 visible cards.
     $mk_param = static function ($key, $fallback) {
         $value = $_GET[$key] ?? $fallback;
@@ -821,7 +821,7 @@ elseif ($mtab === 'browse') {
     }
 }
 // ===== EARNINGS =====
-elseif ($mtab === 'earnings') {
+elseif ($mtab === 'earnings') { wfp('MTAB earnings');
     echo wf_ui_shipping_currency_notice($forders);
     $exp = $ern = 0;
     foreach ($forders as $o) {
@@ -850,7 +850,7 @@ elseif ($mtab === 'earnings') {
     echo '</table></div>';
 }
 // ===== TEAM =====
-elseif ($mtab === 'team') {
+elseif ($mtab === 'team') { wfp('MTAB team');
     $team_rate_pct = wf_team_rate_display(); // TODO: owner approval required before displaying a team percentage.
     echo '<div data-ui="u-9e82dcff d54"><h2 data-ui="u-f64c0b8c d26 dc">فريقي والإحالات</h2></div>';
     echo '<div class="kpis">';
@@ -879,7 +879,7 @@ elseif ($mtab === 'team') {
     echo '</div>';
 }
 // ===== صفحات الهبوط (صفحة مستقلة في شريط لوحة المسوق) =====
-elseif ($mtab === 'pages') {
+elseif ($mtab === 'pages') { wfp('MTAB pages');
     // كل صفحة هبوط لوحدها: الرابط + كام شخص شافها + كام شخص طلب منها + المنتج اللي عليها
     $pg_days = (int)($_GET['ldays'] ?? 0);
     if (!in_array($pg_days, [0, 7, 30], true)) $pg_days = 0;
@@ -986,7 +986,7 @@ elseif ($mtab === 'pages') {
     echo '</div></div>';
 }
 // ===== LINKS =====
-elseif ($mtab === 'links') {
+elseif ($mtab === 'links') { wfp('MTAB links');
     // ===== إحصاءات الروابط: كام شخص دخل كل رابط وكام شخص طلب منه (قراءة فقط) =====
     $ls_days = (int)($_GET['ldays'] ?? 0);
     if (!in_array($ls_days, [0, 7, 30], true)) $ls_days = 0;
@@ -1158,7 +1158,7 @@ elseif ($mtab === 'links') {
     echo '</div>';
 }
 // ===== SETTINGS =====
-elseif ($mtab === 'settings') {
+elseif ($mtab === 'settings') { wfp('MTAB settings');
     echo '<div data-ui="u-9e82dcff d54"><h2 data-ui="u-769590a6 d26 d1"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-settings></use></svg> إعدادات حسابي</h2></div>';
     echo '<div class="card"><table class="data-table rtable" data-ui-table="pending" aria-busy="true">';
     echo '<tr><td data-ui="u-d7d5fd7a dm d94">الاسم</td><td>' . esc($me['name'] ?? '') . '</td></tr>';
