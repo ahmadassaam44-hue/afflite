@@ -2063,8 +2063,11 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         }
         if ($cezma_indexed !== null) {
             $arr = $cezma_indexed;
-        } elseif ($pk === 'cezma' && $source_limit !== null) {
-            $arr = cezma_recent_products(max(1, (int)$source_limit + 100));
+        } elseif ($pk === 'cezma' && ($source_limit !== null ||
+            // المتجر الافتراضي و«المنتجات المميزة» بلا فلاتر: نافذة محدودة من الأحدث بدل تطييع 90 ألف منتج في كل طلب.
+            // «أحدث المنتجات» و«الأكثر مبيعاً/مشاهدة» تظل بالمسار الكامل لأنها صارت مرتبة على الكتالوج كاملاً.
+            ($q === '' && in_array($cat, ['', 'all', 'المنتجات المميزة'], true)))) {
+            $arr = cezma_recent_products($source_limit !== null ? max(1, (int)$source_limit + 100) : 3000);
         } else {
             $arr = platform_products_lite($pk);
         }
