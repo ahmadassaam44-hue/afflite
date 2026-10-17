@@ -1,0 +1,134 @@
+{
+ "at": "2026-10-16T23:31:18+00:00",
+ "root": "/htdocs",
+ "listing": [
+  ".",
+  "..",
+  ".github",
+  ".gitignore",
+  ".htaccess",
+  "README-infinityfree.txt",
+  "affiliate-program.php",
+  "affiliate-register.php",
+  "affiliate_programs.php",
+  "amazon_check.php",
+  "amazon_lib.php",
+  "amz.php",
+  "api_chat.php",
+  "api_events.php",
+  "api_image_search.php",
+  "assets",
+  "config.local.php",
+  "config.php",
+  "customer_req_lib.php",
+  "dashboard",
+  "data",
+  "digital.php",
+  "error.php",
+  "forgot.php",
+  "go.php",
+  "google_callback.php",
+  "google_finish.php",
+  "google_start.php",
+  "hevo_api.php",
+  "htaccess.before-fix.bak",
+  "index.php",
+  "jmi.php",
+  "jumia_check.php",
+  "jumia_lib.php",
+  "landing.php",
+  "login.php",
+  "logout.php",
+  "manifest.json",
+  "manual_products_lib.php",
+  "marketer_complete.php",
+  "noon_lib.php",
+  "pages.php",
+  "php.ini",
+  "ping.php",
+  "register.php",
+  "reset.php",
+  "robots.txt",
+  "secrets.php",
+  "sections.php",
+  "sitemap.php",
+  "social.php",
+  "store.php",
+  "style-guide.php",
+  "supabase.php",
+  "supabase_docs.php",
+  "supabase_schema.sql",
+  "supabase_users.php",
+  "ui-components.php",
+  "ui-runtime.php",
+  "updater"
+ ],
+ "files": {
+  "index.php": {
+   "remote_size": 48145,
+   "remote_md5": "dac4f385b3853a15360056ae83284d15",
+   "local_size": 48145,
+   "local_md5": "dac4f385b3853a15360056ae83284d15",
+   "same_as_git": true
+  },
+  "index.html": {
+   "error": "550 Can't open index.html: No such file or directory"
+  },
+  "store.php": {
+   "remote_size": 30981,
+   "remote_md5": "3f1bfb989bca10287215e72393db9c0e",
+   "local_size": 30981,
+   "local_md5": "3f1bfb989bca10287215e72393db9c0e",
+   "same_as_git": true
+  },
+  "digital.php": {
+   "remote_size": 120,
+   "remote_md5": "b364c9e49e11e72b51afc2b2b8382f22",
+   "local_size": 120,
+   "local_md5": "b364c9e49e11e72b51afc2b2b8382f22",
+   "same_as_git": true
+  },
+  "landing.php": {
+   "remote_size": 22764,
+   "remote_md5": "6cd230971a6c3c34df53c542646f0504",
+   "local_size": 22764,
+   "local_md5": "6cd230971a6c3c34df53c542646f0504",
+   "same_as_git": true
+  },
+  ".htaccess": {
+   "remote_size": 5818,
+   "remote_md5": "a477ae61be7c4e2e9e075a5ecdc09512",
+   "local_size": 5818,
+   "local_md5": "a477ae61be7c4e2e9e075a5ecdc09512",
+   "same_as_git": true
+  },
+  "assets/style.css": {
+   "remote_size": 156683,
+   "remote_md5": "1232926fe7fd5c78600d57b03c9ebe47",
+   "local_size": 156683,
+   "local_md5": "1232926fe7fd5c78600d57b03c9ebe47",
+   "same_as_git": true
+  },
+  "assets/icon-512.png": {
+   "remote_size": 8286,
+   "remote_md5": "5c3cb05163f671d12944a9d29a846766",
+   "local_size": 7069,
+   "local_md5": "f3d8ed8204386ea6ac3bcd66f77878d3",
+   "same_as_git": false
+  },
+  "data/catalog_counts.json": {
+   "remote_size": 1037,
+   "remote_md5": "92e62c91a846301fa66892e19c8df4e4",
+   "local_size": 1037,
+   "local_md5": "92e62c91a846301fa66892e19c8df4e4",
+   "same_as_git": true
+  }
+ },
+ "detail_images": {
+  "local_count": 73,
+  "remote_count": 73,
+  "missing_on_server": [],
+  "extra_on_server": []
+ },
+ "all_same_as_git": false
+}
