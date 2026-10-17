@@ -1,0 +1,7 @@
+updated-in-2026 ids from sitemap: 44957
+threshold id=509251 global created2026=64823 total=309017
+scanning 633 pages over 34 categories
+ pages 200/633
+ pages 400/633
+ pages 600/633
+SUMS: {"created_2026": 64827, "updated_2026": 28886, "union_2026": 65722} (created+updated=93713)

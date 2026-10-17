@@ -1,0 +1,73 @@
+before: 133043
+ delete main 614 الطب التكميلي: 442 (file had 442)
+ delete main 134 الطباعة والتغليف: 416 (file had 416)
+ delete main 421 زراعة: 341 (file had 341)
+ delete main 145 السياحة والسفر: 189 (file had 189)
+ delete main 140 حيوانات المزرعة ومستلزماتها: 175 (file had 175)
+ delete main 136 المواد الخام: 131 (file had 131)
+ delete main 674 عروض مجمعة: 893 (file had 893)
+ delete main 22 الفنون والحرف: 864 (file had 864)
+ delete main 413 اكلات ومشروبات: 795 (file had 795)
+ delete main 101 الاسماك والحيوانات الاليفة ومستلزماتها: 685 (file had 685)
+ delete main 16 تجارة وصناعة: 675 (file had 675)
+ delete main 33 عقارات وأراضي: 1624 (file had 1624)
+ delete main 137 المستلزمات والمعدات المهنية: 1587 (file had 1587)
+ delete main 20 خدمات: 2537 (file had 2537)
+ delete main 28 سيارات وقطع غيار: 2440 (file had 2440)
+ delete main 536 منسوجات المنزل: 3499 (file had 3499)
+ delete main 141 منتجات طبيعية: 3010 (file had 3010)
+ handmade sub 432: 525
+ handmade sub 367: 1132
+ handmade sub 366: 703
+ handmade sub 517: 289
+ handmade sub 555: 991
+ handmade sub 548: 61
+ handmade sub 368: 8
+ handmade sub 650: 138
+ handmade sub 549: 477
+ handmade sub 556: 441
+ handmade sub 547: 92
+ furniture sub 72 ‫غرفة ‬‫النوم‬: 895
+ furniture sub 455 اثاث غرفة المعيشة: 1249
+ furniture sub 79 ‫اثاث ‬‫غرفة‬ ‫اللعب‬ و الترفيه‬: 15
+ furniture sub 80 ‫اثاث‬‫ الحدائق ‫وملحقاته‬ا: 285
+ furniture sub 575 غرفة نوم اطفال: 335
+ furniture sub 77 وحدات تخزين: 778
+ furniture sub 576 كراسي واكسسوارتها: 329
+ furniture sub 78 ‫اثاث ‬‫المطبخ‬: 236
+ furniture sub 76 أثاث مكتبي: 330
+ furniture sub 73 ‫غرفة ‬‫السفرة‬: 585
+ furniture sub 588 ابواب / شبابيك: 149
+ furniture sub 82 ترابيزات: 642
+ furniture sub 729 أدوات الأثاث: 96
+ furniture sub 384 خدمات نقل ورفع الأثاث: 353
+ furniture sub 571 أخرى: 87
+kept from furniture&decor (decor): 1870 | kept from gifts&handmade (gifts): 1414
+{
+ "before": 133043,
+ "removed_total": 31524,
+ "removed_breakdown": {
+  "قسم كامل: الطب التكميلي": 442,
+  "قسم كامل: الطباعة والتغليف": 416,
+  "قسم كامل: زراعة": 341,
+  "قسم كامل: السياحة والسفر": 189,
+  "قسم كامل: حيوانات المزرعة ومستلزماتها": 175,
+  "قسم كامل: المواد الخام": 131,
+  "قسم كامل: عروض مجمعة": 893,
+  "قسم كامل: الفنون والحرف": 864,
+  "قسم كامل: اكلات ومشروبات": 795,
+  "قسم كامل: الاسماك والحيوانات الاليفة ومستلزماتها": 685,
+  "قسم كامل: تجارة وصناعة": 675,
+  "قسم كامل: عقارات وأراضي": 1624,
+  "قسم كامل: المستلزمات والمعدات المهنية": 1587,
+  "قسم كامل: خدمات": 2537,
+  "قسم كامل: سيارات وقطع غيار": 2440,
+  "قسم كامل: منسوجات المنزل": 3499,
+  "قسم كامل: منتجات طبيعية": 3010,
+  "مشغولات يدوية (من قسم الهدايا والمشغولات)": 4857,
+  "أثاث (من قسم اثاث وديكور - سيبنا الديكور فقط)": 6364
+ },
+ "kept_gifts_only_from_gifts_handmade": 1414,
+ "kept_decor_only_from_furniture_decor": 1870,
+ "remaining": 101519
+}

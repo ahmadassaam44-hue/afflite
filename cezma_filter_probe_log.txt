@@ -1,0 +1,40 @@
+file rows=133043 unique ids=133043
+per-main counts for target parents: 364= 6271  8= 8234
+
+PARENT 364 الهدايا و المشغولات اليدوية ومستلزماتها — 16 subcategories
+  sub 432 اكسسوارات حريمي يدوية / Handmade women's accessories: total=2518 in_file=525
+  sub 367 الحقائب المصنوعة يدوياً / Handmade bags: total=3358 in_file=1132
+  sub 365 الشموع المعطرة / Scented candles: total=1066 in_file=284
+  sub 366 الكروشيه / Crochet: total=2460 in_file=703
+  sub 517 ديكورات حائط يدوية / Handmade wall decorations: total=466 in_file=289
+  sub 555 ريزن ومستلزماته / Resin and accessories: total=1842 in_file=991
+  sub 548 مجوهرات يدوية / Handmade jewelry: total=103 in_file=61
+  sub 368 مستلزمات السرير يدوية / Handmade bedding supplies: total=36 in_file=8
+  sub 650 مستلزمات الهاند ميد والكروشية / Handmade & crochet supplies: total=474 in_file=138
+  sub 549 مستلزمات منزل يدوية / Handmade household supplies: total=1158 in_file=477
+  sub 691 لوازم تغليف هدايا / Gift wrapping supplies: total=50 in_file=35
+  sub 556 مكرمية / macrame: total=1173 in_file=441
+  sub 547 منتجات اطفال يدوية / Handmade baby products: total=334 in_file=92
+  sub 442 هدايا واكسسواراتها / Gifts and accessories: total=1251 in_file=575
+  sub 557 ورد ولوازم الخطوبة والزفاف / Engagement , wedding supplies and roses: total=1116 in_file=454
+  sub 460 أخرى / Other: total=83 in_file=66
+
+PARENT 8 اثاث و ديكور — 18 subcategories
+  sub 72 ‫غرفة ‬‫النوم‬ / bedroom: total=1953 in_file=895
+  sub 455 اثاث غرفة المعيشة / Living room furniture: total=2923 in_file=1249
+  sub 79 ‫اثاث ‬‫غرفة‬ ‫اللعب‬ و الترفيه‬ / Play and entertainment room furniture: total=32 in_file=15
+  sub 80 ‫اثاث‬‫ الحدائق ‫وملحقاته‬ا / Garden furniture and accessories: total=592 in_file=285
+  sub 575 غرفة نوم اطفال / Kids bedroom: total=583 in_file=335
+  sub 77 وحدات تخزين / STORAGES: total=1461 in_file=778
+  sub 576 كراسي واكسسوارتها / Chairs & accessories: total=968 in_file=329
+  sub 78 ‫اثاث ‬‫المطبخ‬ / Kitchen furniture: total=521 in_file=236
+  sub 76 أثاث مكتبي / Office Furniture: total=586 in_file=330
+  sub 73 ‫غرفة ‬‫السفرة‬ / Dining Room: total=1120 in_file=585
+  sub 360 المرايات والمصنوعات الزجاجية / Mirrors and glass products: total=468 in_file=228
+  sub 588 ابواب / شبابيك / Doors/windows: total=381 in_file=149
+  sub 82 ترابيزات / Tables: total=1341 in_file=642
+  sub 729 أدوات الأثاث / Furniture Hardware: total=147 in_file=96
+  sub 24 ديكور المنزل / Home decoration: total=4003 in_file=1560
+  sub 384 خدمات نقل ورفع الأثاث / Furniture moving and lifting services: total=483 in_file=353
+  sub 623 ساعة حائط واكسسواراتها / Wall Clock & Accessories: total=285 in_file=82
+  sub 571 أخرى / Other: total=108 in_file=87

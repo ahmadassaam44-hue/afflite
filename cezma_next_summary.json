@@ -1,0 +1,119 @@
+{
+ "threshold_id": 509251,
+ "home_garden_sub_2026_sum": 6564,
+ "home_garden_subcategories": [
+  {
+   "id": 294,
+   "name_ar": "‫مستلزمات ‬‫المطبخ‬ ‫والسفرة‬",
+   "name_en": "Kitchen and dining supplies",
+   "total_in_subcategory": 15374,
+   "created_2026": 3451
+  },
+  {
+   "id": 298,
+   "name_ar": "ادوات التنظيف",
+   "name_en": "Cleaning Martials",
+   "total_in_subcategory": 4869,
+   "created_2026": 981
+  },
+  {
+   "id": 363,
+   "name_ar": "مستلزمات منزل",
+   "name_en": "Home Supplies",
+   "total_in_subcategory": 3700,
+   "created_2026": 807
+  },
+  {
+   "id": 296,
+   "name_ar": "‫ادوات‬‫ التنظيم‬ ‫والتخزين‬",
+   "name_en": "Organization and storage tools",
+   "total_in_subcategory": 1985,
+   "created_2026": 464
+  },
+  {
+   "id": 295,
+   "name_ar": "تركيبات المطبخ والحمام",
+   "name_en": "Kitchen and bathroom fixtures",
+   "total_in_subcategory": 1477,
+   "created_2026": 273
+  },
+  {
+   "id": 297,
+   "name_ar": "‫مستلزمات‬‫ الحديقة‬ ‫والاماكن‬ ‫الخارجية‬",
+   "name_en": "Garden & outdoor supplies",
+   "total_in_subcategory": 433,
+   "created_2026": 112
+  },
+  {
+   "id": 737,
+   "name_ar": "غسيل الملابس والبخار والكي",
+   "name_en": "Laundry, Steaming & Ironing",
+   "total_in_subcategory": 245,
+   "created_2026": 84
+  },
+  {
+   "id": 593,
+   "name_ar": "الحماية والأمان",
+   "name_en": "Protection & Security",
+   "total_in_subcategory": 459,
+   "created_2026": 81
+  },
+  {
+   "id": 609,
+   "name_ar": "المنزل والمكتب",
+   "name_en": "Home & office",
+   "total_in_subcategory": 300,
+   "created_2026": 78
+  },
+  {
+   "id": 301,
+   "name_ar": "مناديل ومستلزمات ورقية",
+   "name_en": "Tissues and paper supplies",
+   "total_in_subcategory": 359,
+   "created_2026": 54
+  },
+  {
+   "id": 730,
+   "name_ar": "المواد اللاصقة والسدادات",
+   "name_en": "Adhesives & Sealers",
+   "total_in_subcategory": 358,
+   "created_2026": 51
+  },
+  {
+   "id": 579,
+   "name_ar": "حاويات القمامة وإعادة التدوير",
+   "name_en": "Trash and recycling containers",
+   "total_in_subcategory": 207,
+   "created_2026": 49
+  },
+  {
+   "id": 534,
+   "name_ar": "مستلزمات الاحتفالات والحفلات",
+   "name_en": "Celebration and party supplies",
+   "total_in_subcategory": 304,
+   "created_2026": 27
+  },
+  {
+   "id": 302,
+   "name_ar": "اخرى",
+   "name_en": "Other",
+   "total_in_subcategory": 77,
+   "created_2026": 26
+  },
+  {
+   "id": 292,
+   "name_ar": "‫مضخات و مواتير ومستلزماتها",
+   "name_en": "Motor & pumps and accessories",
+   "total_in_subcategory": 190,
+   "created_2026": 21
+  },
+  {
+   "id": 728,
+   "name_ar": "المدافئ والمواقد وملحقاتها",
+   "name_en": "Fireplace & Stove Accessories",
+   "total_in_subcategory": 28,
+   "created_2026": 5
+  }
+ ],
+ "women_clothing_scraped_2026": 9053
+}

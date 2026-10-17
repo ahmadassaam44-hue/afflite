@@ -1,0 +1,280 @@
+{
+ "threshold_first_2026_id": 509251,
+ "global_total": 309014,
+ "global_created_2026": 64820,
+ "sum_by_category_2026": 64820,
+ "categories": [
+  {
+   "id": 5,
+   "name_ar": "الموضة والجمال",
+   "name_en": "Fashion and Beauty",
+   "total_in_category": 113655,
+   "scanned": 113655,
+   "created_2026": 25101
+  },
+  {
+   "id": 143,
+   "name_ar": "ادوات ومستلزمات المنزل والحديقة",
+   "name_en": "Home and garden tools and supplies",
+   "total_in_category": 30365,
+   "scanned": 30365,
+   "created_2026": 6564
+  },
+  {
+   "id": 8,
+   "name_ar": "اثاث و ديكور",
+   "name_en": "Furniture & Decoration",
+   "total_in_category": 17949,
+   "scanned": 17949,
+   "created_2026": 3789
+  },
+  {
+   "id": 109,
+   "name_ar": "‫مستلزمات ‬‫الأطفال",
+   "name_en": "Baby supplies",
+   "total_in_category": 16180,
+   "scanned": 16180,
+   "created_2026": 3381
+  },
+  {
+   "id": 364,
+   "name_ar": "الهدايا و المشغولات اليدوية ومستلزماتها",
+   "name_en": "Gifts &Handmade and accessories",
+   "total_in_category": 17487,
+   "scanned": 17487,
+   "created_2026": 2929
+  },
+  {
+   "id": 130,
+   "name_ar": "أجهزة منزلية",
+   "name_en": "Appliances",
+   "total_in_category": 10242,
+   "scanned": 10242,
+   "created_2026": 2368
+  },
+  {
+   "id": 328,
+   "name_ar": "سوبر ماركت",
+   "name_en": "supermarket",
+   "total_in_category": 15419,
+   "scanned": 15419,
+   "created_2026": 2251
+  },
+  {
+   "id": 9,
+   "name_ar": "موبايل و تابلت و ملحقاتها",
+   "name_en": "Mobile & tablet & accessories",
+   "total_in_category": 9439,
+   "scanned": 9439,
+   "created_2026": 2158
+  },
+  {
+   "id": 20,
+   "name_ar": "‫خدمات‬",
+   "name_en": "Services",
+   "total_in_category": 6106,
+   "scanned": 6106,
+   "created_2026": 1794
+  },
+  {
+   "id": 138,
+   "name_ar": "اجهزة ومستلزمات طبية",
+   "name_en": "Medical devices and supplies",
+   "total_in_category": 6811,
+   "scanned": 6811,
+   "created_2026": 1522
+  },
+  {
+   "id": 141,
+   "name_ar": "‫منتجات ‬‫طبيعية‬",
+   "name_en": "Natural products",
+   "total_in_category": 8825,
+   "scanned": 8825,
+   "created_2026": 1494
+  },
+  {
+   "id": 536,
+   "name_ar": "منسوجات المنزل",
+   "name_en": "Home textiles",
+   "total_in_category": 8152,
+   "scanned": 8152,
+   "created_2026": 1433
+  },
+  {
+   "id": 142,
+   "name_ar": "أجهزة الكترونية",
+   "name_en": "Electronic Devices",
+   "total_in_category": 3901,
+   "scanned": 3901,
+   "created_2026": 1116
+  },
+  {
+   "id": 28,
+   "name_ar": "سيارات وقطع غيار",
+   "name_en": "Cars & spare parts",
+   "total_in_category": 5820,
+   "scanned": 5820,
+   "created_2026": 1034
+  },
+  {
+   "id": 2,
+   "name_ar": "الكمبيوتر",
+   "name_en": "Computers",
+   "total_in_category": 4117,
+   "scanned": 4117,
+   "created_2026": 996
+  },
+  {
+   "id": 133,
+   "name_ar": "مكتبات و أدوات مدرسية",
+   "name_en": "Libraries and school tools",
+   "total_in_category": 4034,
+   "scanned": 4034,
+   "created_2026": 881
+  },
+  {
+   "id": 139,
+   "name_ar": "‫كتب وروايات",
+   "name_en": "Books and novels",
+   "total_in_category": 2861,
+   "scanned": 2861,
+   "created_2026": 854
+  },
+  {
+   "id": 137,
+   "name_ar": "المستلزمات والمعدات المهنية",
+   "name_en": "Professional supplies and equipment",
+   "total_in_category": 3394,
+   "scanned": 3394,
+   "created_2026": 732
+  },
+  {
+   "id": 135,
+   "name_ar": "الرياضة والتنزة",
+   "name_en": "Sports, fitness & outdoor",
+   "total_in_category": 2500,
+   "scanned": 2500,
+   "created_2026": 516
+  },
+  {
+   "id": 33,
+   "name_ar": "‫عقارات‬ و أراضي",
+   "name_en": "Properties & lands",
+   "total_in_category": 3479,
+   "scanned": 3479,
+   "created_2026": 505
+  },
+  {
+   "id": 131,
+   "name_ar": "الاضاءة والمصابيح",
+   "name_en": "Lighting and lamps",
+   "total_in_category": 2619,
+   "scanned": 2619,
+   "created_2026": 481
+  },
+  {
+   "id": 16,
+   "name_ar": "‫تجارة ‬‫و‬ ‫صناعة‬ ‫",
+   "name_en": "Trade and industry",
+   "total_in_category": 1226,
+   "scanned": 1226,
+   "created_2026": 451
+  },
+  {
+   "id": 101,
+   "name_ar": "الاسماك وال‫حيوانات‬‫ الاليفة‬ ومستلزماتها",
+   "name_en": "Pets, fish and supplies",
+   "total_in_category": 1454,
+   "scanned": 1454,
+   "created_2026": 451
+  },
+  {
+   "id": 413,
+   "name_ar": "اكلات ومشروبات",
+   "name_en": "Food and drinks",
+   "total_in_category": 2803,
+   "scanned": 2803,
+   "created_2026": 319
+  },
+  {
+   "id": 614,
+   "name_ar": "الطب التكميلي",
+   "name_en": "Complementary medicine",
+   "total_in_category": 690,
+   "scanned": 690,
+   "created_2026": 252
+  },
+  {
+   "id": 674,
+   "name_ar": "عروض مجمعة",
+   "name_en": "Offers",
+   "total_in_category": 2049,
+   "scanned": 2049,
+   "created_2026": 248
+  },
+  {
+   "id": 484,
+   "name_ar": "الكاميرات واكسسواراتها",
+   "name_en": "Cameras and accessories",
+   "total_in_category": 1154,
+   "scanned": 1154,
+   "created_2026": 248
+  },
+  {
+   "id": 22,
+   "name_ar": "‫الفنون والحرف",
+   "name_en": "Arts & Crafts",
+   "total_in_category": 2080,
+   "scanned": 2080,
+   "created_2026": 245
+  },
+  {
+   "id": 144,
+   "name_ar": "المعدات واللوازم الكهربائية",
+   "name_en": "Electrical equipment and supplies",
+   "total_in_category": 979,
+   "scanned": 979,
+   "created_2026": 212
+  },
+  {
+   "id": 134,
+   "name_ar": "الطباعة‬ و التغليف",
+   "name_en": "printing & Packaging",
+   "total_in_category": 1411,
+   "scanned": 1411,
+   "created_2026": 176
+  },
+  {
+   "id": 421,
+   "name_ar": "زراعة",
+   "name_en": "agriculture",
+   "total_in_category": 1078,
+   "scanned": 1078,
+   "created_2026": 98
+  },
+  {
+   "id": 145,
+   "name_ar": "السياحة و السفر",
+   "name_en": "Tourism & Travel",
+   "total_in_category": 321,
+   "scanned": 321,
+   "created_2026": 83
+  },
+  {
+   "id": 136,
+   "name_ar": "‫المواد ‬‫الخام‬",
+   "name_en": "Raw materials",
+   "total_in_category": 151,
+   "scanned": 151,
+   "created_2026": 81
+  },
+  {
+   "id": 140,
+   "name_ar": "‫حيوانات ‬‫المزرعة‬ ومستلزماتها",
+   "name_en": "Farm animals and supplies",
+   "total_in_category": 263,
+   "scanned": 263,
+   "created_2026": 57
+  }
+ ]
+}

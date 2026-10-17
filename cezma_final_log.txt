@@ -1,0 +1,41 @@
+total existing products: 309008
+ probe pos=154504 id=346993 date=2025-03-09 07:01:15
+ probe pos=231756 id=488731 date=2025-11-26 22:08:11
+ probe pos=270382 id=551227 date=2026-04-24 18:54:48
+ probe pos=251069 id=520434 date=2026-01-21 18:46:15
+ probe pos=241413 id=504471 date=2025-12-22 09:42:22
+ probe pos=246241 id=512251 date=2026-01-06 23:25:02
+ probe pos=243827 id=508669 date=2025-12-30 21:00:17
+ probe pos=245034 id=510431 date=2026-01-03 02:10:05
+ probe pos=244431 id=509605 date=2026-01-01 23:54:35
+ probe pos=244129 id=509138 date=2025-12-31 22:19:50
+ probe pos=244280 id=509370 date=2026-01-01 12:00:40
+ probe pos=244205 id=509265 date=2026-01-01 01:14:47
+ probe pos=244167 id=509194 date=2025-12-31 23:10:28
+ probe pos=244186 id=509227 date=2025-12-31 23:31:37
+ probe pos=244196 id=509252 date=2026-01-01 00:17:59
+ probe pos=244191 id=509235 date=2025-12-31 23:42:23
+ probe pos=244194 id=509241 date=2025-12-31 23:52:16
+ probe pos=244195 id=509251 date=2026-01-01 00:13:26
+FIRST 2026: pos=244195 id=509251 date=2026-01-01 00:13:26
+PREV:       pos=244194 id=509241 date=2025-12-31 23:52:16
+ neigh pos=244190 id=509234 date=2025-12-31 23:39:35
+ neigh pos=244191 id=509235 date=2025-12-31 23:42:23
+ neigh pos=244192 id=509236 date=2025-12-31 23:44:53
+ neigh pos=244193 id=509240 date=2025-12-31 23:49:18
+ neigh pos=244194 id=509241 date=2025-12-31 23:52:16
+ neigh pos=244195 id=509251 date=2026-01-01 00:13:26
+ neigh pos=244196 id=509252 date=2026-01-01 00:17:59
+ neigh pos=244197 id=509253 date=2026-01-01 00:25:45
+ neigh pos=244198 id=509254 date=2026-01-01 00:33:04
+ neigh pos=244199 id=509255 date=2026-01-01 00:33:14
+ neigh pos=244200 id=509256 date=2026-01-01 00:36:44
+{
+ "api_total_existing_products": 309008,
+ "first_2026_position": 244195,
+ "first_2026_product_id": 509251,
+ "first_2026_date": "2026-01-01 00:13:26",
+ "last_2025_product_id": 509241,
+ "last_2025_date": "2025-12-31 23:52:16",
+ "count_products_created_in_2026": 64814
+}

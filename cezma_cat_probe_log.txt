@@ -1,0 +1,18 @@
+
+== https://api.cezma.cloud/api/categories keys: ['status', 'message', 'data']
+{"status": true, "message": "Done successfully", "data": [{"id": 9, "name_ar": "موبايل و تابلت و ملحقاتها", "name_en": "Mobile & tablet & accessories", "is_real_estate": 0, "children": [{"id": 55, "name_ar": "تابلت‬ / آيباد", "name_en": "Tablet / iPad", "image": "https://api.cezma.cloud/storage/categories/1758192763tablt-aybad.png", "has_price": 0, "attributes": [{"id": 3943, "name_ar": "الحالة", "name_en": "Condition", "children": [{"id": 3944, "name_ar": "جديد", "name_en": "New", "color": null, "attributes": []}, {"id": 3945, "name_ar": "مستعمل", "name_en": "Used", "color": null, "attributes": []}, {"id": 3946, "name_ar": "كسر زيرو", "name_en": "Zero break", "color": null, "attributes": []}]}, {"id": 2672, "name_ar": "حجم الشاشة", "name_en": "Screen Size", "children": [{"id": 2673, "name_ar": "حتى 6.9 بوصة", "name_en": "Up to 6.9 in", "color": null, "attributes": []}, {"id": 4144, "name_ar": "من 7 إلى 7.9 بوصة", "name_en": "7 to 7.9 in", "color": null, "attributes": []}, {"id": 2674, "name_ar": "من 8 إلى 8.9 بوصة", "name_en": "8 to 8.9 in", "color": null, "attributes": []}, {"id": 4145, "name_ar": "من 9 إلى 9.9 بوصة", "name_en": "9 to 9.9 in", "color": null, "attributes": []}, {"id": 2676, "name_ar": "من 10 إلى 10.9 بوصة", "name_en": "10 to 10.9 in", "color": null, "attributes": []}, {"id": 2678, "name_ar": "من 11 إلى 11,9 بوصة", "name_en": "11 to 11.9 in", "color": null, "attributes": []}, {"id": 2679, "name_ar": "12 بوصة أو أكثر", "name_en": "12 in & above", "color": null
+
+== https://api.cezma.cloud/api/main-categories ERR HTTP Error 404: Not Found
+
+== https://api.cezma.cloud/api/main_categories ERR HTTP Error 404: Not Found
+
+== https://api.cezma.cloud/api/home keys: ['status', 'message', 'pages_total', 'current_page', 'per_page', 'item_count', 'data']
+{"status": true, "message": "Done successfully", "pages_total": 8527, "current_page": 1, "per_page": 20, "item_count": 170522, "data": {"offers": [{"id": 44, "name": "منتجات شركة ايزي واي", "image": "https://api.cezma.cloud/storage/offers/1765027322xxxx.png", "web_image": "https://api.cezma.cloud/storage/offers/1765027322web-2.png", "url": null, "sort_index": 1, "active": 0, "clicks": 0, "views": 0, "creation_date": "2025-12-06 03:22 PM", "start_date": null, "end_date": null}, {"id": 54, "name": "عيد الأضحى المبارك", "image": "https://api.cezma.cloud/storage/offers/17799217891000180942.png", "web_image": "https://api.cezma.cloud/storage/offers/17799217891000180943.png", "url": null, "sort_index": 1, "active": 0, "clicks": 91, "views": 5716, "creation_date": "2026-05-28 01:43 AM", "start_date": "2026-05-28 12:00 AM", "end_date": "2026-05-31 11:59 PM"}, {"id": 53, "name": "سوق مصر اونلاين", "image": "https://api.cezma.cloud/storage/offers/1775133083whatsapp-image-2026-04-02-at-22602-pm.jpeg", "web_image": "https://api.cezma.cloud/storage/offers/1775133083whatsapp-image-2026-04-02-at-22602-pm-1.jpeg", "url": "https://cezma.com/products/Tawfeer.com/339869/%D8%B7%D9%82%D9%85%20%D8%A7%D9%84%D8%B4%D9%86%D8%B7", "sort_index": 1, "active": 0, "clicks": 245, "views": 15749, "creation_date": "2026-03-29 10:02 AM", "start_date": "2026-04-02 12:00 AM", "end_date": "2026-04-06 11:59 PM"}, {"id": 52, "name": "عيد الفطر المبارك", "image": "https://api.cezma.cloud/storage/offers/1773965487100
+
+FILTER main_category_id=9: item_count=309013 ids=[115, 124]
+
+FILTER category_id=9: item_count=9439 ids=[378, 2965]
+
+FILTER main_category=9: item_count=309013 ids=[115, 124]
+
+FILTER category=9: item_count=309013 ids=[115, 124]

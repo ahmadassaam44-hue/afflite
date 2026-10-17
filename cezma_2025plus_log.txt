@@ -1,0 +1,15 @@
+sitemap files: 531
+sitemap files still missing after retries: 0 []
+edited ids: 2025=163893 2026=67644
+first 2025: pos=142290 id=321286 date=2025-01-01 00:05:17 total_existing=309008
+existing ids scanned: 309010
+{
+ "total_existing_products": 309008,
+ "first_2025_product_id": 321286,
+ "posted_in_2025_and_2026": 166721,
+ "edited_in_2025_or_2026_sitemap_ids": 231537,
+ "edited_in_2025_or_2026_and_still_existing": 135323,
+ "posted_AND_edited_in_2025_2026": 133056,
+ "edited_only_2025_ids": 163893,
+ "edited_only_2026_ids": 67644
+}

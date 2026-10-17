@@ -1,0 +1,219 @@
+threshold first-2026 id=509251 (global 2026=64820)
+parent: الموضة والجمال | subcategories: 26
+subs total sum: 113655 | parent total: 113655
+ 7 ملابس رجالي: total=10146 2026=2479
+ 83 ملابس حريمي: total=33664 2026=9053
+ 479 ملابس للجنسين: total=1183 2026=176
+ 85 مستحضرات التجميل: total=5062 2026=1036
+ 560 أزياء حديثة وأزياء ذات الاستخدامات الخاصة: total=108 2026=26
+ 448 مستلزمات عناية شخصية رجالي: total=634 2026=149
+ 84 مستلزمات عناية شخصية حريمي: total=16048 2026=2797
+ 454 مستلزمات عناية شخصية للجنسين: total=5916 2026=794
+ 90 أدوات و‫معدات ‬‫التجميل‬: total=2358 2026=452
+ 475 اكسسوارات رجالي: total=1208 2026=88
+ 476 اكسسوارات حريمي: total=10206 2026=2176
+ 551 اكسسوارات للجنسين: total=662 2026=149
+ 681 المنتجات الصحية و الراحة والاسترخاء: total=431 2026=111
+ 449 اكسسوارات يدوية: total=368 2026=36
+ 93 المحافظ: total=822 2026=149
+ 89 العطور: total=7382 2026=1449
+ 98 ساعات: total=2375 2026=333
+ 92 ‫الاحذية ‬‫و اكسسواراتها‬: total=8643 2026=2200
+ 381 خدمات العناية بالبشرة والشعر: total=253 2026=87
+ 99 ‫اكسسوارات ‬‫الساعات‬ ‫و قطع‬ ‫الغيار‬: total=83 2026=6
+ 94 النظارات‬: total=577 2026=143
+ 627 مشغولات ذهبية: total=40 2026=3
+ 86 ‫الامتعة ‬‫و الحقائب والشنط واكسسواراتها: total=4999 2026=1127
+ 96 فضيات وأحجار كريمة: total=304 2026=38
+ 95 ‫اكسسوارات ‬‫النظارات‬: total=159 2026=23
+ 322 اخرى: total=24 2026=21
+{
+ "parent_id": 5,
+ "parent_name_ar": "الموضة والجمال",
+ "threshold_id": 509251,
+ "sum_2026_in_subcategories": 25101,
+ "subcategories": [
+  {
+   "id": 83,
+   "name_ar": "ملابس حريمي",
+   "name_en": "Women's Clothing",
+   "total_in_subcategory": 33664,
+   "created_2026": 9053
+  },
+  {
+   "id": 84,
+   "name_ar": "مستلزمات عناية شخصية حريمي",
+   "name_en": "Women's personal care supplies",
+   "total_in_subcategory": 16048,
+   "created_2026": 2797
+  },
+  {
+   "id": 7,
+   "name_ar": "ملابس رجالي",
+   "name_en": "Men wear",
+   "total_in_subcategory": 10146,
+   "created_2026": 2479
+  },
+  {
+   "id": 92,
+   "name_ar": "‫الاحذية ‬‫و اكسسواراتها‬",
+   "name_en": "Shoes and accessories",
+   "total_in_subcategory": 8643,
+   "created_2026": 2200
+  },
+  {
+   "id": 476,
+   "name_ar": "اكسسوارات حريمي",
+   "name_en": "women accessories",
+   "total_in_subcategory": 10206,
+   "created_2026": 2176
+  },
+  {
+   "id": 89,
+   "name_ar": "العطور",
+   "name_en": "Perfumes",
+   "total_in_subcategory": 7382,
+   "created_2026": 1449
+  },
+  {
+   "id": 86,
+   "name_ar": "‫الامتعة ‬‫و الحقائب والشنط واكسسواراتها",
+   "name_en": "Luggage, bags, suitcases and accessories",
+   "total_in_subcategory": 4999,
+   "created_2026": 1127
+  },
+  {
+   "id": 85,
+   "name_ar": "مستحضرات التجميل",
+   "name_en": "Cosmetics",
+   "total_in_subcategory": 5062,
+   "created_2026": 1036
+  },
+  {
+   "id": 454,
+   "name_ar": "مستلزمات عناية شخصية للجنسين",
+   "name_en": "Unisex personal care supplies",
+   "total_in_subcategory": 5916,
+   "created_2026": 794
+  },
+  {
+   "id": 90,
+   "name_ar": "أدوات و‫معدات ‬‫التجميل‬",
+   "name_en": "Beauty Tools & Equipment",
+   "total_in_subcategory": 2358,
+   "created_2026": 452
+  },
+  {
+   "id": 98,
+   "name_ar": "ساعات",
+   "name_en": "Watches",
+   "total_in_subcategory": 2375,
+   "created_2026": 333
+  },
+  {
+   "id": 479,
+   "name_ar": "ملابس للجنسين",
+   "name_en": "Unisex clothing",
+   "total_in_subcategory": 1183,
+   "created_2026": 176
+  },
+  {
+   "id": 448,
+   "name_ar": "مستلزمات عناية شخصية رجالي",
+   "name_en": "Men's personal care supplies",
+   "total_in_subcategory": 634,
+   "created_2026": 149
+  },
+  {
+   "id": 551,
+   "name_ar": "اكسسوارات للجنسين",
+   "name_en": "Unisex accessories",
+   "total_in_subcategory": 662,
+   "created_2026": 149
+  },
+  {
+   "id": 93,
+   "name_ar": "المحافظ",
+   "name_en": "Wallets",
+   "total_in_subcategory": 822,
+   "created_2026": 149
+  },
+  {
+   "id": 94,
+   "name_ar": "النظارات‬",
+   "name_en": "the glasses",
+   "total_in_subcategory": 577,
+   "created_2026": 143
+  },
+  {
+   "id": 681,
+   "name_ar": "المنتجات الصحية و الراحة والاسترخاء",
+   "name_en": "Health, comfort and relaxation products",
+   "total_in_subcategory": 431,
+   "created_2026": 111
+  },
+  {
+   "id": 475,
+   "name_ar": "اكسسوارات رجالي",
+   "name_en": "Men's accessories",
+   "total_in_subcategory": 1208,
+   "created_2026": 88
+  },
+  {
+   "id": 381,
+   "name_ar": "خدمات العناية بالبشرة والشعر",
+   "name_en": "Skin & hair care services",
+   "total_in_subcategory": 253,
+   "created_2026": 87
+  },
+  {
+   "id": 96,
+   "name_ar": "فضيات وأحجار كريمة",
+   "name_en": "Silver and precious stones",
+   "total_in_subcategory": 304,
+   "created_2026": 38
+  },
+  {
+   "id": 449,
+   "name_ar": "اكسسوارات يدوية",
+   "name_en": "Handmade accessories",
+   "total_in_subcategory": 368,
+   "created_2026": 36
+  },
+  {
+   "id": 560,
+   "name_ar": "أزياء حديثة وأزياء ذات الاستخدامات الخاصة",
+   "name_en": "Novelty & Special Use",
+   "total_in_subcategory": 108,
+   "created_2026": 26
+  },
+  {
+   "id": 95,
+   "name_ar": "‫اكسسوارات ‬‫النظارات‬",
+   "name_en": "Eyewear accessories",
+   "total_in_subcategory": 159,
+   "created_2026": 23
+  },
+  {
+   "id": 322,
+   "name_ar": "اخرى",
+   "name_en": "Other",
+   "total_in_subcategory": 24,
+   "created_2026": 21
+  },
+  {
+   "id": 99,
+   "name_ar": "‫اكسسوارات ‬‫الساعات‬ ‫و قطع‬ ‫الغيار‬",
+   "name_en": "Watch accessories and spare parts",
+   "total_in_subcategory": 83,
+   "created_2026": 6
+  },
+  {
+   "id": 627,
+   "name_ar": "مشغولات ذهبية",
+   "name_en": "Gold jewelry",
+   "total_in_subcategory": 40,
+   "created_2026": 3
+  }
+ ]
+}

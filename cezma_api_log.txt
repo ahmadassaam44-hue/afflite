@@ -1,0 +1,35 @@
+total products (API): 309003
+ sample pos=1 id=115 created_at=
+ sample pos=77250 id=178460 created_at=
+ sample pos=154501 id=346981 created_at=
+ sample pos=231752 id=488723 created_at=
+ sample pos=278102 id=566000 created_at=
+ sample pos=309003 id=607884 created_at=
+first 2026 position: 309003  | prev: 
+FAILED:
+Traceback (most recent call last):
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 627, in _read_chunked
+    value.append(self._safe_read(chunk_left))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 671, in _safe_read
+    raise IncompleteRead(data, amt - len(data))
+http.client.IncompleteRead: IncompleteRead(4223 bytes read, 3961 more expected)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/runner/work/afflite/afflite/cezma_count_api.py", line 83, in <module>
+    main()
+  File "/home/runner/work/afflite/afflite/cezma_count_api.py", line 52, in main
+    j = get(pg, 100)
+        ^^^^^^^^^^^^
+  File "/home/runner/work/afflite/afflite/cezma_count_api.py", line 22, in get
+    return json.loads(r.read().decode("utf-8", "replace"))
+                      ^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 488, in read
+    return self._read_chunked(amt)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py", line 633, in _read_chunked
+    raise IncompleteRead(b''.join(value)) from exc
+http.client.IncompleteRead: IncompleteRead(60830 bytes read)
+
