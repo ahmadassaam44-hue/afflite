@@ -78,7 +78,7 @@ $use_feat = !empty($vf_items) && is_array($q_feat)
     && count($q_feat['h']) === 64 && count($q_feat['t']) === 64;
 
 // أقل درجة تشابه تتعرض (تحت كده النتيجة مش مطابقة فعلاً)
-const VS_MIN_SCORE = 0.45;
+const VS_MIN_SCORE = 0.50;
 const VS_CEZMA_MIN_PRICE_EGP = 100.0;
 
 // ارتباط بيرسون بين شبكتين 8×8 (بيشيل فرق السطوع والخلفية)
@@ -95,6 +95,75 @@ function vs_centered_corr(array $a, array $b) {
     }
     $den = sqrt($da * $db);
     return $den > 0 ? $num / $den : 0.0;
+}
+
+// شبكة اللون 4×4×4: المسافة بين خانتين (شيفرون) — عشان الخانة المجاورة تعتبر مطابقة جزئيًا
+function vs_bin_dist($ia, $ib) {
+    $dr = abs((($ia >> 4) & 3) - (($ib >> 4) & 3));
+    $dg = abs((($ia >> 2) & 3) - (($ib >> 2) & 3));
+    $db = abs(($ia & 3) - ($ib & 3));
+    return max($dr, max($dg, $db));
+}
+
+// مطابقة كتلية ناعمة بين هستوجرامين (أهم تحسين للمطابقة):
+// التقاطع الخام بيقطع فورًا أي إضاءة/حد بني مختلف، فبنقارن الكتل مع تسامح لوني.
+// بنرجّعها في الاتجاهين ونحسب التنكر (Dice) — القيمة 1 = تطابق كامل.
+function vs_hist_soft(array $ha, array $hb) {
+    $sa = array_sum($ha); $sb = array_sum($hb);
+    if ($sa <= 0 || $sb <= 0) return 0.0;
+    $tops = [];
+    foreach ([[$ha, $sa, 'a'], [$hb, $sb, 'b']] as $side) {
+        $h = $side[0]; $tot = $side[1];
+        $bins = [];
+        foreach ($h as $i => $v) { if ($v > $tot * 0.02) $bins[(int)$i] = $v / $tot; }
+        arsort($bins); $bins = array_slice($bins, 0, 8, true);
+        $tops[$side[2]] = $bins;
+    }
+    // عقوبة المسافة اللونية 0..3 (شيفرون على شبكة 4×4×4)
+    $decay = [1.0, 0.55, 0.28, 0.05];
+    foreach (['a', 'b'] as $s) {
+        $other = $s === 'a' ? 'b' : 'a';
+        $m = 0.0;
+        foreach ($tops[$s] as $ia => $ma) {
+            foreach ($tops[$other] as $ib => $mb) {
+                if ($ma * $mb < 0.0004) continue;
+                $d = vs_bin_dist((int)$ia, (int)$ib);
+                $m += $ma * $mb * ($decay[$d] ?? 0.0);
+            }
+        }
+        $res[$s] = $m;
+    }
+    // منح مطابقة "عالية" بكتل صغيرة جدًا (دجاج بلا لحمة): التنكُر لوحده مش كفاية
+    $mn = min($res['a'], $res['b']);
+    if ($mn <= 0) return 0.0;
+    $dice = 2.0 * $mn / ($res['a'] + $res['b']);
+    return $dice * min(1.0, $mn / 0.30);
+}
+
+// أفضل ارتباط شكل من 4 نافذات (كامل/مركز 6×6/زاوية يمين-أعلى/زاوية شمال-أسفل):
+// بيحل مشكلة المؤطرة المختلفة والكروب اللي بيكسر الارتباط على الشبكة كاملة.
+function vs_best_shape(array $qt, array $tt) {
+    $idx = [];
+    foreach ([[1, 6], [0, 6], [2, 6]] as $k => $conf) {
+        $start = $conf[0]; $len = $conf[1];
+        $qa = []; $ta = [];
+        for ($r = $start; $r < $start + $len; $r++) {
+            for ($c = $start; $c < $start + $len; $c++) {
+                $i = $r * 8 + $c;
+                $qa[] = $qt[$i]; $ta[] = $tt[$i];
+            }
+        }
+        $idx[] = vs_centered_corr($qa, $ta);
+    }
+    $full = vs_centered_corr($qt, $tt);
+    return max($full, max($idx));
+}
+
+// الدرجة المدمجة الجديدة (بتتعامل مع أعداد صحيحة 0..255)
+function vs_pair_score(array $qh, array $qt, array $ph, array $pt) {
+    $hist = vs_hist_soft($qh, $ph);
+    $shape = vs_best_shape($qt, $pt);
+    return [0.52 * $hist + 0.48 * max(0.0, $shape), $hist, $shape];
 }
 
 
@@ -142,6 +211,7 @@ function vs_scan_cezma(array $qh, array $qt, $cat_filter, $kw_hint, array $detec
         if ($off >= 0xFFFFFFFE) continue;          // فشل أو لسه ماتحسبش
         $hv = unpack('C64', substr($bin, $o, 64));
         $tv = unpack('C64', substr($bin, $o + 64, 64));
+        // فرز مبدئي رخيص فقط (تقاطع خام + ارتباط كامل) — التقييم الحقيقي بعدين على المرشحين
         $inter = 0;
         for ($k = 1; $k <= 64; $k++) {
             $a = $qh[$k - 1];
@@ -159,21 +229,20 @@ function vs_scan_cezma(array $qh, array $qt, $cat_filter, $kw_hint, array $detec
         $mb = $sum / 64.0;
         $db = $sq - 64.0 * $mb * $mb;
         $corr = ($qn > 0 && $db > 0) ? ($num / ($qn * sqrt($db))) : 0.0;
-        $score = 0.5 * $hist + 0.5 * max(0.0, $corr);
-        // الحد الأدنى قبل إضافة مكافآت الاسم/اللون (بتتضاف بعدين)
-        if ($score < VS_MIN_SCORE - 0.11) continue;
-        $cands[] = [$score, $i, $off];
+        if ($hist < 0.18 && $corr < 0.15) continue;   // مستبعد تمامًا قبل التقييم النافي
+        $cands[] = [$hist, $corr, $i, $off, array_values($hv), array_values($tv)];
         if (count($cands) > 4000) {
-            usort($cands, function ($a, $b) { return $b[0] <=> $a[0]; });
+            usort($cands, function ($a, $b) { return ($b[0] + $b[1]) <=> ($a[0] + $a[1]); });
             // Gallery photos may create several high-scoring rows for one product.
             // Keep a wider window so those rows don't crowd out other products.
-            $cands = array_slice($cands, 0, 1000);
+            $cands = array_slice($cands, 0, 1200);
         }
     }
     unset($bin);
-    usort($cands, function ($a, $b) { return $b[0] <=> $a[0]; });
-    $cands = array_slice($cands, 0, 1500);
+    usort($cands, function ($a, $b) { return ($b[0] + $b[1]) <=> ($a[0] + $a[1]); });
+    $cands = array_slice($cands, 0, 600);
 
+    // التقييم النافي: درجة اللون الناعمة + أفضل نافذة شكل على المرشحين القصار فقط
     $best_by_id = [];
     if ($idx_parts) {
         $fh = @fopen('php://temp', 'w+b');
@@ -191,7 +260,7 @@ function vs_scan_cezma(array $qh, array $qt, $cat_filter, $kw_hint, array $detec
         if (!$fh) return [];
     }
     foreach ($cands as $c) {
-        fseek($fh, $c[2]);
+        fseek($fh, $c[3]);
         $p = explode("\t", rtrim((string)fgets($fh), "\r\n"));
         if (count($p) < 4) continue;
         $id = $p[0]; $name = $p[1]; $raw_cat = $p[2]; $img = $p[3];
@@ -199,10 +268,13 @@ function vs_scan_cezma(array $qh, array $qt, $cat_filter, $kw_hint, array $detec
         if ($raw_price < VS_CEZMA_MIN_PRICE_EGP) continue;
         $site_cat = wf_cezma_site_category($raw_cat, $name);
         if ($filter_on && $site_cat !== $cat_filter) continue;
-        $score = $c[0];
-        if ($kw_hint !== '' && mb_stripos($name . ' ' . $site_cat, $kw_hint) !== false) $score += 0.08;
+        // بيانات الصف نفسها (متخزنة مع المرشح من الفرز المبدئي) للتقييم النافي
+        if (!isset($c[4], $c[5])) continue;
+        list($score, $hist_s, $shape_s) = vs_pair_score($qh, $qt, $c[4], $c[5]);
+        if ($hist_s < 0.30 && $shape_s < 0.35) continue;   // لازم إشارة قوية واحدة
+        if ($kw_hint !== '' && mb_stripos($name . ' ' . $site_cat, $kw_hint) !== false) $score += 0.06;
         foreach ($detected as $idx_c => $dcol) {
-            if (mb_stripos($name, $dcol) !== false) { $score += ($idx_c === 0 ? 0.03 : 0.015); break; }
+            if (mb_stripos($name, $dcol) !== false) { $score += ($idx_c === 0 ? 0.04 : 0.02); break; }
         }
         if ($score < VS_MIN_SCORE) continue;
         // One result card per product; show the gallery photo that matched best.
@@ -247,28 +319,27 @@ if ($use_feat) {
         foreach ($photo_rows as $photo) {
             if (!isset($photo['h'], $photo['t']) || !is_array($photo['h']) || !is_array($photo['t'])
                 || count($photo['h']) !== 64 || count($photo['t']) !== 64) continue;
-            // تقاطع الهستوجرام (لون) + ارتباط شكل الشبكة الرمادية (شكل).
-            // ارتباط Pearson يتجاهل اختلاف السطوع والخلفية البيضاء.
+            // تقاطع خام كسريع للفرز المبدئي، وبعدها الدرجة الناعمة المحصّنة (لون بتسامح + أفضل نافذة شكل)
             $inter = 0;
-            for ($i = 0; $i < 64; $i++) {
-                $inter += min($qh[$i], (int)$photo['h'][$i]);
-            }
-            $hist_sim = $inter / 255.0;
-            $shape_sim = max(0.0, vs_centered_corr($qt, $photo['t']));
-            $photo_score = 0.5 * $hist_sim + 0.5 * $shape_sim;
+            for ($i = 0; $i < 64; $i++) $inter += min($qh[$i], (int)$photo['h'][$i]);
+            if ($inter / 255.0 < 0.15) continue; // مستبعد تمامًا قبل التقييم النافي
+            list($photo_score, $hist_s, $shape_s) = vs_pair_score($qh, $qt, array_map('intval', $photo['h']), array_map('intval', $photo['t']));
             if ($photo_score > $score) {
                 $score = $photo_score;
                 $matched_photo = $photo;
+                $matched_parts = [$hist_s, $shape_s];
             }
         }
         if ($score < 0) continue;
+        // لازم إشارة قوية واحدة على الأقل — النتيجتين الضعاف = ضجيج
+        if ($matched_parts[0] < 0.30 && $matched_parts[1] < 0.35) continue;
 
         if ($kw_hint !== '' && mb_stripos(($it['name'] ?? '') . ' ' . ($it['cat'] ?? ''), $kw_hint) !== false) {
-            $score += 0.08;
+            $score += 0.06;
         }
         foreach ($detected_ar_colors as $idx_c => $dcol) {
             if (mb_stripos($it['name'] ?? '', $dcol) !== false) {
-                $score += ($idx_c === 0 ? 0.03 : 0.015);
+                $score += ($idx_c === 0 ? 0.04 : 0.02);
                 break;
             }
         }
@@ -363,9 +434,19 @@ usort($scored, function ($a, $b) {
 });
 
 // أعلى 24 حسب الدرجة، بشرط إن المنتج لسه ظاهر في المتجر (عشان الرابط ميبقاش مكسور)
+// + منع تكرار نفس المنتج بصيغ أدلة مختلفة (لوحة/بديل/موديل شريت الفرد نفسه)
+$seen_names = [];
 $final = [];
 foreach ($scored as $fit) {
     if (count($final) >= 24) break;
+    $fname = trim((string)($fit['name'] ?? ''));
+    // Normalize: بلا مسافات/علامات، أول 14 حرف لكل الكلمة الأولى والثانية مثلاً
+    $fkey = mb_strtolower(preg_replace('/[\s\-_\/\\\\|.,،()\[\]#+*]+/u', '', $fname));
+    $fkey = mb_substr($fkey, 0, 22);
+    if ($fkey !== '') {
+        if (isset($seen_names[$fkey])) continue;
+        $seen_names[$fkey] = 1;
+    }
     $fplat = (string)($fit['plat'] ?? '');
     $fprod = find_product_by_id((string)($fit['id'] ?? ''), $fplat);
     if (!$fprod) continue;

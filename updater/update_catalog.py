@@ -2269,6 +2269,12 @@ def ftp_upload(files, cleanup_source_shards=True):
                     log('diag visual files on server:', _names)
                 except Exception as _de:
                     log('diag nlst failed:', str(_de)[:160])
+    # Broadcast-delete the host sitemap cache so sitemap.php regenerates with fresh data.
+    try:
+        ftp.delete('data/cache_sitemap.xml')
+        log('? deleted stale data/cache_sitemap.xml')
+    except Exception as e:
+        log('cache_sitemap cleanup (skip if missing):', str(e)[:120])
     # Index-only must not delete source or visual-index files; normal runs retain their cleanup.
     if cleanup_source_shards:
         try:
