@@ -1902,8 +1902,14 @@ function wf_json_object_slice($raw, $start) {
 function wf_catalog_find_record($plat, $id) {
     if ($plat === 'manual') return manual_product_find($id);
     if ($plat === 'cezma') {
+        // Per-request raw-shard cache: scan shards once per request instead of
+        // re-reading every shard file from disk on each product lookup.
+        static $shard_cache = [];
         foreach (cezma_shard_files() as $f) {
-            $GLOBALS['__cezma_raw_override'] = (string)@file_get_contents($f);
+            if (!array_key_exists($f, $shard_cache)) {
+                $shard_cache[$f] = (string)@file_get_contents($f);
+            }
+            $GLOBALS['__cezma_raw_override'] = $shard_cache[$f];
             $r = wf_catalog_find_record_raw($plat, $id);
             if ($r !== null) { unset($GLOBALS['__cezma_raw_override']); return $r; }
         }
