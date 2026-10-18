@@ -1,12 +1,18 @@
 <?php
 require_once __DIR__ . '/config.php';
 header('Content-Type: application/xml; charset=utf-8');
-$host = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+// استخدم النطاق الأساسي دائماً حتى لا تُنشأ نسخ sitemap مختلفة لكل نطاق/بيئة.
+$host = 'https://wafirinhalk.com';
 $cache = DATA_DIR . '/cache_sitemap.xml';
 if (file_exists($cache) && filemtime($cache) > time() - 21600) { readfile($cache); exit; }
 $x = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-foreach (['/', '/digital.php', '/social.php', '/pages.php?p=privacy', '/pages.php?p=terms', '/pages.php?p=returns'] as $u) {
-    $x .= '<url><loc>' . htmlspecialchars($host . $u) . '</loc><changefreq>daily</changefreq></url>';
+foreach (['/', '/affiliate-register.php', '/pages.php?p=faq', '/pages.php?p=privacy', '/pages.php?p=terms', '/pages.php?p=returns'] as $u) {
+    $x .= '<url><loc>' . htmlspecialchars($host . $u, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><changefreq>daily</changefreq></url>';
+}
+require_once __DIR__ . '/affiliate_programs.php';
+foreach (array_keys(aff_programs()) as $program_key) {
+    $u = '/affiliate-program.php?p=' . rawurlencode((string)$program_key);
+    $x .= '<url><loc>' . htmlspecialchars($host . $u, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><changefreq>monthly</changefreq></url>';
 }
 $items = [];
 // حد أقصى للروابط حتى لا تتحول التوليد إلى استعراض كامل الكتالوج (~90 ألف منتج)

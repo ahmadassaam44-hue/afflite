@@ -54,6 +54,19 @@ function layout_top($title, $active = 'home') {
     $og_t = $og['title'] ?? ($title . ' | ' . BRAND);
     $og_d = $og['desc'] ?? ('تسوق ' . $title . ' بأفضل سعر مع ' . BRAND . ' — الدفع عند الاستلام وتوصيل لكل مصر');
     echo '<meta name="description" content="' . esc(mb_substr($og_d, 0, 160)) . '">';
+    // Canonicalize public product URLs without referral/tracking parameters.
+    if (!empty($GLOBALS['WF_PRODUCT_DETAIL']) && !empty($_GET['id'])) {
+        $canonical = 'https://wafirinhalk.com/dashboard/product.php?id=' . rawurlencode((string)$_GET['id']);
+        echo '<link rel="canonical" href="' . esc($canonical) . '">';
+    }
+    // Keep account, checkout, and utility screens out of search results.
+    $noindex_pages = ['cart.php', 'checkout_cart.php', 'quick_order.php', 'orders.php', 'pay.php', 'notifications.php', 'balance.php', 'support.php', 'login.php', 'register.php'];
+    if (empty($GLOBALS['WF_PRODUCT_DETAIL']) && in_array($script_base, $noindex_pages, true)) {
+        echo '<meta name="robots" content="noindex,follow">';
+    }
+    if (!empty($GLOBALS['SEO_PRODUCT']) && is_array($GLOBALS['SEO_PRODUCT'])) {
+        echo '<script type="application/ld+json">' . json_encode($GLOBALS['SEO_PRODUCT'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . '</script>';
+    }
     echo '<meta property="og:type" content="' . (isset($og['image']) ? 'product' : 'website') . '"><meta property="og:site_name" content="' . BRAND . '">';
     echo '<meta property="og:title" content="' . esc($og_t) . '"><meta property="og:description" content="' . esc(mb_substr($og_d, 0, 200)) . '"><meta property="og:url" content="' . esc($og_url) . '">';
     if (!empty($og['image'])) echo '<meta property="og:image" content="' . esc($og['image']) . '"><meta name="twitter:card" content="summary_large_image"><meta property="twitter:image" content="' . esc($og['image']) . '">';

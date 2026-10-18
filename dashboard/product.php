@@ -194,6 +194,10 @@ if ($imgs) {
         $imgs = $others ? array_merge(array_slice($others, 0, 1), $dimgs, array_slice($others, 1)) : $dimgs;
     }
 }
+$seo_image = $imgs[0] ?? '';
+if ($seo_image !== '' && !preg_match('~^https?://~i', $seo_image)) $seo_image = 'https://wafirinhalk.com/' . ltrim(str_replace('../', '', asset_url($seo_image)), '/');
+$seo_currency = ['ج.م' => 'EGP', 'د.إ' => 'AED', 'ر.س' => 'SAR', 'د.أ' => 'JOD', 'ر.ع' => 'OMR'][$cur] ?? 'EGP';
+$GLOBALS['SEO_PRODUCT'] = ['@context' => 'https://schema.org', '@type' => 'Product', 'name' => $dname, 'description' => mb_substr(trim(strip_tags((string)($p['desc'] ?? ''))) ?: ($dname . ' — الدفع عند الاستلام من ' . BRAND), 0, 500), 'image' => $seo_image !== '' ? [$seo_image] : [], 'sku' => (string)$p['id'], 'offers' => ['@type' => 'Offer', 'url' => 'https://wafirinhalk.com/dashboard/product.php?id=' . rawurlencode((string)$p['id']), 'priceCurrency' => $seo_currency, 'price' => number_format((float)$unit0, 2, '.', ''), 'seller' => ['@type' => 'Organization', 'name' => BRAND]]];
 layout_top(mb_substr($dname, 0, 50), 'products');
 ?>
 <!-- BREADCRUMB -->
