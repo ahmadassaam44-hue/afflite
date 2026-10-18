@@ -9,9 +9,9 @@
    "match": true
   },
   "index.php": {
-   "remote_size": 51176,
+   "remote_size": 50660,
    "on_server": true,
-   "local_size": 51176,
+   "local_size": 50660,
    "match": true
   },
   "data/catalog_counts.json": {
