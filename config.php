@@ -2269,7 +2269,7 @@ function wf_cezma_name_rules() {
     $rules = [
         ['ملابس رجالي', ['الرجالي', 'الرجالى', 'رجالي', 'رجالى', ]],
         ['إكسسوارات', ['نظارات', 'نظارة', 'نظاره', 'نضارات', 'نضارة', 'نضاره', ]],
-        ['أحذية', ['بوط', 'بوت', 'sambaa', 'samba', 'حذاء', 'احذيه', 'احذية', 'كوتش', 'كوتشي', 'سنيكر', 'صندل', 'شبشب', 'سليبر', 'كروكس', 'شوز', 'هاف', 'جزمة', 'جزمه', 'boot', 'boots', 'shoes', 'shoe', 'sneaker', 'sandal', 'slipper', 'crocs']],
+        ['أحذية', ['بوط', 'بوت', 'sambaa', 'samba', 'حذاء', 'احذيه', 'احذية', 'كوتش', 'كوتشي', 'سنيكر', 'صندل', 'شبشب', 'سليبر', 'كروكس', 'شوز', 'هاف', 'جزمة', 'جزمه', 'ستارز', 'ستارس', 'ترتان', 'ترتاتي', 'ترتين', 'boot', 'boots', 'shoes', 'shoe', 'sneaker', 'sandal', 'slipper', 'crocs']],
         ['شنط ومحافظ', ['شنطة', 'شنطه', 'شنط', 'حقيبه', 'حقائب', 'محفظة', 'محفظه', 'باك باك', 'ظهر', 'bag', 'bags', 'wallet', 'backpack', 'handbag', 'tote', 'purse']],
         ['ساعات', ['ساعة', 'ساعه', 'ساعات', 'واتش', 'watch', 'watches', 'wrist']],
         ['مستلزمات السيارات', ['سيارة', 'سياره', 'عربية', 'عربيه', 'كاوتش', 'منفاخ', 'وايبر', 'شماسة', 'دشكام', 'محرك', 'car', 'cars', 'tire', 'tyre', 'wiper', 'dashcam']],
@@ -2326,12 +2326,29 @@ function wf_cezma_name_category($name) {
     return '';
 }
 // قسم سيزما الرئيسي (+ اسم المنتج) → قسم الموقع الموحّد. بترجّع '' لو القسم فاضي.
+// «ستارز / ترتان» موديلات أحذية (شباشب) ممكن متخزن قسّمها «المنزل والمطبخ» بالغلط — قاعدة قاطعة في الجهتين
+// (نفس قاعدة repair_cezma_home_category في updater/update_catalog.py)
+function wf_shoe_model_tokens($name) {
+    $n = wf_cezma_ar_key($name);
+    if ($n === '') return false;
+    static $shoe_re = null;
+    if ($shoe_re === null) $shoe_re = '/(?<![\x{0621}-\x{064A}\x{0660}-\x{0669}A-Za-z0-9])(?:ستارز|ستارس|ترتاتي|ترتين|ترتان)/u';
+    return preg_match($shoe_re, $n) === 1;
+}
 function wf_cezma_site_category($raw, $name = '') {
     $clean = wf_category_plain($raw);
     if ($clean === '') return '';
-    if (in_array($clean, wf_category_canonical(), true)) return $clean; // قسم موقع أصلاً
+    if (in_array($clean, wf_category_canonical(), true)) {
+        if ($clean === 'المنزل والمطبخ' && wf_shoe_model_tokens($name)) return 'أحذية';
+        return $clean; // قسم موقع أصلاً
+    }
     $map = wf_cezma_bucket_map();
     if (array_key_exists($clean, $map)) {
+        if ($map[$clean] === 'المنزل والمطبخ') {
+            // «المنزل والمطبخ» قسم عام: الكلمات القاطعة في الاسم (زي ستارز/ترتان = أحذية) بتكسب
+            $nc = wf_cezma_name_category($name);
+            if ($nc !== '' && $nc !== 'المنزل والمطبخ') return $nc;
+        }
         return $map[$clean] !== '' ? $map[$clean] : (wf_cezma_name_category($name) ?: wf_cezma_fashion_fallback());
     }
     // اسم مش من أقسام سيزما ومش من أقسام الموقع: توحيد بالأسماء المعروفة بس (بدون مطابقة تقريبية)
