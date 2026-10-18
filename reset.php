@@ -72,4 +72,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a href="login.php" data-ui="u-52f2e903 ued uko ue6">العودة لتسجيل الدخول</a>
   </div>
 </main>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script></body></html>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script></body></html>

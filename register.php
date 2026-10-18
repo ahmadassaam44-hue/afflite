@@ -207,6 +207,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p data-ui="u-40fcd368 uko">لديك حساب بالفعل؟ <a href="login.php" data-ui="u-0c7828ab ue6 ued">تسجيل الدخول</a> • <a href="index.php" class="mut">العودة للمتجر</a></p>
   </div>
 </main>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script>
-<script src="assets/tracker.js" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
+<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
 </body></html>

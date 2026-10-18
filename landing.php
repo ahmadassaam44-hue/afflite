@@ -352,7 +352,7 @@ if (function_exists('wf_event')) {
 <?php if (function_exists('render_marketer_pixels_html')) render_marketer_pixels_html($store_cfg); ?>
 
 <div hidden data-track-meta="<?php echo esc(json_encode(['ref_code'=>$ref, 'product_id'=>(string)$p['id']], JSON_UNESCAPED_UNICODE)); ?>"></div>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script>
-<script src="assets/tracker.js" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
+<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
 </body>
 </html>

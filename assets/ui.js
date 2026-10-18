@@ -73,15 +73,59 @@ var state=window._eoState;document.getElementById("eoInputVariant").value=state.
       return [Math.round(bk.r / bk.n), Math.round(bk.g / bk.n), Math.round(bk.b / bk.n)];
     });
   }
+  // ميزات بصرية (لون + شكل) — نفس خوارزمية tracker.js / updater بالظبط:
+  // h: هستوجرام 64 خانة، t: شبكة رمادية 8×8، مع استبعاد الخلفية الموحدة بأي لون.
+  function extractVisualFeatures(imgEl) {
+    var G = 64, C = 8, CELL = G / C;
+    var canvas = document.createElement('canvas');
+    canvas.width = G; canvas.height = G;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, G, G);
+    ctx.drawImage(imgEl, 0, 0, G, G);
+    var data;
+    try { data = ctx.getImageData(0, 0, G, G).data; } catch (e) { return null; }
+    var bgMode = 0, bgr = 255, bgg = 255, bgb = 255;
+    var chips = [];
+    for (var i = 0; i < data.length; i += 4) {
+      var px = i / 4;
+      var x = px % G, y = Math.floor(px / G);
+      if (x === 0 || y === 0 || x === G - 1 || y === G - 1) chips.push([data[i], data[i + 1], data[i + 2]]);
+    }
+    if (chips.length > 100) {
+      var rs = chips.map(function (c) { return c[0]; }).sort(function (a, b) { return a - b; });
+      var gs = chips.map(function (c) { return c[1]; }).sort(function (a, b) { return a - b; });
+      var bs = chips.map(function (c) { return c[2]; }).sort(function (a, b) { return a - b; });
+      function mid(a) { return a[Math.floor(a.length / 2)]; }
+      var spread = Math.max(mid(rs) - rs[Math.floor(rs.length * 0.25)], mid(gs) - gs[Math.floor(gs.length * 0.25)], mid(bs) - bs[Math.floor(bs.length * 0.25)]);
+      if (spread < 18) { bgMode = 1; bgr = mid(rs); bgg = mid(gs); bgb = mid(bs); }
+    }
+    var hist = new Array(64).fill(0);
+    var graySum = new Array(C * C).fill(0);
+    var total = 0;
+    for (var i = 0; i < data.length; i += 4) {
+      var px = i / 4;
+      var x = px % G, y = Math.floor(px / G);
+      var cell = Math.floor(y / CELL) * C + Math.floor(x / CELL);
+      var r = data[i], g = data[i + 1], b = data[i + 2];
+      var isBg = (r > 244 && g > 244 && b > 244);
+      if (bgMode && !isBg) {
+        if (Math.abs(r - bgr) + Math.abs(g - bgg) + Math.abs(b - bgb) < 120) isBg = true;
+      }
+      if (isBg) { graySum[cell] += 255; continue; }
+      graySum[cell] += 0.299 * r + 0.587 * g + 0.114 * b;
+      hist[(r >> 6) * 16 + (g >> 6) * 4 + (b >> 6)] += 1;
+      total++;
+    }
+    var h = hist.map(function (c) { return total ? Math.floor((c * 255) / total + 0.5) : 0; });
+    var perCell = CELL * CELL;
+    var t = graySum.map(function (s2) { return Math.floor(s2 / perCell + 0.5); });
+    return { h: h, t: t };
+  }
   function renderVisualResults(data) {
     var items = (data && data.items) || [];
-    var colors = (data && data.detected_colors) || [];
     var body = '';
-    if (colors.length) {
-      body += '<div class="wfvs-colors">' + colors.map(function (c) {
-        return '<span class="wfvs-color">اللون التقريبي: ' + c + '</span>';
-      }).join('') + '</div>';
-    }
     if (!items.length) {
       body += '<p class="wfvs-note">مفيش نتائج قريبة من الصورة دي. جرّب صورة أوضح للمنتج نفسه (خلفية بسيطة وإضاءة كويسة).</p>';
       openVisualSearchShell(iconHtml('camera') + ' نتائج البحث بالصورة', body);
@@ -109,13 +153,13 @@ var state=window._eoState;document.getElementById("eoInputVariant").value=state.
     var objectUrl = URL.createObjectURL(file);
     var img = new Image();
     img.onload = function () {
-      var rgbs = dominantColors(img);
+      var feat = extractVisualFeatures(img);
       URL.revokeObjectURL(objectUrl);
       fetch(visualEndpoint(), {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        body: JSON.stringify({ rgbs: rgbs, filename: file.name || '' })
+        body: JSON.stringify({ feat: feat, filename: file.name || '' })
       }).then(function (res) { return res.json(); }).then(function (data) {
         if (data && data.ok) renderVisualResults(data);
         else visualMessage(iconHtml('camera') + ' البحث بالصورة', 'تعذر إكمال البحث بالصورة، جرّب تاني.');

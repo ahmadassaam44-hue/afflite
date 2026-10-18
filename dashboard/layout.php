@@ -311,8 +311,8 @@ function layout_end() {
     }
 
     echo '<div hidden id="wfSessionBootstrap" data-csrf="' . esc(csrf_token()) . '"></div>';
-    echo '<script src="' . $pre . 'assets/ui.js?v=20261009-city-mk1" defer></script>';
-    echo '<script src="' . $pre . 'assets/tracker.js" defer></script>';
+    echo '<script src="' . $pre . 'assets/ui.js?v=20261018-visfeat" defer></script>';
+    echo '<script src="' . $pre . 'assets/tracker.js?v=20261018-visfeat" defer></script>';
     echo '</main></div></div></body></html>';
 }
 

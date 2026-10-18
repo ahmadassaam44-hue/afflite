@@ -691,6 +691,6 @@ echo wf_catalog_toolbar([
 
 <?php if (function_exists('render_easyorder_dialog_html')) render_easyorder_dialog_html(); ?>
 <div hidden data-track-meta="<?php echo esc(json_encode(['ref_code'=>function_exists('active_ref') ? active_ref() : ''], JSON_UNESCAPED_UNICODE)); ?>"></div>
-<script src="assets/ui.js?v=20261012-hero-15s" defer></script>
-<script src="assets/tracker.js" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
+<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
 </body></html>

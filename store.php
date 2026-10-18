@@ -513,7 +513,7 @@ $st_has_contact = ($st_contact['phone'] ?? '') !== '' || ($st_contact['email'] ?
 <?php echo wf_bottom_nav('shop', ['cart_count' => $cart_s['count'], 'logged_in' => (bool)$cu, 'prefix' => '', 'shop_href' => $store_home . '#products', 'home_href' => $store_home, 'hide' => ['support']]); ?>
 
 <div hidden data-track-meta="<?php echo esc(json_encode(['ref_code'=>$store_code], JSON_UNESCAPED_UNICODE)); ?>"></div>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script>
-<script src="assets/tracker.js" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
+<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
 </body>
 </html>

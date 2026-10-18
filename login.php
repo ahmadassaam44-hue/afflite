@@ -71,6 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p data-ui="u-bbdbc123 ui2"><a href="affiliate-register.php" data-ui="u-82e75fd0 uhn ue6">برنامج المسوقين بالعمولة</a> • <a href="index.php" class="mut">العودة للمتجر</a></p>
   </div>
 </main>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script>
-<script src="assets/tracker.js" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
+<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
 </body></html>

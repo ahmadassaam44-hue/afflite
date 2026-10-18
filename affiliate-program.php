@@ -66,6 +66,6 @@ $cta = $pr['cta_href'] . ($ref_param !== '' ? (strpos($pr['cta_href'], '?') !== 
     <a href="<?php echo esc($cta); ?>" class="btn"><?php echo esc($pr['cta']); ?></a>
   </section>
 </main>
-<script src="assets/ui.js?v=20261012-hero-15s" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
 </body>
 </html>

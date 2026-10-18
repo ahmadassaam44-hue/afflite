@@ -91,6 +91,6 @@ if (!function_exists('is_admin_user') || !is_admin_user()) {
   </div>
 </main>
 <section class="dash" aria-label="مكونات اللوحات"><div class="main"><div class="card"><h2>مكونات اللوحة — أمثلة عرض، وليست بيانات حقيقية</h2><div class="kpis"><div class="kpi" title="تعريف المؤشر يظهر عند التركيز"><b>—</b><span>رصيد النظام</span></div><div class="kpi"><b>—</b><span>إجمالي الطلبات</span></div></div><?php echo wf_order_timeline('shipped'); ?><div class="alert info"><?php echo wf_icon('info'); ?>تنبيه توضيحي موحّد.</div><button type="button" class="btn outline" data-demo-confirm>تجربة نافذة التأكيد (بدون تنفيذ إجراء)</button><div class="empty-state"><?php echo wf_icon('box',40); ?><h3>حالة فارغة</h3><p>تظهر هنا إرشادات الخطوة التالية عندما لا توجد بيانات.</p></div><div class="skeleton" aria-label="مثال الشكل أثناء التحميل"></div></div></div></section>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
 </body>
 </html>

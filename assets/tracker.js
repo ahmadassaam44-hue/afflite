@@ -339,15 +339,7 @@
       })
       .then(function (d) {
         var colBox = document.getElementById('wfDetectedColors');
-        if (colBox && d.detected_colors && d.detected_colors.length) {
-          colBox.innerHTML =
-            '🎨 <b>الألوان المكتشفة بالصورة:</b> ' +
-            d.detected_colors
-              .map(function (c) {
-                return '<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:99px;font-weight:800;margin:0 3px">' + c + '</span>';
-              })
-              .join('');
-        }
+        if (colBox) colBox.innerHTML = '';
         var items = d.items || [];
         if (!items.length) {
           resBox.innerHTML = '<div style="text-align:center;padding:24px;color:#64748b">لم يتم العثور على تطابق في هذا القسم — جرّب اختيار "كل الأقسام".</div>';

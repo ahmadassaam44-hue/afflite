@@ -32,4 +32,4 @@ else { $_SESSION['pw_reset'] = ['email' => $email, 'at' => time()]; header('Loca
     <p class="mut">تذكرت كلمة المرور؟ <a href="login.php" data-ui="u-0c7828ab ue6 ued">العودة لتسجيل الدخول</a></p>
   </div>
 </main>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script></body></html>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script></body></html>

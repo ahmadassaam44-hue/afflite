@@ -142,6 +142,6 @@ $reg_url = 'register.php?role=marketer' . ($ref_param !== '' ? '&ref=' . urlenco
     </div>
   </section>
 </main>
-<script src="assets/ui.js?v=20261009-city-mk1" defer></script>
+<script src="assets/ui.js?v=20261018-visfeat" defer></script>
 </body>
 </html>
