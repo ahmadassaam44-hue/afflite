@@ -3,9 +3,9 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 319558,
+   "remote_size": 319698,
    "on_server": true,
-   "local_size": 319558,
+   "local_size": 319698,
    "match": true
   },
   "index.php": {
