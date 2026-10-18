@@ -3492,6 +3492,9 @@ def deploy_cezma_index_only():
 # ---------------------------------------------------------------- main
 if __name__ == '__main__':
     only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'cezma']
+    if only == ['cezma-audit']:
+        import audit_cezma_pages
+        sys.exit(audit_cezma_pages.main())
     if 'index-only' in only:
         try:
             deploy_cezma_index_only()

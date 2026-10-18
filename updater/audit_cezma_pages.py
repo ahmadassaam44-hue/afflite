@@ -16,9 +16,11 @@ import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 from updater import update_catalog
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'data')
 PHRASE = 'هذا المنتج غير متوفر في الوقت الحالي'
 SITEMAP = 'https://cezma.com/sitemap.xml'
@@ -288,7 +290,7 @@ def main():
         'publish_error': upload_error,
     }
     names = {product_id: row.get('name', '') for product_id, row in by_id.items()}
-    report_path = os.path.join(ROOT, 'cezma_page_audit_report.json')
+    report_path = os.path.join(DATA, 'cezma_page_audit_report.json')
     with open(report_path, 'w', encoding='utf-8') as stream:
         json.dump(report, stream, ensure_ascii=False, indent=2)
     write_summary(report, names)
