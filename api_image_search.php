@@ -81,6 +81,9 @@ $use_feat = !empty($vf_items) && is_array($q_feat)
 const VS_MIN_SCORE = 0.50;
 const VS_CEZMA_MIN_PRICE_EGP = 100.0;
 
+// المطابقة بصرية خالصة: شكل + نمط الصورة — من غير تحليل ألوان/أسماء.
+// الألوان المكتشفة بتترجع للعرض فقط (detected_colors) وتشيل أي تأثير في الدرجة.
+
 // ارتباط بيرسون بين شبكتين 8×8 (بيشيل فرق السطوع والخلفية)
 function vs_centered_corr(array $a, array $b) {
     $n = min(count($a), count($b));
@@ -292,9 +295,6 @@ function vs_scan_cezma(array $qh, array $qt, $cat_filter, $kw_hint, array $detec
         list($score, $hist_s, $shape_s) = vs_pair_score($qh, $qt, $c[4], $c[5]);
         if ($hist_s < 0.30 && $shape_s < 0.35) continue;   // لازم إشارة قوية واحدة
         if ($kw_hint !== '' && mb_stripos($name . ' ' . $site_cat, $kw_hint) !== false) $score += 0.06;
-        foreach ($detected as $idx_c => $dcol) {
-            if (mb_stripos($name, $dcol) !== false) { $score += ($idx_c === 0 ? 0.04 : 0.02); break; }
-        }
         if ($score < VS_MIN_SCORE) continue;
         // One result card per product; show the gallery photo that matched best.
         if (isset($best_by_id[$id]) && $best_by_id[$id]['_s'] >= $score) continue;
@@ -355,12 +355,6 @@ if ($use_feat) {
 
         if ($kw_hint !== '' && mb_stripos(($it['name'] ?? '') . ' ' . ($it['cat'] ?? ''), $kw_hint) !== false) {
             $score += 0.06;
-        }
-        foreach ($detected_ar_colors as $idx_c => $dcol) {
-            if (mb_stripos($it['name'] ?? '', $dcol) !== false) {
-                $score += ($idx_c === 0 ? 0.04 : 0.02);
-                break;
-            }
         }
         if ($score < VS_MIN_SCORE) continue;
 
