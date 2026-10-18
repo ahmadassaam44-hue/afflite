@@ -3156,8 +3156,37 @@ def remove_low_price_cezma():
     return removed
 
 
+CEZMA_UNAVAILABLE_NOTICE = 'هذا المنتج غير متوفر في الوقت الحالي'
+
+def _cezma_contains_unavailable_notice(value):
+    """Detect Cezma's unavailable-product placeholder anywhere in a nested API record."""
+    if isinstance(value, str):
+        text = html.unescape(re.sub(r'<[^>]*>', ' ', value)).replace('\u0640', '')
+        compact = re.sub(r'\s+', '', text).casefold()
+        marker = re.sub(r'\s+', '', CEZMA_UNAVAILABLE_NOTICE).casefold()
+        return marker in compact
+    if isinstance(value, dict):
+        return any(_cezma_contains_unavailable_notice(child) for child in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_cezma_contains_unavailable_notice(child) for child in value)
+    return False
+
+def remove_cezma_unavailable_notice_products():
+    """Permanently prune Cezma catalog rows carrying the unavailable-item placeholder."""
+    rows = _cezma_load_shards()
+    kept = [row for row in rows if not _cezma_contains_unavailable_notice(row)]
+    removed = len(rows) - len(kept)
+    if removed:
+        _cezma_write_shards(kept)
+        summary['cezma_unavailable_notice'] = {'removed': removed}
+        log('cezma unavailable-message products: removed', removed)
+    return removed
+
 def update_cezma():
     lite = _cezma_load_shards()
+    initial_lite = len(lite)
+    lite = [row for row in lite if not _cezma_contains_unavailable_notice(row)]
+    removed_unavailable = initial_lite - len(lite)
     existing_by_id = {}
     for row in lite:
         try:
@@ -3180,6 +3209,8 @@ def update_cezma():
     below_min_price_ids = set()
     for cid, main_name in targets:
         for d in _cezma_scan_cat(cid):
+            if _cezma_contains_unavailable_notice(d):
+                continue
             pid = int(d.get('id') or 0)
             if pid < CEZMA_MIN_ID:
                 continue
@@ -3236,10 +3267,11 @@ def update_cezma():
             'extra': {'cezma_id': pid, 'store_name': st.get('name') or '', 'cost': f'{price:g} ج.م',
                       'source_commission_original': '0 ج.م'}})
         added += 1
-    if added or image_updates or price_filtered: _cezma_write_shards(lite)
+    if added or image_updates or price_filtered or removed_unavailable: _cezma_write_shards(lite)
     summary['cezma'] = {
         'total': len(lite), 'added': added, 'image_updates': image_updates,
         'removed_below_min_price': price_filtered,
+        'removed_unavailable_message': removed_unavailable,
     }
     log('cezma', summary['cezma'])
 
@@ -3376,6 +3408,8 @@ if __name__ == '__main__':
         try: fn()
         except Exception as e:
             log(f'❌ {step} failed: {e}'); summary[step] = {'error': str(e)[:200]}
+    # Prune unavailable Cezma placeholder records on every run, including deploy-only runs.
+    remove_cezma_unavailable_notice_products()
     # Enforce the Cezma price floor on every run, including deploy-only runs,
     # so removed products cannot return through a partial/update-skipped run.
     remove_low_price_cezma()
