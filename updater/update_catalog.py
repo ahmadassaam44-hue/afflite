@@ -3490,30 +3490,38 @@ def deploy_cezma_index_only():
 
 
 # ---------------------------------------------------------------- main
-def _audit_workflow_changed_in_push():
+def _audit_requested_in_push():
     if os.environ.get('GITHUB_EVENT_NAME') != 'push':
         return False
-    event_path = os.environ.get('GITHUB_EVENT_PATH')
-    if not event_path or not os.path.isfile(event_path):
-        return False
-    try:
-        with open(event_path, encoding='utf-8') as stream:
-            event = json.load(stream)
-        changed = set()
-        for commit in event.get('commits', []):
-            changed.update(commit.get('added', []))
-            changed.update(commit.get('modified', []))
-            changed.update(commit.get('removed', []))
-        if '.github/workflows/audit-cezma-pages.yml' in changed:
-            return True
-    except (OSError, ValueError, TypeError):
-        pass
-    # The push webhook payload can omit its commit file list for some push types.
-    # The checked-out commit is available in every Actions runner, so use it as a fallback.
+    import subprocess
     commit = os.environ.get('GITHUB_SHA')
+    if commit:
+        try:
+            subject = subprocess.check_output(
+                ['git', 'show', '-s', '--format=%s', commit],
+                cwd=ROOT, stderr=subprocess.DEVNULL, timeout=10,
+            ).decode('utf-8', 'replace').strip()
+            if subject.startswith('[cezma-page-audit]'):
+                return True
+        except (OSError, subprocess.SubprocessError):
+            pass
+    event_path = os.environ.get('GITHUB_EVENT_PATH')
+    if event_path and os.path.isfile(event_path):
+        try:
+            with open(event_path, encoding='utf-8') as stream:
+                event = json.load(stream)
+            changed = set()
+            for pushed_commit in event.get('commits', []):
+                changed.update(pushed_commit.get('added', []))
+                changed.update(pushed_commit.get('modified', []))
+                changed.update(pushed_commit.get('removed', []))
+            if '.github/workflows/audit-cezma-pages.yml' in changed:
+                return True
+        except (OSError, ValueError, TypeError):
+            pass
+    # The push webhook payload can omit its commit file list for some push types.
     if not commit:
         return False
-    import subprocess
     try:
         names = subprocess.check_output(
             ['git', 'diff-tree', '--no-commit-id', '--name-only', '-r', commit],
@@ -3526,7 +3534,7 @@ def _audit_workflow_changed_in_push():
 
 if __name__ == '__main__':
     only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'cezma']
-    if only == ['deploy'] and _audit_workflow_changed_in_push():
+    if only == ['deploy'] and _audit_requested_in_push():
         only = ['cezma-audit']
     if only == ['cezma-audit']:
         import audit_cezma_pages

@@ -29,9 +29,14 @@ class CezmaPageAuditTests(unittest.TestCase):
             event_path = stream.name
         try:
             with patch.dict(os.environ, {'GITHUB_EVENT_NAME': 'push', 'GITHUB_EVENT_PATH': event_path}):
-                self.assertTrue(audit.update_catalog._audit_workflow_changed_in_push())
+                self.assertTrue(audit.update_catalog._audit_requested_in_push())
         finally:
             os.unlink(event_path)
+
+    def test_push_audit_detection_uses_explicit_commit_subject_marker(self):
+        with patch.dict(os.environ, {'GITHUB_EVENT_NAME': 'push', 'GITHUB_SHA': 'deadbeef'}):
+            with patch('subprocess.check_output', return_value=b'[cezma-page-audit] page scan\n'):
+                self.assertTrue(audit.update_catalog._audit_requested_in_push())
 
     def test_push_audit_detection_falls_back_to_checked_out_commit_files(self):
         with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as stream:
@@ -41,7 +46,7 @@ class CezmaPageAuditTests(unittest.TestCase):
             with patch.dict(os.environ, {
                 'GITHUB_EVENT_NAME': 'push', 'GITHUB_EVENT_PATH': event_path, 'GITHUB_SHA': 'deadbeef',
             }), patch('subprocess.check_output', return_value=b'.github/workflows/audit-cezma-pages.yml\n'):
-                self.assertTrue(audit.update_catalog._audit_workflow_changed_in_push())
+                self.assertTrue(audit.update_catalog._audit_requested_in_push())
         finally:
             os.unlink(event_path)
 
