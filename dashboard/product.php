@@ -63,8 +63,9 @@ if ($sdisc) {
     $sdisc['pct'] = $sdisc['old'] > 0 ? (int)round((1 - $unit0 / $sdisc['old']) * 100) : 0;
 }
 if ($plat === 'm5zoon') {
-    $p['sizes'] = [];
-    $ex['colors'] = [];
+    $manual_product_options = product_overrides()[$plat . '#' . (string)($p['id'] ?? '')] ?? [];
+    if (!array_key_exists('sizes', $manual_product_options)) $p['sizes'] = [];
+    if (!array_key_exists('colors', $manual_product_options)) $ex['colors'] = [];
     $ex['variants_detailed'] = [];
     $ex['stock_rows'] = [];
     $ex['variant_codes'] = [];

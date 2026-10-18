@@ -219,60 +219,106 @@ if (isset($_POST['retry_order'])) {
     }
     $orders = jload('orders.json', []);
 }
-// تعديل سعر منتج في ملفات JSON المحلية مباشرة
+// حفظ تعديلات المنتج كـ overrides مستقلة عن ملفات المصدر حتى لا يمحوها تحديث الكتالوج.
 if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
-    $ok = preg_replace('/[^a-z0-9_]/i', '', $_POST['ov_plat']) . '#' . (string)$_POST['ov_id'];
-    $act = $_POST['ov_action'];
-    jupdate('product_overrides.json', function (&$ov) use ($ok, $act) {
-        if (!is_array($ov)) $ov = [];
-        if (!isset($ov[$ok])) $ov[$ok] = [];
-        if ($act === 'hide') $ov[$ok]['hidden'] = empty($ov[$ok]['hidden']);
-        elseif ($act === 'pin') $ov[$ok]['pinned'] = empty($ov[$ok]['pinned']);
-        elseif ($act === 'title') $ov[$ok]['title'] = mb_substr(trim((string)($_POST['ov_title'] ?? '')), 0, 160);
-        elseif ($act === 'category') {
-            $category = trim((string)($_POST['ov_category'] ?? ''));
-            if ($category === '' || in_array($category, wf_category_canonical(), true)) $ov[$ok]['category'] = $category;
+    $raw_plat = is_scalar($_POST['ov_plat']) ? (string)$_POST['ov_plat'] : '';
+    $raw_id = is_scalar($_POST['ov_id']) ? trim((string)$_POST['ov_id']) : '';
+    $plat = preg_replace('/[^a-z0-9_]/i', '', $raw_plat);
+    $action = is_scalar($_POST['ov_action']) ? (string)$_POST['ov_action'] : '';
+    $valid_plats = wf_catalog_plats();
+    if (!csrf_ok()) {
+        $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    } elseif (!in_array($plat, $valid_plats, true) || $raw_id === '' || strlen($raw_id) > 180) {
+        $msg = 'بيانات المنتج غير صالحة.';
+    } else {
+        $ok = $plat . '#' . $raw_id;
+        $ov_fields = ['hide', 'pin', 'title', 'category', 'image', 'full_details', 'delete'];
+        if (!in_array($action, $ov_fields, true)) {
+            $msg = 'نوع التعديل غير معروف.';
+        } else {
+            $saved = false;
+            jupdate('product_overrides.json', function (&$ov) use ($ok, $action, &$saved) {
+                if (!is_array($ov)) $ov = [];
+                if (!isset($ov[$ok]) || !is_array($ov[$ok])) $ov[$ok] = [];
+                if ($action === 'hide') $ov[$ok]['hidden'] = empty($ov[$ok]['hidden']);
+                elseif ($action === 'pin') $ov[$ok]['pinned'] = empty($ov[$ok]['pinned']);
+                elseif ($action === 'delete') {
+                    $ov[$ok]['deleted'] = true;
+                    $ov[$ok]['deleted_at'] = date('c');
+                } elseif ($action === 'title') $ov[$ok]['title'] = mb_substr(trim((string)($_POST['ov_title'] ?? '')), 0, 160);
+                elseif ($action === 'category') {
+                    $category = trim((string)($_POST['ov_category'] ?? ''));
+                    if ($category === '' || in_array($category, wf_category_canonical(), true)) $ov[$ok]['category'] = $category;
+                } elseif ($action === 'image') {
+                    $image = trim((string)($_POST['ov_image'] ?? ''));
+                    if ($image === '' || preg_match('~^(https?://|/)~i', $image)) $ov[$ok]['image'] = mb_substr($image, 0, 600);
+                } elseif ($action === 'full_details') {
+                    $name = trim((string)($_POST['full_name'] ?? ''));
+                    $category = trim((string)($_POST['full_category'] ?? ''));
+                    $price_raw = trim((string)($_POST['full_price'] ?? ''));
+                    if ($name === '' || mb_strlen($name) > 200 || !is_numeric($price_raw) || (float)$price_raw < 0
+                        || ($category !== '' && !in_array($category, wf_category_canonical(), true))) return false;
+                    $split_lines = function ($value, $max_items = 40) {
+                        $parts = preg_split('/[\r\n,]+/u', (string)$value) ?: [];
+                        $parts = array_slice(array_values(array_unique(array_filter(array_map('trim', $parts)))), 0, $max_items);
+                        return $parts;
+                    };
+                    $images = $split_lines($_POST['full_images'] ?? '', 30);
+                    foreach ($images as $image) if (!preg_match('~^(https?://|/)~i', $image)) return false;
+                    $variants_raw = trim((string)($_POST['full_variants'] ?? ''));
+                    $variants = $variants_raw === '' ? [] : json_decode($variants_raw, true);
+                    if (!is_array($variants) || count($variants) > 120) return false;
+                    foreach ($variants as $variant) {
+                        if (!is_array($variant)) return false;
+                        $variant_image = trim((string)($variant['image'] ?? ''));
+                        if ($variant_image !== '' && !preg_match('~^(https?://|/)~i', $variant_image)) return false;
+                    }
+                    $ov[$ok]['name'] = mb_substr($name, 0, 200);
+                    $ov[$ok]['category'] = $category;
+                    $ov[$ok]['price'] = (float)$price_raw;
+                    $ov[$ok]['sku'] = mb_substr(trim((string)($_POST['full_sku'] ?? '')), 0, 100);
+                    $ov[$ok]['description'] = mb_substr(trim((string)($_POST['full_description'] ?? '')), 0, 12000);
+                    $ov[$ok]['images'] = $images;
+                    $ov[$ok]['sizes'] = $split_lines($_POST['full_sizes'] ?? '', 80);
+                    $ov[$ok]['colors'] = $split_lines($_POST['full_colors'] ?? '', 80);
+                    $ov[$ok]['features'] = mb_substr(trim((string)($_POST['full_features'] ?? '')), 0, 6000);
+                    $ov[$ok]['specifications'] = mb_substr(trim((string)($_POST['full_specs'] ?? '')), 0, 6000);
+                    $ov[$ok]['variants'] = array_values($variants);
+                }
+                $saved = true;
+                return true;
+            }, []);
+            if ($saved) {
+                unset($GLOBALS['_WF_PRODUCT_OVERRIDES']);
+                if ($action === 'delete') {
+                    log_audit('product_permanent_delete', $ok, ['scope' => 'storefront catalog only']);
+                    $msg = 'تم حذف المنتج من المتجر نهائيًا ✅ (لم تُمس الطلبات أو السجلات التاريخية)';
+                } else {
+                    log_audit('product_override_' . $action, $ok, $action === 'full_details' ? ['fields' => 'name,category,price,images,description,options,specifications'] : []);
+                    $msg = 'تم حفظ التعديلات ✅';
+                }
+            } else $msg = 'تعذر الحفظ. راجع الاسم والسعر والقسم وروابط الصور.';
         }
-        elseif ($act === 'image') $ov[$ok]['image'] = mb_substr(trim((string)($_POST['ov_image'] ?? '')), 0, 400);
-        $ov[$ok] = array_filter($ov[$ok]); if (!$ov[$ok]) unset($ov[$ok]);
-        return true;
-    }, []);
-    log_audit('product_override_' . $act, $ok, []);
-    $msg = 'تم تحديث المنتج ✅';
+    }
 }
+// تحديث السعر السريع يكتب override دائمًا بدل تعديل ملفات المصدر التي يعاد بناؤها.
 if (isset($_POST['edit_prod_plat'], $_POST['edit_prod_id'], $_POST['new_price'])) {
-    $eplat = preg_replace('/[^a-z0-9_]/i', '', $_POST['edit_prod_plat']);
-    $epid = (string)$_POST['edit_prod_id'];
-    $nprice = max(0, (float)$_POST['new_price']);
-    $f_full = $eplat . '.json';
-    $f_lite = 'lite_' . $eplat . '.json';
-    $full_arr = jload($f_full, []);
-    $changed = false;
-    foreach ($full_arr as &$item) {
-        if ((string)($item['id'] ?? '') === $epid) {
-            $item['price'] = $nprice;
-            $cur_u = $item['currency'] ?? 'جنيه';
-            $item['price_text'] = $nprice . ' ' . $cur_u;
-            $changed = true;
-            break;
-        }
-    }
-    unset($item);
-    if ($changed) {
-        jsave($f_full, $full_arr);
-        $lite_arr = jload($f_lite, []);
-        foreach ($lite_arr as &$litem) {
-            if ((string)($litem['id'] ?? '') === $epid) {
-                $litem['price'] = $nprice;
-                $cur_u = $litem['currency'] ?? 'جنيه';
-                $litem['price_text'] = $nprice . ' ' . $cur_u;
-                break;
-            }
-        }
-        unset($litem);
-        if ($lite_arr) jsave($f_lite, $lite_arr);
-        $msg = 'تم تحديث سعر المنتج #' . esc($epid) . ' إلى ' . number_format($nprice, 2) . ' ✅';
-    }
+    $eplat = is_scalar($_POST['edit_prod_plat']) ? preg_replace('/[^a-z0-9_]/i', '', (string)$_POST['edit_prod_plat']) : '';
+    $epid = is_scalar($_POST['edit_prod_id']) ? trim((string)$_POST['edit_prod_id']) : '';
+    $raw_price = trim((string)$_POST['new_price']);
+    if (!csrf_ok()) $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    elseif (in_array($eplat, wf_catalog_plats(), true) && $epid !== '' && is_numeric($raw_price) && (float)$raw_price >= 0) {
+        $price = (float)$raw_price; $key = $eplat . '#' . $epid;
+        jupdate('product_overrides.json', function (&$ov) use ($key, $price) {
+            if (!is_array($ov)) $ov = [];
+            if (!isset($ov[$key]) || !is_array($ov[$key])) $ov[$key] = [];
+            $ov[$key]['price'] = $price;
+            return true;
+        }, []);
+        unset($GLOBALS['_WF_PRODUCT_OVERRIDES']);
+        log_audit('product_override_price', $key, ['price' => $price]);
+        $msg = 'تم تحديث السعر وحفظه بشكل دائم ✅';
+    } else $msg = 'السعر أو بيانات المنتج غير صالحة.';
 }
 // حذف مستخدم (مع حماية: منع حذف النفس + منع حذف آخر أدمن)
 if (isset($_GET['del_user'])) {
@@ -1211,7 +1257,7 @@ elseif ($tab === 'products') {
     $total_p = (int)($res[1] ?? 0);
 
     echo '<div class="adm-box">';
-    echo '<h2><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-box></use></svg> إدارة المنتجات وتعديل الأسعار</span></h2>';
+    echo '<h2><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-box></use></svg> إدارة المنتجات وتفاصيلها</span></h2><p class="mut">يمكن تعديل بيانات المنتج بالكامل أو حذفه من المتجر. الحذف لا يمس الطلبات أو السجلات التاريخية.</p>';
     echo '<form method="get" data-ui="u-1dcf4cfc dh d1s dj d0">';
     echo '<input type="hidden" name="tab" value="products">';
     echo '<input name="q" value="' . esc($q) . '" placeholder="ابحث باسم المنتج أو الكود..." data-ui="u-b05aa79a d2i d3c d3d dt d24 d1v">';
@@ -1247,16 +1293,41 @@ elseif ($tab === 'products') {
         echo '<td>' . ($ca > 0 ? '<span class="badge amber"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-cart></use></svg> ' . $ca . '</span>' : '0') . '</td>';
         echo '<td>' . ($ord_c > 0 ? '<span class="badge green"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> ' . $ord_c . '</span>' : '0') . '</td>';
         echo '<td><b style="color:' . ($conv_rate >= 3 ? 'var(--success)' : ($conv_rate >= 1 ? 'var(--warning-text)' : 'var(--slate-400)')) . '">' . $conv_rate . '%</b></td>';
-        echo '<td><form data-confirm="سيُحفظ السعر الجديد لهذا المنتج ويؤثر على الطلبات القادمة. تأكيد الحفظ؟" method="post" data-ui="u-fd0a8ea7 d3e di d1p d19">';
+        echo '<td><form data-confirm="سيُحفظ السعر الجديد لهذا المنتج ويؤثر على الطلبات القادمة. تأكيد الحفظ؟" method="post" data-ui="u-fd0a8ea7 d3e di d1p d19">' . csrf_field();
         echo '<input type="hidden" name="edit_prod_plat" value="' . esc($pl_k) . '">';
         echo '<input type="hidden" name="edit_prod_id" value="' . esc($p['id'] ?? '') . '">';
         echo '<input name="new_price" type="number" step="0.5" value="' . esc($pr_now) . '" data-ui="u-39d7d7e4 d3f d3g dt d1u dc">';
         echo '<button class="btn sm"> حفظ</button></form></td>';
         echo '<td data-ui="u-176669be d2m"><form data-confirm="سيتم تبديل إظهار المنتج في المتجر. هذا لا يحذف المنتج من المصدر. تأكيد التغيير؟" method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="hide"><button class="btn sm' . (!empty($ovr['hidden']) ? '' : ' outline') . '" data-ui="u-03ebc769 do d3h" title="إخفاء/إظهار">' . (!empty($ovr['hidden']) ? ' مخفي' : ' ظاهر') . '</button></form> ';
         echo '<form method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="pin"><button class="btn sm' . (!empty($ovr['pinned']) ? ' pri' : ' outline') . '" data-ui="u-03ebc769 do d3h" title="تثبيت في الأول"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-pin></use></svg></button></form>';
-        echo '<details data-ui="u-392dd6f0 d3i"><summary data-ui="u-5725c475 do d3j d28"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-edit></use></svg> عنوان/صورة/تصنيف</summary><form method="post" data-ui="u-90245531 d3k">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="title"><input name="ov_title" value="' . esc($ovr['title'] ?? '') . '" placeholder="عنوان جديد" data-ui="u-a2e2dc8d d3l d3m do dt d2w"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form>';
-        echo '<form method="post" data-ui="u-67647882 d19">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="image"><input name="ov_image" value="' . esc($ovr['image'] ?? '') . '" placeholder="رابط صورة" dir="ltr" data-ui="u-a2e2dc8d d3l d3m do dt d2w"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></details></td>';
-        echo '<td><a href="product.php?id=' . urlencode($p['id'] ?? '') . '" target="_blank" class="btn sm outline">عرض ↗</a></td>';
+        $extra_data = is_array($p['extra'] ?? null) ? $p['extra'] : [];
+        $edit_images = implode("\n", (array)($p['images'] ?? []));
+        $edit_colors = implode("\n", (array)($extra_data['colors'] ?? []));
+        $edit_sizes = implode("\n", (array)($p['sizes'] ?? []));
+        $edit_features = (string)($extra_data['features'] ?? '');
+        $edit_specs = (string)($extra_data['specifications'] ?? '');
+        $edit_variants = json_encode(array_values((array)($extra_data['variants_detailed'] ?? [])), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        echo '<details><summary class="btn sm outline">تعديل كل التفاصيل</summary><form method="post" class="form-row" style="min-width:300px;max-width:520px;display:grid;gap:8px">' . csrf_field()
+            . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="full_details">'
+            . '<label>الاسم<input name="full_name" required maxlength="200" value="' . esc($p['name'] ?? '') . '"></label>'
+            . '<label>السعر<input name="full_price" required type="number" min="0" step="0.01" value="' . esc($pr_now) . '"></label>'
+            . '<label>القسم<select name="full_category"><option value="">قسم المصدر</option>';
+        $full_categories = wf_category_canonical();
+        if (!empty($p['category']) && !in_array($p['category'], $full_categories, true)) $full_categories[] = $p['category'];
+        foreach ($full_categories as $full_cat) echo '<option value="' . esc($full_cat) . '"' . (($p['category'] ?? '') === $full_cat ? ' selected' : '') . '>' . esc($full_cat) . '</option>';
+        echo '</select></label>'
+            . '<label>كود المنتج / SKU<input name="full_sku" value="' . esc($p['sku'] ?? '') . '"></label>'
+            . '<label>روابط الصور (رابط في كل سطر)<textarea name="full_images" rows="4" dir="ltr">' . esc($edit_images) . '</textarea></label>'
+            . '<label>الوصف<textarea name="full_description" rows="5">' . esc($p['desc'] ?? '') . '</textarea></label>'
+            . '<label>الألوان (لون في كل سطر)<textarea name="full_colors" rows="3">' . esc($edit_colors) . '</textarea></label>'
+            . '<label>المقاسات / الخيارات (خيار في كل سطر)<textarea name="full_sizes" rows="3">' . esc($edit_sizes) . '</textarea></label>'
+            . '<label>المميزات<textarea name="full_features" rows="4">' . esc($edit_features) . '</textarea></label>'
+            . '<label>المواصفات<textarea name="full_specs" rows="4">' . esc($edit_specs) . '</textarea></label>'
+            . '<label>خيارات المنتج المركبة (JSON: color, size, price, image)<textarea name="full_variants" rows="8" dir="ltr">' . esc($edit_variants ?: '[]') . '</textarea></label>'
+            . '<button class="btn">حفظ كل التعديلات</button></form></details>'
+            . '<form method="post" style="margin-top:6px" onsubmit="return confirm(\'حذف هذا المنتج نهائياً من المتجر؟ لن يتم حذف أي طلب أو سجل تاريخي.\')">' . csrf_field()
+            . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="delete"><button class="btn sm outline" style="color:#b91c1c">🗑 حذف نهائي</button></form></td>';
+        echo '<td><a href="product.php?id=' . urlencode($p['id'] ?? '') . '&plat=' . urlencode($pl_k) . '" target="_blank" class="btn sm outline">عرض ↗</a></td>';
         echo '</tr>';
     }
     echo '</table></div><nav class="pager" aria-label="صفحات المنتجات">';

@@ -1987,78 +1987,6 @@ def clean_catalog_names_and_images():
             dedup.append(item)
         jsave(plat + '.json', dedup)
 
-# ---------------------------------------------------------------- remove duplicate product names across the combined storefront catalog
-def _product_name_dedupe_key(value):
-    """Normalize Unicode/case/diacritics/punctuation so spelling-only duplicates match."""
-    import unicodedata
-    text = unicodedata.normalize('NFKC', str(value or '')).casefold().replace('\u0640', '')
-    text = ''.join(ch for ch in unicodedata.normalize('NFD', text) if not unicodedata.combining(ch))
-    text = text.translate(str.maketrans({'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ٱ': 'ا'}))
-    text = re.sub(r'[^\w]+', ' ', text, flags=re.UNICODE)
-    return re.sub(r'\s+', ' ', text).strip()
-
-def deduplicate_catalog_names():
-    """Keep one best catalog entry for each normalized product name, across suppliers."""
-    platform_order = ('vendoor', 'timehand', 'safqa', 'angazny', 'shopmart', 'm5zoon', 'g2g', 'social', 'cezma')
-    datasets = []
-    for rank, plat in enumerate(platform_order):
-        rows = jload(plat + '.json', None)
-        if isinstance(rows, list) and rows:
-            datasets.append((plat, rows, rank, plat + '.json'))
-    cezma_rows = _cezma_load_shards()
-    if cezma_rows:
-        datasets.append(('cezma', cezma_rows, platform_order.index('cezma'), 'cezma_shards'))
-
-    winners = {}
-    for plat, rows, rank, dataset_id in datasets:
-        for index, item in enumerate(rows):
-            if not isinstance(item, dict):
-                continue
-            key = _product_name_dedupe_key(item.get('name'))
-            if not key:
-                continue
-            country = str(item.get('country') or '').strip().casefold()
-            egypt = country in ('مصر', 'egypt', 'eg', 'egyptian')
-            stock = item.get('stock', 1)
-            available = not (str(stock).strip() == '0' or stock is False)
-            imgs = item.get('images') if isinstance(item.get('images'), list) else []
-            image_count = sum(1 for image in imgs if _catalog_image_is_valid(image))
-            description_len = min(500, len(str(item.get('desc') or '')))
-            try:
-                price = float(str(item.get('price') or 0).replace(',', ''))
-            except (TypeError, ValueError):
-                price = 0.0
-            # Prefer Egypt listings, available records, richer product data, and lower prices.
-            score = (int(egypt), int(available), int(image_count > 0), image_count, description_len,
-                     int(price > 0), -price if price > 0 else float('-inf'), -rank)
-            previous = winners.get(key)
-            if previous is None or score > previous[0]:
-                winners[key] = (score, plat, index, dataset_id)
-
-    keep_refs = {(dataset_id, index) for _score, _plat, index, dataset_id in winners.values()}
-    removed = 0
-    for plat, rows, _rank, dataset_id in datasets:
-        kept = []
-        for index, item in enumerate(rows):
-            if not isinstance(item, dict):
-                kept.append(item)
-                continue
-            key = _product_name_dedupe_key(item.get('name'))
-            if key and (dataset_id, index) not in keep_refs:
-                removed += 1
-                continue
-            kept.append(item)
-        if len(kept) == len(rows):
-            continue
-        if dataset_id == 'cezma_shards':
-            _cezma_write_shards(kept)
-        else:
-            jsave(plat + '.json', kept)
-    summary['duplicate_names'] = {'removed': removed, 'kept_unique_names': len(winners)}
-    if removed:
-        log('duplicate names: removed', removed, 'kept', len(winners), 'unique names')
-    return removed
-
 # ---------------------------------------------------------------- physical commission policy
 def normalize_physical_commissions():
     """Keep the feed's commission separately for gross-price reconstruction, while the effective catalog commission is always zero."""
@@ -3157,6 +3085,8 @@ def remove_low_price_cezma():
 
 
 CEZMA_UNAVAILABLE_NOTICE = 'هذا المنتج غير متوفر في الوقت الحالي'
+# ID matched to the unavailable product shown in the user's screenshot; keep it out of future imports.
+CEZMA_UNAVAILABLE_IDS = {'337114'}
 
 def _cezma_contains_unavailable_notice(value):
     """Detect Cezma's unavailable-product placeholder anywhere in a nested API record."""
@@ -3171,10 +3101,17 @@ def _cezma_contains_unavailable_notice(value):
         return any(_cezma_contains_unavailable_notice(child) for child in value)
     return False
 
+def _cezma_is_unavailable_record(row):
+    if not isinstance(row, dict):
+        return False
+    product_id = str((row.get('extra') or {}).get('cezma_id') or row.get('orig_id') or row.get('id') or '')
+    product_id = re.sub(r'^cezma-', '', product_id, flags=re.I)
+    return product_id in CEZMA_UNAVAILABLE_IDS or _cezma_contains_unavailable_notice(row)
+
 def remove_cezma_unavailable_notice_products():
-    """Permanently prune Cezma catalog rows carrying the unavailable-item placeholder."""
+    """Permanently prune known unavailable Cezma items and placeholder records."""
     rows = _cezma_load_shards()
-    kept = [row for row in rows if not _cezma_contains_unavailable_notice(row)]
+    kept = [row for row in rows if not _cezma_is_unavailable_record(row)]
     removed = len(rows) - len(kept)
     if removed:
         _cezma_write_shards(kept)
@@ -3185,7 +3122,7 @@ def remove_cezma_unavailable_notice_products():
 def update_cezma():
     lite = _cezma_load_shards()
     initial_lite = len(lite)
-    lite = [row for row in lite if not _cezma_contains_unavailable_notice(row)]
+    lite = [row for row in lite if not _cezma_is_unavailable_record(row)]
     removed_unavailable = initial_lite - len(lite)
     existing_by_id = {}
     for row in lite:
@@ -3212,6 +3149,8 @@ def update_cezma():
             if _cezma_contains_unavailable_notice(d):
                 continue
             pid = int(d.get('id') or 0)
+            if str(pid) in CEZMA_UNAVAILABLE_IDS:
+                continue
             if pid < CEZMA_MIN_ID:
                 continue
             try:
@@ -3417,7 +3356,6 @@ if __name__ == '__main__':
     normalize_physical_commissions()
     remove_blocked_products()
     repair_product_categories()
-    deduplicate_catalog_names()
     rebuild_lite()
     force_open_production()
     _cezma_index_signature = ''
