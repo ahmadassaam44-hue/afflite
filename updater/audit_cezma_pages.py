@@ -293,6 +293,16 @@ def main():
     report_path = os.path.join(DATA, 'cezma_page_audit_report.json')
     with open(report_path, 'w', encoding='utf-8') as stream:
         json.dump(report, stream, ensure_ascii=False, indent=2)
+    deploy_log = {
+        'at': report['created_at'],
+        'event': 'cezma-page-audit',
+        'files_to_upload': len(upload_relative),
+        'uploaded_ok': len(uploaded),
+        'failed_count': int(bool(upload_error)),
+        'failed': [upload_error] if upload_error else [],
+    }
+    with open(os.path.join(DATA, '_deploy_log.json'), 'w', encoding='utf-8') as stream:
+        json.dump(deploy_log, stream, ensure_ascii=False, separators=(',', ':'))
     write_summary(report, names)
     print(json.dumps({key: value for key, value in report.items() if key != 'errors'}, ensure_ascii=False), flush=True)
     if failures:

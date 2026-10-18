@@ -3490,8 +3490,29 @@ def deploy_cezma_index_only():
 
 
 # ---------------------------------------------------------------- main
+def _audit_workflow_changed_in_push():
+    if os.environ.get('GITHUB_EVENT_NAME') != 'push':
+        return False
+    event_path = os.environ.get('GITHUB_EVENT_PATH')
+    if not event_path or not os.path.isfile(event_path):
+        return False
+    try:
+        with open(event_path, encoding='utf-8') as stream:
+            event = json.load(stream)
+        changed = set()
+        for commit in event.get('commits', []):
+            changed.update(commit.get('added', []))
+            changed.update(commit.get('modified', []))
+            changed.update(commit.get('removed', []))
+        return '.github/workflows/audit-cezma-pages.yml' in changed
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 if __name__ == '__main__':
     only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'cezma']
+    if only == ['deploy'] and _audit_workflow_changed_in_push():
+        only = ['cezma-audit']
     if only == ['cezma-audit']:
         import audit_cezma_pages
         sys.exit(audit_cezma_pages.main())

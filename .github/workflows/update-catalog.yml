@@ -14,6 +14,7 @@ on:
       - 'assets/**'
       - 'data/id_index.json'
       - 'updater/update_catalog.py'
+      - '.github/workflows/audit-cezma-pages.yml'
       - 'updater/category_overrides.json'
       - 'updater/visual_cezma.py'
       - 'updater/visual_features.py'

@@ -1,3 +1,4 @@
+# The catalog workflow also dispatches this scan when this file changes on an Arena branch.
 name: Audit saved Cezma product pages
 
 on:

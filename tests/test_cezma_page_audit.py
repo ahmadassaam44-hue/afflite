@@ -23,6 +23,16 @@ class CezmaPageAuditTests(unittest.TestCase):
         self.assertFalse(unavailable)
         self.assertEqual(error, 'HTTP 503')
 
+    def test_push_event_can_request_audit_by_touching_the_audit_workflow(self):
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as stream:
+            json.dump({'commits': [{'modified': ['.github/workflows/audit-cezma-pages.yml']} ]}, stream)
+            event_path = stream.name
+        try:
+            with patch.dict(os.environ, {'GITHUB_EVENT_NAME': 'push', 'GITHUB_EVENT_PATH': event_path}):
+                self.assertTrue(audit.update_catalog._audit_workflow_changed_in_push())
+        finally:
+            os.unlink(event_path)
+
     def test_remove_rows_from_shards_removes_only_matching_cezma_ids(self):
         with tempfile.TemporaryDirectory() as data_dir:
             shard_dir = os.path.join(data_dir, 'cezma_shards')
