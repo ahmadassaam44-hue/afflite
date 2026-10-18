@@ -651,8 +651,10 @@ def _has_repair_keyword(text, keyword):
 
 def repair_category(name, stored):
     """تصحيح محدود: يشتغل على المنتجات الواقعة في القسم الافتراضي «المنزل والمطبخ» بالغلط بس،
-    وبس لو اسم المنتج فيه كلمة قاطعة (٤ حروف أو أكثر) بتحدد القسم الصح. مابيلمسش أي تصنيف صحيح."""
+    وبس لو اسم المنتج فيه كلمة قاطعة (٤ حروف أو أكثر) بتحدد القسم الصح. مابيلمسش أي تصنيف صحيح.
+    استثناء قاطع: «ستارز/ترتان» موديلات أحذية — بتترجع أحذية من أي قسم."""
     stored = str(stored or '').strip()
+    if is_shoe_model_name(name): return 'أحذية'
     if stored != 'المنزل والمطبخ': return stored
     n = _ar_key(name)
     if not n: return stored
@@ -2013,7 +2015,7 @@ def normalize_physical_commissions():
 # ---------------------------------------------------------------- lite files
 def rebuild_lite():
     """يحدّث lite_*.json مع الحفاظ على بنيته الحالية (نلمس فقط الحقول المتغيرة)"""
-    SYNC = ['price', 'price_text', 'old_price', 'discount', 'stock', 'name', 'sizes', 'cost', 'commission', 'currency',
+    SYNC = ['price', 'price_text', 'old_price', 'discount', 'stock', 'name', 'category', 'sizes', 'cost', 'commission', 'currency',
             'added_at', 'price_drop_at', 'price_updated_at', 'unavailable_since', 'availability', 'is_available']
     for plat in ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma']:
         full = jload(f'{plat}.json', None)
