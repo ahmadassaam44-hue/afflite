@@ -33,6 +33,18 @@ class CezmaPageAuditTests(unittest.TestCase):
         finally:
             os.unlink(event_path)
 
+    def test_push_audit_detection_falls_back_to_checked_out_commit_files(self):
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', delete=False) as stream:
+            json.dump({'commits': []}, stream)
+            event_path = stream.name
+        try:
+            with patch.dict(os.environ, {
+                'GITHUB_EVENT_NAME': 'push', 'GITHUB_EVENT_PATH': event_path, 'GITHUB_SHA': 'deadbeef',
+            }), patch('subprocess.check_output', return_value=b'.github/workflows/audit-cezma-pages.yml\n'):
+                self.assertTrue(audit.update_catalog._audit_workflow_changed_in_push())
+        finally:
+            os.unlink(event_path)
+
     def test_remove_rows_from_shards_removes_only_matching_cezma_ids(self):
         with tempfile.TemporaryDirectory() as data_dir:
             shard_dir = os.path.join(data_dir, 'cezma_shards')

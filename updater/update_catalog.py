@@ -3504,8 +3504,23 @@ def _audit_workflow_changed_in_push():
             changed.update(commit.get('added', []))
             changed.update(commit.get('modified', []))
             changed.update(commit.get('removed', []))
-        return '.github/workflows/audit-cezma-pages.yml' in changed
+        if '.github/workflows/audit-cezma-pages.yml' in changed:
+            return True
     except (OSError, ValueError, TypeError):
+        pass
+    # The push webhook payload can omit its commit file list for some push types.
+    # The checked-out commit is available in every Actions runner, so use it as a fallback.
+    commit = os.environ.get('GITHUB_SHA')
+    if not commit:
+        return False
+    import subprocess
+    try:
+        names = subprocess.check_output(
+            ['git', 'diff-tree', '--no-commit-id', '--name-only', '-r', commit],
+            cwd=ROOT, stderr=subprocess.DEVNULL, timeout=10,
+        ).decode('utf-8', 'replace').splitlines()
+        return '.github/workflows/audit-cezma-pages.yml' in names
+    except (OSError, subprocess.SubprocessError):
         return False
 
 
