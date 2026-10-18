@@ -2962,13 +2962,99 @@ def _cezma_product_images(product):
         _cezma_add_image_values(out, product)
         return out
     out = []
-    for field in ('image', 'image_url', 'main_image'):
-        if field in product:
-            _cezma_add_image_values(out, product[field])
-    for field in ('images', 'product_images', 'gallery', 'photos', 'media'):
+    for field in ('image', 'image_url', 'main_image', 'images', 'product_images', 'gallery', 'photos', 'media', 'variants', 'variations'):
         if field in product:
             _cezma_add_image_values(out, product[field])
     return out
+
+
+def _cezma_option_text(value):
+    if isinstance(value, (str, int, float)):
+        return str(value).strip()
+    if isinstance(value, dict):
+        for key in ('name_ar', 'value_ar', 'label_ar', 'name', 'value', 'label', 'title', 'text'):
+            candidate = value.get(key)
+            if isinstance(candidate, (str, int, float)) and str(candidate).strip():
+                return str(candidate).strip()
+    return ''
+
+
+def _cezma_extract_options(product):
+    """Normalize Cezma's varying attribute/variant shapes for durable catalog rows."""
+    if not isinstance(product, dict):
+        return {'colors': [], 'sizes': [], 'types': [], 'attributes': [], 'variants': []}
+    colors, sizes, types, attributes, variants = [], [], [], [], []
+
+    def add(label, value):
+        label = str(label or '').strip().casefold()
+        value = _cezma_option_text(value)
+        if not value:
+            return
+        entry = {'label': str(label), 'value': value}
+        if entry not in attributes:
+            attributes.append(entry)
+        if any(token in label for token in ('لون', 'الوان', 'ألوان', 'color', 'colour')) and value not in colors:
+            colors.append(value)
+        elif any(token in label for token in ('مقاس', 'مقاسات', 'حجم', 'size')) and value not in sizes:
+            sizes.append(value)
+        elif any(token in label for token in ('نوع', 'type', 'model', 'موديل')) and value not in types:
+            types.append(value)
+
+    for attr in product.get('attributes') or product.get('product_attributes') or []:
+        if not isinstance(attr, dict):
+            continue
+        parent = (_cezma_option_text(attr.get('parent')) or _cezma_option_text(attr.get('attribute'))
+                  or _cezma_option_text(attr.get('parent_name_ar')) or _cezma_option_text(attr.get('label_ar'))
+                  or _cezma_option_text(attr.get('key')))
+        values = attr.get('values') if attr.get('values') is not None else attr.get('options')
+        if isinstance(values, dict): values = [values]
+        if not parent and isinstance(values, list):
+            parent = _cezma_option_text(attr.get('name_ar') or attr.get('name') or attr.get('label'))
+        if isinstance(values, list):
+            for value in values:
+                add(parent, value)
+        else:
+            value = attr.get('value', attr.get('value_ar', attr.get('name_ar', attr.get('label', ''))))
+            add(parent, value)
+
+    for key in ('colors', 'color_options', 'available_colors', 'sizes', 'size_options', 'available_sizes', 'types', 'type_options'):
+        values = product.get(key)
+        if values is None:
+            continue
+        if not isinstance(values, (list, tuple)):
+            values = [values]
+        label = 'color' if 'color' in key else ('size' if 'size' in key else 'type')
+        for value in values:
+            normalized = _cezma_option_text(value)
+            if not normalized:
+                continue
+            target = colors if label == 'color' else sizes if label == 'size' else types
+            if normalized not in target:
+                target.append(normalized)
+
+    for field in ('variants', 'variations', 'product_variants', 'variant_options'):
+        raw_variants = product.get(field)
+        if isinstance(raw_variants, dict): raw_variants = [raw_variants]
+        if not isinstance(raw_variants, list):
+            continue
+        for variant in raw_variants:
+            if not isinstance(variant, dict):
+                continue
+            color = _cezma_option_text(variant.get('color') or variant.get('colour') or variant.get('color_name') or variant.get('color_ar'))
+            size = _cezma_option_text(variant.get('size') or variant.get('size_name') or variant.get('size_ar'))
+            kind = _cezma_option_text(variant.get('type') or variant.get('type_name') or variant.get('model'))
+            nested = _cezma_extract_options({'attributes': variant.get('attributes') or variant.get('options') or []})
+            color = color or (nested['colors'][0] if nested['colors'] else '')
+            size = size or (nested['sizes'][0] if nested['sizes'] else '')
+            kind = kind or (nested['types'][0] if nested['types'] else '')
+            if color and color not in colors: colors.append(color)
+            if size and size not in sizes: sizes.append(size)
+            if kind and kind not in types: types.append(kind)
+            images = _cezma_product_images(variant)
+            if color or size or kind:
+                variants.append({'color': color, 'size': size, 'type': kind,
+                                 'price': variant.get('price', ''), 'image': images[0] if images else ''})
+    return {'colors': colors, 'sizes': sizes, 'types': types, 'attributes': attributes, 'variants': variants}
 
 def _cezma_load_shards():
     import glob as _g
@@ -3101,27 +3187,75 @@ def _cezma_contains_unavailable_notice(value):
         return any(_cezma_contains_unavailable_notice(child) for child in value)
     return False
 
+_CEZMA_UNAVAILABLE_IDS_CACHE = None
+
+def _cezma_unavailable_ids():
+    global _CEZMA_UNAVAILABLE_IDS_CACHE
+    if _CEZMA_UNAVAILABLE_IDS_CACHE is not None:
+        return set(_CEZMA_UNAVAILABLE_IDS_CACHE)
+    ids = {str(value) for value in CEZMA_UNAVAILABLE_IDS}
+    saved = jload('cezma_unavailable.json', {})
+    if isinstance(saved, dict):
+        ids.update(re.sub(r'^cezma-', '', str(key), flags=re.I) for key in saved if str(key).isdigit() or str(key).lower().startswith('cezma-'))
+        for value in saved.values():
+            if str(value).isdigit(): ids.add(str(value))
+    elif isinstance(saved, list):
+        ids.update(re.sub(r'^cezma-', '', str(value), flags=re.I) for value in saved if str(value).strip())
+    _CEZMA_UNAVAILABLE_IDS_CACHE = {value for value in ids if value.isdigit()}
+    return set(_CEZMA_UNAVAILABLE_IDS_CACHE)
+
+def _cezma_save_unavailable_ids(ids):
+    existing = jload('cezma_unavailable.json', {})
+    saved = dict(existing) if isinstance(existing, dict) else {}
+    changed = False
+    for product_id in sorted({str(value) for value in ids if str(value).isdigit()}):
+        if product_id not in saved:
+            saved[product_id] = 'unavailable-price-message'
+            changed = True
+    if changed:
+        jsave('cezma_unavailable.json', saved)
+    global _CEZMA_UNAVAILABLE_IDS_CACHE
+    _CEZMA_UNAVAILABLE_IDS_CACHE = None
+    return saved
+
 def _cezma_is_unavailable_record(row):
     if not isinstance(row, dict):
         return False
     product_id = str((row.get('extra') or {}).get('cezma_id') or row.get('orig_id') or row.get('id') or '')
     product_id = re.sub(r'^cezma-', '', product_id, flags=re.I)
-    return product_id in CEZMA_UNAVAILABLE_IDS or _cezma_contains_unavailable_notice(row)
+    return product_id in _cezma_unavailable_ids() or _cezma_contains_unavailable_notice(row)
 
 def remove_cezma_unavailable_notice_products():
-    """Permanently prune known unavailable Cezma items and placeholder records."""
+    """Persist unavailable IDs and permanently prune matching Cezma catalog rows."""
     rows = _cezma_load_shards()
+    found_ids = set()
+    for row in rows:
+        if isinstance(row, dict) and _cezma_contains_unavailable_notice(row):
+            product_id = str((row.get('extra') or {}).get('cezma_id') or row.get('orig_id') or row.get('id') or '')
+            product_id = re.sub(r'^cezma-', '', product_id, flags=re.I)
+            if product_id.isdigit(): found_ids.add(product_id)
+    if found_ids:
+        _cezma_save_unavailable_ids(found_ids)
+    unavailable = _cezma_unavailable_ids()
     kept = [row for row in rows if not _cezma_is_unavailable_record(row)]
     removed = len(rows) - len(kept)
     if removed:
         _cezma_write_shards(kept)
-        summary['cezma_unavailable_notice'] = {'removed': removed}
-        log('cezma unavailable-message products: removed', removed)
+    summary['cezma_unavailable_notice'] = {'removed': removed, 'known_unavailable_ids': len(unavailable)}
+    if removed: log('cezma unavailable-message products: removed', removed)
     return removed
 
 def update_cezma():
     lite = _cezma_load_shards()
     initial_lite = len(lite)
+    unavailable_found = set()
+    for row in lite:
+        if isinstance(row, dict) and _cezma_contains_unavailable_notice(row):
+            row_id = str((row.get('extra') or {}).get('cezma_id') or row.get('orig_id') or row.get('id') or '')
+            row_id = re.sub(r'^cezma-', '', row_id, flags=re.I)
+            if row_id.isdigit(): unavailable_found.add(row_id)
+    if unavailable_found:
+        _cezma_save_unavailable_ids(unavailable_found)
     lite = [row for row in lite if not _cezma_is_unavailable_record(row)]
     removed_unavailable = initial_lite - len(lite)
     existing_by_id = {}
@@ -3146,10 +3280,14 @@ def update_cezma():
     below_min_price_ids = set()
     for cid, main_name in targets:
         for d in _cezma_scan_cat(cid):
+            try:
+                pid = int(d.get('id') or 0)
+            except (TypeError, ValueError, AttributeError):
+                pid = 0
             if _cezma_contains_unavailable_notice(d):
+                if pid > 0: unavailable_found.add(str(pid))
                 continue
-            pid = int(d.get('id') or 0)
-            if str(pid) in CEZMA_UNAVAILABLE_IDS:
+            if str(pid) in _cezma_unavailable_ids():
                 continue
             if pid < CEZMA_MIN_ID:
                 continue
@@ -3161,14 +3299,31 @@ def update_cezma():
                 if current_price is not None and current_price < CEZMA_MIN_PRICE_EGP:
                     below_min_price_ids.add(pid)
                     continue
+                row = existing_by_id[pid]
                 incoming_images = _cezma_product_images(d)
                 if incoming_images:
-                    row = existing_by_id[pid]
                     current_images = _cezma_product_images({'images': row.get('images')})
                     merged_images = incoming_images + [u for u in current_images if u not in incoming_images]
                     if merged_images != current_images:
                         row['images'] = merged_images
                         image_updates += 1
+                options = _cezma_extract_options(d)
+                if options['sizes']:
+                    row['sizes'] = list(dict.fromkeys([*options['sizes'], *(row.get('sizes') or [])]))
+                ex = row.setdefault('extra', {})
+                if not isinstance(ex, dict):
+                    ex = row['extra'] = {}
+                for key in ('colors', 'types', 'attributes', 'variants'):
+                    incoming = options[key]
+                    if not incoming:
+                        continue
+                    target = 'variants_detailed' if key == 'variants' else key
+                    old_values = ex.get(target) or []
+                    if not isinstance(old_values, list): old_values = []
+                    if key in ('colors', 'types'):
+                        ex[target] = list(dict.fromkeys([*incoming, *old_values]))
+                    else:
+                        ex[target] = list(dict.fromkeys([*incoming, *old_values]))
                 continue
             if current_price is None or not current_price >= CEZMA_MIN_PRICE_EGP:
                 continue
@@ -3194,18 +3349,31 @@ def update_cezma():
     added = 0
     for pid, (d, main_name) in sorted(candidates.items()):
         if added >= CEZMA_MAX_NEW_PER_RUN: log('cezma: per-run cap reached, rest next run'); break
+        if str(pid) in _cezma_unavailable_ids() or _cezma_contains_unavailable_notice(d):
+            if _cezma_contains_unavailable_notice(d): unavailable_found.add(str(pid))
+            continue
         price = float(d.get('price') or 0); old = float(d.get('basic_price') or 0) or price
         st = d.get('store') or {}; imgs = _cezma_product_images(d)
         pname = d.get('name_ar') or d.get('name_en') or ''
+        options = _cezma_extract_options(d)
         lite.append({
             'id': f'cezma-{pid}', 'orig_id': str(pid), 'name': pname,
             'price': price, 'old_price': old if old > price else 0, 'discount': float(d.get('discount') or 0),
             'price_text': f'{price:g} ج.م', 'currency': 'ج.م', 'country': 'مصر',
             # قسم الموقع الموحّد (مش قسم سيزما الرئيسي) — نفس اللي بتكتبه الواجهة
             'category': cezma_category(main_name, pname), 'stock': 999999, 'images': imgs,
+            'sizes': options['sizes'],
             'extra': {'cezma_id': pid, 'store_name': st.get('name') or '', 'cost': f'{price:g} ج.م',
-                      'source_commission_original': '0 ج.م'}})
+                      'colors': options['colors'], 'types': options['types'], 'attributes': options['attributes'],
+                      'variants_detailed': options['variants'], 'source_commission_original': '0 ج.م'}})
         added += 1
+    if unavailable_found:
+        _cezma_save_unavailable_ids(unavailable_found)
+        unavailable = _cezma_unavailable_ids()
+        before = len(lite)
+        lite = [row for row in lite if not _cezma_is_unavailable_record(row)]
+        removed_unavailable += before - len(lite)
+        existing_by_id = {pid: row for pid, row in existing_by_id.items() if str(pid) not in unavailable}
     if added or image_updates or price_filtered or removed_unavailable: _cezma_write_shards(lite)
     summary['cezma'] = {
         'total': len(lite), 'added': added, 'image_updates': image_updates,
