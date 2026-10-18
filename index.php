@@ -419,7 +419,6 @@ echo wf_store_navbar($nav_items, ['lead' => $nav_lead]);
 </div>
 <section class="section" aria-labelledby="affiliate-intro-title">
   <h2 id="affiliate-intro-title">وفرنهالك أفلييت — منصة تسويق بالعمولة في مصر</h2>
-  <p>بتدور على طريقة للربح من الإنترنت أو الربح من النت؟ وفرنهالك أفلييت تتيح لك التسويق بالعمولة: سجّل مجاناً، اختر منتجات من الكتالوج، أضف عمولتك وشارك متجرك أو رابطك الخاص. ممكن تكسب فلوس من الطلبات المستلمة، لكن الأرباح غير مضمونة وتعتمد على المبيعات وتُحتسب وفق سياسة البرنامج.</p>
   <a class="btn sm outline" href="affiliate-register.php">اعرف تفاصيل برنامج وفرنهالك أفلييت</a>
 </section>
 
