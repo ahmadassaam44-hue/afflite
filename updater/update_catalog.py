@@ -592,6 +592,14 @@ def _ar_key(text):
 
 CAT_RULES_AR = [(cat, [_ar_key(k) for k in kws]) for cat, kws in CAT_RULES]
 
+# «ستارز / ترتان»: موديلات أحذية (شباشب وترتاتي) — علامة قاطعة: أي منتج اسمه فيها دي الأحذية.
+# مطابقة على النص الموحّد بدون حدود كلمات عشان «أستارز/استارز» تتطابق هي كمان
+# («ستارة» مش هتتطابق — الحرف مختلف: ة ≠ ز).
+SHOE_MODEL_RE = re.compile('ستارز|ستارس|ترتاتي|ترتين|ترتان')
+
+def is_shoe_model_name(name):
+    return bool(SHOE_MODEL_RE.search(_ar_key(str(name or ''))))
+
 # حرف عربي أو لاتيني أو رقم: الكلمة المفتاحية لا تُطابق إلا من بداية كلمة حقيقية
 # (تمنع «الكريم» ← «كريم» و«Women» ← «men» و«Carolina» ← «car» و«Automatic» ← «auto»)
 WORD_CHAR = '[\u0621-\u064A\u0660-\u0669A-Za-z0-9]'
@@ -608,6 +616,7 @@ def guess_category(name):
 
     ده بيمنع أخطاء زي: «مجموعة أدوات المطبخ» تروح عدد وأدوات بدل المنزل والمطبخ.
     """
+    if is_shoe_model_name(name): return 'أحذية'
     n = _ar_key(name)
     if not n: return 'المنزل والمطبخ'
     best_cat, best_len = '', 0
@@ -1262,7 +1271,7 @@ def update_timehand():
     detail_map = _fetch_timehand_details_parallel(op, list(fresh.keys()))
     details = len(detail_map)
     log(f'Timehand: fetched detail galleries for {details}/{len(fresh)} products')
-    upd = add = drop = 0; seen = set()
+    upd = add = drop = 0; seen = set(); cat_fix = 0
     for pid, f in fresh.items():
         seen.add(pid); price = float(f['price']); commission = float(f['commission'])
         d = detail_map.get(pid) or {}
@@ -1276,6 +1285,13 @@ def update_timehand():
                 price = round(f['suggested'] - commission, 2)
             if price > 0 and apply_price(it, 'timehand#' + pid, price): upd += 1
             it['commission'] = commission; it['stock'] = f['stock']; it['name'] = f['name'] or it.get('name')
+            # إعادة تصنيف القسم على التحديث: علامات الموديل القاطعة (ستارز/ترتان…) + التصحيح المحدود لأقسام المنزل الافتراضية
+            pname = f['name'] or it.get('name')
+            if is_shoe_model_name(pname):
+                if it.get('category') != 'أحذية': it['category'] = 'أحذية'; cat_fix += 1
+            elif it.get('category') == 'المنزل والمطبخ':
+                fixed = repair_category(pname, it.get('category'))
+                if fixed != it['category']: it['category'] = fixed; cat_fix += 1
             it['currency'] = 'جنيه'; it['price_text'] = price_text(price, 'جنيه')
             ex['source_commission_original'] = commission; ex['orig_suggested'] = f['suggested']
             if d.get('images'):
@@ -1312,7 +1328,7 @@ def update_timehand():
         if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
             it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
     jsave('timehand.json', cur)
-    summary['timehand'] = {'total': len(cur), 'fetched': len(fresh), 'updated': upd, 'added': add, 'unavailable': drop, 'details': details}
+    summary['timehand'] = {'total': len(cur), 'fetched': len(fresh), 'updated': upd, 'added': add, 'unavailable': drop, 'details': details, 'cat_fixed': cat_fix}
     log('Timehand done', summary['timehand'])
 
 # ---------------------------------------------------------------- Aff Shopmart (منصة أف شوب مارت)
@@ -2818,6 +2834,7 @@ def cezma_category(main_name, name=''):
         mapped = mapped or (cezma_name_category(name) or CEZMA_FASHION_FALLBACK)
     else:
         mapped = normalize_category(c) or c
+    if is_shoe_model_name(name): return 'أحذية'
     return repair_cezma_home_category(name, mapped)
 
 
@@ -2833,10 +2850,8 @@ def cezma_site_category(main_name, name=''):
     c = cezma_plain(main_name)
     if not c:
         return ''
+    if is_shoe_model_name(name): return 'أحذية'
     if c in CEZMA_SITE_CATEGORIES:
-        # «ستارز/ترتان» موديلات أحذية ممكن متخزن قسّمها المنزل والمطبخ بالغلط (نفس قاعدة config.php)
-        if c == 'المنزل والمطبخ' and _cezma_matches_any(cezma_ar_key(name), ['ستارز', 'ستارس', 'ترتان', 'ترتاتي', 'ترتين']):
-            return 'أحذية'
         return c
     if c in CEZMA_CAT_MAP:
         mapped = CEZMA_CAT_MAP[c]

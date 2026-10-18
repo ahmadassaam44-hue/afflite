@@ -2332,14 +2332,15 @@ function wf_shoe_model_tokens($name) {
     $n = wf_cezma_ar_key($name);
     if ($n === '') return false;
     static $shoe_re = null;
-    if ($shoe_re === null) $shoe_re = '/(?<![\x{0621}-\x{064A}\x{0660}-\x{0669}A-Za-z0-9])(?:ستارز|ستارس|ترتاتي|ترتين|ترتان)/u';
+    if ($shoe_re === null) $shoe_re = '/(?<![\x{0621}-\x{064A}\x{0660}-\x{0669}A-Za-z0-9])(?:استارز|ستارز|استارس|ستارس|ترتاتي|ترتين|ترتان)/u';
     return preg_match($shoe_re, $n) === 1;
 }
 function wf_cezma_site_category($raw, $name = '') {
+    // علامة قاطعة في كل الحالات: أي منتج اسمه فيه «ستارز/ترتان» موديل أحذية (شباشب)
+    if ($name !== '' && wf_shoe_model_tokens($name)) return 'أحذية';
     $clean = wf_category_plain($raw);
     if ($clean === '') return '';
     if (in_array($clean, wf_category_canonical(), true)) {
-        if ($clean === 'المنزل والمطبخ' && wf_shoe_model_tokens($name)) return 'أحذية';
         return $clean; // قسم موقع أصلاً
     }
     $map = wf_cezma_bucket_map();
