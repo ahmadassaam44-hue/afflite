@@ -9,9 +9,9 @@
    "match": true
   },
   "index.php": {
-   "remote_size": 48163,
+   "remote_size": 51176,
    "on_server": true,
-   "local_size": 48163,
+   "local_size": 51176,
    "match": true
   },
   "data/catalog_counts.json": {
@@ -81,9 +81,9 @@
    "match": true
   },
   "dashboard/layout.php": {
-   "remote_size": 33319,
+   "remote_size": 34375,
    "on_server": true,
-   "local_size": 33319,
+   "local_size": 34375,
    "match": true
   },
   "dashboard/marketer.php": {
