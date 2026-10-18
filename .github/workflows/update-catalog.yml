@@ -40,7 +40,7 @@ permissions:
 
 concurrency:
   group: catalog-update
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   update:
