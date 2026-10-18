@@ -40,6 +40,9 @@ class CezmaUnavailableFilterTests(unittest.TestCase):
 
     def test_known_unavailable_id_is_excluded_without_name_based_deduplication(self):
         self.assertTrue(update_catalog._cezma_is_unavailable_record(
+            {'id': 'cezma-337112', 'name': 'جاكت الترند'}
+        ))
+        self.assertTrue(update_catalog._cezma_is_unavailable_record(
             {'id': 'cezma-337114', 'name': 'جاكت الترند الجديد'}
         ))
         self.assertFalse(update_catalog._cezma_is_unavailable_record(

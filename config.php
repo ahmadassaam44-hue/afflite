@@ -1867,7 +1867,7 @@ function cezma_recent_products($limit) {
 // IDs discovered from live unavailable-product reports; kept hidden even if the source feed still lists them.
 function cezma_unavailable_ids() {
     if (isset($GLOBALS['_CEZMA_UNAVAILABLE_IDS']) && is_array($GLOBALS['_CEZMA_UNAVAILABLE_IDS'])) return $GLOBALS['_CEZMA_UNAVAILABLE_IDS'];
-    $ids = ['337114' => true];
+    $ids = ['337112' => true, '337114' => true];
     $saved = jload('cezma_unavailable.json', []);
     if (is_array($saved)) {
         foreach ($saved as $key => $value) {

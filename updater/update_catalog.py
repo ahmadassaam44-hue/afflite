@@ -3172,7 +3172,7 @@ def remove_low_price_cezma():
 
 CEZMA_UNAVAILABLE_NOTICE = 'هذا المنتج غير متوفر في الوقت الحالي'
 # ID matched to the unavailable product shown in the user's screenshot; keep it out of future imports.
-CEZMA_UNAVAILABLE_IDS = {'337114'}
+CEZMA_UNAVAILABLE_IDS = {'337112', '337114'}
 
 def _cezma_contains_unavailable_notice(value):
     """Detect Cezma's unavailable-product placeholder anywhere in a nested API record."""
