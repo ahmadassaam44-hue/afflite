@@ -229,6 +229,10 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
         if ($act === 'hide') $ov[$ok]['hidden'] = empty($ov[$ok]['hidden']);
         elseif ($act === 'pin') $ov[$ok]['pinned'] = empty($ov[$ok]['pinned']);
         elseif ($act === 'title') $ov[$ok]['title'] = mb_substr(trim((string)($_POST['ov_title'] ?? '')), 0, 160);
+        elseif ($act === 'category') {
+            $category = trim((string)($_POST['ov_category'] ?? ''));
+            if ($category === '' || in_array($category, wf_category_canonical(), true)) $ov[$ok]['category'] = $category;
+        }
         elseif ($act === 'image') $ov[$ok]['image'] = mb_substr(trim((string)($_POST['ov_image'] ?? '')), 0, 400);
         $ov[$ok] = array_filter($ov[$ok]); if (!$ov[$ok]) unset($ov[$ok]);
         return true;
@@ -1245,7 +1249,13 @@ elseif ($tab === 'products') {
         $ovk = $pl_k . '#' . ($p['id'] ?? ''); $ovr = product_overrides()[$ovk] ?? [];
         echo '<td data-ui="u-176669be d2m"><form data-confirm="سيتم تبديل إظهار المنتج في المتجر. هذا لا يحذف المنتج من المصدر. تأكيد التغيير؟" method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="hide"><button class="btn sm' . (!empty($ovr['hidden']) ? '' : ' outline') . '" data-ui="u-03ebc769 do d3h" title="إخفاء/إظهار">' . (!empty($ovr['hidden']) ? ' مخفي' : ' ظاهر') . '</button></form> ';
         echo '<form method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="pin"><button class="btn sm' . (!empty($ovr['pinned']) ? ' pri' : ' outline') . '" data-ui="u-03ebc769 do d3h" title="تثبيت في الأول"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-pin></use></svg></button></form>';
-        echo '<details data-ui="u-392dd6f0 d3i"><summary data-ui="u-5725c475 do d3j d28"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-edit></use></svg> عنوان/صورة</summary><form method="post" data-ui="u-90245531 d3k">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="title"><input name="ov_title" value="' . esc($ovr['title'] ?? '') . '" placeholder="عنوان جديد" data-ui="u-a2e2dc8d d3l d3m do dt d2w"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form>';
+        echo '<details data-ui="u-392dd6f0 d3i"><summary data-ui="u-5725c475 do d3j d28"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-edit></use></svg> عنوان/صورة/تصنيف</summary><form method="post" data-ui="u-90245531 d3k">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="title"><input name="ov_title" value="' . esc($ovr['title'] ?? '') . '" placeholder="عنوان جديد" data-ui="u-a2e2dc8d d3l d3m do dt d2w"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form>';
+        $category_options = wf_category_canonical();
+        $product_category = trim((string)($p['category'] ?? ''));
+        if ($product_category !== '' && !in_array($product_category, $category_options, true)) $category_options[] = $product_category;
+        echo '<form method="post" data-ui="u-90245531 d3k">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="category"><label>القسم <select name="ov_category"><option value="">قسم المصدر (افتراضي)</option>';
+        foreach ($category_options as $category_option) echo '<option value="' . esc($category_option) . '"' . (($ovr['category'] ?? '') === $category_option ? ' selected' : '') . '>' . esc($category_option) . '</option>';
+        echo '</select></label> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ القسم</button></form>';
         echo '<form method="post" data-ui="u-67647882 d19">' . csrf_field() . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="image"><input name="ov_image" value="' . esc($ovr['image'] ?? '') . '" placeholder="رابط صورة" dir="ltr" data-ui="u-a2e2dc8d d3l d3m do dt d2w"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></details></td>';
         echo '<td><a href="product.php?id=' . urlencode($p['id'] ?? '') . '" target="_blank" class="btn sm outline">عرض ↗</a></td>';
         echo '</tr>';

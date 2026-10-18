@@ -1402,6 +1402,7 @@ function apply_product_overrides($all, $key, $show_hidden = false) {
             $o = $ov[$k];
             if (!empty($o['hidden'])) { if (!$show_hidden) continue; $x['_hidden'] = true; }
             if (!empty($o['title'])) $x['name'] = $o['title'];
+            if (!empty($o['category'])) $x['category'] = $o['category'];
             if (!empty($o['image'])) { $imgs = (array)($x['images'] ?? []); array_unshift($imgs, $o['image']); $x['images'] = array_values(array_unique($imgs)); }
             if (!empty($o['pinned'])) { $x['_pinned'] = true; $pinned[] = $x; continue; }
         }
@@ -1452,7 +1453,7 @@ function platform_products_lite($key) {
         $all = manual_products_all();
         foreach ($all as &$x) $x = normalize_product_record($x, 'manual');
         unset($x);
-        return $cache[$key] = $all;
+        return $cache[$key] = apply_product_overrides($all, 'manual');
     }
     if ($key === 'cezma') {
         $all = cezma_all_products();
@@ -2029,7 +2030,11 @@ function find_product_by_id($id, $plat_hint = '') {
                     // نفس توحيد الأقسام اللي بيحصل في قوائم المنتجات (صفحة المنتج بتقرا السجل الخام)
                     $row['category'] = wf_cezma_site_category($row['category'] ?? '', $row['name'] ?? '');
                 }
-                return $memo[$mkey] = normalize_product_record(with_detail_imgs($row, $pl), $pl);
+                $row = normalize_product_record(with_detail_imgs($row, $pl), $pl);
+                $row_id = (string)($row['id'] ?? $id_dec);
+                $row_override = product_overrides()[$pl . '#' . $row_id] ?? [];
+                if (!empty($row_override['category'])) $row['category'] = $row_override['category'];
+                return $memo[$mkey] = $row;
             }
         }
     }
