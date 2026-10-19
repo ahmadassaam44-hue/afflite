@@ -1976,7 +1976,6 @@ function cezma_extract_variant_options($product) {
 
 // إغناء منتج سيزما بالتفاصيل الكاملة (كل الصور + الوصف + المواصفات) من API سيزما،
 // مع كاش على الاستضافة data/cezma_details/<id>.json عشان تتجاب مرة واحدة بس.
-if (!defined('CEZMA_DETAIL_CACHE_VER')) define('CEZMA_DETAIL_CACHE_VER', 2);
 function cezma_enrich_record($row) {
     $cid = (int)($row['extra']['cezma_id'] ?? $row['orig_id'] ?? 0);
     if ($cid <= 0) return $row;
@@ -2003,7 +2002,7 @@ function cezma_enrich_record($row) {
             cezma_mark_unavailable_id($cid);
             return null;
         }
-        $prod = $j['data']['product'] ?? null;
+        $prod = $j['data']['product'] ?? (isset($j['data']['id']) ? $j['data'] : null);
         if (is_array($prod)) {
             if (cezma_contains_unavailable_notice($prod)) {
                 cezma_mark_unavailable_id($cid);
@@ -2051,12 +2050,6 @@ function cezma_enrich_record($row) {
         if (!empty($det['variants'])) $row['extra']['variants_detailed'] = $det['variants'];
         $row['extra']['source_url'] = $det['source_url'] ?? '';
         $row['extra']['added_at'] = $det['date'] ?? '';
-        if (!empty($det['colors'])) {
-            $row['extra']['colors'] = array_values(array_unique(array_merge((array)($row['extra']['colors'] ?? []), (array)$det['colors'])));
-        }
-        if (!empty($det['sizes'])) {
-            $row['sizes'] = array_values(array_unique(array_merge((array)($row['sizes'] ?? []), (array)$det['sizes'])));
-        }
     }
     return $row;
 }

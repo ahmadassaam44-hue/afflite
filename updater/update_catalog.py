@@ -3382,96 +3382,6 @@ def update_cezma():
     }
     log('cezma', summary['cezma'])
 
-# دفعة فحص التوفر لكل تشغيل (تدريجي عشان ما نرهقش السيرفر).
-CEZMA_PRUNE_BATCH = int(os.environ.get('CEZMA_PRUNE_BATCH', '10000'))
-
-def prune_cezma_unavailable():
-    """زيارة صفحة/تفاصيل كل منتج سيزما محفوظ، وحذف اللي بقى غير متوفر نهائيًا.
-
-    الـAPI بيرجّع status=false مع «Product not found» للمنتجات اللي اتشالت من سيزما
-    (وده اللي بيخلي صفحة المنتج تقول «هذا المنتج غير متوفر في الوقت الحالي»).
-    الفحص تدريجي بمؤشّر محفوظ (data/cezma_prune_state.json) عشان يلف على كل المنتجات
-    المحفوظة خلال كام تشغيل من غير ما يوقّع التشغيل. فشل الشبكة مش بيحذف أي منتج."""
-    lite = _cezma_load_shards()
-    if not lite:
-        return 0
-    ids = []
-    for row in lite:
-        try:
-            pid = int((row.get('extra') or {}).get('cezma_id') or row.get('orig_id') or 0)
-        except (TypeError, ValueError):
-            pid = 0
-        if pid:
-            ids.append(pid)
-    if not ids:
-        return 0
-
-    state = jload('cezma_prune_state.json', {})
-    if not isinstance(state, dict):
-        state = {}
-    cursor = int(state.get('cursor') or 0)
-    if cursor < 0 or cursor >= len(ids):
-        cursor = 0
-    batch = ids[cursor:cursor + CEZMA_PRUNE_BATCH]
-    log(f'cezma prune: probing {len(batch)} saved products (cursor {cursor}/{len(ids)})')
-
-    import urllib.error as _uerr
-
-    def _alive(pid):
-        url = f'{CEZMA_API}/{pid}'
-        for attempt in range(3):
-            try:
-                req = urllib.request.Request(url, headers=CEZMA_HDR)
-                with urllib.request.urlopen(req, timeout=30) as r:
-                    j = json.loads(r.read().decode('utf-8', 'replace'))
-                if isinstance(j, dict) and j.get('status'):
-                    return True
-                return False  # status=false → المنتج اتشال من سيزما
-            except _uerr.HTTPError as he:
-                if he.code in (404, 410):
-                    return False  # المنتج مش موجود على سيزما
-                time.sleep(1 + attempt * 2)
-            except Exception:
-                time.sleep(1 + attempt * 2)
-        return True  # فشل الشبكة: نحتفظ بالمنتج، مش نحذفه بالغلط
-
-    import concurrent.futures as _cf
-    dead = set()
-    # سيزما بتبطّأ مع التوازي العالي (اختبرناها: 2-4 أنسب من 16)، فبنستخدم عدد معتدل
-    with _cf.ThreadPoolExecutor(max_workers=4) as ex:
-        for pid, ok in zip(batch, ex.map(_alive, batch)):
-            if not ok:
-                dead.add(pid)
-
-    removed = 0
-    if dead:
-        kept = []
-        for row in lite:
-            try:
-                rid = int((row.get('extra') or {}).get('cezma_id') or row.get('orig_id') or 0)
-            except (TypeError, ValueError):
-                rid = 0
-            if rid in dead:
-                removed += 1
-            else:
-                kept.append(row)
-        if removed:
-            _cezma_write_shards(kept)
-            log(f'cezma prune: removed {removed} unavailable products permanently')
-
-    new_cursor = cursor + len(batch)
-    if new_cursor >= len(ids):
-        new_cursor = 0
-    jsave('cezma_prune_state.json', {
-        'cursor': new_cursor, 'at': NOW, 'last_batch': len(batch),
-        'removed': removed, 'total_saved': len(ids),
-    })
-    summary['cezma_prune'] = {
-        'probed': len(batch), 'removed': removed, 'cursor': new_cursor, 'total_saved': len(ids),
-    }
-    log('cezma prune', summary['cezma_prune'])
-    return removed
-
 def deploy_cezma_index_only():
     """Build and publish only the Cezma index, reading live shards without modifying them."""
     import tempfile
@@ -3657,12 +3567,6 @@ if __name__ == '__main__':
     # Enforce the Cezma price floor on every run, including deploy-only runs,
     # so removed products cannot return through a partial/update-skipped run.
     remove_low_price_cezma()
-    if 'cezma' in only:
-        try:
-            prune_cezma_unavailable()
-        except Exception as _prune_err:
-            log('❌ cezma prune failed:', str(_prune_err)[:200])
-            summary['cezma_prune'] = {'error': str(_prune_err)[:200]}
     clean_catalog_names_and_images()
     normalize_physical_commissions()
     remove_blocked_products()
@@ -3750,7 +3654,7 @@ if __name__ == '__main__':
     # الاستضافة المشتركة بتختنق وقت النشر (الكتالوج لوحده ~10 ميجا)، وده بيظهر للزوار كـ 502 Bad Gateway.
     # بنقارن MD5 المحلي بآخر رفع ناجح (data/deploy_state.json) وبنرفع اللي اتغيّر بس.
     # نشر إجباري لكل الملفات: سيط الـ only بـ clean أو force.
-    SKIP_ON_HOST = {'data/deploy_state.json', 'data/gamsgo_probe.json', 'data/gamsgo_probe.request', 'data/_deploy_log.json', 'data/cezma_prune_state.json'}
+    SKIP_ON_HOST = {'data/deploy_state.json', 'data/gamsgo_probe.json', 'data/gamsgo_probe.request', 'data/_deploy_log.json'}
     # نشر كامل متحقَّق منه مع أي push فيه كود (code_deploy): حالة النشر ملف مشترك بيتكتب في كل فرع،
     # فماتقدرش تكشف إن تشغيل مجدول من فرع تاني (main) رفع نسخته القديمة من ملفات الواجهة فوق نسخة الفرع
     # (وده اللي ضرب شكل الموقع يومي 2026-10-04 و 2026-10-05). النشر الكامل مع الـpush يرجّع كل حاجة لمكانها.
