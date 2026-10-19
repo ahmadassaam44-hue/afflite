@@ -3974,7 +3974,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '') {
     // Display the existing Egyptian supplier rates, not one shared Vendoor table.
     // Non-EGP shipping/accounting behaviour is unchanged and still shows the currency warning.
     $ship_by_platform = [];
-    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'shopmart'] as $ship_platform) {
+    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'shopmart', 'cezma'] as $ship_platform) {
         $ship_by_platform[$ship_platform] = site_ship_map($ship_platform);
     }
     $ship_by_platform['safka'] = $ship_by_platform['safqa'];

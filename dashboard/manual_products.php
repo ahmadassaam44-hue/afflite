@@ -72,6 +72,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $status === '') {
         $msgs[] = 'اتحسبت ملامح ' . $r['ok'] . ' منتج، وفشل ' . $r['fail'] . '. اللي لسه مستنية: ' . manual_index_pending_count();
     } elseif ($action === 'delete') {
         manual_product_delete($_POST['id'] ?? '') ? $msgs[] = 'اتشال المنتج من الموقع' : $errs[] = 'المنتج ده مش موجود';
+    } elseif ($action === 'bulk_delete') {
+        $bulk_ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
+        $bulk_ok = 0;
+        foreach ($bulk_ids as $bulk_id) {
+            if (manual_product_delete((int)$bulk_id)) $bulk_ok++;
+        }
+        if ($bulk_ok) $msgs[] = 'اتشال ' . $bulk_ok . ' منتج من الموقع';
+        else $errs[] = 'مفيش منتجات محددة صالحة للحذف';
     }
 }
 
@@ -147,10 +155,18 @@ if ($status !== '') {
     $list = manual_product_list(200);
     echo '<div class="card"><h3>المنتجات اليدوية (' . count($list) . ')</h3>';
     if (!$list) echo '<p class="mut">مفيش منتجات يدوية لسه</p>';
+    if ($list) {
+        echo '<form id="mpBulkForm" method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">' . csrf_field()
+            . '<input type="hidden" name="action" value="bulk_delete">'
+            . '<label style="display:inline-flex;gap:6px;align-items:center;margin:0"><input type="checkbox" onchange="document.querySelectorAll(\'.mp-pick\').forEach(function(c){c.checked=this.checked;},this)"> تحديد الكل</label>'
+            . '<button class="btn sm outline" type="submit" style="color:#b91c1c" onclick="return confirm(\'حذف المنتجات المحددة نهائيًا؟\')">🗑 حذف المحدد</button>'
+            . '</form>';
+    }
     foreach ($list as $r) {
         $d = manual_decode_details($r);
         $imgs = manual_row_images($r, $d);
         echo '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid #e2e8f0">';
+        echo '<input type="checkbox" class="mp-pick" form="mpBulkForm" name="ids[]" value="' . (int)$r['id'] . '" style="width:18px;height:18px" aria-label="تحديد المنتج">';
         echo $imgs ? '<img src="' . esc(manual_img_src($imgs[0])) . '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px">' : '<span style="width:56px;height:56px;background:#f1f5f9;border-radius:6px;display:inline-block"></span>';
         echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ج.م — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
         echo '<a class="btn sm outline" href="?edit=' . (int)$r['id'] . '">تعديل</a> ';

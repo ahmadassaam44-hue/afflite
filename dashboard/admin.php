@@ -326,6 +326,40 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
         }
     }
 }
+// حذف جماعي: تحديد أكتر من منتج وحذفهم مرة واحدة (overrides مستقلة عن ملفات المصدر).
+if (isset($_POST['bulk_delete_products'])) {
+    $bulk_keys = is_array($_POST['bulk_keys'] ?? null) ? $_POST['bulk_keys'] : [];
+    if (!csrf_ok()) {
+        $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    } else {
+        $bulk_count = 0;
+        jupdate('product_overrides.json', function (&$ov) use ($bulk_keys, &$bulk_count) {
+            if (!is_array($ov)) $ov = [];
+            foreach ($bulk_keys as $raw_key) {
+                if (!is_string($raw_key) || strpos($raw_key, '#') === false) continue;
+                [$plat_part, $id_part] = explode('#', $raw_key, 2);
+                $plat_part = preg_replace('/[^a-z0-9_]/i', '', $plat_part);
+                $id_part = trim($id_part);
+                if ($id_part === '' || strlen($id_part) > 180 || !in_array($plat_part, wf_catalog_plats(), true)) continue;
+                $key = $plat_part . '#' . $id_part;
+                if (!isset($ov[$key]) || !is_array($ov[$key])) $ov[$key] = [];
+                if (empty($ov[$key]['deleted'])) {
+                    $ov[$key]['deleted'] = true;
+                    $ov[$key]['deleted_at'] = date('c');
+                    $bulk_count++;
+                }
+            }
+            return $bulk_count > 0;
+        }, []);
+        unset($GLOBALS['_WF_PRODUCT_OVERRIDES']);
+        if ($bulk_count > 0) {
+            log_audit('product_bulk_delete', '-', ['count' => $bulk_count]);
+            $msg = 'تم حذف ' . $bulk_count . ' منتج من المتجر نهائيًا ✅ (لم تُمس الطلبات أو السجلات التاريخية)';
+        } else {
+            $msg = 'مفيش منتجات محددة صالحة للحذف.';
+        }
+    }
+}
 // تحديث السعر السريع يكتب override دائمًا بدل تعديل ملفات المصدر التي يعاد بناؤها.
 if (isset($_POST['edit_prod_plat'], $_POST['edit_prod_id'], $_POST['new_price'])) {
     $eplat = is_scalar($_POST['edit_prod_plat']) ? preg_replace('/[^a-z0-9_]/i', '', (string)$_POST['edit_prod_plat']) : '';
@@ -1301,7 +1335,13 @@ elseif ($tab === 'products') {
     }
     echo '</select><button class="btn"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-search></use></svg> بحث</button></form>';
 
-    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-server-page="1" data-ui="u-5d985ec3 do"><tr><th>الصورة</th><th>اسم المنتج</th><th>القسم</th><th>المشاهدات </th><th>اللاڤ </th><th>إضافات السلة </th><th>الطلبات </th><th>نسبة التحويل</th><th>تعديل السعر الحالي</th><th>تحكم</th><th>معاينة</th></tr>';
+    echo '<form id="prodBulkForm" method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">' . csrf_field()
+        . '<input type="hidden" name="bulk_delete_products" value="1">'
+        . '<label style="display:inline-flex;gap:6px;align-items:center;margin:0"><input type="checkbox" onchange="document.querySelectorAll(\'.prod-pick\').forEach(function(c){c.checked=this.checked;},this)"> تحديد كل الصفحة</label>'
+        . '<button type="submit" class="btn sm" style="color:#b91c1c" onclick="return confirm(\'حذف كل المنتجات المحددة نهائيًا من المتجر؟ الطلبات والسجلات التاريخية مش هتتأثر.\')">🗑 حذف المحدد</button>'
+        . '</form>';
+
+    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-server-page="1" data-ui="u-5d985ec3 do"><tr><th>تحديد</th><th>الصورة</th><th>اسم المنتج</th><th>القسم</th><th>المشاهدات </th><th>اللاڤ </th><th>إضافات السلة </th><th>الطلبات </th><th>نسبة التحويل</th><th>تعديل السعر الحالي</th><th>تحكم</th><th>معاينة</th></tr>';
     foreach ($items as $p) {
         $pl_k = $p['_plat'] ?? resolve_plat($p['id'] ?? '', $plat_f);
         $uid = $pl_k . '#' . ($p['id'] ?? '');
@@ -1314,6 +1354,7 @@ elseif ($tab === 'products') {
         $conv_rate = $vw > 0 ? round($ord_c / $vw * 100, 1) : 0;
         $pr_now = list_price($p, $pl_k) ?: display_price($p, $pl_k);
         echo '<tr>';
+        echo '<td><input type="checkbox" class="prod-pick" form="prodBulkForm" name="bulk_keys[]" value="' . esc($uid) . '" aria-label="تحديد المنتج"></td>';
         echo '<td>' . ($img ? '<img alt="' . esc(aff_clean($p['name'] ?? 'صورة المنتج', true)) . '" loading="lazy" width="48" height="48" src="' . esc(asset_url($img)) . '" data-ui="u-25323dcd d2z d30 d2t d1u">' : '') . '</td>';
         echo '<td><b>' . esc(mb_substr(aff_clean($p['name'] ?? '', true), 0, 55)) . '</b><br><span class="mut" dir="ltr">#' . esc($p['id'] ?? '') . '</span></td>';
         $category_options = wf_category_canonical();

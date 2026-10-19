@@ -60,8 +60,10 @@ function site_shipping() {
 }
 
 function site_ship_regions($plat) {
+    // Cezma بيستخدم نفس جدول شحن TimeHand بالكامل (نفس أسعار المحافظات ونفس الملاحظات).
+    $lookup = (strtolower(trim((string)$plat)) === 'cezma') ? 'timehand' : $plat;
     foreach (site_shipping() as $p) {
-        if ($p['platform'] === $plat || ($plat === 'safqa' && $p['platform'] === 'safka')) return $p['regions'];
+        if ($p['platform'] === $lookup || ($lookup === 'safqa' && $p['platform'] === 'safka')) return $p['regions'];
     }
     $all = site_shipping();
     return $all ? $all[0]['regions'] : [];
