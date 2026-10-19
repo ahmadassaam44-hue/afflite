@@ -80,7 +80,10 @@ if ($is_new_v) {
 if (!isset($an['daily'][$today])) {
     $an['daily'][$today] = ['views' => 0, 'prod_views' => 0, 'uv' => [], 'carts' => 0, 'loves' => 0, 'checkouts' => 0, 'orders' => 0];
 }
-$an['daily'][$today]['uv'][$vid] = 1;
+if (!isset($an['daily'][$today]['uv']) || !is_array($an['daily'][$today]['uv'])) $an['daily'][$today]['uv'] = [];
+// الزائر اليومي الفريد بالـ IP: نفس الشخص (نفس الشبكة) = مرة واحدة في اليوم، ويتحسب من جديد تاني يوم
+$day_key = function_exists('wf_daily_visitor_key') ? wf_daily_visitor_key() : $vid;
+$an['daily'][$today]['uv'][$day_key] = 1;
 
 if ($type === 'page_view') {
     $an['total_pageviews'] = (int)($an['total_pageviews'] ?? 0) + 1;

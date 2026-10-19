@@ -170,6 +170,31 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
         $msg = 'تم تحديث حالة الطلب بنجاح ✅' . (isset($msg_extra) ? '<br>' . $msg_extra : '');
     }
 }
+// ملاحظة الإدارة على الطلب (سجل ملاحظات بتتراكم على الطلب نفسه)
+if (isset($_POST['order_note_idx'])) {
+    $ni = (int)$_POST['order_note_idx'];
+    $ntext = mb_substr(trim((string)($_POST['order_note_text'] ?? '')), 0, 500);
+    if ($ntext === '') {
+        $msg = 'اكتب نص الملاحظة الأول.';
+    } else {
+        $saved_note = false;
+        jupdate('orders.json', function (&$os) use ($ni, $ntext, &$saved_note) {
+            if (!is_array($os) || !isset($os[$ni])) return false;
+            if (!isset($os[$ni]['admin_notes']) || !is_array($os[$ni]['admin_notes'])) $os[$ni]['admin_notes'] = [];
+            $os[$ni]['admin_notes'][] = ['note' => $ntext, 'by' => admin_actor(), 'at' => date('c')];
+            $os[$ni]['admin_note'] = $ntext;
+            $saved_note = true;
+            return true;
+        }, []);
+        if ($saved_note) {
+            $msg = 'تم حفظ ملاحظة الإدارة ✅';
+            log_audit('order_note', '#' . $ni, ['len' => mb_strlen($ntext)]);
+        } else {
+            $msg = '⚠️ تعذر حفظ الملاحظة (الطلب غير موجود).';
+        }
+    }
+    $orders = jload('orders.json', []);
+}
 // إعادة محاولة حقيقية للطلب الاجتماعي المؤكد الذي فشل إرساله إلى Hevo.
 if (isset($_POST['retry_order'])) {
     $ri = (int)$_POST['retry_order'];
@@ -1160,7 +1185,7 @@ elseif ($tab === 'orders') {
     }
     echo '</div>';
 
-    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف / واتساب</th><th>العنوان</th><th>كمية</th><th>السعر</th><th>الشحن</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>حالة الإرسال للمصدر</th></tr>';
+    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف / واتساب</th><th>العنوان</th><th>كمية</th><th>السعر</th><th>الشحن</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
     foreach ($rev_orders as $idx => $o) {
         $ph_digits = preg_replace('/\D+/', '', (string)($o['cphone'] ?? ''));
         if (strpos($ph_digits, '01') === 0) $ph_wa = '2' . $ph_digits;
@@ -1181,6 +1206,15 @@ elseif ($tab === 'orders') {
         echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
         echo '</select></form></td>';
+        $an_list = (isset($o['admin_notes']) && is_array($o['admin_notes'])) ? $o['admin_notes'] : [];
+        echo '<td data-ui="u-5d985ec3 do">';
+        if ($an_list) {
+            $lastn = $an_list[count($an_list) - 1];
+            echo '<div class="mut" style="font-size:12px;margin-bottom:5px;max-width:190px;white-space:normal">' . esc(mb_substr((string)($lastn['note'] ?? ''), 0, 100));
+            if (count($an_list) > 1) echo ' <span style="opacity:.6">(+' . (count($an_list) - 1) . ')</span>';
+            echo '</div>';
+        }
+        echo '<form method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></td>';
         $sync_st = $o['source_sync_status'] ?? 'pending';
         $sync_badges = ['pending' => ['⏳ لم يُرسل', 'var(--amber-100)', 'var(--amber-600)'], 'processing' => [' جارٍ الإرسال', '#dbeafe', 'var(--electro-blue)'], 'sent' => [' أُرسل للمصدر', '#dcfce7', 'var(--tone-15803d)'], 'failed' => [' فشل الإرسال', '#fee2e2', 'var(--red-700)']];
         $snb = $sync_badges[$sync_st] ?? $sync_badges['pending'];

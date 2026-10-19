@@ -1831,20 +1831,31 @@ function cezma_recent_products($limit) {
 }
 // إغناء منتج سيزما بالتفاصيل الكاملة (كل الصور + الوصف + المواصفات) من API سيزما،
 // مع كاش على الاستضافة data/cezma_details/<id>.json عشان تتجاب مرة واحدة بس.
+if (!defined('CEZMA_DETAIL_CACHE_VER')) define('CEZMA_DETAIL_CACHE_VER', 2);
 function cezma_enrich_record($row) {
     $cid = (int)($row['extra']['cezma_id'] ?? $row['orig_id'] ?? 0);
     if ($cid <= 0) return $row;
     $cache_dir = DATA_DIR . '/cezma_details';
     $cache_file = $cache_dir . '/' . $cid . '.json';
-    $det = null;
-    if (is_file($cache_file)) $det = json_decode((string)@file_get_contents($cache_file), true);
+    $cached = null;
+    if (is_file($cache_file)) {
+        $tmp = json_decode((string)@file_get_contents($cache_file), true);
+        if (is_array($tmp)) $cached = $tmp;
+    }
+    // كاش نسخة 2 فيه ألوان/مقاسات منظمة. لو الكاش قديم (نسخة أقل) أو مش موجود بنجيب التفاصيل تاني.
+    $det = (is_array($cached) && (int)($cached['v'] ?? 0) >= CEZMA_DETAIL_CACHE_VER) ? $cached : null;
     if (!is_array($det)) {
         $ch = curl_init('https://api.cezma.cloud/api/products/' . $cid);
         curl_setopt_array($ch, [CURLOPT_HTTPHEADER => ['Platform: web', 'Accept: application/json'],
             CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10, CURLOPT_CONNECTTIMEOUT => 4]);
         $raw = curl_exec($ch); $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
         $j = ($raw && $code < 400) ? json_decode($raw, true) : null;
-        $prod = $j['data']['product'] ?? null;
+        // الـ API بيرجّع المنتج في data مباشرة، وبعض النسخ بترجّعه في data.product — بندعم الاتنين.
+        $prod = null;
+        if (is_array($j)) {
+            if (isset($j['data']['product']) && is_array($j['data']['product'])) $prod = $j['data']['product'];
+            elseif (isset($j['data']) && is_array($j['data']) && isset($j['data']['id'])) $prod = $j['data'];
+        }
         if (is_array($prod)) {
             $imgs = [];
             $image_values = [];
@@ -1856,24 +1867,39 @@ function cezma_enrich_record($row) {
                     $imgs[] = trim($im);
                 } elseif (is_array($im) || is_object($im)) {
                     $im = (array)$im;
-                    foreach (['image', 'image_url', 'url', 'src', 'path', 'original', 'full'] as $image_key) {
+                    foreach (['image', 'image_url', 'url', 'src', 'path', 'original', 'original_image', 'full'] as $image_key) {
                         if (!empty($im[$image_key]) && is_string($im[$image_key])) $imgs[] = trim($im[$image_key]);
                     }
                 }
             }
             $imgs = clean_product_images($imgs);
-            $feats = [];
+            $feats = []; $colors = []; $sizes = [];
             foreach (($prod['attributes'] ?? []) as $at) {
-                $pn = $at['parent']['name_ar'] ?? ''; $nm = $at['name_ar'] ?? '';
-                if ($nm !== '') $feats[] = ($pn !== '' ? $pn . ': ' : '') . $nm;
+                $pn = trim((string)($at['parent']['name_ar'] ?? ($at['parent']['name_en'] ?? '')));
+                $nm = trim((string)($at['name_ar'] ?? ($at['name_en'] ?? '')));
+                if ($nm === '') continue;
+                $feats[] = ($pn !== '' ? $pn . ': ' : '') . $nm;
+                $pnl = mb_strtolower($pn);
+                $hex = trim((string)($at['color'] ?? ''));
+                if ($hex !== '' || mb_strpos($pnl, 'لون') !== false || mb_strpos($pnl, 'color') !== false) {
+                    $colors[] = $hex !== '' ? $hex : $nm;
+                } elseif (mb_strpos($pnl, 'مقاس') !== false || mb_strpos($pnl, 'حجم') !== false || mb_strpos($pnl, 'size') !== false) {
+                    $sizes[] = $nm;
+                }
             }
             $uname = $prod['store']['username'] ?? '';
-            $det = ['desc' => (string)($prod['description_ar'] ?? ''), 'images' => $imgs,
-                'features' => implode("\n", $feats), 'seller' => (string)($prod['store']['name'] ?? ''),
+            $det = ['v' => CEZMA_DETAIL_CACHE_VER, 'desc' => (string)($prod['description_ar'] ?? ''),
+                'images' => $imgs, 'features' => implode("\n", $feats),
+                'colors' => array_values(array_unique(array_filter($colors, function ($x) { return $x !== ''; }))),
+                'sizes' => array_values(array_unique(array_filter($sizes, function ($x) { return $x !== ''; }))),
+                'seller' => (string)($prod['store']['name'] ?? ''),
                 'source_url' => $uname !== '' ? 'https://cezma.com/products/' . $uname . '/' . $cid : '',
                 'date' => (string)($prod['date'] ?? '')];
             if (!is_dir($cache_dir)) @mkdir($cache_dir, 0755, true);
             @file_put_contents($cache_file, json_encode($det, JSON_UNESCAPED_UNICODE));
+        } elseif (is_array($cached)) {
+            // فشل الجلب المؤقت: نستخدم الكاش القديم بدل ما نعرض بيانات ناقصة
+            $det = $cached;
         }
     }
     if (is_array($det)) {
@@ -1883,6 +1909,12 @@ function cezma_enrich_record($row) {
         $row['extra']['features'] = $det['features'] ?? '';
         $row['extra']['source_url'] = $det['source_url'] ?? '';
         $row['extra']['added_at'] = $det['date'] ?? '';
+        if (!empty($det['colors'])) {
+            $row['extra']['colors'] = array_values(array_unique(array_merge((array)($row['extra']['colors'] ?? []), (array)$det['colors'])));
+        }
+        if (!empty($det['sizes'])) {
+            $row['sizes'] = array_values(array_unique(array_merge((array)($row['sizes'] ?? []), (array)$det['sizes'])));
+        }
     }
     return $row;
 }
@@ -4764,6 +4796,20 @@ function visitor_id() {
     return $vid;
 }
 
+function wf_client_ip() {
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    if (strpos($ip, ',') !== false) $ip = trim(explode(',', $ip)[0]);
+    return substr($ip, 0, 45);
+}
+
+// مفتاح الزائر اليومي حسب الـ IP: نفس الشخص (نفس الشبكة) لو دخل 100 مرة في اليوم
+// يتحسب مرة واحدة، وبيتحسب من جديد تاني يوم. لو الـ IP مش متاح بنرجع لمعرّف الزائر.
+function wf_daily_visitor_key() {
+    $ip = function_exists('wf_client_ip') ? wf_client_ip() : (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    if ($ip !== '') return 'ip_' . $ip;
+    return function_exists('visitor_id') ? visitor_id() : '';
+}
+
 function visitor_meta() {
     $ua = strtolower((string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
     if (strpos($ua, 'ipad') !== false || strpos($ua, 'tablet') !== false) $dev = 'تابلت 📲';
@@ -4885,7 +4931,8 @@ function track_site_visit() {
         $an['daily'][$today] = ['views' => 0, 'uv' => [], 'carts' => 0, 'loves' => 0, 'orders' => 0];
     }
     $an['daily'][$today]['views'] = (int)($an['daily'][$today]['views'] ?? 0) + 1;
-    $an['daily'][$today]['uv'][$vid] = 1;
+    if (!isset($an['daily'][$today]['uv']) || !is_array($an['daily'][$today]['uv'])) $an['daily'][$today]['uv'] = [];
+    $an['daily'][$today]['uv'][wf_daily_visitor_key()] = 1;
     if (count($an['daily']) > 60) {
         $an['daily'] = array_slice($an['daily'], -60, null, true);
     }
@@ -4983,8 +5030,10 @@ function wf_event($type, $extra = []) {
     // احتساب فريد لكل (يوم، زائر، نوع، منتج)
     $is_new_visitor_today = false;
     $is_unique = true;
+    // الزائر اليومي بيتحسب بالـ IP (مرة واحدة في اليوم لكل شبكة) بدل معرّف الكوكيز
+    $dkey = function_exists('wf_daily_visitor_key') ? wf_daily_visitor_key() : (string)($row['vid'] ?? '');
 
-    jupdate('wf_events.json', function (&$ev) use ($row, &$is_new_visitor_today, &$is_unique) {
+    jupdate('wf_events.json', function (&$ev) use ($row, $dkey, &$is_new_visitor_today, &$is_unique) {
         if (!is_array($ev)) $ev = ['rows' => [], 'uniq' => [], 'visitors' => []];
         if (!isset($ev['rows']) || !is_array($ev['rows'])) $ev['rows'] = [];
         if (!isset($ev['uniq']) || !is_array($ev['uniq'])) $ev['uniq'] = [];
@@ -4995,12 +5044,12 @@ function wf_event($type, $extra = []) {
         else $ev['uniq'][$ukey] = 1;
 
         if (!isset($ev['visitors'][$row['day']])) $ev['visitors'][$row['day']] = [];
-        if (!isset($ev['visitors'][$row['day']][$row['vid']])) {
-            $ev['visitors'][$row['day']][$row['vid']] = ['first' => $row['at'], 'last' => $row['at'], 'hits' => 0];
+        if (!isset($ev['visitors'][$row['day']][$dkey])) {
+            $ev['visitors'][$row['day']][$dkey] = ['first' => $row['at'], 'last' => $row['at'], 'hits' => 0];
             $is_new_visitor_today = true;
         }
-        $ev['visitors'][$row['day']][$row['vid']]['last'] = $row['at'];
-        $ev['visitors'][$row['day']][$row['vid']]['hits']++;
+        $ev['visitors'][$row['day']][$dkey]['last'] = $row['at'];
+        $ev['visitors'][$row['day']][$dkey]['hits']++;
 
         $ev['rows'][] = $row;
         // سقف أقل: كل حدث بيعيد قراءة/كتابة الملف كله، فالحجم الكبير بيبطّل الموقع ويوقّعه
