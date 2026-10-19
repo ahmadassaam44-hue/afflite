@@ -14,6 +14,7 @@ on:
       - 'assets/**'
       - 'data/id_index.json'
       - 'updater/update_catalog.py'
+      - '.github/workflows/audit-cezma-pages.yml'
       - 'updater/category_overrides.json'
       - 'updater/visual_cezma.py'
       - 'updater/visual_features.py'
@@ -40,12 +41,12 @@ permissions:
 
 concurrency:
   group: catalog-update
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -55,7 +56,7 @@ jobs:
 
       - name: تثبيت Pillow (فهرس البحث بالصورة)
         if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}
-        run: pip install --quiet pillow
+        run: pip install --quiet pillow requests
 
       - name: استرجاع فهرس سيزما من الكاش (بيكمّل من آخر تشغيل)
         if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}
@@ -102,6 +103,15 @@ jobs:
             read -r -a only_args <<< "$ONLY_INPUT"
             python updater/update_catalog.py "${only_args[@]}"
           fi
+
+      - name: Upload Cezma page audit report
+        if: ${{ always() && hashFiles('data/cezma_page_audit_report.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cezma-product-page-audit-${{ github.run_id }}
+          path: data/cezma_page_audit_report.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: ✅ تحقّق وصول ملفات الموقع للاستضافة (تقرير)
         env:

@@ -3,15 +3,15 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 319698,
+   "remote_size": 330174,
    "on_server": true,
-   "local_size": 319698,
+   "local_size": 330174,
    "match": true
   },
   "index.php": {
-   "remote_size": 48163,
+   "remote_size": 50660,
    "on_server": true,
-   "local_size": 48163,
+   "local_size": 50660,
    "match": true
   },
   "data/catalog_counts.json": {
@@ -75,15 +75,15 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 300487,
+   "remote_size": 308919,
    "on_server": true,
-   "local_size": 300487,
+   "local_size": 308919,
    "match": true
   },
   "dashboard/layout.php": {
-   "remote_size": 33319,
+   "remote_size": 34375,
    "on_server": true,
-   "local_size": 33319,
+   "local_size": 34375,
    "match": true
   },
   "dashboard/marketer.php": {

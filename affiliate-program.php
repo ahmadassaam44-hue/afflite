@@ -14,8 +14,17 @@ $cta = $pr['cta_href'] . ($ref_param !== '' ? (strpos($pr['cta_href'], '?') !== 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0f172a">
-<title><?php echo esc($pr['title']); ?> | <?php echo esc(BRAND); ?></title>
+<title><?php echo esc($pr['title']); ?> | <?php echo esc(BRAND); ?> أفلييت</title>
 <meta name="description" content="<?php echo esc($pr['intro']); ?>">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://wafirinhalk.com/affiliate-program.php?p=<?php echo rawurlencode($key); ?>">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_EG">
+<meta property="og:site_name" content="<?php echo esc(BRAND); ?> أفلييت">
+<meta property="og:title" content="<?php echo esc($pr['title']); ?> | <?php echo esc(BRAND); ?> أفلييت">
+<meta property="og:description" content="<?php echo esc($pr['intro']); ?>">
+<meta property="og:url" content="https://wafirinhalk.com/affiliate-program.php?p=<?php echo rawurlencode($key); ?>">
+<meta property="og:image" content="https://wafirinhalk.com/assets/aff-<?php echo esc($key); ?>.png">
 <link rel="stylesheet" href="assets/style.css?v=20261012-aff-under-strip">
 </head>
 <body>

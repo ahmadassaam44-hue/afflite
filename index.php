@@ -276,8 +276,19 @@ $vis_mk = ($vis_ref !== '' && function_exists('find_marketer_by_code')) ? find_m
 <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><link rel="manifest" href="manifest.json"><?php echo tracking_pixels_html(); ?>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0f172a">
-<title><?php echo esc(BRAND); ?> | تسوق بأفضل الأسعار والدفع عند الاستلام</title>
-
+<title><?php echo esc(BRAND); ?> أفلييت | التسويق بالعمولة والربح من الإنترنت</title>
+<meta name="description" content="<?php echo esc(BRAND); ?> أفلييت: تعرّف على التسويق بالعمولة والربح من الإنترنت بمشاركة المنتجات وكسب عمولة على الطلبات المستلمة. لا يوجد دخل مضمون.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://wafirinhalk.com/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_EG">
+<meta property="og:site_name" content="<?php echo esc(BRAND); ?>">
+<meta property="og:title" content="<?php echo esc(BRAND); ?> أفلييت | التسويق بالعمولة والربح من الإنترنت">
+<meta property="og:description" content="منصة وفرنهالك أفلييت للتسوق والتسويق بالعمولة في مصر. اكتشف المنتجات والخدمات الرقمية أو ابدأ كمسوق وأنشئ متجرك ورابطك الخاص.">
+<meta property="og:url" content="https://wafirinhalk.com/">
+<meta property="og:image" content="https://wafirinhalk.com/assets/icon-512.png">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json"><?php echo json_encode(['@context' => 'https://schema.org', '@graph' => [['@type' => 'Organization', '@id' => 'https://wafirinhalk.com/#organization', 'name' => BRAND, 'url' => 'https://wafirinhalk.com/', 'logo' => ['@type' => 'ImageObject', 'url' => 'https://wafirinhalk.com/assets/icon-512.png'], 'email' => $top_email, 'telephone' => $top_phone, 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'EG']], ['@type' => 'WebSite', '@id' => 'https://wafirinhalk.com/#website', 'url' => 'https://wafirinhalk.com/', 'name' => BRAND, 'inLanguage' => 'ar-EG', 'publisher' => ['@id' => 'https://wafirinhalk.com/#organization'], 'potentialAction' => ['@type' => 'SearchAction', 'target' => 'https://wafirinhalk.com/?q={search_term_string}', 'query-input' => 'required name=search_term_string']]]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
 
 <link rel="preload" href="assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/style.css?v=20261014-redeploy"></head><body class="has-mob-nav">
@@ -406,7 +417,10 @@ echo wf_store_navbar($nav_items, ['lead' => $nav_lead]);
 </div>
 <?php endif; ?>
 </div>
-
+<section class="section" aria-labelledby="affiliate-intro-title">
+  <h2 id="affiliate-intro-title">وفرنهالك أفلييت — منصة تسويق بالعمولة في مصر</h2>
+  <a class="btn sm outline" href="affiliate-register.php">اعرف تفاصيل برنامج وفرنهالك أفلييت</a>
+</section>
 
 <!-- VALUE PROPS STRIP -->
 <div class="value-strip">

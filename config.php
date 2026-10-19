@@ -1387,25 +1387,58 @@ function stats() { return function_exists('site_stats') ? site_stats() : jload('
 // قراءة سريعة للمنتجات في صفحات القوائم والفلاتر (باستخدام lite_*.json)
 // ===== تحكم الأدمن في المنتجات (إخفاء / تثبيت / تعديل عنوان أو صورة) — data/product_overrides.json =====
 function product_overrides() {
-    static $ov = null;
-    if ($ov === null) { $ov = jload('product_overrides.json', []); if (!is_array($ov)) $ov = []; }
-    return $ov;
+    if (!isset($GLOBALS['_WF_PRODUCT_OVERRIDES']) || !is_array($GLOBALS['_WF_PRODUCT_OVERRIDES'])) {
+        $ov = jload('product_overrides.json', []);
+        $GLOBALS['_WF_PRODUCT_OVERRIDES'] = is_array($ov) ? $ov : [];
+    }
+    return $GLOBALS['_WF_PRODUCT_OVERRIDES'];
+}
+function apply_product_override_record($row, $key, $show_hidden = false) {
+    if (!is_array($row)) return null;
+    $override = product_overrides()[$key . '#' . (string)($row['id'] ?? '')] ?? [];
+    if (!empty($override['deleted'])) return null;
+    if (!empty($override['hidden'])) {
+        if (!$show_hidden) return null;
+        $row['_hidden'] = true;
+    }
+    if (array_key_exists('title', $override)) $row['name'] = $override['title'];
+    if (array_key_exists('name', $override)) $row['name'] = $override['name'];
+    if (array_key_exists('category', $override)) $row['category'] = $override['category'];
+    if (array_key_exists('description', $override)) $row['desc'] = $override['description'];
+    if (array_key_exists('sku', $override)) $row['sku'] = $override['sku'];
+    if (array_key_exists('price', $override)) {
+        $row['price'] = $override['price'];
+        $row['price_text'] = $override['price'] . ' ' . ($row['currency'] ?? 'جنيه');
+    }
+    if (array_key_exists('images', $override) && is_array($override['images'])) $row['images'] = $override['images'];
+    elseif (!empty($override['image'])) $row['images'] = array_values(array_unique(array_merge([$override['image']], (array)($row['images'] ?? []))));
+    if (array_key_exists('sizes', $override)) $row['sizes'] = (array)$override['sizes'];
+    if (array_key_exists('colors', $override)) {
+        if (!isset($row['extra']) || !is_array($row['extra'])) $row['extra'] = [];
+        $row['extra']['colors'] = (array)$override['colors'];
+    }
+    if (array_key_exists('features', $override)) {
+        if (!isset($row['extra']) || !is_array($row['extra'])) $row['extra'] = [];
+        $row['extra']['features'] = (string)$override['features'];
+    }
+    if (array_key_exists('specifications', $override)) {
+        if (!isset($row['extra']) || !is_array($row['extra'])) $row['extra'] = [];
+        $row['extra']['specifications'] = (string)$override['specifications'];
+    }
+    if (array_key_exists('variants', $override)) {
+        if (!isset($row['extra']) || !is_array($row['extra'])) $row['extra'] = [];
+        $row['extra']['variants_detailed'] = (array)$override['variants'];
+    }
+    if (!empty($override['pinned'])) $row['_pinned'] = true;
+    return $row;
 }
 function apply_product_overrides($all, $key, $show_hidden = false) {
-    $ov = product_overrides();
     $out = []; $pinned = [];
-    foreach ($all as $x) {
-        // كل المنتجات تُعامل كإنتاج مفتوح؛ بيانات المخزون لا تُخفي المنتج عن المتجر.
-        $k = $key . '#' . (string)($x['id'] ?? '');
-        if (!$ov) { $out[] = $x; continue; }
-        if (isset($ov[$k])) {
-            $o = $ov[$k];
-            if (!empty($o['hidden'])) { if (!$show_hidden) continue; $x['_hidden'] = true; }
-            if (!empty($o['title'])) $x['name'] = $o['title'];
-            if (!empty($o['image'])) { $imgs = (array)($x['images'] ?? []); array_unshift($imgs, $o['image']); $x['images'] = array_values(array_unique($imgs)); }
-            if (!empty($o['pinned'])) { $x['_pinned'] = true; $pinned[] = $x; continue; }
-        }
-        $out[] = $x;
+    foreach ($all as $row) {
+        $row = apply_product_override_record($row, $key, $show_hidden);
+        if (!is_array($row)) continue;
+        if (!empty($row['_pinned'])) { $pinned[] = $row; continue; }
+        $out[] = $row;
     }
     return array_merge($pinned, $out);
 }
@@ -1452,7 +1485,7 @@ function platform_products_lite($key) {
         $all = manual_products_all();
         foreach ($all as &$x) $x = normalize_product_record($x, 'manual');
         unset($x);
-        return $cache[$key] = $all;
+        return $cache[$key] = apply_product_overrides($all, 'manual');
     }
     if ($key === 'cezma') {
         $all = cezma_all_products();
@@ -1536,7 +1569,7 @@ function cezma_all_products() {
         $rows = json_decode((string)@file_get_contents($f), true);
         if (is_array($rows)) $all = array_merge($all, $rows);
     }
-    return $all;
+    return $all = cezma_filter_available_rows($all);
 }
 
 // فهرس مشتق من الشظايا يبنيه updater؛ لا نستخدمه إلا إذا طابق توقيع المصدر الحالي.
@@ -1749,6 +1782,7 @@ function cezma_indexed_products($cat, $q) {
             unset($row['__wf_cezma_order']);
             $row = normalize_product_record($row, 'cezma');
             $row['category'] = wf_cezma_site_category($row['category'] ?? '', $row['name'] ?? '');
+            if (!$row || !cezma_filter_available_rows([$row])) continue;
             // تطبيق المطابقة الدقيقة فورًا يقلّل الذاكرة في البحث واسع المرشحين؛ وتُعاد الفلاتر لاحقًا كحارس.
             if ($q !== '' && mb_stripos(($row['name'] ?? '') . ' ' . ($row['sku'] ?? ''), $q) === false) continue;
             $row['__wf_cezma_order'] = $order;
@@ -1822,6 +1856,7 @@ function cezma_recent_products($limit) {
             if (!is_array($row)) continue;
             $row = normalize_product_record($row, 'cezma');
             $row['category'] = wf_cezma_site_category($row['category'] ?? '', $row['name'] ?? '');
+            if (!cezma_filter_available_rows([$row])) continue;
             $newest_first[] = $row;
         }
     }
@@ -1829,84 +1864,191 @@ function cezma_recent_products($limit) {
     $tail = array_reverse(array_slice($newest_first, 0, $limit));
     return apply_product_overrides($tail, 'cezma');
 }
+// IDs discovered from live unavailable-product reports; kept hidden even if the source feed still lists them.
+function cezma_unavailable_ids() {
+    if (isset($GLOBALS['_CEZMA_UNAVAILABLE_IDS']) && is_array($GLOBALS['_CEZMA_UNAVAILABLE_IDS'])) return $GLOBALS['_CEZMA_UNAVAILABLE_IDS'];
+    $ids = ['337112' => true, '337114' => true];
+    $saved = jload('cezma_unavailable.json', []);
+    if (is_array($saved)) {
+        foreach ($saved as $key => $value) {
+            $id = is_int($key) ? (string)$key : (string)$key;
+            if (is_int($value) || ctype_digit((string)$value)) $id = (string)$value;
+            $id = preg_replace('/^cezma-/', '', trim($id));
+            if ($id !== '' && ctype_digit($id)) $ids[$id] = true;
+        }
+    }
+    $GLOBALS['_CEZMA_UNAVAILABLE_IDS'] = $ids;
+    return $ids;
+}
+function cezma_is_unavailable_id($id) {
+    $id = preg_replace('/^cezma-/', '', trim((string)$id));
+    return $id !== '' && isset(cezma_unavailable_ids()[$id]);
+}
+function cezma_mark_unavailable_id($id) {
+    $id = preg_replace('/^cezma-/', '', trim((string)$id));
+    if ($id === '' || !ctype_digit($id)) return;
+    jupdate('cezma_unavailable.json', function (&$ids) use ($id) {
+        if (!is_array($ids)) $ids = [];
+        $ids[$id] = date('c');
+        return true;
+    }, []);
+    unset($GLOBALS['_CEZMA_UNAVAILABLE_IDS']);
+}
+function cezma_contains_unavailable_notice($value) {
+    $needle = preg_replace('/\\s+/u', '', 'هذا المنتج غير متوفر في الوقت الحالي');
+    if (is_string($value)) {
+        $text = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace('ـ', '', $text);
+        return mb_stripos(preg_replace('/\\s+/u', '', $text), $needle) !== false;
+    }
+    if (is_array($value)) foreach ($value as $child) if (cezma_contains_unavailable_notice($child)) return true;
+    return false;
+}
+function cezma_filter_available_rows($rows) {
+    if (!is_array($rows)) return [];
+    $ids = cezma_unavailable_ids();
+    return array_values(array_filter($rows, function ($row) use ($ids) {
+        if (!is_array($row)) return false;
+        $id = preg_replace('/^cezma-/', '', (string)($row['extra']['cezma_id'] ?? $row['orig_id'] ?? $row['id'] ?? ''));
+        return !isset($ids[$id]) && !cezma_contains_unavailable_notice($row);
+    }));
+}
+function cezma_collect_image_urls($value, &$out) {
+    if (is_string($value)) {
+        $url = trim($value);
+        if (preg_match('~^https?://~i', $url) && !in_array($url, $out, true)) $out[] = $url;
+        return;
+    }
+    if (!is_array($value)) return;
+    foreach (['url', 'image', 'image_url', 'src', 'path', 'original', 'full', 'thumbnail', 'large'] as $key) {
+        if (isset($value[$key])) cezma_collect_image_urls($value[$key], $out);
+    }
+    foreach ($value as $key => $child) if (!in_array($key, ['url', 'image', 'image_url', 'src', 'path', 'original', 'full', 'thumbnail', 'large'], true)) cezma_collect_image_urls($child, $out);
+}
+function cezma_variant_text($value) {
+    if (is_string($value) || is_numeric($value)) return trim((string)$value);
+    if (!is_array($value)) return '';
+    foreach (['name_ar', 'value_ar', 'label_ar', 'name', 'value', 'label', 'title'] as $key) {
+        if (isset($value[$key]) && (is_string($value[$key]) || is_numeric($value[$key]))) return trim((string)$value[$key]);
+    }
+    return '';
+}
+function cezma_extract_variant_options($product) {
+    $colors = []; $sizes = []; $variants = [];
+    $add = function ($label, $value) use (&$colors, &$sizes) {
+        $label = mb_strtolower((string)$label); $value = trim((string)$value);
+        if ($value === '' || $value === '—') return;
+        if (preg_match('/لون|ألوان|الوان|color|colour/u', $label) && !in_array($value, $colors, true)) $colors[] = $value;
+        if (preg_match('/مقاس|مقاسات|حجم|size/u', $label) && !in_array($value, $sizes, true)) $sizes[] = $value;
+    };
+    foreach ((array)($product['attributes'] ?? []) as $attribute) {
+        if (!is_array($attribute)) continue;
+        $parent = cezma_variant_text($attribute['parent'] ?? $attribute['attribute'] ?? []);
+        if ($parent === '') $parent = cezma_variant_text($attribute['parent_name_ar'] ?? $attribute['label_ar'] ?? $attribute['key'] ?? '');
+        $values = $attribute['values'] ?? $attribute['options'] ?? null;
+        if ($parent === '' && is_array($values)) $parent = cezma_variant_text($attribute['name_ar'] ?? $attribute['name'] ?? $attribute['label'] ?? '');
+        if (is_array($values)) {
+            foreach ($values as $option) $add($parent, cezma_variant_text($option));
+        } else {
+            $value = cezma_variant_text($attribute['value'] ?? $attribute['value_ar'] ?? $attribute['name_ar'] ?? $attribute['label'] ?? '');
+            $add($parent, $value);
+        }
+    }
+    foreach (['colors', 'color_options', 'available_colors'] as $key) foreach ((array)($product[$key] ?? []) as $value) {
+        $v = cezma_variant_text($value); if ($v !== '' && !in_array($v, $colors, true)) $colors[] = $v;
+    }
+    foreach (['sizes', 'size_options', 'available_sizes'] as $key) foreach ((array)($product[$key] ?? []) as $value) {
+        $v = cezma_variant_text($value); if ($v !== '' && !in_array($v, $sizes, true)) $sizes[] = $v;
+    }
+    foreach (['variants', 'variations', 'product_variants', 'variant_options'] as $key) {
+        foreach ((array)($product[$key] ?? []) as $variant) {
+            if (!is_array($variant)) continue;
+            $color = cezma_variant_text($variant['color'] ?? $variant['colour'] ?? $variant['color_name'] ?? $variant['color_ar'] ?? '');
+            $size = cezma_variant_text($variant['size'] ?? $variant['size_name'] ?? $variant['size_ar'] ?? '');
+            if ($color !== '' && !in_array($color, $colors, true)) $colors[] = $color;
+            if ($size !== '' && !in_array($size, $sizes, true)) $sizes[] = $size;
+            $image_urls = []; cezma_collect_image_urls($variant, $image_urls);
+            if ($color !== '' || $size !== '') $variants[] = ['color' => $color, 'size' => $size, 'price' => $variant['price'] ?? '', 'image' => $image_urls[0] ?? ''];
+        }
+    }
+    return ['colors' => array_values(array_unique($colors)), 'sizes' => array_values(array_unique($sizes)), 'variants' => $variants];
+}
+
 // إغناء منتج سيزما بالتفاصيل الكاملة (كل الصور + الوصف + المواصفات) من API سيزما،
 // مع كاش على الاستضافة data/cezma_details/<id>.json عشان تتجاب مرة واحدة بس.
 if (!defined('CEZMA_DETAIL_CACHE_VER')) define('CEZMA_DETAIL_CACHE_VER', 2);
 function cezma_enrich_record($row) {
     $cid = (int)($row['extra']['cezma_id'] ?? $row['orig_id'] ?? 0);
     if ($cid <= 0) return $row;
+    if (cezma_is_unavailable_id($cid)) return null;
+
     $cache_dir = DATA_DIR . '/cezma_details';
     $cache_file = $cache_dir . '/' . $cid . '.json';
-    $cached = null;
-    if (is_file($cache_file)) {
-        $tmp = json_decode((string)@file_get_contents($cache_file), true);
-        if (is_array($tmp)) $cached = $tmp;
+    $det = null;
+    if (is_file($cache_file)) $det = json_decode((string)@file_get_contents($cache_file), true);
+    if (is_array($det) && cezma_contains_unavailable_notice($det)) {
+        cezma_mark_unavailable_id($cid);
+        return null;
     }
-    // كاش نسخة 2 فيه ألوان/مقاسات منظمة. لو الكاش قديم (نسخة أقل) أو مش موجود بنجيب التفاصيل تاني.
-    $det = (is_array($cached) && (int)($cached['v'] ?? 0) >= CEZMA_DETAIL_CACHE_VER) ? $cached : null;
-    if (!is_array($det)) {
+    // Refresh old detail-cache records once so cached items gain the full image and variant metadata.
+    if (!is_array($det) || (int)($det['schema_version'] ?? 0) < 2) {
         $ch = curl_init('https://api.cezma.cloud/api/products/' . $cid);
         curl_setopt_array($ch, [CURLOPT_HTTPHEADER => ['Platform: web', 'Accept: application/json'],
             CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 10, CURLOPT_CONNECTTIMEOUT => 4]);
-        $raw = curl_exec($ch); $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-        $j = ($raw && $code < 400) ? json_decode($raw, true) : null;
-        // الـ API بيرجّع المنتج في data مباشرة، وبعض النسخ بترجّعه في data.product — بندعم الاتنين.
-        $prod = null;
-        if (is_array($j)) {
-            if (isset($j['data']['product']) && is_array($j['data']['product'])) $prod = $j['data']['product'];
-            elseif (isset($j['data']) && is_array($j['data']) && isset($j['data']['id'])) $prod = $j['data'];
+        $raw = curl_exec($ch);
+        $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        $j = $raw ? json_decode($raw, true) : null;
+        if (is_array($j) && cezma_contains_unavailable_notice($j)) {
+            cezma_mark_unavailable_id($cid);
+            return null;
         }
+        $prod = $j['data']['product'] ?? null;
         if (is_array($prod)) {
-            $imgs = [];
-            $image_values = [];
-            foreach (['images', 'product_images', 'gallery', 'photos', 'image'] as $image_field) {
-                if (isset($prod[$image_field])) $image_values = array_merge($image_values, (array)$prod[$image_field]);
+            if (cezma_contains_unavailable_notice($prod)) {
+                cezma_mark_unavailable_id($cid);
+                return null;
             }
-            foreach ($image_values as $im) {
-                if (is_string($im) && trim($im) !== '') {
-                    $imgs[] = trim($im);
-                } elseif (is_array($im) || is_object($im)) {
-                    $im = (array)$im;
-                    foreach (['image', 'image_url', 'url', 'src', 'path', 'original', 'original_image', 'full'] as $image_key) {
-                        if (!empty($im[$image_key]) && is_string($im[$image_key])) $imgs[] = trim($im[$image_key]);
-                    }
-                }
+            $imgs = [];
+            foreach (['images', 'product_images', 'gallery', 'photos', 'image', 'variants', 'variations', 'product_variants'] as $image_field) {
+                if (isset($prod[$image_field])) cezma_collect_image_urls($prod[$image_field], $imgs);
             }
             $imgs = clean_product_images($imgs);
             $feats = []; $colors = []; $sizes = [];
             foreach (($prod['attributes'] ?? []) as $at) {
-                $pn = trim((string)($at['parent']['name_ar'] ?? ($at['parent']['name_en'] ?? '')));
-                $nm = trim((string)($at['name_ar'] ?? ($at['name_en'] ?? '')));
-                if ($nm === '') continue;
-                $feats[] = ($pn !== '' ? $pn . ': ' : '') . $nm;
-                $pnl = mb_strtolower($pn);
-                $hex = trim((string)($at['color'] ?? ''));
-                if ($hex !== '' || mb_strpos($pnl, 'لون') !== false || mb_strpos($pnl, 'color') !== false) {
-                    $colors[] = $hex !== '' ? $hex : $nm;
-                } elseif (mb_strpos($pnl, 'مقاس') !== false || mb_strpos($pnl, 'حجم') !== false || mb_strpos($pnl, 'size') !== false) {
-                    $sizes[] = $nm;
-                }
+                if (!is_array($at)) continue;
+                $pn = cezma_variant_text($at['parent'] ?? $at['attribute'] ?? []);
+                $nm = cezma_variant_text($at['value'] ?? $at['value_ar'] ?? $at['name_ar'] ?? $at['label'] ?? '');
+                if ($nm !== '') $feats[] = ($pn !== '' ? $pn . ': ' : '') . $nm;
             }
+            $options = cezma_extract_variant_options($prod);
             $uname = $prod['store']['username'] ?? '';
-            $det = ['v' => CEZMA_DETAIL_CACHE_VER, 'desc' => (string)($prod['description_ar'] ?? ''),
-                'images' => $imgs, 'features' => implode("\n", $feats),
-                'colors' => array_values(array_unique(array_filter($colors, function ($x) { return $x !== ''; }))),
-                'sizes' => array_values(array_unique(array_filter($sizes, function ($x) { return $x !== ''; }))),
+            $det = ['schema_version' => 2, 'desc' => (string)($prod['description_ar'] ?? ''), 'images' => $imgs,
+                'features' => implode("\n", array_values(array_unique($feats))), 'colors' => $options['colors'],
+                'sizes' => $options['sizes'], 'variants' => $options['variants'],
                 'seller' => (string)($prod['store']['name'] ?? ''),
                 'source_url' => $uname !== '' ? 'https://cezma.com/products/' . $uname . '/' . $cid : '',
                 'date' => (string)($prod['date'] ?? '')];
             if (!is_dir($cache_dir)) @mkdir($cache_dir, 0755, true);
             @file_put_contents($cache_file, json_encode($det, JSON_UNESCAPED_UNICODE));
-        } elseif (is_array($cached)) {
-            // فشل الجلب المؤقت: نستخدم الكاش القديم بدل ما نعرض بيانات ناقصة
-            $det = $cached;
+        } elseif ($code === 404) {
+            // A true 404 is an unavailable product; transient network/5xx failures are not.
+            cezma_mark_unavailable_id($cid);
+            return null;
         }
     }
     if (is_array($det)) {
+        if (cezma_contains_unavailable_notice($det)) {
+            cezma_mark_unavailable_id($cid);
+            return null;
+        }
         if (!empty($det['desc'])) $row['desc'] = $det['desc'];
-        if (!empty($det['images'])) $row['images'] = $det['images'];
+        if (!empty($det['images'])) $row['images'] = clean_product_images(array_merge((array)($row['images'] ?? []), (array)$det['images']));
         if (!empty($det['seller'])) $row['seller'] = $det['seller'];
+        if (!empty($det['sizes'])) $row['sizes'] = array_values(array_unique(array_merge((array)($row['sizes'] ?? []), (array)$det['sizes'])));
         $row['extra']['features'] = $det['features'] ?? '';
+        $row['extra']['colors'] = array_values(array_unique(array_merge((array)($row['extra']['colors'] ?? []), (array)($det['colors'] ?? []))));
+        if (!empty($det['variants'])) $row['extra']['variants_detailed'] = $det['variants'];
         $row['extra']['source_url'] = $det['source_url'] ?? '';
         $row['extra']['added_at'] = $det['date'] ?? '';
         if (!empty($det['colors'])) {
@@ -2058,10 +2200,14 @@ function find_product_by_id($id, $plat_hint = '') {
             if (is_array($row)) {
                 if ($pl === 'cezma') {
                     $row = cezma_enrich_record($row);
+                    if (!is_array($row)) return $memo[$mkey] = null;
                     // نفس توحيد الأقسام اللي بيحصل في قوائم المنتجات (صفحة المنتج بتقرا السجل الخام)
                     $row['category'] = wf_cezma_site_category($row['category'] ?? '', $row['name'] ?? '');
                 }
-                return $memo[$mkey] = normalize_product_record(with_detail_imgs($row, $pl), $pl);
+                $row = normalize_product_record(with_detail_imgs($row, $pl), $pl);
+                $row = apply_product_override_record($row, $pl);
+                if (!is_array($row)) return $memo[$mkey] = null;
+                return $memo[$mkey] = $row;
             }
         }
     }
@@ -4771,6 +4917,12 @@ function render_product_details_html($p, $plat = '', $opts = []) {
                 <p data-ui="u-33e0306e ufu udg uek ugw"><?php echo is_array($f) ? esc(mb_substr($f['a'] ?? $f['answer'] ?? '', 0, 350)) : esc(mb_substr((string)$f, 0, 250)); ?></p>
             </div>
             <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if (!empty($ex['specifications']) || !empty($ex['features'])): ?>
+        <div class="wf-admin-product-specs" style="margin:14px 0;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff">
+            <?php if (!empty($ex['features'])): ?><h4>المميزات</h4><div><?php echo nl2br(esc((string)$ex['features'])); ?></div><?php endif; ?>
+            <?php if (!empty($ex['specifications'])): ?><h4>المواصفات</h4><div><?php echo nl2br(esc((string)$ex['specifications'])); ?></div><?php endif; ?>
         </div>
         <?php endif; ?>
         <?php if (empty($opts['hide_media']) && function_exists('wf_product_media_html')) echo wf_product_media_html($p, $in_root, $plat); ?>
