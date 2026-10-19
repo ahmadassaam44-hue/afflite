@@ -56,7 +56,7 @@ jobs:
 
       - name: تثبيت Pillow (فهرس البحث بالصورة)
         if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}
-        run: pip install --quiet pillow
+        run: pip install --quiet pillow requests
 
       - name: استرجاع فهرس سيزما من الكاش (بيكمّل من آخر تشغيل)
         if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}

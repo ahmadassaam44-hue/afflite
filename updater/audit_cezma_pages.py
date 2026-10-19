@@ -12,10 +12,17 @@ import os
 import re
 import sys
 import time
+import threading
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
 
+try:
+    import requests
+except ImportError:
+    requests = None
+
+_HTTP_LOCAL = threading.local()
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
@@ -30,19 +37,41 @@ USER_AGENT = ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
 
 
 def fetch_bytes(url, timeout=25, limit=2_000_000):
-    req = urllib.request.Request(url, headers={
+    headers = {
         'User-Agent': USER_AGENT,
         'Accept': 'text/html,application/xml,application/xhtml+xml,*/*;q=0.8',
         'Accept-Language': 'ar,en;q=0.8',
-    })
+    }
     last_error = None
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                body = response.read(limit + 1)
-                if len(body) > limit:
-                    raise RuntimeError(f'response exceeded {limit} byte audit limit: {url}')
-                return response.status, body
+            if requests is not None:
+                session = getattr(_HTTP_LOCAL, 'session', None)
+                if session is None:
+                    session = requests.Session()
+                    _HTTP_LOCAL.session = session
+                response = session.get(url, headers=headers, timeout=timeout, stream=True)
+                try:
+                    if response.status_code != 200:
+                        if response.status_code not in (408, 425, 429, 500, 502, 503, 504):
+                            return response.status_code, b''
+                        last_error = RuntimeError('HTTP ' + str(response.status_code))
+                    else:
+                        body = bytearray()
+                        for chunk in response.iter_content(chunk_size=65536):
+                            body.extend(chunk)
+                            if len(body) > limit:
+                                raise RuntimeError(f'response exceeded {limit} byte audit limit: {url}')
+                        return response.status_code, bytes(body)
+                finally:
+                    response.close()
+            else:
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=timeout) as response:
+                    body = response.read(limit + 1)
+                    if len(body) > limit:
+                        raise RuntimeError(f'response exceeded {limit} byte audit limit: {url}')
+                    return response.status, body
         except urllib.error.HTTPError as error:
             last_error = error
             if error.code not in (408, 425, 429, 500, 502, 503, 504):

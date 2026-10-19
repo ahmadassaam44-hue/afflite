@@ -33,6 +33,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install HTTP keep-alive client
+        run: pip install --quiet requests
+
       - name: Scan every saved product page and publish removals
         id: audit
         run: python updater/audit_cezma_pages.py
