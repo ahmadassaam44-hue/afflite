@@ -254,7 +254,6 @@ $grand = array_sum(array_map(function ($o) { return $o['total'] ?? 0; }, $orders
 layout_top('طلباتي ومتابعة الشحن', 'orders');
 if ($cust_msg) echo '<div class="ok" data-ui="u-f2235598 d1r">' . esc($cust_msg) . '</div>';
 echo '<div class="kpis"><div class="kpi"><b>' . count($orders) . '</b><span>إجمالي الطلبات</span></div><div class="kpi"><b>' . (count(wf_ui_currencies($orders)) > 1 ? 'عملات متعددة' : number_format($grand,2) . ' ' . esc(wf_ui_currencies($orders)[0] ?? 'ج.م')) . '</b><span>إجمالي القيمة</span></div></div>';
-echo wf_ui_currency_notice($orders) . wf_ui_shipping_currency_notice($orders);
 $steps = ['pending' => 'جديد', 'confirmed' => 'مؤكد', 'shipped' => 'مشحون', 'delivered' => 'تم التوصيل'];
 echo '<div class="card"><h2 data-ui="u-e205cc36 d5l dc d1r">سجل الطلبات ومتابعة الحالة</h2>';
 if (!$orders) {

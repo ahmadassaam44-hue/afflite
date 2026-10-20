@@ -434,6 +434,9 @@ assert.ok(/function eoSetShippingPlatform\(platform,country,productShip\)/.test(
 assert.ok(/eoSetShippingPlatform\(e\.plat\|\|"",e\.country\|\|"",e\.ship_fee\)/.test(uijs),'the easy-order dialog must pass the product country and its own shipping fee');
 // تحذير «عملة المنتج تختلف عن رسوم الشحن المصرية» اتشال من النافذة بقرار الإدارة
 assert.ok(!/eoCurrencyNotice/.test(uijs)&&!/eoCurrencyNotice/.test(src('config.php')),'the removed currency-mismatch warning must not come back');
+// رسالتا خلط العملات (سلة/طلبات/لوحات) اتشالوا كمان بقرار الإدارة 2026-10-21
+for(const file of ['ui-components.php','dashboard/admin.php','dashboard/cart.php','dashboard/checkout_cart.php','dashboard/marketer.php','dashboard/orders.php'])
+  assert.ok(!/wf_ui_(shipping_)?currency_notice/.test(src(file)),file+' must not render the removed mixed-currency notices');
 // سعر شحن المنتج بيكتب على كل الخيارات (فالـ total يتحسب بيه) — وفاضي = جدول المناطق زي الأول
 assert.ok(/var fixed=\(productShip===null\|\|productShip===undefined\|\|productShip===""\)\?null:Number\(productShip\);/.test(uijs),'ui.js must ignore an absent/blank product shipping fee');
 assert.ok(/var fee=\(fixed!==null\)\?fixed:Number\(rates\[region\]\);/.test(uijs),'every region option must show the product fee when it is set');

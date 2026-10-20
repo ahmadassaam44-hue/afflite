@@ -538,23 +538,10 @@ function wf_ui_currencies($rows) {
     foreach ($rows as $row) $currencies[wf_ui_currency($row)] = true;
     return array_keys($currencies);
 }
-function wf_ui_currency_notice($rows) {
-    $currencies = wf_ui_currencies($rows);
-    if (count($currencies) < 2) return '';
-    return '<div class="alert warning">' . wf_icon('warning') . '<p>توجد أكثر من عملة (' . esc(implode('، ', $currencies)) . '). المبالغ معروضة بعملة كل منتج؛ لا يتم تحويل العملات أو اعتبار مجموعها إجمالياً مالياً موحّداً.</p></div>';
-}
-
 function wf_ui_currency_label($currency) {
     $aliases = ['EGP'=>'ج.م', 'جنيه'=>'ج.م', 'جنيه مصري'=>'ج.م', 'درهم'=>'د.إ', 'AED'=>'د.إ', 'SAR'=>'ر.س', 'ريال سعودي'=>'ر.س', 'JOD'=>'د.أ', 'OMR'=>'ر.ع'];
     return $aliases[trim((string)$currency)] ?? trim((string)$currency);
 }
-function wf_ui_shipping_currency_notice($rows) {
-    foreach ($rows as $row) {
-        if (wf_ui_currency($row) !== 'ج.م') return '<div class="alert warning">' . wf_icon('info') . '<p>عملة أحد المنتجات ليست الجنيه المصري، بينما رسوم الشحن والمحفظة مسجلة بالجنيه. لا تحوّل الواجهة العملات؛ راجع الإدارة قبل الاعتماد المالي لهذا الطلب.</p></div>';
-    }
-    return '';
-}
-
 function wf_ui_money($amount) {
     $value = (float)$amount;
     // Formatting only; do not round/reprice persisted values or commission calculations.

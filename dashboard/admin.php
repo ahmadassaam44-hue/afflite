@@ -1253,7 +1253,6 @@ elseif ($tab === 'orders') {
         });
     }
 
-    echo wf_ui_currency_notice($rev_orders);
     echo '<div class="adm-box">';
     echo '<div data-ui="u-ccc8f25c dh d1o d1p dj d1q d1r">';
     echo '<h2 data-ui="u-67647882 d19"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> إدارة الطلبات (' . count($rev_orders) . ')</h2>';

@@ -153,7 +153,6 @@ layout_top('إتمام الطلب', 'orders'); ?>
   <div class="step active" aria-current="step"><span class="num">2</span><span>بيانات الشحن</span></div>
   <div class="step"><span class="num">3</span><span>التأكيد</span></div>
 </div>
-<?php echo wf_ui_currency_notice($_SESSION['cart']); echo wf_ui_shipping_currency_notice($_SESSION['cart']); ?>
 <div class="checkout-grid">
 <section class="card">
 <h2>بيانات التوصيل</h2>

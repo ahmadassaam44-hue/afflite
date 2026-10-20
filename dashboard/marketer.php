@@ -567,7 +567,6 @@ elseif ($mtab === 'store') { wfp('MTAB store');
 }
 // ===== ORDERS =====
 elseif ($mtab === 'orders') { wfp('MTAB orders');
-    echo wf_ui_currency_notice($forders) . wf_ui_shipping_currency_notice($forders);
     echo '<div data-ui="u-b27a4db8 dh d1o d1p dj d1q d54"><h2 data-ui="u-c35cd038 d26 d1 d19"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> طلباتي ومبيعاتي (' . count($forders) . ')</h2><div data-ui="u-3ecc8ff6 dh d1s"><a href="?mtab=orders&export=csv" class="btn sm outline"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-download></use></svg> تصدير Excel / CSV</a><a href="?mtab=browse" class="btn sm" data-ui="u-8254dc57 d4e d3v"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-plus></use></svg> تسجيل طلب جديد لعميل</a></div></div>';
     echo '<div class="card" data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف</th><th>المحافظة والعنوان</th><th>كمية</th><th>سعر البيع</th><th>الشحن</th><th>الإجمالي</th><th>عمولتي</th><th>الحالة</th></tr>';
     foreach (array_reverse($forders) as $o) {
@@ -736,7 +735,6 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
     echo '</select></div>';
     echo '<input type="hidden" id="mkPlatformFilter" name="plat" value="' . esc($mplat) . '">';
     echo '<div class="catalog-filter-actions"><button class="btn outline" type="submit">تطبيق الفلاتر</button><a class="btn outline" href="' . esc($mk_url(['mcat'=>'all', 'pq'=>'', 'country'=>'all', 'plat'=>'all', 'sort'=>'default'])) . '">مسح الفلاتر</a></div></form>';
-    echo wf_ui_currency_notice($mitems);
     if ($mitems) {
         echo '<div class="marketer-catalog" data-catalog-grid>';
         $mk_ui_states = []; // Presentation metadata only, never persisted.
@@ -823,7 +821,6 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
 }
 // ===== EARNINGS =====
 elseif ($mtab === 'earnings') { wfp('MTAB earnings');
-    echo wf_ui_shipping_currency_notice($forders);
     $exp = $ern = 0;
     foreach ($forders as $o) {
         $ok = status_key($o['status'] ?? '');

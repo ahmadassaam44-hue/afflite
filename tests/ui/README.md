@@ -156,3 +156,9 @@ inline form and `wfFillCityList`. The test also guards the deployment path: `sit
 `updater/update_catalog.py` must list `data/shipping_cities_gulf.json`, otherwise the Gulf city
 dropdowns can never reach the hosting even with correct code. Documented in
 `docs/order-dialogs-per-country-and-deploy-sync-2026-10-21.md`.
+
+The mixed-currency warnings (`wf_ui_currency_notice` / `wf_ui_shipping_currency_notice`) were removed
+from every page by an owner decision on 2026-10-21 (after the dialog warning went in PR #5); the test
+asserts they stay gone from `ui-components.php` and all former call sites, while the arithmetic that
+refuses to sum different currencies (`wf_ui_currencies` / `data-checkout-mixed`) remains. Documented in
+`docs/remove-currency-mix-notices-2026-10-21.md`.
