@@ -2941,37 +2941,76 @@ function wf_customer_reviews($email = '', $limit = 10) {
 }
 
 // ============================================================================
-//  محافظات ومدن مصر (من بيانات شحن شوب مارت) — تُستخدم في تسجيل المسوقين
+//  محافظات ومدن مصر (من بيانات شحن شوب مارت) + مناطق ومدن دول الخليج
+//  (data/shipping_cities_gulf.json) — تُستخدم في تسجيل المسوقين (مصر بس) وفي
+//  قوائم المنطقة/المدينة بنافذة الطلب وصفحة الهبوط (حسب دولة المنتج).
 // ============================================================================
-function wf_ship_cities_map() {
-    static $cache = null;
-    if ($cache !== null) return $cache;
-    $cache = [];
-    $raw = jload('shipping_cities_shopmart.json', [], false);
-    $govs = is_array($raw['governorates'] ?? null) ? $raw['governorates'] : [];
-    foreach ($govs as $gov => $cities) {
-        $gov = trim((string)$gov);
-        if ($gov === '' || !is_array($cities)) continue;
+// $country = 'مصر' (الافتراضي) بيرجع نفس خريطة المحافظات/المدن القديمة بالظبط.
+function wf_ship_cities_map($country = 'مصر') {
+    static $cache = [];
+    $cn = wf_match_country($country, 'مصر');
+    if (isset($cache[$cn])) return $cache[$cn];
+    $map = [];
+    // أسماء المناطق/المدن بتتنضّف وتتشال منها المكررات
+    $collect = function ($rows) {
         $names = [];
-        foreach ($cities as $c) {
+        foreach ((array)$rows as $c) {
             $n = trim((string)(is_array($c) ? ($c['name'] ?? '') : $c));
             if ($n !== '' && !in_array($n, $names, true)) $names[] = $n;
         }
-        if ($names) $cache[$gov] = $names;
-    }
-    if (!$cache) {
-        foreach (array_keys(function_exists('site_ship_map') ? site_ship_map() : []) as $gov) {
+        return $names;
+    };
+    if ($cn === 'مصر') {
+        $raw = jload('shipping_cities_shopmart.json', [], false);
+        $govs = is_array($raw['governorates'] ?? null) ? $raw['governorates'] : [];
+        foreach ($govs as $gov => $cities) {
             $gov = trim((string)$gov);
-            if ($gov !== '') $cache[$gov] = [];
+            if ($gov === '' || !is_array($cities)) continue;
+            $names = $collect($cities);
+            if ($names) $map[$gov] = $names;
+        }
+        if (!$map) {
+            foreach (array_keys(function_exists('site_ship_map') ? site_ship_map() : []) as $gov) {
+                $gov = trim((string)$gov);
+                if ($gov !== '') $map[$gov] = [];
+            }
+        }
+    } else {
+        $raw = jload('shipping_cities_gulf.json', [], false);
+        $list = (is_array($raw['countries'] ?? null) && is_array($raw['countries'][$cn] ?? null)) ? $raw['countries'][$cn] : [];
+        foreach ($list as $region => $cities) {
+            $region = trim((string)$region);
+            if ($region === '') continue;
+            $map[$region] = $collect($cities);
+        }
+        // أي منطقة في جدول الدولة مالهاش مدن ⇒ قائمة فاضية (الواجهة بتحوّل الحقل لنص حر)
+        foreach (array_keys(function_exists('site_ship_map') ? site_ship_map('manual', $cn) : []) as $region) {
+            $region = trim((string)$region);
+            if ($region !== '' && !isset($map[$region])) $map[$region] = [];
         }
     }
-    return $cache;
+    return $cache[$cn] = $map;
 }
+// محافظات مصر (لصفحات التسجيل/استكمال بيانات المسوق) — من غير دول الخليج
 function wf_ship_governorates() { return array_keys(wf_ship_cities_map()); }
-function wf_ship_cities($gov = '') {
-    $map = wf_ship_cities_map();
+function wf_ship_cities($gov = '', $country = 'مصر') {
+    $map = wf_ship_cities_map($country);
     $gov = trim((string)$gov);
     return $gov !== '' && !empty($map[$gov]) ? $map[$gov] : [];
+}
+// مصر + دول الخليج في خريطة واحدة للـ JS (wfCityState): المفتاح اسم المنطقة، وأسماء المناطق
+// مش بتتعارض بين مصر والخليج — ولو اتعارضت مرة، قائمة مصر هي اللي بتكسب (زي السلوك القديم).
+function wf_ship_cities_map_all() {
+    static $all = null;
+    if ($all !== null) return $all;
+    $all = wf_ship_cities_map('مصر');
+    foreach (wf_country_list() as $cn) {
+        if ($cn === 'مصر') continue;
+        foreach (wf_ship_cities_map($cn) as $region => $cities) {
+            if (!isset($all[$region])) $all[$region] = $cities;
+        }
+    }
+    return $all;
 }
 
 // ============================================================================
@@ -4195,7 +4234,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
     <script type="application/json" id="wfShippingCurrency"><?php echo json_encode($ship_currency_by_key, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <?php // الخصم بالجنيه بس: لو الصفحة عندها منتج بعملة تانية (ر.س/د.إ/…) الـ state بيقول للواجهة متطبّقوش
     $bulk_state = function_exists('wf_bulk_discount_state') ? wf_bulk_discount_state($default_plat, $default_currency) : ['per_piece' => 0, 'max_qty' => 99]; ?>
-    <script type="application/json" id="wfCityState"><?php echo json_encode(wf_ship_cities_map(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
+    <script type="application/json" id="wfCityState"><?php echo json_encode(wf_ship_cities_map_all(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <script type="application/json" id="wfBulkState"><?php echo json_encode($bulk_state, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <div id="eoCheckoutDialog" class="eo-modal-backdrop" onclick="if(event.target===this)closeEasyOrderModal()">
       <div id="wfLeadModal" class="eo-modal-card" role="dialog" aria-modal="true" aria-labelledby="eoDialogTitle">

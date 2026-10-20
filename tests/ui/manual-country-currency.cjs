@@ -12,7 +12,7 @@ const {loadNodeRuntime}=require(path.join(NM,'@php-wasm/node'));
 // config.php requires these siblings at include time (amazon/jumia/noon are file_exists-guarded and skipped).
 const FILES=['config.php','manual_products_lib.php','customer_req_lib.php','supabase.php','supabase_users.php','supabase_docs.php','hevo_api.php','ui-components.php','manual_products_import.csv'];
 // جداول الشحن بتتحمل من DATA_DIR (/app/data) — بننسخها عشان الاختبار يشتغل على البيانات الحقيقية
-const DATA_FILES=['data/shipping.json','data/shipping_cities_shopmart.json'];
+const DATA_FILES=['data/shipping.json','data/shipping_cities_shopmart.json','data/shipping_cities_gulf.json'];
 const PHP_TESTS=String.raw`
 <?php
 require '/app/config.php';
@@ -146,9 +146,44 @@ chk($out,$fail,'dialog select currency attr',mb_strpos($__dlg,'data-ship-currenc
 chk($out,$fail,'dialog ships country tables to js',mb_strpos($__dlg,'manual:السعودية')!==false&&mb_strpos($__dlg,'id="wfShippingCurrency"')!==false,true);
 chk($out,$fail,'dialog currency state has sar',mb_strpos($__dlg,'"manual:\u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629":"\u0631.\u0633"')!==false||mb_strpos($__dlg,'"manual:السعودية":"ر.س"')!==false,true);
 chk($out,$fail,'dialog has no egp shipping label for saudi',mb_strpos($__dlg,'(الشحن: 0 ج.م)')===false,true);
+chk($out,$fail,'dialog city state has gulf cities',mb_strpos($__dlg,'id="wfCityState"')!==false&&mb_strpos($__dlg,'"الرياض":')!==false&&mb_strpos($__dlg,'"دبي":')!==false,true);
+chk($out,$fail,'dialog city state keeps egypt',mb_strpos($__dlg,'"القاهرة":')!==false,true);
 // ملاحظة: النافذة بتترسم مرة واحدة في الطلب (static \$rendered guard) فبنرسم حالة الخليج هنا —
 // وحالة مصر مغطاة بفحوص البيانات فوق (manual + مصر = جدول تايم هاند بالقاهرة والجنيه و«المحافظة»).
 chk($out,$fail,'dialog egypt data path',isset(site_ship_map('manual','مصر')['القاهرة'])&&wf_ship_currency('manual','مصر')==='ج.م'&&wf_ship_region_label('مصر')==='المحافظة',true);
+// ---- 8c) مدن دول الخليج (القايمة التانية بقت منسدلة زي مصر) ----
+$eg_map = wf_ship_cities_map();
+chk($out,$fail,'cities egypt default count',count($eg_map),26);
+chk($out,$fail,'cities egypt cairo count',count($eg_map['القاهرة'] ?? []),54);
+chk($out,$fail,'cities egypt has no riyadh',isset($eg_map['الرياض']),false);
+chk($out,$fail,'governorates list stays egypt only',in_array('دبي',wf_ship_governorates(),true),false);
+$gulf_cities=['السعودية'=>['الرياض','الرياض','مكة المكرمة','جدة','المنطقة الشرقية','الدمام'],
+             'الإمارات'=>['أبو ظبي','أبو ظبي','دبي','دبي','رأس الخيمة','رأس الخيمة'],
+             'الأردن'=>['عمّان','عمّان','العقبة','العقبة','إربد','إربد'],
+             'عُمان'=>['مسقط','مسقط','ظفار','صلالة','الداخلية','نزوى']];
+foreach($gulf_cities as $cn=>$spec){
+  $cm = wf_ship_cities_map($cn);
+  $regions = array_keys(site_ship_map('manual',$cn));
+  chk($out,$fail,'cities '.$cn.' cover every region',count(array_intersect($regions,array_keys($cm))),count($regions));
+  $empty = [];
+  foreach($regions as $r) if (empty($cm[$r])) $empty[] = $r;
+  chk($out,$fail,'cities '.$cn.' all regions have cities',$empty,[]);
+  chk($out,$fail,'cities '.$cn.' first pair',wf_ship_cities($spec[0],$cn)[0] ?? '',$spec[1]);
+  chk($out,$fail,'cities '.$cn.' second pair',in_array($spec[3],wf_ship_cities($spec[2],$cn),true),true);
+  chk($out,$fail,'cities '.$cn.' third pair',in_array($spec[5],wf_ship_cities($spec[4],$cn),true),true);
+  chk($out,$fail,'cities '.$cn.' no egyptian city',in_array('مدينة نصر',wf_ship_cities($spec[0],$cn),true),false);
+}
+// أسماء مناطق الخليج مش بتتعارض مع محافظات مصر (وإلا القايمة الغلط هتظهر للعميل)
+$collision = array_values(array_intersect(array_keys($eg_map), array_keys(wf_ship_cities_map('السعودية')), array_keys(wf_ship_cities_map('الإمارات')), array_keys(wf_ship_cities_map('الأردن')), array_keys(wf_ship_cities_map('عُمان'))));
+chk($out,$fail,'no region name collisions with egypt',$collision,[]);
+$all = wf_ship_cities_map_all();
+chk($out,$fail,'merged map has cairo',count($all['القاهرة'] ?? []),54);
+chk($out,$fail,'merged map has riyadh',in_array('الخرج',$all['الرياض'] ?? [],true),true);
+chk($out,$fail,'merged map has dubai',in_array('حتا',$all['دبي'] ?? [],true),true);
+chk($out,$fail,'merged map size',count($all) >= 26 + 13 + 7 + 12 + 11,true);
+// الاسم من غير تشكيل/KSA برضوه بيوصل لقايمة الدولة
+chk($out,$fail,'cities alias oman',count(wf_ship_cities_map('عمان')),11);
+chk($out,$fail,'cities alias ksa',count(wf_ship_cities_map('KSA')),13);
 // ---- 9) رجعة: باقي المنصات ما اتغيّرتش ----
 chk($out,$fail,'ship cezma = timehand',site_ship_regions('cezma'),$th);
 chk($out,$fail,'ship vendoor 27',count(site_ship_map('vendoor')),27);
@@ -255,6 +290,25 @@ for(const [file,re] of shipCallers)assert.ok(re.test(src(file)),file+' must reso
 assert.ok(/function eoSetShippingPlatform\(platform,country\)/.test(uijs)&&/eoShipCurrency/.test(uijs),'ui.js must switch the region table and currency per product country');
 assert.ok(/eoSetShippingPlatform\(e\.plat\|\|"",e\.country\|\|""\)/.test(uijs),'the easy-order dialog must pass the product country');
 assert.ok(/eoShipCur\(\)/.test(uijs)&&!/\+" ج\.م":"اختر المحافظة"/.test(uijs),'ui.js must not hardcode EGP for the shipping line');
+// صفحات التسجيل/استكمال بيانات المسوق بتفضل بمحافظات مصر بس (عنوان الحساب مش شحن طلب)
+for(const file of ['register.php','marketer_complete.php']){
+  const s2=src(file);
+  assert.ok(/wf_ship_governorates\(\)/.test(s2)&&/wf_ship_cities_map\(\)/.test(s2),file+' must keep the Egypt-only address lists');
+  assert.ok(!/wf_ship_cities_map_all\(\)/.test(s2),file+' must not use the merged (Gulf) city map');
+}
+// قوايم مدن الخليج موجودة في البيانات ومغطّية كل منطقة
+const gulfCities=JSON.parse(fs.readFileSync(path.join(repo,'data/shipping_cities_gulf.json'),'utf8')).countries;
+const shipTables=JSON.parse(fs.readFileSync(path.join(repo,'data/shipping.json'),'utf8')).filter(e=>e.platform==='manual');
+assert.equal(shipTables.length,4,'shipping.json must have one manual table per Gulf country');
+for(const entry of shipTables){
+  const cities=gulfCities[entry.country];
+  assert.ok(cities,'missing city list for '+entry.country);
+  for(const region of entry.regions){
+    assert.ok(Array.isArray(cities[region.region])&&cities[region.region].length>0,entry.country+' / '+region.region+' has no cities');
+    assert.equal(region.fee,0,'Gulf manual fees must start at 0 until the owner fills them ('+entry.country+'/'+region.region+')');
+    assert.equal(region.currency,{'السعودية':'ر.س','الإمارات':'د.إ','الأردن':'د.أ','عُمان':'ر.ع'}[entry.country],'wrong currency for '+entry.country);
+  }
+}
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){
   const Engine=require(path.join(NM,'php-parser'));
