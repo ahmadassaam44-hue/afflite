@@ -15,9 +15,9 @@
    "match": true
   },
   "data/catalog_counts.json": {
-   "remote_size": 1040,
+   "remote_size": 1041,
    "on_server": true,
-   "local_size": 1040,
+   "local_size": 1041,
    "match": true
   },
   ".htaccess": {
