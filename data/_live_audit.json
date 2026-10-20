@@ -1,5 +1,5 @@
 {
- "at": "2026-10-20T19:07:52+00:00",
+ "at": "2026-10-20T21:52:19+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -65,20 +65,20 @@
  ],
  "files": {
   "index.php": {
-   "remote_size": 51186,
-   "remote_md5": "5994b27bf8350abc66e110f906173006",
-   "local_size": 51186,
-   "local_md5": "5994b27bf8350abc66e110f906173006",
+   "remote_size": 51428,
+   "remote_md5": "962027c78c82d0cba92aff64827debdf",
+   "local_size": 51428,
+   "local_md5": "962027c78c82d0cba92aff64827debdf",
    "same_as_git": true
   },
   "index.html": {
    "error": "550 Can't open index.html: No such file or directory"
   },
   "store.php": {
-   "remote_size": 31206,
-   "remote_md5": "668496e551277ed48a36646b52d90c44",
-   "local_size": 31206,
-   "local_md5": "668496e551277ed48a36646b52d90c44",
+   "remote_size": 31440,
+   "remote_md5": "1d2ccf8b30d9ead20f1935338d195b5a",
+   "local_size": 31440,
+   "local_md5": "1d2ccf8b30d9ead20f1935338d195b5a",
    "same_as_git": true
   },
   "digital.php": {
@@ -89,10 +89,10 @@
    "same_as_git": true
   },
   "landing.php": {
-   "remote_size": 23754,
-   "remote_md5": "5b223247965c7f0a61a515bfc5905735",
-   "local_size": 23754,
-   "local_md5": "5b223247965c7f0a61a515bfc5905735",
+   "remote_size": 24488,
+   "remote_md5": "c686f9dede9f5058fc1791f72e1affcf",
+   "local_size": 24488,
+   "local_md5": "c686f9dede9f5058fc1791f72e1affcf",
    "same_as_git": true
   },
   ".htaccess": {
@@ -118,9 +118,9 @@
   },
   "data/catalog_counts.json": {
    "remote_size": 1034,
-   "remote_md5": "1d1a2b7862a9a783d7773fe784413835",
+   "remote_md5": "900ad94d6728e52f6131a7f077199f31",
    "local_size": 1034,
-   "local_md5": "1d1a2b7862a9a783d7773fe784413835",
+   "local_md5": "900ad94d6728e52f6131a7f077199f31",
    "same_as_git": true
   }
  },
