@@ -78,7 +78,7 @@ $is_special_view = ($is_digital_only || $is_social_only);
 // التصنيفات الخاصة بالوضع الحالي فقط (فيزيكال فقط / رقمي فقط / سوشيال فقط)
 // الصفحة الرئيسية لا تفك كتالوج سيزما كاملًا لعرض أسماء الأقسام: تستخدم ملخصًا
 // صغيرًا يولّده المحدّث، وتظل المنتجات نفسها قابلة للفلترة والبحث من الكتالوج الكامل.
-if ($mode === 'physical' && !in_array($country, ['الإمارات', 'السعودية', 'الأردن', 'عُمان'], true)) {
+if ($mode === 'physical' && !in_array($country, wf_gulf_countries(), true)) {
     $catalog_counts = jload('catalog_counts.json', []);
     $cezma_category_counts = cezma_search_index_category_counts($country);
     if ($country === 'all' && !empty($catalog_counts['physical_categories']) && is_array($catalog_counts['physical_categories'])) {
@@ -465,7 +465,9 @@ echo wf_store_navbar($nav_items, ['lead' => $nav_lead]);
 <?php if ($mode === 'physical'):
 // فلتر الدولة بنفس شكل التابات المستخدم في صفحة الكتالوج (مفيش صف شيبس في الرئيسية)
 $country_tabs = [];
-foreach ([['c'=>'all','n'=>'كل الدول'],['c'=>'مصر','n'=>'مصر'],['c'=>'الإمارات','n'=>'الإمارات'],['c'=>'السعودية','n'=>'السعودية'],['c'=>'الأردن','n'=>'الأردن'],['c'=>'عُمان','n'=>'عُمان']] as $cc) {
+$country_tab_defs = [['c'=>'all','n'=>'كل الدول']];
+foreach (wf_country_list() as $country_name) $country_tab_defs[] = ['c'=>$country_name,'n'=>$country_name];
+foreach ($country_tab_defs as $cc) {
     $country_tabs[] = ['href' => esc(build_filter_url(['country'=>$cc['c'],'page'=>1])) . '#products', 'label' => $cc['n'], 'on' => ($country === $cc['c'])];
 }
 echo wf_tabs($country_tabs, ['label' => 'فلترة الدول']);

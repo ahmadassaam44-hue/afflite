@@ -424,37 +424,76 @@ define('LP_BUNDLE_DISCOUNT', 70);
 // (أي خدمة أقل من 10 قروش بيتضاف عليها 10 قروش) — الاتنين قابلين للتعديل من الإعدادات.
 define('DIGITAL_USD_EGP', 56.0);
 define('SOCIAL_PRICE_ADDON', 0.10);
-// المنتجات الرقمية وخدمات السوشيال ميديا خارج خصم الكمية (سعرها ثابت وتنفيذها آلي)
-function wf_bulk_discount_plat_ok($plat = '') {
-    return !function_exists('wf_is_digital_plat') || !wf_is_digital_plat($plat);
+// عملة المنتج (من المنتج نفسه أو من دولته) — المصدر الوحيد لقرار «هل الخصم بالجنيه ينطبق؟»
+// نفس ترتيب wf_ui_currency: عملة مخزّنة ⇒ عملة الدولة ⇒ ومصدر m5zoon بيسبق الاتنين.
+function wf_product_currency($p, $plat = '') {
+    if (!is_array($p)) $p = [];
+    $plat = trim((string)($plat !== '' ? $plat : ($p['_plat'] ?? $p['plat'] ?? '')));
+    $cur = trim((string)($p['currency'] ?? ''));
+    if ($cur === '') $cur = wf_country_currency($p['country'] ?? 'مصر');
+    if ($plat === 'm5zoon' && function_exists('mz_src_currency')) {
+        $src = trim((string)mz_src_currency($p));
+        if ($src !== '') $cur = $src;
+    }
+    return $cur;
 }
-// قيمة الخصم لإجمالي كمية معيّنة — 70 ج.م × عدد القطع الزائدة عن القطعة الأولى
-function wf_bulk_discount($qty, $plat = '') {
-    if (!wf_bulk_discount_plat_ok($plat)) return 0.0;
+// الكتابات اللي بتعني الجنيه المصري (فاضية = مجهول = معاملة الجنيه، لأن أغلب الكتالوج مصري)
+function wf_egp_currency_labels() {
+    return ['', 'ج.م', 'جنيه', 'جنيه مصري', 'EGP', 'LE', 'E£'];
+}
+function wf_is_egp_currency($currency) {
+    $c = trim((string)$currency);
+    foreach (wf_egp_currency_labels() as $label) {
+        if (strcasecmp($c, trim((string)$label)) === 0) return true;
+    }
+    return false;
+}
+// المنتجات الرقمية وخدمات السوشيال ميديا خارج خصم الكمية (سعرها ثابت وتنفيذها آلي)
+// وكمان أي منتج سعره مش بالجنيه: الخصم مبلغ ثابت بالجنيه (LP_BUNDLE_DISCOUNT) والموقع
+// ما بيحوّلش عملات، فتطبيقه على سعر بالريال/الدرهم يبقى خصم أكبر بكتير من المقصود.
+// $currency: عملة المنتج أو المنتج نفسه (array) — null/'' = مجهول = جنيه.
+function wf_bulk_discount_plat_ok($plat = '', $currency = null) {
+    if (function_exists('wf_is_digital_plat') && wf_is_digital_plat($plat)) return false;
+    return wf_bulk_currency_ok($currency);
+}
+function wf_bulk_currency_ok($currency = null) {
+    if ($currency === null) return true;
+    if (is_array($currency)) $currency = wf_product_currency($currency);
+    return wf_is_egp_currency($currency);
+}
+// قيمة الخصم لإجمالي كمية معيّنة — 70 ج.م × عدد القطع الزائدة عن القطعة الأولى (للجنيه فقط)
+function wf_bulk_discount($qty, $plat = '', $currency = null) {
+    if (!wf_bulk_discount_plat_ok($plat, $currency)) return 0.0;
     $q = max(1, min(999, (int)$qty));
     return $q >= 2 ? round((float)LP_BUNDLE_DISCOUNT * ($q - 1), 2) : 0.0;
 }
 // القيم اللي بتستخدمها الواجهة للحساب الحيّ (عرض فقط — السيرفر هو المرجع)
-function wf_bulk_discount_state($plat = '') {
+function wf_bulk_discount_state($plat = '', $currency = null) {
     $plat = trim((string)$plat);
     return [
         'per_piece' => (float)LP_BUNDLE_DISCOUNT,
         'max_qty'   => 99,
-        'applies'   => $plat === '' ? null : wf_bulk_discount_plat_ok($plat),
+        'applies'   => ($plat === '' && $currency === null) ? null : wf_bulk_discount_plat_ok($plat, $currency),
         'label'     => 'خصم ' . (int)LP_BUNDLE_DISCOUNT . ' ج.م لكل قطعة إضافية بعد القطعة الأولى',
         // نفس predicate اللي بيقولده wf_is_digital_plat — بتستخدمه الواجهة عشان متطبّقش الخصم
         'digital'   => ['g2g', 'social', 'smm', 'hevo'],
+        // الخصم بالجنيه بس: الواجهة بتقارن عملة المنتج اللي اتفتح بيه نافذة الطلب
+        'egp_only'  => true,
+        'egp'       => array_values(array_filter(wf_egp_currency_labels(), function ($l) { return $l !== ''; })),
+        // عملة المنتج لو الصفحة عندها منتج محدد (صفحة المنتج / صفحة الهبوط)
+        'currency'  => $currency === null ? '' : (is_array($currency) ? wf_product_currency($currency) : trim((string)$currency)),
     ];
 }
 // إجمالي الكمية بعد الخصم — المصدر الوحيد للسعر على السيرفر
-function wf_bundle_total($unit, $qty, $plat = '') {
+function wf_bundle_total($unit, $qty, $plat = '', $currency = null) {
     $unit = max(0, round((float)$unit, 2));
     $qty = max(1, min(999, (int)$qty));
-    return max(0, round($unit * $qty - wf_bulk_discount($qty, $plat), 2));
+    return max(0, round($unit * $qty - wf_bulk_discount($qty, $plat, $currency), 2));
 }
-// الخصم بقى عام لكل الطلبات (مش صفحة الهبوط بس) للمنتجات التقليدية — الرقمی والسوشيال مستثنيان
-function wf_landing_bundle_discount($qty, $from_landing = false, $plat = '') {
-    return wf_bulk_discount($qty, $plat);
+// الخصم بقى عام لكل الطلبات (مش صفحة الهبوط بس) للمنتجات التقليدية — الرقمی والسوشيال
+// وأي منتج سعره مش بالجنيه مستثنيان
+function wf_landing_bundle_discount($qty, $from_landing = false, $plat = '', $currency = null) {
+    return wf_bulk_discount($qty, $plat, $currency);
 }
 
 function server_order_line($pid, $plat, $qty = 1, $requested_price = null, $ref = '', $explicit_extra_comm = null, $honor_requested = false) {
@@ -566,11 +605,16 @@ function hero_product_slides() {
         $plat = $p['_plat'] ?? resolve_plat($p['id'] ?? '');
         $img = product_first_image($p, $plat) ?: wf_product_placeholder($plat);
         $price = (float)display_price($p, $plat);
+        // العملة من المنتج نفسه (منتج يدوي سعودي = ر.س، إماراتي = د.إ …) — عرض فقط ومن غير أي تحويل
+        $cur = trim((string)($p['currency'] ?? ''));
+        if ($cur === '' && $plat === 'm5zoon' && function_exists('mz_src_currency')) $cur = mz_src_currency($p);
+        if ($cur === '') $cur = wf_country_currency($p['country'] ?? 'مصر');
+        if (function_exists('wf_ui_currency_label')) $cur = wf_ui_currency_label($cur);
         $out[] = [
             'link'  => 'dashboard/product.php?id=' . urlencode((string)$p['id']),
             'image' => $img,
             'title' => (string)($p['name'] ?? ''),
-            'price' => $price > 0 ? number_format($price, 0) . ' ج.م' : '',
+            'price' => $price > 0 ? number_format($price, 0) . ' ' . $cur : '',
         ];
     }
     return $out;
@@ -1573,7 +1617,7 @@ function cezma_shard_files() {
 }
 // عدد الشظايا المحمّلة في الطلب الواحد (شظية = 6000 منتج ≈ 3 ميجا)
 if (!defined('WF_CEZMA_POOL_SHARDS')) define('WF_CEZMA_POOL_SHARDS', 17);
-// كتالوج سيزما أكبر من أي كتالوج تاني (100 ألف+ منتج في 17 شظية ≈ 48 ميجا)، وتحميله
+// كتالوج سيزما (منتجات 2026 بس — 2025 اتحذفت) أكبر من أي كتالوج تاني (43 ألف منتج في 8 شظايا ≈ 20 ميجا)، وتحميله
 // كله في كل طلب على استضافة مشتركة (memory_limit 256M) بيموّت الصفحة بخطأ ذاكرة.
 // فبنحمّل عدد محدود من الشظايا في الطلب الواحد مع تبديل ساعي ثابت:
 //   • كل الطلبات جوه الساعة الواحدة بتشوف نفس المنتجات → القوائم والترقيم متسقين.
@@ -2265,11 +2309,12 @@ function mix_by_platform($items, $order = ['timehand', 'safqa', 'vendoor', 'anga
 // بحيث يحتوي كل قسم على منتج من كل أفلييت بجانب الآخر بالتناوب
 function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q = '', $plat_filter = 'all', $shuffle_seed = null, $source_limit = null) {
     wfp('physCOL start ' . $type . '/' . $country . '/' . $cat . '/' . substr((string)$q, 0, 20));
-    $gulf = ['الإمارات', 'السعودية', 'الأردن', 'عُمان'];
+    $gulf = wf_gulf_countries();
     if ($plat_filter !== '' && $plat_filter !== 'all') {
         $plats = [$plat_filter];
     } elseif (in_array($country, $gulf, true)) {
-        $plats = ['m5zoon'];
+        // الخليج: مخزون + المنتجات اليدوية (المنتج اليدوي بيحدد دولته وعملته بنفسه)
+        $plats = ['m5zoon', 'manual'];
     } else {
         // الترتيب المطلوب بالضبط: تايم هاند → صفقة → فيندور → ليدجر → أنجزني → شوب مارت → سيزما
         $plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'cezma', 'manual'];
@@ -2297,7 +2342,7 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         if ($cezma_indexed !== null) {
             $arr = $cezma_indexed;
         } elseif ($pk === 'cezma' && ($source_limit !== null ||
-            // المتجر الافتراضي و«المنتجات المميزة» بلا فلاتر: نافذة محدودة من الأحدث بدل تطييع 90 ألف منتج في كل طلب.
+            // المتجر الافتراضي و«المنتجات المميزة» بلا فلاتر: نافذة محدودة من الأحدث بدل تطييع 43 ألف منتج في كل طلب.
             // «أحدث المنتجات» و«الأكثر مبيعاً/مشاهدة» تظل بالمسار الكامل لأنها صارت مرتبة على الكتالوج كاملاً.
             ($q === '' && in_array($cat, ['', 'all', 'المنتجات المميزة'], true)))) {
             $arr = $use_home_window
@@ -2410,6 +2455,71 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
     $out = mix_by_platform($flat, $plats);
     wfp('physCOL end: ' . count($out));
     return $out;
+}
+
+// ===== الدول والعملات: قايمة واحدة لكل الموقع =====
+// نفس الدول اللي في فلاتر الدولة (الرئيسية / الكتالوج / لوحة المسوّق)، وكل دولة بعملتها المحلية.
+// المنتجات اليدوية بتختار الدولة من القايمة دي، والسعر بيتسجّل وبيتعرض بعملة الدولة نفسها
+// (مفيش تحويل عملات — نفس قاعدة باقي المنصات: المبلغ بعملة منتجه).
+function wf_country_currencies() {
+    static $map = null;
+    // الترتيب ده هو نفس ترتيب تبويبات الدول في الرئيسية والكتالوج ولوحة المسوّق
+    if ($map === null) $map = ['مصر' => 'ج.م', 'الإمارات' => 'د.إ', 'السعودية' => 'ر.س', 'الأردن' => 'د.أ', 'عُمان' => 'ر.ع'];
+    return $map;
+}
+function wf_country_list() {
+    return array_keys(wf_country_currencies());
+}
+// دول الخليج/المصادر العربية (كانت مكتوبة باليد في أكتر من مكان)
+function wf_gulf_countries() {
+    static $gulf = null;
+    if ($gulf === null) $gulf = ['الإمارات', 'السعودية', 'الأردن', 'عُمان'];
+    return $gulf;
+}
+function wf_is_gulf_country($country) {
+    return in_array(wf_match_country($country, ''), wf_gulf_countries(), true);
+}
+// مفتاح مقارنة: من غير تشكيل ولا تطويل، أ/إ/آ = ا، ة = ه، ى = ي، ومسافة واحدة
+function wf_country_key($value) {
+    $s = preg_replace('/[\x{064B}-\x{0652}\x{0640}\x{0670}]/u', '', (string)$value);
+    $s = str_replace(['أ', 'إ', 'آ', 'ٱ'], 'ا', $s);
+    $s = str_replace(['ة', 'ى', 'ؤ'], ['ه', 'ي', 'و'], $s);
+    $s = preg_replace('/\s+/u', ' ', trim($s));
+    return mb_strtolower($s, 'UTF-8');
+}
+// تطبيع اسم الدولة: يقبل الاسم الرسمي، اسم شائع/مختصر/إنجليزي، أو اسم العملة (ريال/درهم/دينار).
+// بيرجع اسم الدولة من القايمة الموحّدة، أو $fallback لو القيمة مش معروفة.
+function wf_match_country($value, $fallback = '') {
+    $raw = trim((string)$value);
+    if ($raw === '') return (string)$fallback;
+    // رموز العملة بالنقط لازم تتطابق على النص الأصلي: بعد توحيد الحروف (إ/أ => ا) بيصبح
+    // «د.إ» (الإمارات) و«د.أ» (الأردن) نفس المفتاح — فبنقارنها قبل أي توحيد.
+    $compact = preg_replace('/\s+/u', '', $raw);
+    foreach (wf_country_currencies() as $cn => $cur) {
+        if ($raw === $cur || $compact === $cur) return $cn;
+    }
+    static $aliases = null;
+    if ($aliases === null) {
+        $aliases = [];
+        $table = [
+            'مصر' => ['مصر', 'مصريه', 'جمهوريه مصر العربيه', 'مصر العربيه', 'egypt', 'eg', 'egp', 'جنيه', 'جنيه مصري'],
+            'السعودية' => ['السعوديه', 'سعودي', 'المملكه العربيه السعوديه', 'ksa', 'saudi', 'saudi arabia', 'sa', 'sar', 'ريال', 'ريال سعودي'],
+            'الإمارات' => ['الامارات', 'امارات', 'الامارات العربيه المتحده', 'uae', 'emirates', 'dubai', 'ae', 'aed', 'درهم', 'درهم اماراتي'],
+            'الأردن' => ['الاردن', 'اردن', 'المملكه الاردنيه الهاشميه', 'jordan', 'jo', 'jod', 'دينار', 'دينار اردني'],
+            'عُمان' => ['عمان', 'سلطنه عمان', 'oman', 'om', 'omr', 'ريال عماني'],
+        ];
+        foreach ($table as $country => $names) {
+            foreach ($names as $name) $aliases[wf_country_key($name)] = $country;
+        }
+    }
+    $key = wf_country_key($raw);
+    return isset($aliases[$key]) ? $aliases[$key] : (string)$fallback;
+}
+// عملة الدولة (ج.م / ر.س / د.إ / د.أ / ر.ع) — من اسم الدولة أو من اسم العملة نفسه
+function wf_country_currency($country, $fallback = 'ج.م') {
+    $map = wf_country_currencies();
+    $c = wf_match_country($country, '');
+    return ($c !== '' && isset($map[$c])) ? $map[$c] : (string)$fallback;
 }
 
 // إرجاع التصنيفات الخاصة بكل نوع منفصلاً (فيزيكال فقط / رقمي فقط / سوشيال فقط)
@@ -2636,12 +2746,13 @@ function categories_by_mode($mode = 'physical', $country = 'all', $include_cezma
         return $cats;
     }
     // فيزيكال فقط (بدون أي تصنيف رقمي أو سوشيال)
-    $gulf = ['الإمارات', 'السعودية', 'الأردن', 'عُمان'];
+    $gulf = wf_gulf_countries();
     $plats = in_array($country, $gulf, true)
         ? ['m5zoon']
         : ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart'];
     if (!in_array($country, $gulf, true) && $include_cezma) $plats[] = 'cezma';
-    if (!in_array($country, $gulf, true)) $plats[] = 'manual';
+    // المنتجات اليدوية لكل الدول: كل منتج بياخد دولته (وعملتها) من لوحة الأدمن
+    $plats[] = 'manual';
     $cats = [];
     foreach ($plats as $pk) {
         if ($pk === 'cezma') {
@@ -4014,7 +4125,7 @@ function order_variant_label($order) {
 
 // ===== نافذة إتمام الطلب الفوري للعميل =====
 // خانة «سعر الاتفاق مع العميل» اتشالت من الموقع كله: سعر العميل دايمًا هو سعر الرابط المحسوب على السيرفر.
-function render_easyorder_dialog_html($default_ref = '', $default_plat = '') {
+function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $default_currency = null) {
     require_once __DIR__ . '/ui-components.php';
     static $rendered = false;
     if ($rendered) return;
@@ -4040,7 +4151,8 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '') {
     
     <?php wf_ui_sprite(); ?>
     <script type="application/json" id="wfShippingState"><?php echo json_encode($ship_by_platform, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
-    <?php $bulk_state = function_exists('wf_bulk_discount_state') ? wf_bulk_discount_state($default_plat) : ['per_piece' => 0, 'max_qty' => 99]; ?>
+    <?php // الخصم بالجنيه بس: لو الصفحة عندها منتج بعملة تانية (ر.س/د.إ/…) الـ state بيقول للواجهة متطبّقوش
+    $bulk_state = function_exists('wf_bulk_discount_state') ? wf_bulk_discount_state($default_plat, $default_currency) : ['per_piece' => 0, 'max_qty' => 99]; ?>
     <script type="application/json" id="wfCityState"><?php echo json_encode(wf_ship_cities_map(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <script type="application/json" id="wfBulkState"><?php echo json_encode($bulk_state, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <div id="eoCheckoutDialog" class="eo-modal-backdrop" onclick="if(event.target===this)closeEasyOrderModal()">
@@ -4065,7 +4177,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '') {
                 </div>
               </div>
             </div>
-            <div class="alert info" id="eoBulkHint"<?php echo ($default_plat !== '' && function_exists('wf_bulk_discount_plat_ok') && wf_bulk_discount_plat_ok($default_plat)) ? '' : ' hidden'; ?> data-per-piece="<?php echo (float)($bulk_state['per_piece'] ?? 0); ?>">🎁 <?php echo esc($bulk_state['label'] ?? ('خصم ' . (int)LP_BUNDLE_DISCOUNT . ' ج.م لكل قطعة إضافية بعد القطعة الأولى')); ?> — بيتحسب أوتوماتيك في الإجمالي (ما بيطبّقش على المنتجات الرقمية أو خدمات السوشيال ميديا).</div>
+            <div class="alert info" id="eoBulkHint"<?php echo ($default_plat !== '' && function_exists('wf_bulk_discount_plat_ok') && wf_bulk_discount_plat_ok($default_plat, $default_currency)) ? '' : ' hidden'; ?> data-per-piece="<?php echo (float)($bulk_state['per_piece'] ?? 0); ?>">🎁 <?php echo esc($bulk_state['label'] ?? ('خصم ' . (int)LP_BUNDLE_DISCOUNT . ' ج.م لكل قطعة إضافية بعد القطعة الأولى')); ?> — بيتحسب أوتوماتيك في الإجمالي (ما بيطبّقش على المنتجات الرقمية أو خدمات السوشيال ميديا).</div>
 
             <form id="eoOrderForm" method="post" action="<?php echo esc($orders_url); ?>" onsubmit="return submitEasyOrderForm(event)">
               <input type="hidden" name="csrf_token" value="<?php echo esc($csrf_val); ?>">

@@ -15,7 +15,7 @@ foreach (array_keys(aff_programs()) as $program_key) {
     $x .= '<url><loc>' . htmlspecialchars($host . $u, ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc><changefreq>monthly</changefreq></url>';
 }
 $items = [];
-// حد أقصى للروابط حتى لا تتحول التوليد إلى استعراض كامل الكتالوج (~90 ألف منتج)
+// حد أقصى للروابط حتى لا تتحول التوليد إلى استعراض كامل الكتالوج (~43 ألف منتج)
 foreach (['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart'] as $pl) {
     foreach (platform_products($pl, false) as $p) {
         if (empty($p['id'])) continue;

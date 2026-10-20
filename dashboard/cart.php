@@ -158,8 +158,10 @@ echo wf_ui_currency_notice($cart);
 <div data-ui="u-e883eee1 dh d1o d1p d1r"><h2 data-ui="u-ecf1db9a d5l dc d19">منتجاتك في السلة (<?php echo count($cart); ?>)</h2><a href="?clear=1" data-confirm="هل أنت متأكد من تفريغ سلة التسوق بالكامل؟" class="btn sm outline" data-ui="u-4a65d709 d4y d5m">تفريغ السلة</a></div>
 <div data-ui="u-62466bd8 dh d5n d3z">
 <?php foreach ($cart as $c): $t = $c['price'] * $c['qty']; $sum += $t;
-    // خصم الكمية لكل سطر: 70 ج.م عن كل قطعة بعد الأولى (المنتجات الرقمية والسوشيال مستثناة)
-    $c_disc = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount((int)($c['qty'] ?? 1), function_exists('resolve_plat') ? resolve_plat((string)($c['id'] ?? ''), $c['plat'] ?? '') : ($c['plat'] ?? '')) : 0.0;
+    // خصم الكمية لكل سطر: 70 ج.م عن كل قطعة بعد الأولى (المنتجات الرقمية والسوشيال مستثناة،
+    // وكمان أي سطر عملته مش الجنيه — نفس العملة المعروضة في السطر هي اللي بتحكم)
+    $c_cur = wf_ui_currency($c);
+    $c_disc = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount((int)($c['qty'] ?? 1), function_exists('resolve_plat') ? resolve_plat((string)($c['id'] ?? ''), $c['plat'] ?? '') : ($c['plat'] ?? ''), $c_cur) : 0.0;
     $cdisc += $c_disc; $t_net = round(max(0, $t - $c_disc), 2); ?>
 <article class="cart-line">
 <?php if ($c['img']): ?><img src="<?php echo esc(asset_url($c['img'])); ?>" alt="<?php echo esc($c['pname']); ?>" width="72" height="72" data-ui="u-af50c98c d5o d5p d5q d4u dt d24"><?php endif; ?>

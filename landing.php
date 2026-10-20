@@ -108,7 +108,8 @@ $eo_payload = json_encode([
     'base_price' => $base_store_price,
     'extra_comm' => $extra_comm,
     'bundle_discount' => (int)LP_BUNDLE_DISCOUNT,   // لكل قطعة إضافية (مش للطلب كله)
-    'bulk_applies' => function_exists('wf_bulk_discount_plat_ok') ? wf_bulk_discount_plat_ok($plat) : true,
+    // الخصم بالجنيه بس: منتج سعره بعملة تانية (ر.س/د.إ/د.أ/ر.ع) مفيش عليه خصم كمية
+    'bulk_applies' => function_exists('wf_bulk_discount_plat_ok') ? wf_bulk_discount_plat_ok($plat, wf_ui_currency($p)) : true,
     'img' => asset_url($imgs[0]),
     'ref' => $ref,
     'currency' => wf_ui_currency($p),
@@ -224,19 +225,19 @@ if (function_exists('wf_event')) {
             <div data-ui="u-e0552804 udu uda">قطعة واحدة</div>
             <div data-ui="u-4e43534e uhn ue6 udg"><?php echo wf_ui_money($final_price); ?> <?php echo esc(wf_ui_currency($p)); ?></div>
           </div>
-          <?php $lp_b2 = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount(2, $plat) : 0.0; $lp_b3 = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount(3, $plat) : 0.0; ?>
+          <?php $lp_cur = wf_ui_currency($p); $lp_b2 = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount(2, $plat, $lp_cur) : 0.0; $lp_b3 = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount(3, $plat, $lp_cur) : 0.0; ?>
           <?php if ($lp_b2 > 0): ?>
           <div class="lp-chip" data-qty="2" onclick="selectLpBundle(2, this)" data-ui="u-94aa87b6 udn ujo uhk">
             <span class="lp-bundle-save">وفّر <?php echo (int)$lp_b2; ?> ج.م — قطعتين</span>
             <div data-ui="u-e0552804 udu uda">قطعتين (2x)</div>
-            <div data-ui="u-4e43534e uhn ue6 udg"><?php echo number_format(function_exists('wf_bundle_total') ? wf_bundle_total($final_price, 2, $plat) : ($final_price * 2 - 70), 0); ?> <?php echo esc(wf_ui_currency($p)); ?></div>
+            <div data-ui="u-4e43534e uhn ue6 udg"><?php echo number_format(function_exists('wf_bundle_total') ? wf_bundle_total($final_price, 2, $plat, $lp_cur) : ($final_price * 2 - 70), 0); ?> <?php echo esc(wf_ui_currency($p)); ?></div>
           </div>
           <?php endif; ?>
           <?php if ($lp_b3 > $lp_b2): ?>
           <div class="lp-chip" data-qty="3" onclick="selectLpBundle(3, this)" data-ui="u-94aa87b6 udn ujo uhk">
             <span class="lp-bundle-save">وفّر <?php echo (int)$lp_b3; ?> ج.م — 3 قطع</span>
             <div data-ui="u-e0552804 udu uda">3 قطع (3x)</div>
-            <div data-ui="u-4e43534e uhn ue6 udg"><?php echo number_format(function_exists('wf_bundle_total') ? wf_bundle_total($final_price, 3, $plat) : ($final_price * 3 - 140), 0); ?> <?php echo esc(wf_ui_currency($p)); ?></div>
+            <div data-ui="u-4e43534e uhn ue6 udg"><?php echo number_format(function_exists('wf_bundle_total') ? wf_bundle_total($final_price, 3, $plat, $lp_cur) : ($final_price * 3 - 140), 0); ?> <?php echo esc(wf_ui_currency($p)); ?></div>
           </div>
           <?php endif; ?>
         </div>
@@ -343,9 +344,9 @@ if (function_exists('wf_event')) {
   </button>
 </div>
 
-<?php render_easyorder_dialog_html($ref, $plat); ?>
+<?php render_easyorder_dialog_html($ref, $plat, wf_ui_currency($p)); ?>
 
-<div hidden id="wfLandingState" data-state="<?php echo esc(json_encode(['id'=>(string)$p['id'], 'plat'=>$plat, 'ref'=>$ref, 'unit'=>(float)$final_price, 'bundle_discount'=>(int)LP_BUNDLE_DISCOUNT, 'bundle_max'=>99, 'bulk_applies'=>function_exists('wf_bulk_discount_plat_ok')?wf_bulk_discount_plat_ok($plat):true, 'currency'=>wf_ui_currency($p), 'payload'=>json_decode($eo_payload, true)], JSON_UNESCAPED_UNICODE)); ?>"></div>
+<div hidden id="wfLandingState" data-state="<?php echo esc(json_encode(['id'=>(string)$p['id'], 'plat'=>$plat, 'ref'=>$ref, 'unit'=>(float)$final_price, 'bundle_discount'=>(int)LP_BUNDLE_DISCOUNT, 'bundle_max'=>99, 'bulk_applies'=>function_exists('wf_bulk_discount_plat_ok')?wf_bulk_discount_plat_ok($plat, wf_ui_currency($p)):true, 'currency'=>wf_ui_currency($p), 'payload'=>json_decode($eo_payload, true)], JSON_UNESCAPED_UNICODE)); ?>"></div>
 <?php if (!empty($store_cfg['whatsapp'])): ?>
 <a class="wa-float" href="https://wa.me/2<?php echo esc(preg_replace('/\D+/', '', $store_cfg['whatsapp'])); ?>" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب"></a>
 <?php endif; ?>

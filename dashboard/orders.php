@@ -26,7 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
         $prod = $line['product'];
         $plat = $line['plat'];
         // خصم الكمية: LP_BUNDLE_DISCOUNT عن كل قطعة بعد الأولى — فيزيائي فقط (الرقمي والسوشيال مستثنيان)
-        $bundle_disc = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($qty, $plat) : 0.0;
+        // والمنتجات اللي سعرها مش بالجنيه مستثناة كمان: الخصم مبلغ ثابت بالجنيه والموقع ما بيحوّلش عملات
+        $bundle_disc = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($qty, $plat, $prod) : 0.0;
         $unit = $line['unit_price'];           // سعر محسوب على السيرفر
         $base = $line['base_price'];
         $city = mb_substr(trim((string)($_POST['city'] ?? '')), 0, 60);

@@ -600,7 +600,9 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
     $mcat = $mk_param('mcat', 'all');
     $mmode = $mk_param('mmode', 'physical');
     if (!in_array($mmode, ['physical', 'digital', 'social'], true)) $mmode = 'physical';
-    $countries = ['all'=>'الكل', 'مصر'=>'مصر', 'الإمارات'=>'الإمارات', 'السعودية'=>'السعودية', 'الأردن'=>'الأردن', 'عُمان'=>'عُمان'];
+    // الدول من القايمة الموحّدة (config.php) — نفس دول المنتجات اليدوية وفلاتر الموقع
+    $countries = ['all' => 'الكل'];
+    foreach (wf_country_list() as $country_name) $countries[$country_name] = $country_name;
     $mcountry = $mk_param('country', 'all');
     if (!isset($countries[$mcountry]) || $mmode !== 'physical') $mcountry = 'all';
     $platforms = ['all', 'timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'cezma', 'manual'];
@@ -680,13 +682,12 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
         });
     } elseif (in_array($msort, ['price_asc', 'price_desc', 'commission'], true)) {
         $ranks = [];
-        $country_currency = ['مصر'=>'ج.م', 'الإمارات'=>'د.إ', 'السعودية'=>'ر.س', 'الأردن'=>'د.أ', 'عُمان'=>'ر.ع'];
         foreach ($mall as $rank_product) {
             $rank_plat = $rank_product['_plat'] ?? '';
             $rank_key = $rank_plat . '#' . ($rank_product['id'] ?? '');
             $rank_extra = isset($st_saved_prods[$rank_key]) ? (float)($st_saved_prods[$rank_key]['extra_comm'] ?? 0) : marketer_store_product_comm($code, $rank_plat, (string)($rank_product['id'] ?? ''));
             $rank_base = list_price($rank_product, $rank_plat) ?: display_price($rank_product, $rank_plat);
-            $rank_currency = wf_ui_currency_label(($rank_product['currency'] ?? '') ?: ($country_currency[$rank_product['country'] ?? 'مصر'] ?? 'ج.م'));
+            $rank_currency = wf_ui_currency_label(($rank_product['currency'] ?? '') ?: wf_country_currency($rank_product['country'] ?? 'مصر'));
             $ranks[$rank_key] = ['price'=>round($rank_base + $rank_extra, 2), 'commission'=>round($rank_extra, 2), 'currency'=>$rank_currency];
         }
         usort($mall, static function ($a, $b) use ($ranks, $msort) {

@@ -524,12 +524,12 @@ function wf_ui_currency($row) {
     $key = (string)($row['plat'] ?? $row['_plat'] ?? '') . '#' . (string)($row['id'] ?? '');
     if (!isset($currency_cache[$key])) {
         $product = !empty($row['id']) && function_exists('find_product_by_id') ? find_product_by_id((string)$row['id'], (string)($row['plat'] ?? $row['_plat'] ?? '')) : null;
-        $map = ['مصر'=>'ج.م', 'الإمارات'=>'د.إ', 'السعودية'=>'ر.س', 'الأردن'=>'د.أ', 'عُمان'=>'ر.ع'];
-        $currency_cache[$key] = $product['currency'] ?? ($map[$product['country'] ?? 'مصر'] ?? 'ج.م');
-        if ($product && ($product['_plat'] ?? $row['plat'] ?? '') === 'm5zoon' && function_exists('mz_src_currency')) {
-            $source_currency = mz_src_currency($product);
-            if ($source_currency !== '') $currency_cache[$key] = $source_currency;
-        }
+        // اشتقاق العملة من مصدر واحد في config.php (عملة مخزّنة ⇒ عملة الدولة ⇒ مصدر m5zoon):
+        // مصر=ج.م، السعودية=ر.س، الإمارات=د.إ، الأردن=د.أ، عُمان=ر.ع — وده نفس الأساس اللي
+        // بيقرّر بيه السيرفر هل خصم الكمية (بالجنيه) ينطبق على المنتج ولا لأ.
+        $currency_cache[$key] = function_exists('wf_product_currency')
+            ? wf_product_currency($product ?: $row, (string)($product['_plat'] ?? $row['plat'] ?? $row['_plat'] ?? ''))
+            : ($product['currency'] ?? (function_exists('wf_country_currency') ? wf_country_currency($product['country'] ?? 'مصر') : 'ج.م'));
     }
     return wf_ui_currency_label($currency_cache[$key]);
 }

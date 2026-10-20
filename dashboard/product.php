@@ -71,8 +71,7 @@ if ($plat === 'm5zoon') {
     $ex['variant_codes'] = [];
 }
 $base_cart = $unit0;
-$curmap = ['مصر' => 'ج.م', 'الإمارات' => 'د.إ', 'السعودية' => 'ر.س', 'الأردن' => 'د.أ', 'عُمان' => 'ر.ع'];
-$cur = $p['currency'] ?? ($curmap[$p['country'] ?? 'مصر'] ?? 'ج.م');
+$cur = $p['currency'] ?? wf_country_currency($p['country'] ?? 'مصر');
 if ($plat === 'm5zoon') { $mzCur = mz_src_currency($p); if ($mzCur !== '') $cur = $mzCur; }
 
 // === FAVORITES (logged-in = saved to file, guest = session) ===
@@ -556,7 +555,7 @@ $vlbl = $plat === 'ledger' ? (string)($vd['color'] ?? '') : ($sz2 !== '' ? $sz2 
   <button type="button" aria-label="زيادة الكمية" onclick="var q=document.getElementById('bqty');q.value=(parseInt(q.value||1,10)||1)+1;" data-ui="u-033dc7b5 d5v d5w d3w ds dc de d3j">+</button>
 </div>
 <div data-ui="u-aaa3fbb4 d12 ds dt d24 d3d">قيمة المنتجات قبل الشحن: <b id="buytotal" data-ui="u-9dfa35fd d2k d9h"><?php echo wf_ui_money($unit0); ?></b> <?php echo esc($cur); ?></div>
-<?php if (function_exists('wf_bulk_discount_plat_ok') && wf_bulk_discount_plat_ok($plat) && (float)$unit0 > 0): ?>
+<?php if (function_exists('wf_bulk_discount_plat_ok') && wf_bulk_discount_plat_ok($plat, $cur) && (float)$unit0 > 0): ?>
 <div data-ui="u-aaa3fbb4 d12 ds dt d24 d3d" id="buyBulkRow" hidden><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-check></use></svg> خصم الكمية: <b id="buyBulkExtra">1</b> قطعة إضافية × <b><?php echo (int)LP_BUNDLE_DISCOUNT; ?></b> ج.م = <b id="buyBulkDisc" style="color:var(--success)">0</b> <?php echo esc($cur); ?></div>
 <?php endif; ?>
 </div>

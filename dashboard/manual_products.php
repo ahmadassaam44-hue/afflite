@@ -4,7 +4,7 @@ if (!is_admin_user()) {
     header('Location: ../index.php'); exit;
 }
 
-$FIELDS = ['name', 'price', 'category', 'stock', 'sku', 'description', 'colors', 'sizes', 'material', 'weight', 'dimensions', 'faqs'];
+$FIELDS = ['name', 'price', 'country', 'category', 'stock', 'sku', 'description', 'colors', 'sizes', 'material', 'weight', 'dimensions', 'faqs'];
 $msgs = []; $errs = [];
 $status = manual_db_status();
 $cats = array_values(array_filter(wf_category_canonical(), function ($c) { return !in_array($c, ['منتجات رقمية', 'سوشيال ميديا'], true); }));
@@ -90,13 +90,21 @@ function manual_img_src($u) {
 function manual_form_html($v, $mode, $cats) {
     $g = function ($k) use ($v) { return esc($v[$k] ?? ''); };
     $sel = (string)($v['category'] ?? '');
+    $currencies = wf_country_currencies();
+    $country = wf_match_country($v['country'] ?? '', 'مصر');
     $imgs = (array)($v['images'] ?? []);
     echo '<form method="post" enctype="multipart/form-data">' . csrf_field();
     echo '<input type="hidden" name="action" value="' . ($mode === 'update' ? 'update' : 'add') . '">';
     if ($mode === 'update') echo '<input type="hidden" name="id" value="' . (int)($v['id'] ?? 0) . '">';
     echo '<div class="mp-grid">';
     echo '<label>الاسم *<input name="name" required maxlength="255" value="' . $g('name') . '"></label>';
-    echo '<label>السعر (ج.م) *<input name="price" required inputmode="decimal" value="' . $g('price') . '"></label>';
+    // الدولة بتحدد عملة السعر (مصر=ج.م، السعودية=ر.س، الإمارات=د.إ، الأردن=د.أ، عُمان=ر.ع)
+    echo '<label>الدولة *<select name="country" id="mpCountry" required onchange="mpSyncCurrency()">';
+    foreach (wf_country_list() as $c) {
+        echo '<option value="' . esc($c) . '"' . ($c === $country ? ' selected' : '') . '>' . esc($c) . ' — ' . esc($currencies[$c]) . '</option>';
+    }
+    echo '</select></label>';
+    echo '<label>السعر (<span class="mp-cur">' . esc(wf_country_currency($country)) . '</span>) *<input name="price" required inputmode="decimal" value="' . $g('price') . '"></label>';
     echo '<label>القسم *<select name="category" required><option value="">— اختار —</option>';
     foreach ($cats as $c) echo '<option value="' . esc($c) . '"' . ($c === $sel ? ' selected' : '') . '>' . esc($c) . '</option>';
     echo '</select></label>';
@@ -121,13 +129,19 @@ function manual_form_html($v, $mode, $cats) {
     }
     echo '<label>صور من الكمبيوتر (تقدر تختار أكتر من صورة، JPG/PNG/WEBP، لحد 4MB للصورة)<input type="file" name="images_files[]" accept="image/*" multiple></label>';
     echo '<label>روابط صور (سطر لكل رابط https://...)<textarea name="images_text" rows="3" dir="ltr" placeholder="https://example.com/1.jpg"></textarea></label>';
+    echo '<p class="mut">السعر بيتسجّل وبيتعرض بعملة الدولة المختارة (مفيش تحويل عملات). المنتج هيظهر في فلتر الدولة دي على الموقع، وجوه «كل الدول».</p>';
     echo '<p><button class="btn" type="submit">' . ($mode === 'update' ? 'حفظ التعديل' : 'إضافة المنتج') . '</button>';
     if ($mode === 'update') echo ' <a class="btn outline" href="manual_products.php">إلغاء</a>';
     echo '</p></form>';
+    // العملة اللي جنب خانة السعر بتتبدّل أوتوماتيك مع اختيار الدولة
+    echo '<script>var mpCurrencies=' . json_encode($currencies, JSON_UNESCAPED_UNICODE) . ';'
+        . 'function mpSyncCurrency(){var s=document.getElementById("mpCountry");if(!s)return;var c=mpCurrencies[s.value]||"ج.م";'
+        . 'document.querySelectorAll(".mp-cur").forEach(function(e){e.textContent=c;});}'
+        . 'document.addEventListener("DOMContentLoaded",mpSyncCurrency);</script>';
 }
 
 layout_top('المنتجات اليدوية', 'home');
-echo '<style>.mp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.mp-grid label,.card label{display:block;margin:8px 0}.mp-grid input,.mp-grid select,.card input,.card textarea,.card select{width:100%;box-sizing:border-box}.mp-imgs{display:flex;flex-wrap:wrap;gap:10px}.mp-img{display:block;width:110px;margin:0}.mp-img img{width:110px;height:110px;object-fit:cover;border-radius:8px;background:#f1f5f9}.mp-msg{padding:10px 12px;border-radius:8px;margin:8px 0}.mp-ok{background:#ecfdf5;color:#065f46}.mp-err{background:#fef2f2;color:#991b1b}</style>';
+echo '<style>.mp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.mp-grid label,.card label{display:block;margin:8px 0}.mp-grid input,.mp-grid select,.card input,.card textarea,.card select{width:100%;box-sizing:border-box}.mp-imgs{display:flex;flex-wrap:wrap;gap:10px}.mp-img{display:block;width:110px;margin:0}.mp-img img{width:110px;height:110px;object-fit:cover;border-radius:8px;background:#f1f5f9}.mp-msg{padding:10px 12px;border-radius:8px;margin:8px 0}.mp-ok{background:#ecfdf5;color:#065f46}.mp-err{background:#fef2f2;color:#991b1b}.mp-cur{font-weight:700}</style>';
 
 foreach ($msgs as $m) echo '<div class="card mp-msg mp-ok">' . esc($m) . '</div>';
 foreach ($errs as $e) echo '<div class="card mp-msg mp-err">' . esc($e) . '</div>';
@@ -141,8 +155,9 @@ if ($status !== '') {
     echo '</div>';
 
     echo '<div class="card"><h3>رفع ملف Excel / CSV</h3>';
-    echo '<p class="mut">الصف الأول لازم يكون العناوين: name,price,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs<br>';
+    echo '<p class="mut">الصف الأول لازم يكون العناوين: name,price,country,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs (الترتيب مش مهم — الأعمدة بتتقرا بالاسم)<br>';
     echo 'القيم المتعددة (الألوان، المقاسات، الصور) بتتفصل بـ | . الأسئلة: السؤال::الجواب|السؤال::الجواب . القسم لازم يكون اسم قسم من أقسام الموقع.<br>';
+    echo '<b>country</b> اختياري (الافتراضي مصر): ' . esc(implode(' / ', wf_country_list())) . ' — والعملة بتتحدد منها أوتوماتيك (' . esc(implode(' / ', array_values(wf_country_currencies()))) . ') والسعر بيتسجّل بالعملة دي من غير تحويل.<br>';
     echo 'في Excel: احفظ الملف كـ «CSV (Comma delimited)».</p>';
     echo '<form method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="action" value="csv">';
     echo '<input type="file" name="csv_file" accept=".csv,text/csv" required> <button class="btn" type="submit">رفع</button></form></div>';
@@ -156,6 +171,19 @@ if ($status !== '') {
     echo '<div class="card"><h3>المنتجات اليدوية (' . count($list) . ')</h3>';
     if (!$list) echo '<p class="mut">مفيش منتجات يدوية لسه</p>';
     if ($list) {
+        // ملخّص بالدولة عشان الأدمن يشوف أنهي منتجات بالسعر المحلي (ج.م / ر.س / د.إ / د.أ / ر.ع)
+        $by_country = [];
+        foreach ($list as $r) {
+            $c = wf_match_country((manual_decode_details($r))['country'] ?? '', 'مصر');
+            $by_country[$c] = ($by_country[$c] ?? 0) + 1;
+        }
+        $country_bits = [];
+        foreach (wf_country_list() as $cn) {
+            if (!empty($by_country[$cn])) $country_bits[] = $cn . ' (' . wf_country_currency($cn) . '): ' . (int)$by_country[$cn];
+        }
+        echo '<p class="mut">حسب الدولة — ' . esc(implode(' • ', $country_bits)) . '</p>';
+    }
+    if ($list) {
         echo '<form id="mpBulkForm" method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">' . csrf_field()
             . '<input type="hidden" name="action" value="bulk_delete">'
             . '<label style="display:inline-flex;gap:6px;align-items:center;margin:0"><input type="checkbox" onchange="document.querySelectorAll(\'.mp-pick\').forEach(function(c){c.checked=this.checked;},this)"> تحديد الكل</label>'
@@ -165,10 +193,12 @@ if ($status !== '') {
     foreach ($list as $r) {
         $d = manual_decode_details($r);
         $imgs = manual_row_images($r, $d);
+        $row_country = wf_match_country($d['country'] ?? '', 'مصر');
+        $row_cur = wf_country_currency($row_country);
         echo '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid #e2e8f0">';
         echo '<input type="checkbox" class="mp-pick" form="mpBulkForm" name="ids[]" value="' . (int)$r['id'] . '" style="width:18px;height:18px" aria-label="تحديد المنتج">';
         echo $imgs ? '<img src="' . esc(manual_img_src($imgs[0])) . '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px">' : '<span style="width:56px;height:56px;background:#f1f5f9;border-radius:6px;display:inline-block"></span>';
-        echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ج.م — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
+        echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ' . esc($row_cur) . ' — ' . esc($row_country) . ' — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
         echo '<a class="btn sm outline" href="?edit=' . (int)$r['id'] . '">تعديل</a> ';
         echo '<form method="post" style="display:inline">' . csrf_field() . '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . (int)$r['id'] . '"><button class="btn sm outline" type="submit">حذف</button></form>';
         echo '</div>';
