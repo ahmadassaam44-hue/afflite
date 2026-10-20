@@ -151,7 +151,6 @@ if (!$cart) {
 }
 $sum = 0; $cdisc = 0.0;
 $currencies = array_fill_keys(wf_ui_currencies($cart), true);
-echo wf_ui_currency_notice($cart);
 ?>
 <div class="cart-grid">
 <div><div class="card" data-ui="u-a2bc2b26 d5k">
