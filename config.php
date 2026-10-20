@@ -4086,6 +4086,18 @@ function wf_product_country($p) {
     if (!is_array($p)) $p = [];
     return wf_match_country($p['country'] ?? '', 'مصر');
 }
+// رسوم شحن ثابتة حدّدها المالك للمنتج نفسه (بعملة دولة المنتج) — بتتقدم على جدول مناطق الدولة.
+// null = المنتج مالوش سعر شحن خاص ⇒ الرسوم من جدول الدولة/المنطقة زي الأول.
+// الصفر المُدخل صراحةً معناه «شحن مجاني» — وده غير الفاضي (مش مُحدد).
+function wf_product_shipping($p) {
+    if (!is_array($p)) return null;
+    $v = $p['ship_fee'] ?? ($p['extra']['ship_fee'] ?? null);
+    if ($v === null || $v === '') return null;
+    if (is_array($v) || !is_numeric($v)) return null;
+    $f = round((float)$v, 2);
+    if ($f < 0) return null;
+    return min(2000.0, $f);   // نفس سقف رسوم الشحن المستخدم في الطلبات
+}
 // عملة رسوم الشحن: الجنيه لمصر، وعملة الدولة نفسها للخليج (مفيش تحويل عملات)
 function wf_ship_currency($plat = '', $country = '') {
     $cn = wf_match_country($country, '');
@@ -4199,15 +4211,19 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
         $ship_by_platform[$ship_platform] = site_ship_map($ship_platform);
     }
     $ship_by_platform['safka'] = $ship_by_platform['safqa'];
-    // المنتجات اليدوية: مصر بتستخدم جدول تايم هاند بالجنيه، وكل دولة خليجية ليها جدول مناطقها
-    // بعملة الدولة (الرسوم بيدخلها المالك من dashboard/admin_shipping.php) — مفيش تحويل عملات.
+    // المنصات اللي ليها جدول لكل دولة (المنتجات اليدوية + مخزون): مصر بتستخدم جدول تايم هاند
+    // بالجنيه، وكل دولة خليجية ليها جدول مناطقها بعملة الدولة (الرسوم بيدخلها المالك من
+    // dashboard/admin_shipping.php) — مفيش تحويل عملات.
     $ship_currency_by_key = [];
-    $ship_by_platform['manual'] = site_ship_map('manual', 'مصر');
-    $ship_currency_by_key['manual'] = wf_ship_currency('manual', 'مصر');
-    foreach (wf_gulf_countries() as $ship_country) {
-        $ship_key = 'manual:' . $ship_country;
-        $ship_by_platform[$ship_key] = site_ship_map('manual', $ship_country);
-        $ship_currency_by_key[$ship_key] = wf_ship_currency('manual', $ship_country);
+    $ship_country_plats = function_exists('site_ship_country_plats') ? site_ship_country_plats() : ['manual'];
+    foreach ($ship_country_plats as $ship_cplat) {
+        $ship_by_platform[$ship_cplat] = site_ship_map($ship_cplat, 'مصر');
+        $ship_currency_by_key[$ship_cplat] = wf_ship_currency($ship_cplat, 'مصر');
+        foreach (wf_gulf_countries() as $ship_country) {
+            $ship_key = $ship_cplat . ':' . $ship_country;
+            $ship_by_platform[$ship_key] = site_ship_map($ship_cplat, $ship_country);
+            $ship_currency_by_key[$ship_key] = wf_ship_currency($ship_cplat, $ship_country);
+        }
     }
     foreach (array_keys($ship_by_platform) as $ship_key) {
         if (!isset($ship_currency_by_key[$ship_key])) $ship_currency_by_key[$ship_key] = 'ج.م';
@@ -4215,8 +4231,8 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
     // أول ما يفتح المتصفح الصفحة، قائمة المناطق تظهر بأسعار المنصة/الدولة نفسها (بدل جدول عام)
     $default_plat = trim((string)$default_plat);
     $default_country = wf_match_country($default_country, '');
-    $default_key = ($default_plat === 'manual' && $default_country !== '' && $default_country !== 'مصر')
-        ? 'manual:' . $default_country
+    $default_key = (in_array($default_plat, $ship_country_plats, true) && $default_country !== '' && $default_country !== 'مصر')
+        ? $default_plat . ':' . $default_country
         : $default_plat;
     $ship_rates = ($default_key !== '' && !empty($ship_by_platform[$default_key]))
         ? $ship_by_platform[$default_key]

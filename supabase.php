@@ -61,25 +61,35 @@ function site_shipping() {
 
 // جدول مناطق/رسوم الشحن لمنصة معيّنة — ولو المنصة بتشتغل في أكتر من دولة (المنتجات اليدوية)
 // بيتحدّد الجدول بالدولة: مصر = جدول تايم هاند، وكل دولة خليجية = جدول مناطقها اللي المالك بيدخل رسومه.
+// منصات ليها جدول شحن لكل دولة (مش جدول واحد لكل الدول): المنتجات اليدوية ومخزون.
+// أي منصة تانية (vendoor/timehand/safqa/…) ليها جدول واحد بمحافظات مصر بالجنيه زي الأول.
+function site_ship_country_plats() {
+    return ['manual', 'm5zoon'];
+}
 function site_ship_regions($plat, $country = '') {
     $plat = strtolower(trim((string)$plat));
     // Cezma بيستخدم نفس جدول شحن TimeHand بالكامل (نفس أسعار المحافظات ونفس الملاحظات).
     $lookup = ($plat === 'cezma') ? 'timehand' : $plat;
     $cn = function_exists('wf_match_country') ? wf_match_country($country, '') : trim((string)$country);
-    // المنتجات اليدوية في مصر (أو من غير دولة محددة) = نفس جدول تايم هاند بالجنيه.
-    if ($plat === 'manual' && ($cn === '' || $cn === 'مصر')) $lookup = 'timehand';
+    $per_country = in_array($lookup, site_ship_country_plats(), true);
+    // منتج دولته مصر (أو من غير دولة محددة) = نفس جدول تايم هاند بمحافظات مصر بالجنيه،
+    // حتى لو كان يدوي أو من مخزون — مفيش محافظات مصرية بتظهر لمنتج دولته خليجية.
+    if ($per_country && ($cn === '' || $cn === 'مصر')) $lookup = 'timehand';
     $all = site_shipping();
+    $legacy = null;   // جدول المنصة القديم من غير دولة (احتياطي للتوافق مع بيانات أقدم)
     foreach ($all as $p) {
         $is_match = (($p['platform'] ?? '') === $lookup) || ($lookup === 'safqa' && ($p['platform'] ?? '') === 'safka');
         if (!$is_match) continue;
-        if ($lookup !== 'manual') return $p['regions'];
-        // أكتر من جدول يدوي (جدول لكل دولة): لازم الدولة تتطابق — مش بنخمن رسوم دولة تانية
+        if ($lookup !== $plat || !$per_country) return $p['regions'];
+        // أكتر من جدول لنفس المنصة (جدول لكل دولة): لازم الدولة تتطابق — مش بنخمن رسوم دولة تانية
         $pc = function_exists('wf_match_country') ? wf_match_country($p['country'] ?? '', '') : trim((string)($p['country'] ?? ''));
         if ($pc !== '' && $pc === $cn) return $p['regions'];
+        if ($pc === '' && $legacy === null) $legacy = $p['regions'];
     }
-    if ($lookup === 'manual') {
-        // دولة مالهاش جدول (أو دولة خليجية من غير رسوم مدخلة): مفيش مناطق — أحسن من رسوم غلط
-        error_log('site_ship_regions: مفيش جدول شحن للمنتجات اليدوية في دولة "' . $cn . '"');
+    if ($lookup === $plat && $per_country) {
+        if ($legacy !== null) return $legacy;   // بيانات قديمة: جدول واحد للمنصة من غير دولة
+        // دولة مالهاش جدول: مفيش مناطق — أحسن من رسوم دولة تانية أو محافظات مصرية غلط
+        error_log('site_ship_regions: مفيش جدول شحن لـ"' . $plat . '" في دولة "' . $cn . '"');
         return [];
     }
     return $all ? $all[0]['regions'] : [];
