@@ -4351,7 +4351,6 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
                 <div class="eo-inv-row total"><span>الإجمالي المطلوب عند الاستلام:</span><span><b id="eoInvTotal">0</b> <span data-eo-total-currency>ج.م</span></span></div>
               </div>
 
-              <div id="eoCurrencyNotice" class="alert warning" hidden>عملة المنتج تختلف عن رسوم الشحن المصرية. لا يتم تحويل العملات في الواجهة؛ راجع الإدارة قبل الاعتماد المالي.</div>
               <div id="eoErrorMsg" data-ui="u-39395ec1 uev uey ud7 uez uf0 ue9 uf1 ue6 ue5"></div>
 
               <button type="submit" id="eoSubmitBtn" class="eo-submit-btn">

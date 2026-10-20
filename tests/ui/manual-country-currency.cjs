@@ -172,6 +172,7 @@ chk($out,$fail,'dialog currency default key = rendered case',($__curs['default']
 chk($out,$fail,'dialog default state = rendered case',($__state['default'] ?? []),($__state['manual:السعودية'] ?? []));
 chk($out,$fail,'dialog rendered saudi uses manual table',mb_strpos($__dlg,'data-ship-currency="ر.س"')!==false,true);
 chk($out,$fail,'dialog district placeholder follows country',mb_strpos($__dlg,'-- اختر المنطقة أولاً --')!==false&&mb_strpos($__dlg,'-- اختر المحافظة أولاً --')===false,true);
+chk($out,$fail,'dialog has no currency-mismatch warning',mb_strpos($__dlg,'عملة المنتج تختلف عن رسوم الشحن')===false&&mb_strpos($__dlg,'eoCurrencyNotice')===false,true);
 // ---- 8c) مدن دول الخليج (القايمة التانية بقت منسدلة زي مصر) ----
 $eg_map = wf_ship_cities_map();
 chk($out,$fail,'cities egypt default count',count($eg_map),26);
@@ -431,6 +432,8 @@ assert.ok(/\$shipfee = \(\$prod_ship !== null\)[\s\S]{0,120}\$_POST\['ship_fee'\
 // الواجهة بتبدّل جدول المناطق والعملة حسب دولة المنتج
 assert.ok(/function eoSetShippingPlatform\(platform,country,productShip\)/.test(uijs)&&/eoShipCurrency/.test(uijs),'ui.js must switch the region table and currency per product country');
 assert.ok(/eoSetShippingPlatform\(e\.plat\|\|"",e\.country\|\|"",e\.ship_fee\)/.test(uijs),'the easy-order dialog must pass the product country and its own shipping fee');
+// تحذير «عملة المنتج تختلف عن رسوم الشحن المصرية» اتشال من النافذة بقرار الإدارة
+assert.ok(!/eoCurrencyNotice/.test(uijs)&&!/eoCurrencyNotice/.test(src('config.php')),'the removed currency-mismatch warning must not come back');
 // سعر شحن المنتج بيكتب على كل الخيارات (فالـ total يتحسب بيه) — وفاضي = جدول المناطق زي الأول
 assert.ok(/var fixed=\(productShip===null\|\|productShip===undefined\|\|productShip===""\)\?null:Number\(productShip\);/.test(uijs),'ui.js must ignore an absent/blank product shipping fee');
 assert.ok(/var fee=\(fixed!==null\)\?fixed:Number\(rates\[region\]\);/.test(uijs),'every region option must show the product fee when it is set');
