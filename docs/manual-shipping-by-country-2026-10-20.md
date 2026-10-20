@@ -80,7 +80,7 @@
 ## التحقق
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 205 assertion — 0 فشل
+node tests/ui/manual-country-currency.cjs   # 306 assertion — 0 فشل
 ```
 الفحص (PHP 8.3 حقيقي في WASM على `data/shipping.json` و`shipping_cities_gulf.json`
 و`shipping_cities_shopmart.json` الحقيقيين) بيأكد:
@@ -90,7 +90,8 @@ node tests/ui/manual-country-currency.cjs   # 205 assertion — 0 فشل
 - الاسم من غير تشكيل أو بالكود الإنجليزي (`عمان`، `KSA`) بيوصل لنفس الجدول.
 - دولة مش في قايمة الموقع (الكويت) ⇒ معاملة مصر (نفس قاعدة الموقع)، ودولة خليجية جدولها اتحذف ⇒ قائمة فاضية.
 - **رجعة:** `cezma` ⇒ تايم هاند، `vendoor`/`timehand` 27، `safqa` ⇒ `safka` 26، `shopmart` 26،
-  منصة مش معروفة ⇒ أول جدول (30)، و`m5zoon` لسه 4 صفوف على مستوى الدولة.
+  منصة مش معروفة ⇒ أول جدول (30)، و`m5zoon` بقى له جدول لكل دولة (اتظبط لاحقاً — شوف
+  `docs/stock-shipping-by-country-and-product-fee-2026-10-20.md`).
 - **HTML فعلي:** `render_easyorder_dialog_html('', 'manual', 'ر.س', 'السعودية')` بيطلّع
   `>الرياض (الشحن: 0 ر.س)</option>` و«المنطقة / المدينة» و`data-ship-currency="ر.س"`
   و`manual:السعودية` جوه `wfShippingCurrency`، و**مفيش** أي «(الشحن: … ج.م)» ولا «القاهرة».
@@ -109,13 +110,16 @@ node tests/ui/manual-country-currency.cjs   # 205 assertion — 0 فشل
    المدن المضافة هي **المدن الرئيسية** لكل منطقة؛ المالك يقدر يكمّل الباقي في
    `data/shipping_cities_gulf.json` (الرسوم بتتحسب بالمنطقة مش بالمدينة، فأي مدينة ناقصة
    العميل يقدر يكتبها في الحقل النص).
-2. **مخزون (m5zoon) لسه 4 صفوف على مستوى الدولة** (الإمارات 25 درهم، السعودية 25 ريال، الأردن 3 دينار،
-   عُمان 2.5 ريال) — المالك طلب إن الشغل ده يكون **لليدوية بس** دلوقتي. لما نقرر نظبط مخزون،
-   نفس الميكانيزم (جدول لكل دولة بحقل `country`) هينفع من غير تغيير في الكود.
+2. **مخزون (m5zoon) اتظبط بعدها بنفس الآلية** (جدول لكل دولة بحقل `country` + نفس مناطق اليدوي،
+   والرسوم = سعر الدولة الموحّد 25 ر.س / 25 د.إ / 3 د.أ / 2.5 ر.ع) — التفاصيل في
+   `docs/stock-shipping-by-country-and-product-fee-2026-10-20.md`. الوثيقة دي بتوصف حالة اليدوي
+   وقت كتابتها (رسوم يدوية صفر، وجدول `m5zoon` القديم بأسماء الدول).
 3. **Supabase:** `USE_SUPABASE = false` ومفيش migration لجدول `shipping` ⇒ المصدر الفعلي هو
    `data/shipping.json`. لو اتفعّل Supabase لاحقاً، جدول `shipping` هناك محتاج عمود `country`
    (`sb_shipping()` بيقرأ `platform,region,fee,currency,notes` بس) وإلا جداول الدول هتتدمج في جدول واحد.
 4. **`$_POST['ship_fee']`** في `dashboard/orders.php` لسه بيتقدّم على جدول السيرفر (اترفع كملاحظة
-   أمان فلوس ومالهاش قرار لسه) — الجدول نفسه بقى حسب الدولة.
+   أمان فلوس ومالهاش قرار لسه) — الجدول نفسه بقى حسب الدولة. **تحديث:** بقى فيه أولوية أعلى
+   = سعر الشحن المخزّن للمنتج نفسه (`wf_product_shipping`)، ولو متحدد فالسيرفر بيتجاهل رقم
+   المتصفح خالص.
 5. صفحات التسجيل (`register.php` / `marketer_complete.php`) بتستخدم محافظات مصر لعنوان المستخدم —
    دي بيانات حساب مش شحن طلب، فسايبتها زي ما هي.

@@ -982,6 +982,29 @@ def m5zoon_detail(op, pid):
     sku = re.search(r'\bSKU\s*:\s*</?[^>]*>\s*([^<\s]+)', main, re.I)
     return {'images': imgs, 'desc': desc, 'sku': sku.group(1) if sku else ''}
 
+M5ZOON_COUNTRY_BY_CODE = {'AE': 'الإمارات', 'SA': 'السعودية', 'JO': 'الأردن', 'OM': 'عُمان'}
+M5ZOON_COUNTRY_BY_CURRENCY = {
+    'درهم': 'الإمارات', 'درهم إماراتي': 'الإمارات', 'د.إ': 'الإمارات', 'aed': 'الإمارات',
+    'دينار': 'الأردن', 'دينار أردني': 'الأردن', 'د.أ': 'الأردن', 'jod': 'الأردن',
+    'ريال عماني': 'عُمان', 'ر.ع': 'عُمان', 'omr': 'عُمان',
+    'ريال': 'السعودية', 'ريال سعودي': 'السعودية', 'ر.س': 'السعودية', 'sar': 'السعودية',
+    'جنيه': 'مصر', 'جنيه مصري': 'مصر', 'ج.م': 'مصر', 'egp': 'مصر',
+}
+
+
+def _m5zoon_country(pid, currency):
+    """دولة منتج مخزون من بياناته نفسها — لأن العنوان في صفحة الطلب لازم يعرض مناطق الدولة دي،
+    مش محافظات مصر. الترتيب: لاحقة الكود (-AE/-SA/-JO/-OM) هي الأدق، وبعدين اسم العملة.
+    'ريال' لوحدها = السعودية (الأشهر في المصدر، وعُمان بتيجي بـ'ريال عماني'/'ر.ع')، وأي حاجة تانية = مصر."""
+    m = re.search(r'-(ae|sa|jo|om)$', str(pid).strip(), re.I)
+    if m:
+        return M5ZOON_COUNTRY_BY_CODE[m.group(1).upper()], 'id'
+    cur = str(currency or '').strip().lower()
+    if cur in M5ZOON_COUNTRY_BY_CURRENCY:
+        return M5ZOON_COUNTRY_BY_CURRENCY[cur], 'currency'
+    return 'مصر', 'default'
+
+
 def update_m5zoon():
     user, pw = os.environ.get('M5ZOON_USER', ''), os.environ.get('M5ZOON_PASS', '')
     if not (user and pw): log('M5zoon: no M5ZOON_USER/M5ZOON_PASS — skip'); return
@@ -1025,7 +1048,7 @@ def update_m5zoon():
                   'media_links': [], 'description_html': '', 'detail_images': imgs[1:], 'market': '', 'orig_category': '', 'orig_suggested': float(f['suggested'])}
             it = {'id': pid, 'name': f['name'], 'sku': d.get('sku', ''), 'price': price, 'price_text': price_text(price, currency), 'currency': currency,
                   'commission': price_text(commission, currency), 'images': imgs, 'videos': [], 'files': [], 'desc': d.get('desc') or f['name'],
-                  'category': normalize_category(guess_category(f['name'])), 'stock': 999, 'sizes': [], 'rank': 0, 'country': 'مصر', 'added_at': TODAY, 'extra': ex}
+                  'category': normalize_category(guess_category(f['name'])), 'stock': 999, 'sizes': [], 'rank': 0, 'country': _m5zoon_country(pid, currency)[0], 'added_at': TODAY, 'extra': ex}
             record_price('m5zoon#' + pid, price, 0); cur.append(it); by_id[pid] = it; add += 1
         ex['source_commission_original'] = price_text(commission, currency); ex['cost'] = price_text(price, currency); ex['suggested'] = price_text(float(f['suggested']), currency); ex['profit'] = price_text(commission, currency)
         ex['orig_suggested'] = float(f['suggested']); ex['price_boxes'] = [price_text(price, currency) + ' سعر التكلفة', price_text(float(f['suggested']), currency) + ' سعر بيع مقترح', price_text(commission, currency) + ' الربح']
@@ -1033,8 +1056,17 @@ def update_m5zoon():
     for it in cur:
         if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
             it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+    # إصلاح ذاتي: صفوف قديمة اتخزنت بمصر رغم إن عملتها خليجية (زي 5549 بالدرهم) —
+    # دي بتخلي صفحة الطلب تعرض محافظات مصر لمنتج إماراتي، فبنصلّح الدولة من بيانات الصف نفسه.
+    country_fixed = 0
+    for it in cur:
+        if str(it.get('country') or '').strip() in ('', 'مصر'):
+            guess, how = _m5zoon_country(it.get('id'), it.get('currency'))
+            if guess != 'مصر':
+                log(f"M5zoon: country fixed {it.get('id')} → {guess} (by {how})")
+                it['country'] = guess; country_fixed += 1
     jsave('m5zoon.json', cur)
-    summary['m5zoon'] = {'total': len(cur), 'fetched': len(fresh), 'updated': upd, 'added': add, 'unavailable': drop, 'details': details}
+    summary['m5zoon'] = {'total': len(cur), 'fetched': len(fresh), 'updated': upd, 'added': add, 'unavailable': drop, 'details': details, 'country_fixed': country_fixed}
     log('M5zoon done', summary['m5zoon'])
 
 # ---------------------------------------------------------------- Angazny (تسجيل دخول + المنتجات والأسعار والمخزون)

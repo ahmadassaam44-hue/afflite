@@ -41,7 +41,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
         $ord_cur = function_exists('wf_ui_currency') ? wf_ui_currency($prod) : wf_product_currency($prod, $plat);
         $ship_cur = wf_ship_currency($plat, $ord_country);
         $ship_map = function_exists('site_ship_map') ? site_ship_map($plat, $ord_country) : [];
-        $shipfee = max(0, min(2000, (float)($_POST['ship_fee'] ?? ($ship_map[$city] ?? 0))));
+        // سعر الشحن الثابت بتاع المنتج نفسه (لو المالك حدده في المنتجات اليدوية) بيكسب جدول المناطق،
+        // وبيتحسب على السيرفر من بيانات المنتج — مش من رقم جاي من المتصفح.
+        $prod_ship = function_exists('wf_product_shipping') ? wf_product_shipping($prod) : null;
+        $shipfee = ($prod_ship !== null)
+            ? $prod_ship
+            : max(0, min(2000, (float)($_POST['ship_fee'] ?? ($ship_map[$city] ?? 0))));
         $phone = preg_replace('/\D+/', '', (string)($_POST['phone'] ?? ''));
         $phone = mb_substr($phone, 0, 20);
         $phone2 = preg_replace('/\D+/', '', (string)($_POST['phone2'] ?? ''));

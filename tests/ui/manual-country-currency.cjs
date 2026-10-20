@@ -151,6 +151,26 @@ chk($out,$fail,'dialog city state keeps egypt',mb_strpos($__dlg,'"القاهرة
 // ملاحظة: النافذة بتترسم مرة واحدة في الطلب (static \$rendered guard) فبنرسم حالة الخليج هنا —
 // وحالة مصر مغطاة بفحوص البيانات فوق (manual + مصر = جدول تايم هاند بالقاهرة والجنيه و«المحافظة»).
 chk($out,$fail,'dialog egypt data path',isset(site_ship_map('manual','مصر')['القاهرة'])&&wf_ship_currency('manual','مصر')==='ج.م'&&wf_ship_region_label('مصر')==='المحافظة',true);
+// النافذة بتبعت جدول كل منصة ليها دولة (يدوي + مخزون) للواجهة: مفاتيح platform و platform:country
+preg_match('#id="wfShippingState">(.*?)</script>#s',$__dlg,$__sm);
+$__state=json_decode($__sm[1] ?? '',true) ?: [];
+preg_match('#id="wfShippingCurrency">(.*?)</script>#s',$__dlg,$__cm);
+$__curs=json_decode($__cm[1] ?? '',true) ?: [];
+chk($out,$fail,'dialog state parsed',count($__state)>10,true);
+foreach(['السعودية'=>'ر.س','الإمارات'=>'د.إ','الأردن'=>'د.أ','عُمان'=>'ر.ع'] as $__cn=>$__cs){
+  chk($out,$fail,'dialog state key m5zoon:'.$__cn,isset($__state['m5zoon:'.$__cn]),true);
+  chk($out,$fail,'dialog state m5zoon:'.$__cn.' no cairo',isset($__state['m5zoon:'.$__cn]['القاهرة']),false);
+  chk($out,$fail,'dialog currency key m5zoon:'.$__cn,$__curs['m5zoon:'.$__cn] ?? '',$__cs);
+  chk($out,$fail,'dialog currency key manual:'.$__cn,$__curs['manual:'.$__cn] ?? '',$__cs);
+}
+chk($out,$fail,'dialog state m5zoon saudi fees',[25.0],array_values(array_unique(array_map('floatval',array_values($__state['m5zoon:السعودية'] ?? [])))));
+chk($out,$fail,'dialog state manual saudi fees',[0.0],array_values(array_unique(array_map('floatval',array_values($__state['manual:السعودية'] ?? [])))));
+chk($out,$fail,'dialog state m5zoon default is egypt',isset($__state['m5zoon']['القاهرة']),true);
+chk($out,$fail,'dialog currency m5zoon default',($__curs['m5zoon'] ?? ''),'ج.م');
+// مفتاح default = حالة الصفحة اللي ات رسمت (هنا: يدوي/السعودية) — مصر مغطّاة بفحوص البيانات فوق
+chk($out,$fail,'dialog currency default key = rendered case',($__curs['default'] ?? ''),'ر.س');
+chk($out,$fail,'dialog default state = rendered case',($__state['default'] ?? []),($__state['manual:السعودية'] ?? []));
+chk($out,$fail,'dialog rendered saudi uses manual table',mb_strpos($__dlg,'data-ship-currency="ر.س"')!==false,true);
 // ---- 8c) مدن دول الخليج (القايمة التانية بقت منسدلة زي مصر) ----
 $eg_map = wf_ship_cities_map();
 chk($out,$fail,'cities egypt default count',count($eg_map),26);
@@ -191,8 +211,26 @@ chk($out,$fail,'ship timehand 27',count(site_ship_map('timehand')),27);
 chk($out,$fail,'ship safqa -> safka 26',count(site_ship_map('safqa')),26);
 chk($out,$fail,'ship shopmart 26',count(site_ship_map('shopmart')),26);
 chk($out,$fail,'ship unknown plat falls back',count(site_ship_map('hevo')),30);
-chk($out,$fail,'ship m5zoon still country rows',count(site_ship_map('m5zoon')),4);
-chk($out,$fail,'ship m5zoon uae product unchanged',count(site_ship_map('m5zoon','الإمارات')),4);
+// ---- 9b) مخزون: عنوان الطلب يعرض مناطق دولة المنتج — مش محافظات مصر (شكوى 2026-10-20) ----
+chk($out,$fail,'ship m5zoon default = egypt timehand',site_ship_regions('m5zoon'),$th);
+chk($out,$fail,'ship m5zoon egypt has cairo',isset(site_ship_map('m5zoon','مصر')['القاهرة']),true);
+chk($out,$fail,'ship m5zoon unknown country = egypt',count(site_ship_map('m5zoon','المريخ')),27);
+chk($out,$fail,'ship country plats',site_ship_country_plats(),['manual','m5zoon']);
+$mz_tables=['السعودية'=>[13,'الرياض',25.0,'ر.س'],'الإمارات'=>[7,'دبي',25.0,'د.إ'],'الأردن'=>[12,'عمّان',3.0,'د.أ'],'عُمان'=>[11,'مسقط',2.5,'ر.ع']];
+foreach($mz_tables as $cn=>$spec){
+  $m=site_ship_map('m5zoon',$cn);
+  chk($out,$fail,'mz '.$cn.' regions',count($m),(int)$spec[0]);
+  chk($out,$fail,'mz '.$cn.' has '.$spec[1],isset($m[$spec[1]]),true);
+  chk($out,$fail,'mz '.$cn.' no cairo',isset($m['القاهرة']),false);
+  chk($out,$fail,'mz '.$cn.' no giza',isset($m['الجيزة']),false);
+  // الرسوم = سعر الدولة الموحّد (قرار الإدارة)، وكل منطقة قابلة للتعديل من إعدادات الشحن
+  chk($out,$fail,'mz '.$cn.' every region fee',array_values(array_unique(array_map('floatval',array_values($m)))),[$spec[2]]);
+  chk($out,$fail,'mz '.$cn.' currency',wf_ship_currency('m5zoon',$cn),$spec[3]);
+  chk($out,$fail,'mz '.$cn.' table currency',(string)(site_ship_regions('m5zoon',$cn)[0]['currency'] ?? ''),$spec[3]);
+  chk($out,$fail,'mz '.$cn.' region label',wf_ship_region_label($cn),'المنطقة / المدينة');
+  chk($out,$fail,'mz '.$cn.' regions = manual regions',array_keys($m),array_keys(site_ship_map('manual',$cn)));
+  chk($out,$fail,'mz '.$cn.' cities covered',array_values(array_diff(array_keys($m),array_keys(wf_ship_cities_map($cn)))),[]);
+}
 chk($out,$fail,'ship default map is egypt',isset(site_ship_map()['القاهرة']),true);
 // ---- 8) خصم الكمية (70 ج.م) للجنيه بس — قرار الإدارة 2026-10-20 ----
 chk($out,$fail,'egp label ج.م',wf_is_egp_currency('ج.م'),true);
@@ -224,6 +262,53 @@ chk($out,$fail,'state without product applies null',$st_none['applies'],null);
 chk($out,$fail,'state egp_only flag',$st_sar['egp_only'],true);
 chk($out,$fail,'state currency for js',$st_sar['currency'],'ر.س');
 chk($out,$fail,'state egp labels for js',in_array('ج.م',$st_sar['egp'],true),true);
+// ---- 10) سعر شحن المنتج نفسه: حقل في فورم المنتج اليدوي، بيتقدم على جدول مناطق الدولة ----
+chk($out,$fail,'prod ship missing = null',wf_product_shipping(['id'=>'manual-1']),null);
+chk($out,$fail,'prod ship empty = null',wf_product_shipping(['ship_fee'=>'']),null);
+chk($out,$fail,'prod ship text = null',wf_product_shipping(['ship_fee'=>'abc']),null);
+chk($out,$fail,'prod ship negative = null',wf_product_shipping(['ship_fee'=>'-5']),null);
+chk($out,$fail,'prod ship not array = null',wf_product_shipping('منتج'),null);
+chk($out,$fail,'prod ship zero = free',wf_product_shipping(['ship_fee'=>'0']),0.0);
+chk($out,$fail,'prod ship int',wf_product_shipping(['ship_fee'=>25]),25.0);
+chk($out,$fail,'prod ship decimal rounded',wf_product_shipping(['ship_fee'=>'12.345']),12.35);
+chk($out,$fail,'prod ship clamp 2000',wf_product_shipping(['ship_fee'=>99999]),2000.0);
+chk($out,$fail,'prod ship from extra',wf_product_shipping(['extra'=>['ship_fee'=>'7.5']]),7.5);
+chk($out,$fail,'prod ship top level wins',wf_product_shipping(['ship_fee'=>'9','extra'=>['ship_fee'=>'3']]),9.0);
+// دورة كاملة: فورم → تحقق → تفاصيل مخزنة → منتج → قيمة بتوصل الواجهة/الطلب
+list($__c,$__e)=manual_validate_row(['name'=>'منتج بشحن','price'=>'300','country'=>'السعودية','category'=>'إلكترونيات','ship_fee'=>'25','images'=>'https://example.com/a.jpg']);
+chk($out,$fail,'validate ship fee ok',$__e,'');
+chk($out,$fail,'validate ship fee value',$__c['ship_fee'],25.0);
+chk($out,$fail,'details json keeps ship fee',(float)(json_decode(manual_details_json($__c),true)['ship_fee'] ?? -1),25.0);
+chk($out,$fail,'details json keeps country',json_decode(manual_details_json($__c),true)['country'],'السعودية');
+$__stored=['id'=>31,'name'=>'منتج بشحن','price'=>300,'category'=>'إلكترونيات','stock'=>5,'description'=>'','image_url'=>'https://example.com/a.jpg','details'=>manual_details_json($__c)];
+$__prod=manual_row_to_product($__stored);
+chk($out,$fail,'stored product ship fee',$__prod['ship_fee'],25.0);
+chk($out,$fail,'stored product currency',$__prod['currency'],'ر.س');
+chk($out,$fail,'stored product ships its own fee',wf_product_shipping($__prod),25.0);
+chk($out,$fail,'stored product country',$__prod['country'],'السعودية');
+chk($out,$fail,'row ship fee passthrough',manual_row_to_product(mrow(11,'منتج','100','ساعات',['country'=>'الإمارات','ship_fee'=>12.5]))['ship_fee'],12.5);
+chk($out,$fail,'row without ship fee = null',manual_row_to_product(mrow(12,'منتج','100','ساعات',['country'=>'مصر']))['ship_fee'],null);
+list($__c2,$__e2)=manual_validate_row(['name'=>'منتج','price'=>'300','country'=>'مصر','category'=>'ساعات','ship_fee'=>'']);
+chk($out,$fail,'validate ship fee optional',$__e2,'');
+chk($out,$fail,'validate ship fee optional null',$__c2['ship_fee'],null);
+chk($out,$fail,'details json ship fee null when unset',json_decode(manual_details_json($__c2),true)['ship_fee'],null);
+chk($out,$fail,'legacy stored product has no own fee',wf_product_shipping(manual_row_to_product(['id'=>33,'name'=>'قديم','price'=>50,'category'=>'ساعات','stock'=>1,'description'=>'','image_url'=>'','details'=>manual_details_json($__c2)])),null);
+list($__c3,$__e3)=manual_validate_row(['name'=>'منتج','price'=>'300','country'=>'السعودية','category'=>'إلكترونيات','ship_fee'=>'1,200']);
+chk($out,$fail,'validate ship fee comma stripped',$__e3,'');
+chk($out,$fail,'validate ship fee comma value',$__c3['ship_fee'] ?? null,1200.0);
+list($__c4,$__e4)=manual_validate_row(['name'=>'منتج','price'=>'300','country'=>'السعودية','category'=>'إلكترونيات','ship_fee'=>'-1']);
+chk($out,$fail,'validate ship fee negative rejected',$__e4,'سعر الشحن لازم يكون رقم صفر أو أكبر (منتج)');
+list($__c5,$__e5)=manual_validate_row(['name'=>'منتج','price'=>'300','country'=>'السعودية','category'=>'إلكترونيات','ship_fee'=>'abc']);
+chk($out,$fail,'validate ship fee text rejected',$__e5,'سعر الشحن لازم يكون رقم صفر أو أكبر (منتج)');
+list($__c6,$__e6)=manual_validate_row(['name'=>'منتج','price'=>'300','country'=>'السعودية','category'=>'إلكترونيات','ship_fee'=>'5000']);
+chk($out,$fail,'validate ship fee too big rejected',$__e6,'سعر الشحن كبير جداً (أقصى 2000) (منتج)');
+list($__c7,$__e7)=manual_validate_row(['name'=>'منتج','price'=>'300','country'=>'السعودية','category'=>'إلكترونيات','ship_fee'=>'0']);
+chk($out,$fail,'validate ship fee zero allowed',$__e7,'');
+chk($out,$fail,'validate ship fee zero value',$__c7['ship_fee'],0.0);
+file_put_contents('/app/__bad_header.csv',"bad,header\n");
+chk($out,$fail,'csv bad header lists ship_fee',mb_strpos(manual_parse_csv('/app/__bad_header.csv')[1][0] ?? '','ship_fee')!==false,true);
+chk($out,$fail,'csv bad header still needs name+price',mb_strpos(manual_parse_csv('/app/__bad_header.csv')[1][0] ?? '','name,price')!==false,true);
+chk($out,$fail,'csv template file has ship_fee column',in_array('ship_fee',array_map('trim',explode(',',(string)@file_get_contents('/app/manual_products_import.csv'))),true)||mb_strpos((string)@file_get_contents('/app/manual_products_import.csv'),'ship_fee')!==false,true);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -245,8 +330,14 @@ assert.ok(/wf_country_currency\(/.test(fs.readFileSync(path.join(repo,'ui-compon
 const admin=fs.readFileSync(path.join(repo,'dashboard/manual_products.php'),'utf8');
 assert.ok(/id="mpCountry"/.test(admin)&&/mpSyncCurrency/.test(admin),'admin form must have a country select that syncs the price currency label');
 assert.ok(/wf_country_list\(\)/.test(admin)&&/wf_country_currency\(/.test(admin),'admin page must use the shared country/currency helpers');
+// سعر الشحن: حقل في نفس الفورم، بعملة دولة المنتج (اللي بتتزامن مع اختيار الدولة)، واختياري
+assert.ok(/name="ship_fee"/.test(admin),'the manual product form must have a shipping-price field');
+assert.ok(/'ship_fee'/.test(admin)&&/\$FIELDS = \['name', 'price', 'country', 'ship_fee'/.test(admin),'ship_fee must be collected with the other form fields');
+assert.ok(/سعر الشحن \(<span class="mp-cur">/.test(admin),'the shipping-price label must show the country currency and be synced by mpSyncCurrency');
+assert.ok(/اختياري/.test(admin)&&/حسب منطقة العميل/.test(admin),'the shipping-price field must be documented as optional (falls back to the region table)');
+assert.ok(/شحن /.test(admin),'the products list must show the stored shipping fee');
 const csvTemplate=fs.readFileSync(path.join(repo,'manual_products_import.csv'),'utf8').replace(/^\uFEFF/,'');
-assert.deepStrictEqual(csvTemplate.split('\n')[0].split(','),['name','price','country','category','stock','sku','description','colors','sizes','material','weight','dimensions','images','faqs'],'CSV template header must include country after price');
+assert.deepStrictEqual(csvTemplate.split('\n')[0].split(','),['name','price','country','ship_fee','category','stock','sku','description','colors','sizes','material','weight','dimensions','images','faqs'],'CSV template header must include country and ship_fee after price');
 // خصم الكمية (70 ج.م) بقى للجنيه بس: كل مكان بيحسب الخصم لازم يمرّر العملة/المنتج
 const src=file=>fs.readFileSync(path.join(repo,file),'utf8');
 const bulkCallers=[
@@ -276,9 +367,15 @@ const shipCallers=[
   ['dashboard/checkout_cart.php',/\$ship_currency/],
   ['landing.php',/site_ship_map\(\$plat, \$lp_country\)/],
   ['landing.php',/render_easyorder_dialog_html\(\$ref, \$plat, wf_ui_currency\(\$p\), \$lp_country\)/],
-  ['config.php',/site_ship_map\('manual', 'مصر'\)/],
+  ['config.php',/site_ship_map\(\$ship_cplat, 'مصر'\)/],
+  ['config.php',/site_ship_country_plats\(\)/],
   ['config.php',/wf_gulf_countries\(\) as \$ship_country/],
   ['config.php',/id="wfShippingCurrency"/],
+  ['supabase.php',/function site_ship_country_plats/],
+  ['supabase.php',/\$per_country = in_array\(\$lookup, site_ship_country_plats\(\), true\);/],
+  ['supabase.php',/if \(\$per_country && \(\$cn === '' \|\| \$cn === 'مصر'\)\) \$lookup = 'timehand';/],
+  ['supabase.php',/if \(\$pc !== '' && \$pc === \$cn\) return \$p\['regions'\];/],
+  ['supabase.php',/مفيش جدول شحن لـ/],
   ['dashboard/admin_shipping.php',/function ship_table_key/],
   ['dashboard/admin_shipping.php',/wf_country_currency\(\$country\)/],
   ['index.php',/'country' => wf_product_country\(\$p\)/],
@@ -286,9 +383,39 @@ const shipCallers=[
   ['dashboard/product.php',/'country'=>wf_product_country\(\$p\)/],
 ];
 for(const [file,re] of shipCallers)assert.ok(re.test(src(file)),file+' must resolve shipping by the product country');
+// سعر الشحن الثابت بتاع المنتج: بيتخزّن، بيتبعت للواجهة، والسيرفر هو اللي بيحسبه (مش المتصفح)
+const feeCallers=[
+  ['config.php',/function wf_product_shipping\(\$p\)/],
+  ['config.php',/return min\(2000\.0, \$f\);/],
+  ['manual_products_lib.php',/'ship_fee' => \$ship_fee,/],
+  ['manual_products_lib.php',/'ship_fee' => \(isset\(\$c\['ship_fee'\]\) && is_numeric\(\$c\['ship_fee'\]\)\) \? round\(\(float\)\$c\['ship_fee'\], 2\) : null,/],
+  ['manual_products_lib.php',/سعر الشحن لازم يكون رقم صفر أو أكبر/],
+  ['manual_products_lib.php',/سعر الشحن كبير جداً \(أقصى 2000\)/],
+  ['index.php',/'ship_fee' => function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$p\) : null,/],
+  ['store.php',/'ship_fee' => function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$p\) : null,/],
+  ['landing.php',/'ship_fee' => function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$p\) : null,/],
+  ['dashboard/product.php',/'ship_fee'=>function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$p\) : null,/],
+  ['dashboard/product.php',/\$pd_ship = function_exists\('wf_product_shipping'\)/],
+  ['dashboard/orders.php',/\$prod_ship = function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$prod\) : null;/],
+  ['dashboard/orders.php',/\$shipfee = \(\$prod_ship !== null\)/],
+  ['dashboard/checkout_cart.php',/\$ship_fixed = \(\$__fp && function_exists\('wf_product_shipping'\)\)/],
+  ['dashboard/checkout_cart.php',/if \(\$ship_fixed !== null\) \$fee = \$ship_fixed;/],
+  ['dashboard/checkout_cart.php',/if \(\$ship_fixed !== null\) \{ foreach \(\$shiprows as &\$__sr\)/],
+  ['landing.php',/\$lp_ship_fixed = function_exists\('wf_product_shipping'\)/],
+  ['landing.php',/\$ship_rates\[\$__k\] = \$lp_ship_fixed;/],
+];
+for(const [file,re] of feeCallers)assert.ok(re.test(src(file)),file+' must use the product-level shipping fee');
+// الطلب بيتحسب على السيرفر: سعر شحن المنتج بيكسب، ومفيش اعتماد على POST لوحده
+assert.ok(/\$shipfee = \(\$prod_ship !== null\)[\s\S]{0,120}\$_POST\['ship_fee'\]/.test(src('dashboard/orders.php')),'the order total must prefer the stored product fee over the posted one');
 // الواجهة بتبدّل جدول المناطق والعملة حسب دولة المنتج
-assert.ok(/function eoSetShippingPlatform\(platform,country\)/.test(uijs)&&/eoShipCurrency/.test(uijs),'ui.js must switch the region table and currency per product country');
-assert.ok(/eoSetShippingPlatform\(e\.plat\|\|"",e\.country\|\|""\)/.test(uijs),'the easy-order dialog must pass the product country');
+assert.ok(/function eoSetShippingPlatform\(platform,country,productShip\)/.test(uijs)&&/eoShipCurrency/.test(uijs),'ui.js must switch the region table and currency per product country');
+assert.ok(/eoSetShippingPlatform\(e\.plat\|\|"",e\.country\|\|"",e\.ship_fee\)/.test(uijs),'the easy-order dialog must pass the product country and its own shipping fee');
+// سعر شحن المنتج بيكتب على كل الخيارات (فالـ total يتحسب بيه) — وفاضي = جدول المناطق زي الأول
+assert.ok(/var fixed=\(productShip===null\|\|productShip===undefined\|\|productShip===""\)\?null:Number\(productShip\);/.test(uijs),'ui.js must ignore an absent/blank product shipping fee');
+assert.ok(/var fee=\(fixed!==null\)\?fixed:Number\(rates\[region\]\);/.test(uijs),'every region option must show the product fee when it is set');
+assert.ok(/select\.dataset\.shipFixed=/.test(uijs),'the shipping select must expose the fixed product fee');
+// سلة الشراء: رسوم الشحن بتعرض عملة دولة المنتج (مش ج.م ثابتة)
+assert.ok(/t\.dataset\.shipCurrency\)\|\|"ج\.م"/.test(uijs),'the cart checkout must show the shipping fee in the country currency');
 assert.ok(/eoShipCur\(\)/.test(uijs)&&!/\+" ج\.م":"اختر المحافظة"/.test(uijs),'ui.js must not hardcode EGP for the shipping line');
 // صفحات التسجيل/استكمال بيانات المسوق بتفضل بمحافظات مصر بس (عنوان الحساب مش شحن طلب)
 for(const file of ['register.php','marketer_complete.php']){
@@ -298,17 +425,60 @@ for(const file of ['register.php','marketer_complete.php']){
 }
 // قوايم مدن الخليج موجودة في البيانات ومغطّية كل منطقة
 const gulfCities=JSON.parse(fs.readFileSync(path.join(repo,'data/shipping_cities_gulf.json'),'utf8')).countries;
-const shipTables=JSON.parse(fs.readFileSync(path.join(repo,'data/shipping.json'),'utf8')).filter(e=>e.platform==='manual');
+const CUR_BY_COUNTRY={'السعودية':'ر.س','الإمارات':'د.إ','الأردن':'د.أ','عُمان':'ر.ع'};
+// رسوم مخزون = سعر الدولة الموحّد (قرار الإدارة)، والرسوم اليدوية لسه صفر لحد ما المالك يدخلها
+const MZ_FEE_BY_COUNTRY={'السعودية':25,'الإمارات':25,'الأردن':3,'عُمان':2.5};
+const allShipTables=JSON.parse(fs.readFileSync(path.join(repo,'data/shipping.json'),'utf8'));
+const shipTables=allShipTables.filter(e=>e.platform==='manual');
+const mzTables=allShipTables.filter(e=>e.platform==='m5zoon');
 assert.equal(shipTables.length,4,'shipping.json must have one manual table per Gulf country');
-for(const entry of shipTables){
+assert.equal(mzTables.length,4,'shipping.json must have one stock (m5zoon) table per Gulf country');
+assert.ok(!allShipTables.some(e=>e.platform==='m5zoon'&&!e.country),'the legacy country-less m5zoon table must be gone — it listed countries as regions');
+for(const entry of shipTables.concat(mzTables)){
   const cities=gulfCities[entry.country];
   assert.ok(cities,'missing city list for '+entry.country);
   for(const region of entry.regions){
     assert.ok(Array.isArray(cities[region.region])&&cities[region.region].length>0,entry.country+' / '+region.region+' has no cities');
-    assert.equal(region.fee,0,'Gulf manual fees must start at 0 until the owner fills them ('+entry.country+'/'+region.region+')');
-    assert.equal(region.currency,{'السعودية':'ر.س','الإمارات':'د.إ','الأردن':'د.أ','عُمان':'ر.ع'}[entry.country],'wrong currency for '+entry.country);
+    assert.equal(region.currency,CUR_BY_COUNTRY[entry.country],'wrong currency for '+entry.country);
+    if(entry.platform==='m5zoon')assert.equal(region.fee,MZ_FEE_BY_COUNTRY[entry.country],'stock fees must start at the country price ('+entry.country+'/'+region.region+')');
+    else assert.equal(region.fee,0,'Gulf manual fees must start at 0 until the owner fills them ('+entry.country+'/'+region.region+')');
   }
 }
+// مخزون واليدوي بيستخدموا نفس المناطق ⇒ قايمة مدن الخليج بتغطيهم كلهم
+for(const entry of mzTables){
+  const manual=shipTables.find(e=>e.country===entry.country);
+  assert.ok(manual,'missing manual table for '+entry.country);
+  assert.deepStrictEqual(entry.regions.map(r=>r.region),manual.regions.map(r=>r.region),'stock and manual regions must match for '+entry.country);
+  assert.ok(String(entry.name||'').includes('مخزون'),'each stock table needs its own display name ('+entry.country+')');
+}
+// بيانات مخزون: كل صف له دولته الصح — 5549 كان متخزّن مصر رغم إن سعره بالدرهم
+const MZ_CODE_COUNTRY={AE:'الإمارات',SA:'السعودية',JO:'الأردن',OM:'عُمان'};
+const MZ_CURRENCY_COUNTRY={'درهم':'الإمارات','د.إ':'الإمارات','دينار':'الأردن','د.أ':'الأردن','ريال':'السعودية','ر.س':'السعودية','ريال عماني':'عُمان','ر.ع':'عُمان'};
+function mzExpectedCountry(id,currency){
+  const m=String(id).match(/-(AE|SA|JO|OM)$/i);
+  if(m)return MZ_CODE_COUNTRY[m[1].toUpperCase()];
+  return MZ_CURRENCY_COUNTRY[String(currency||'').trim()]||null;
+}
+for(const file of ['data/m5zoon.json','data/lite_m5zoon.json']){
+  const rows=JSON.parse(fs.readFileSync(path.join(repo,file),'utf8'));
+  assert.ok(Array.isArray(rows)&&rows.length>100,file+' must hold the stock catalog');
+  const row5549=rows.find(r=>String(r.id)==='5549'||String(r.id).startsWith('5549-'));
+  assert.ok(row5549,'5549 must exist in '+file);
+  assert.equal(row5549.country,'الإمارات','5549 is priced in dirhams — its country must be the UAE, not Egypt ('+file+')');
+  assert.deepEqual(rows.filter(r=>!r.country).length,0,'every stock row must have a country ('+file+')');
+  const wrong=rows.filter(r=>{const want=mzExpectedCountry(r.id,r.currency);return want&&want!==(r.country||'');})
+                  .map(r=>r.id+':'+r.currency+'->'+r.country);
+  assert.deepEqual(wrong,[],'no stock row may keep a country that contradicts its own data ('+file+')');
+}
+// الكرون لازم يكتب الدولة الصحيحة للمنتجات الجديدة (وكان بيثبّت مصر لكل منتج مخزون)
+const updater=src('updater/update_catalog.py');
+const mzUpdate=updater.slice(updater.indexOf('def update_m5zoon():'));
+assert.ok(mzUpdate.length>500,'updater must still contain update_m5zoon()');
+assert.ok(/def _m5zoon_country\(pid, currency\):/.test(updater),'the updater must derive the country of a stock product from its own data');
+assert.ok(/M5ZOON_COUNTRY_BY_CODE/.test(updater)&&/M5ZOON_COUNTRY_BY_CURRENCY/.test(updater),'the updater must map both the id suffix and the currency to a country');
+assert.ok(!/'country': 'مصر'/.test(mzUpdate.slice(0,mzUpdate.indexOf('jsave'))),'update_m5zoon must not hardcode مصر for new stock products');
+assert.ok(/'country': _m5zoon_country\(pid, currency\)\[0\]/.test(mzUpdate),'new stock items must be stored with their derived country');
+assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock rows stored as مصر');
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){
   const Engine=require(path.join(NM,'php-parser'));

@@ -4,7 +4,7 @@ if (!is_admin_user()) {
     header('Location: ../index.php'); exit;
 }
 
-$FIELDS = ['name', 'price', 'country', 'category', 'stock', 'sku', 'description', 'colors', 'sizes', 'material', 'weight', 'dimensions', 'faqs'];
+$FIELDS = ['name', 'price', 'country', 'ship_fee', 'category', 'stock', 'sku', 'description', 'colors', 'sizes', 'material', 'weight', 'dimensions', 'faqs'];
 $msgs = []; $errs = [];
 $status = manual_db_status();
 $cats = array_values(array_filter(wf_category_canonical(), function ($c) { return !in_array($c, ['منتجات رقمية', 'سوشيال ميديا'], true); }));
@@ -105,6 +105,9 @@ function manual_form_html($v, $mode, $cats) {
     }
     echo '</select></label>';
     echo '<label>السعر (<span class="mp-cur">' . esc(wf_country_currency($country)) . '</span>) *<input name="price" required inputmode="decimal" value="' . $g('price') . '"></label>';
+    // سعر الشحن: رقم واحد ثابت للمنتج كله بعملة دولته، وبيتقدم على جدول مناطق الدولة.
+    // فاضي = الرسوم تتحسب حسب منطقة العميل من «إعدادات الشحن» — ومفيش أي تحويل عملات.
+    echo '<label>سعر الشحن (<span class="mp-cur">' . esc(wf_country_currency($country)) . '</span>) — اختياري<input name="ship_fee" inputmode="decimal" placeholder="فاضي = حسب منطقة العميل" value="' . $g('ship_fee') . '"></label>';
     echo '<label>القسم *<select name="category" required><option value="">— اختار —</option>';
     foreach ($cats as $c) echo '<option value="' . esc($c) . '"' . ($c === $sel ? ' selected' : '') . '>' . esc($c) . '</option>';
     echo '</select></label>';
@@ -116,6 +119,7 @@ function manual_form_html($v, $mode, $cats) {
     echo '<label>الألوان (اختياري)<input name="colors" placeholder="أحمر | أزرق | أسود" value="' . $g('colors') . '"></label>';
     echo '<label>المقاسات (اختياري)<input name="sizes" placeholder="S | M | L | XL" value="' . $g('sizes') . '"></label>';
     echo '</div>';
+    echo '<p class="mut" style="margin:2px 0 0">سعر الشحن اختياري: لو سبته فاضي، الرسوم هتتحسب حسب منطقة العميل من <a href="admin_shipping.php">إعدادات الشحن</a>. ولو دخلت رقم، هو ده الشحن لكل المناطق بعملة دولة المنتج (مفيش تحويل عملات).</p>';
     echo '<label>الوصف التفصيلي (سطر لكل فكرة)<textarea name="description" rows="6">' . $g('description') . '</textarea></label>';
     echo '<label>الأسئلة الشائعة (سؤال :: جواب، كل سؤال في سطر)<textarea name="faqs" rows="4" placeholder="هل المنتج أصلي؟ :: أيوه، أصلي 100%">' . $g('faqs') . '</textarea></label>';
 
@@ -198,7 +202,9 @@ if ($status !== '') {
         echo '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid #e2e8f0">';
         echo '<input type="checkbox" class="mp-pick" form="mpBulkForm" name="ids[]" value="' . (int)$r['id'] . '" style="width:18px;height:18px" aria-label="تحديد المنتج">';
         echo $imgs ? '<img src="' . esc(manual_img_src($imgs[0])) . '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px">' : '<span style="width:56px;height:56px;background:#f1f5f9;border-radius:6px;display:inline-block"></span>';
-        echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ' . esc($row_cur) . ' — ' . esc($row_country) . ' — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
+        // شحن المنتج (لو المالك حدده) بيظهر في القائمة عشان يعرف أنهي منتجات ليها سعر ثابت
+        $row_ship = (isset($d['ship_fee']) && is_numeric($d['ship_fee'])) ? (' — شحن ' . rtrim(rtrim(number_format((float)$d['ship_fee'], 2, '.', ''), '0'), '.') . ' ' . $row_cur) : '';
+        echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ' . esc($row_cur) . esc($row_ship) . ' — ' . esc($row_country) . ' — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
         echo '<a class="btn sm outline" href="?edit=' . (int)$r['id'] . '">تعديل</a> ';
         echo '<form method="post" style="display:inline">' . csrf_field() . '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . (int)$r['id'] . '"><button class="btn sm outline" type="submit">حذف</button></form>';
         echo '</div>';

@@ -258,6 +258,8 @@ function pcard2($p, $soldmap) {
             'currency' => wf_ui_currency($p),
             // دولة المنتج: بتحدد جدول الشحن (مصر = محافظات بالجنيه، الخليج = مناطق الدولة بعملتها)
             'country' => wf_product_country($p),
+            // سعر شحن المنتج نفسه (لو متحدد) — بيكسب جدول المناطق في النافذة والحساب
+            'ship_fee' => function_exists('wf_product_shipping') ? wf_product_shipping($p) : null,
             'colors' => array_slice($cols, 0, 15),
             'sizes' => array_slice($sizes_clean, 0, 20),
         ], JSON_UNESCAPED_UNICODE);

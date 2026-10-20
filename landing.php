@@ -100,6 +100,9 @@ $sizes = clean_product_sizes($p, $plat);
 // دولة المنتج بتحدد جدول الشحن: مصر = محافظات بالجنيه (جدول تايم هاند)، والخليج = مناطق الدولة بعملتها
 $lp_country = wf_product_country($p);
 $ship_rates = function_exists('site_ship_map') ? site_ship_map($plat, $lp_country) : ['القاهرة' => 70, 'الجيزة' => 70, 'الإسكندرية' => 75];
+// سعر شحن ثابت للمنتج (لو المالك حدده) بيكسب جدول المناطق — نفس الرقم لكل المناطق المعروضة
+$lp_ship_fixed = function_exists('wf_product_shipping') ? wf_product_shipping($p) : null;
+if ($lp_ship_fixed !== null) { foreach ($ship_rates as $__k => $__v) { $ship_rates[$__k] = $lp_ship_fixed; } }
 $ship_cur = wf_ship_currency($plat, $lp_country);
 $region_word = wf_ship_region_label($lp_country);
 $store_cfg = $ref !== '' ? marketer_store_get($ref) : ['title' => BRAND, 'whatsapp' => ''];
@@ -119,6 +122,8 @@ $eo_payload = json_encode([
     'currency' => wf_ui_currency($p),
     // دولة المنتج: بتحدد جدول الشحن (مصر = محافظات بالجنيه، الخليج = مناطق الدولة بعملتها)
     'country' => wf_product_country($p),
+    // سعر شحن المنتج نفسه (لو متحدد) — بيكسب جدول المناطق في النافذة والحساب
+    'ship_fee' => function_exists('wf_product_shipping') ? wf_product_shipping($p) : null,
     'colors' => $colors,
     'sizes' => $sizes,
 ], JSON_UNESCAPED_UNICODE);

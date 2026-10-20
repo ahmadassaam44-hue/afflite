@@ -46,12 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fee'])) {
 layout_top('إدارة الشحن ', 'shipping');
 if ($msg) echo '<div role="status" data-save-feedback class="card" data-ui="u-9e82dcff d54">' . esc($msg) . '</div>';
 echo '<div class="card"><p class="mut">الرسوم بتتحفظ في <b>data/shipping.json</b>' . (SB_SERVICE ? ' و Supabase' : '') . '. لإعداد التحديث المباشر تأكد من ضبط <b>SB_SERVICE</b> في إعدادات الخادم.</p>'
-   . '<p class="mut">المنتجات اليدوية: <b>مصر</b> بتستخدم جدول <b>تايم هاند</b> بالجنيه (مفيش جدول منفصل)، وكل دولة خليجية ليها جدول مناطقها بعملة الدولة — الرسوم بتاعتها إنت اللي بتحددها هنا، ومفيش أي تحويل عملات.</p><br><form method="post">';
+   . '<p class="mut">المنتجات اليدوية: <b>مصر</b> بتستخدم جدول <b>تايم هاند</b> بالجنيه (مفيش جدول منفصل)، وكل دولة خليجية ليها جدول مناطقها بعملة الدولة — الرسوم بتاعتها إنت اللي بتحددها هنا. منتجات <b>مخزون</b> ليها جدول لكل دولة بنفس المناطق، والرسوم مزروعة بسعر الدولة الموحّد (25 ر.س · 25 د.إ · 3 د.أ · 2.5 ر.ع) وتقدر تعدّل أي منطقة — ومفيش أي تحويل عملات في أي مكان.</p><br><form method="post">';
 foreach (site_shipping() as $p) {
     $key = ship_table_key($p);
     $country = function_exists('wf_match_country') ? wf_match_country($p['country'] ?? '', '') : trim((string)($p['country'] ?? ''));
     $cur = $country !== '' ? wf_country_currency($country) : 'ج.م';
-    $title = $p['name'] ?? ($country !== '' ? 'منتجات يدوية — ' . $country : (string)($p['platform'] ?? ''));
+    $title = $p['name'] ?? ($country !== '' ? 'جدول شحن — ' . $country : (string)($p['platform'] ?? ''));
     // تنبيه: جدول كل رسومه لسه صفر = العميل هيشوف شحن مجاني لحد ما تتملى الأرقام
     $all_zero = true;
     foreach ((array)($p['regions'] ?? []) as $rg) { if ((float)($rg['fee'] ?? 0) > 0) { $all_zero = false; break; } }

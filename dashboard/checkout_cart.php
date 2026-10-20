@@ -5,10 +5,13 @@ if (empty($_SESSION['cart'])) { header('Location: cart.php'); exit; }
 $__first_cart = is_array($_SESSION['cart'][0] ?? null) ? $_SESSION['cart'][0] : [];
 $ship_plat = function_exists('resolve_plat') ? resolve_plat((string)($__first_cart['id'] ?? ''), $__first_cart['plat'] ?? '') : (string)($__first_cart['plat'] ?? '');
 $ship_country = 'مصر';
+$__fp = null;
 if (!empty($__first_cart['id'])) {
     $__fp = function_exists('find_product_by_id') ? find_product_by_id((string)$__first_cart['id'], (string)$ship_plat) : null;
     if ($__fp) $ship_country = wf_product_country($__fp);
 }
+// سعر شحن ثابت حدّده المالك للمنتج نفسه (منتجات يدوية) — بيكسب جدول مناطق الدولة
+$ship_fixed = ($__fp && function_exists('wf_product_shipping')) ? wf_product_shipping($__fp) : null;
 $ship_currency = wf_ship_currency($ship_plat, $ship_country);
 $region_word = wf_ship_region_label($ship_country);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['name'])) {
@@ -16,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['name'])) {
     foreach ($shiprows as $sr) {
         if (($sr['region'] ?? '') === ($_POST['city'] ?? '')) { $fee = max(0, min(2000, (float)$sr['fee'])); break; }
     }
+    if ($ship_fixed !== null) $fee = $ship_fixed;   // سعر شحن المنتج نفسه بيكسب جدول المناطق
     $phone = preg_replace('/\D+/', '', (string)($_POST['phone'] ?? ''));
     $phone = mb_substr($phone, 0, 20);
     $batch = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid('', true)), 0, 5));
@@ -140,6 +144,8 @@ foreach ($_SESSION['cart'] as $cd) {
 }
 $cart_disc = round($cart_disc, 2);
 $shiprows = site_ship_regions($ship_plat !== '' ? $ship_plat : ($_SESSION['cart'][0]['plat'] ?? 'vendoor'), $ship_country);
+// لو المنتج له سعر شحن ثابت، كل الخيارات بتعرضه (والإجمالي بيتحسب بيه على السيرفر عند التأكيد)
+if ($ship_fixed !== null) { foreach ($shiprows as &$__sr) { $__sr['fee'] = $ship_fixed; } unset($__sr); }
 $first_fee = isset($shiprows[0]['fee']) ? (float)$shiprows[0]['fee'] : 0;
 layout_top('إتمام الطلب', 'orders'); ?>
 <div class="checkout-stepper" aria-label="خطوات إتمام الطلب">
