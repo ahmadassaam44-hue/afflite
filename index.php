@@ -658,7 +658,7 @@ echo wf_catalog_toolbar([
 <?php if ($page === 1 && $q === '' && $cat === 'all' && $col === '' && !$is_special_view && $plat_view !== 'm5zoon'):
     // الأقسام الأفقية معاينة فقط؛ 500 مرشح حديث لكل منصة كافٍ لاختيار 8 بطاقات،
     // والروابط «عرض الكل» تستمر باستخدام الكتالوج والفلاتر الكاملين.
-    $home_section_candidates = 500;
+    $home_section_candidates = 300;
     $feat_sec   = array_slice(physical_collection('featured', $country, 'all', '', 'all', $home_seed + 1, $home_section_candidates), 0, 8);
     $best_sec   = array_slice(physical_collection('best', $country, 'all', '', 'all', $home_seed + 2, $home_section_candidates), 0, 8);
     $new_sec    = array_slice(physical_collection('new', $country, 'all', '', 'all', $home_seed + 3, $home_section_candidates), 0, 8);

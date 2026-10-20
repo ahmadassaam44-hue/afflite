@@ -1506,6 +1506,37 @@ function platform_products_lite($key) {
     return $cache[$key] = apply_product_overrides($all, $key);
 }
 
+// نافذة أحدث المنتجات لكل منصة للصفحة الرئيسية (كاش قصير 10 دقايق).
+// الهدف: الرئيسية متقرأش الكتالوج كامل كل زيارة — بنحفظ آخر 900 منتج لكل منصة
+// في ملف صغير، فالطلبات اللي بعده بتقرأ ملف صغير بدل تحميل/تجهيز الكتالوج.
+function wf_home_platform_window($pk, $limit) {
+    $limit = max(1, min(900, (int)$limit));
+    static $memo = [];
+    $key = (string)$pk;
+    if (isset($memo[$key])) return array_slice($memo[$key], -$limit);
+
+    $dir = DATA_DIR . '/cache';
+    $file = $dir . '/home_window_' . preg_replace('/[^a-z0-9_]/', '', $key) . '.json';
+    $ttl = 600;
+    $items = null;
+    if (is_file($file) && (time() - (int)@filemtime($file)) < $ttl) {
+        $c = json_decode((string)@file_get_contents($file), true);
+        if (is_array($c) && isset($c['items']) && is_array($c['items']) && $c['items']) $items = $c['items'];
+    }
+    if ($items === null) {
+        $all = ($key === 'cezma') ? cezma_recent_products(900) : platform_products_lite($key);
+        if (count($all) > 900) $all = array_slice($all, -900);
+        $items = array_values($all);
+        if (!is_dir($dir)) @mkdir($dir, 0775, true);
+        if (is_dir($dir) && is_writable($dir)) {
+            $payload = json_encode(['at' => time(), 'items' => $items], JSON_UNESCAPED_UNICODE);
+            if ($payload !== false) @file_put_contents($file, $payload, LOCK_EX);
+        }
+    }
+    $memo[$key] = $items;
+    return array_slice($items, -$limit);
+}
+
 function platform_products($key, $lite = false) {
     if ($lite) return platform_products_lite($key);
     static $cache = [];
@@ -2244,11 +2275,15 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         $plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'cezma', 'manual'];
     }
     $views = jload('views.json', []);
-    $soldmap = [];
-    foreach (jload('orders.json', []) as $o) {
-        $k = ($o['plat'] ?? '') . '#' . ($o['id'] ?? '');
-        $soldmap[$k] = ($soldmap[$k] ?? 0) + ($o['qty'] ?? 1);
+    static $soldmap_memo = null;
+    if ($soldmap_memo === null) {
+        $soldmap_memo = [];
+        foreach (jload('orders.json', []) as $o) {
+            $k = ($o['plat'] ?? '') . '#' . ($o['id'] ?? '');
+            $soldmap_memo[$k] = ($soldmap_memo[$k] ?? 0) + ($o['qty'] ?? 1);
+        }
     }
+    $soldmap = $soldmap_memo;
 
     $by_plat = [];
     foreach ($plats as $pk) {
@@ -2258,15 +2293,20 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         if ($pk === 'cezma' && ($q !== '' || ($cat !== '' && $cat !== 'all' && !in_array($cat, ['المنتجات المميزة', 'أحدث المنتجات', 'الأكثر مبيعاً', 'الأكثر مشاهدة'], true)))) {
             $cezma_indexed = cezma_indexed_products($cat, $q);
         }
+        $use_home_window = ($source_limit !== null && $q === '' && $pk !== 'manual' && ((int)$source_limit + 100) <= 900);
         if ($cezma_indexed !== null) {
             $arr = $cezma_indexed;
         } elseif ($pk === 'cezma' && ($source_limit !== null ||
             // المتجر الافتراضي و«المنتجات المميزة» بلا فلاتر: نافذة محدودة من الأحدث بدل تطييع 90 ألف منتج في كل طلب.
             // «أحدث المنتجات» و«الأكثر مبيعاً/مشاهدة» تظل بالمسار الكامل لأنها صارت مرتبة على الكتالوج كاملاً.
             ($q === '' && in_array($cat, ['', 'all', 'المنتجات المميزة'], true)))) {
-            $arr = cezma_recent_products($source_limit !== null ? max(1, (int)$source_limit + 100) : 3000);
+            $arr = $use_home_window
+                ? wf_home_platform_window('cezma', (int)$source_limit + 100)
+                : cezma_recent_products($source_limit !== null ? max(1, (int)$source_limit + 100) : 3000);
         } else {
-            $arr = platform_products_lite($pk);
+            $arr = $use_home_window
+                ? wf_home_platform_window($pk, (int)$source_limit + 100)
+                : platform_products_lite($pk);
         }
         if ($source_limit !== null && $pk !== 'cezma' && count($arr) > (int)$source_limit + 100) {
             // الأقسام الأفقية ولوحة المنتجات الافتراضية تحتاج مرشحين حديثين فقط؛
