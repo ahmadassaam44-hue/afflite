@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Build Cezma catalog shards from cezma_filtered_2025_2026.csv (101,519 products).
+"""Build the 2026-only Cezma catalog shards from cezma_filtered_2025_2026.csv.
+Products created before 2026 (id < MIN_ID) are skipped: the 2025 catalog was
+deleted on purpose and must not be rebuilt from the historical scrape file.
 Writes data/cezma_shards/lite_cezma_XX.json (~6,000 products each, <10MB so the
 FTP deployer accepts them). Site loader merges shards (config.php).
 Full details (gallery + description) are enriched on demand from Cezma's detail
@@ -10,6 +12,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "cezma_filtered_2025_2026.csv"); DATA = os.path.join(ROOT, "data")
 SHARD_DIR = os.path.join(DATA, "cezma_shards"); PER_SHARD = 6000
 MIN_PRICE_EGP = 100.0
+MIN_ID = 509251  # أول منتج اتعمل في 2026 — نفس CEZMA_MIN_ID في updater/update_catalog.py
 def num(v):
     try: return float(v)
     except Exception: return 0
@@ -37,6 +40,10 @@ def build_rows():
         rows = list(csv.DictReader(source))
     lite = []
     for r in rows:
+        try: pid = int(r["id"])
+        except (TypeError, ValueError): continue
+        if pid < MIN_ID:   # منتجات 2025 (وأقدم) محذوفة من الكتالوج
+            continue
         price = num(r["price"])
         if price < MIN_PRICE_EGP:
             continue
@@ -52,7 +59,11 @@ def build_rows():
     return lite
 def write_shards(lite):
     os.makedirs(SHARD_DIR, exist_ok=True)
-    lite = [r for r in lite if num(r.get("price")) >= MIN_PRICE_EGP]
+    def keep(r):
+        if num(r.get("price")) < MIN_PRICE_EGP: return False
+        oid = str(r.get("orig_id") or "")
+        return not (oid.isdigit() and int(oid) < MIN_ID)   # مفيش منتجات 2025 في الشظايا
+    lite = [r for r in lite if keep(r)]
     for old in os.listdir(SHARD_DIR):
         if old.startswith("lite_cezma_"): os.remove(os.path.join(SHARD_DIR, old))
     n = 0

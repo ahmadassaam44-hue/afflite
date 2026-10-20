@@ -162,20 +162,20 @@ class VisualGalleryIndexTests(unittest.TestCase):
         shards = os.path.join(data, 'cezma_shards')
         self.write_json(os.path.join(shards, 'lite_cezma_01.json'), [
             {
-                'id': 'cezma-400001', 'orig_id': '400001', 'price': 150,
-                'extra': {'cezma_id': 400001},
+                'id': 'cezma-600001', 'orig_id': '600001', 'price': 150,
+                'extra': {'cezma_id': 600001},
             },
             {
-                'id': 'cezma-400002', 'orig_id': '400002', 'price': 100,
-                'extra': {'cezma_id': 400002},
+                'id': 'cezma-600002', 'orig_id': '600002', 'price': 100,
+                'extra': {'cezma_id': 600002},
             },
         ])
         products = [
-            {'id': 400001, 'price': 99},
-            {'id': 400002, 'price': 100},
-            {'id': 400003, 'price': 99},
-            {'id': 400004, 'price': 100},
-            {'id': 400005, 'price': 150},
+            {'id': 600001, 'price': 99},
+            {'id': 600002, 'price': 100},
+            {'id': 600003, 'price': 99},
+            {'id': 600004, 'price': 100},
+            {'id': 600005, 'price': 150},
         ]
 
         with (
@@ -189,29 +189,32 @@ class VisualGalleryIndexTests(unittest.TestCase):
             update_catalog.update_cezma()
             rows = update_catalog._cezma_load_shards()
 
-        self.assertEqual({row['id'] for row in rows}, {'cezma-400002', 'cezma-400004', 'cezma-400005'})
+        self.assertEqual({row['id'] for row in rows}, {'cezma-600002', 'cezma-600004', 'cezma-600005'})
         self.assertEqual(summary['cezma']['added'], 2)
         self.assertEqual(summary['cezma']['removed_below_min_price'], 1)
         self.assertTrue(all(float(row['price']) >= 100 for row in rows))
 
-    def test_cezma_csv_builder_does_not_regenerate_products_below_100(self):
+    def test_cezma_csv_builder_skips_2025_products_and_prices_below_100(self):
         csv_path = os.path.join(self.root, 'cezma.csv')
         with open(csv_path, 'w', encoding='utf-8') as fh:
             fh.write(
                 'id,price,price_before_discount,image,name_ar,name_en,discount,category_ar,store_name\n'
-                '1,99,,https://cdn.example.test/cheap.jpg,رخيص,Cheap,,قسم,متجر\n'
-                '2,100,,https://cdn.example.test/floor.jpg,الحد,Floor,,قسم,متجر\n'
+                '400001,900,,https://cdn.example.test/old.jpg,قديم,Old,,قسم,متجر\n'
+                '600001,99,,https://cdn.example.test/cheap.jpg,رخيص,Cheap,,قسم,متجر\n'
+                '600002,100,,https://cdn.example.test/floor.jpg,الحد,Floor,,قسم,متجر\n'
             )
         with mock.patch.object(cezma_build, 'SRC', csv_path):
             rows = cezma_build.build_rows()
-        self.assertEqual([(row['id'], row['price']) for row in rows], [('cezma-2', 100.0)])
+        # 400001 منتج 2025 — اتحذف من الكتالوج ومايتبنيش تاني من ملف السكراب القديم
+        self.assertEqual([(row['id'], row['price']) for row in rows], [('cezma-600002', 100.0)])
 
         shards = os.path.join(self.root, 'builder_shards')
         with mock.patch.object(cezma_build, 'SHARD_DIR', shards):
-            cezma_build.write_shards(rows + [{'id': 'cezma-extra-low', 'price': 99}])
+            cezma_build.write_shards(rows + [{'id': 'cezma-extra-low', 'price': 99},
+                                             {'id': 'cezma-400002', 'orig_id': '400002', 'price': 500}])
         with open(os.path.join(shards, 'lite_cezma_01.json'), encoding='utf-8') as fh:
             written = json.load(fh)
-        self.assertEqual([row['id'] for row in written], ['cezma-2'])
+        self.assertEqual([row['id'] for row in written], ['cezma-600002'])
 
     def test_visual_cezma_ftp_parts_round_trip_and_remove_stale_chunks(self):
         path = os.path.join(self.root, 'visual_cezma.bin')

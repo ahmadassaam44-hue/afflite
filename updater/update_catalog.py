@@ -2903,16 +2903,17 @@ def repair_cezma_shards():
 
 
 # ---------------------------------------------------------------- Cezma (سيزما)
-# مصدر جديد: منتجات نزلت واتعدلت 2025-2026 بعد فلترة أقسام معينة (انظر cezma_filter.py).
-# كل 6 ساعات: ندور في الأقسام المسموحة بس على منتجات مش موجودة عندنا (من أول 2025)
-# ونجيب بياناتها من API سيزما ونضيفها لـ lite_cezma.json (التفاصيل الكاملة بتتغني
+# الكتالوج بقى 2026 بس: كل منتجات سيزما اللي اتعملت في 2025 اتحذفت نهائياً (2026-10-20)،
+# والأقسام المفلترة زي ما هي (انظر cezma_filter.py).
+# كل 12 ساعة: ندور في الأقسام المسموحة بس على منتجات مش موجودة عندنا (من أول 2026)
+# ونجيب بياناتها من API سيزما ونضيفها للشظايا (التفاصيل الكاملة بتتغني
 # عند فتح المنتج على الموقع نفسه - cezma_fetch_detail في config.php).
 CEZMA_API = 'https://api.cezma.cloud/api/products'
 CEZMA_HDR = {'User-Agent': 'Mozilla/5.0', 'Platform': 'web', 'Accept': 'application/json'}
 CEZMA_DELETE_MAIN = {614, 134, 421, 145, 140, 136, 674, 22, 413, 101, 16, 33, 137, 20, 28, 536, 141}
 CEZMA_GIFTS_KEEP_SUBS = {365, 691, 442, 557, 460}   # من قسم الهدايا والمشغولات: الهدايا فقط
 CEZMA_DECOR_KEEP_SUBS = {24, 360, 623}              # من قسم اثاث وديكور: الديكور فقط
-CEZMA_MIN_ID = 321286                               # أول منتج اتعمل في 2025
+CEZMA_MIN_ID = 509251                               # أول منتج اتعمل في 2026 — أي منتج قبله (2025) محذوف ومش بيرجع
 CEZMA_MIN_PRICE_EGP = 100.0                         # استبعاد منتجات سيزما الأقل من 100 جنيه
 CEZMA_MAX_NEW_PER_RUN = 5000
 
@@ -3084,7 +3085,7 @@ def rebuild_cezma_buckets():
 
     Each bucket is a small JSON object keyed by product id and orig_id, so PHP can
     answer a single-product lookup with one ~200KB read instead of scanning all
-    shards (39.7MB) on the slow shared-hosting disk.
+    shards (20MB) on the slow shared-hosting disk.
     """
     import glob as _g, hashlib
     bdir = os.path.join(DATA, 'cezma_buckets'); os.makedirs(bdir, exist_ok=True)
@@ -3135,6 +3136,61 @@ def rebuild_cezma_buckets():
             changed_files.add(f'data/cezma_buckets/b_{h}.json')
     summary['cezma_buckets'] = {'buckets': len(buckets), 'keys': sum(len(m) for m in buckets.values())}
     return len(buckets)
+
+def _cezma_row_id(row):
+    """Cezma's numeric product id from wherever the shard row keeps it (0 = unknown)."""
+    if not isinstance(row, dict):
+        return 0
+    extra = row.get('extra') if isinstance(row.get('extra'), dict) else {}
+    raw = extra.get('cezma_id') or row.get('orig_id') or row.get('id') or ''
+    text = re.sub(r'^cezma-', '', str(raw).strip(), flags=re.I)
+    return int(text) if text.isdigit() else 0
+
+
+def _cezma_prune_pre_2026_unavailable_ids():
+    """Drop unavailable-list entries of deleted 2025 products (CEZMA_MIN_ID already blocks them)."""
+    global _CEZMA_UNAVAILABLE_IDS_CACHE
+    saved = jload('cezma_unavailable.json', {})
+    if not isinstance(saved, dict) or not saved:
+        return 0
+    kept = {}
+    for key, value in saved.items():
+        text = re.sub(r'^cezma-', '', str(key).strip(), flags=re.I)
+        if text.isdigit() and int(text) < CEZMA_MIN_ID:
+            continue
+        kept[key] = value
+    removed = len(saved) - len(kept)
+    if removed:
+        jsave('cezma_unavailable.json', kept)
+        _CEZMA_UNAVAILABLE_IDS_CACHE = None
+    return removed
+
+
+def remove_pre_2026_cezma():
+    """Permanently delete every Cezma product created before 2026 (id < CEZMA_MIN_ID).
+
+    The 2025 catalog was dropped on purpose, so this runs on every pass — including
+    deploy-only and scheduled runs — and a 2025 product cannot come back through an
+    old shard, a stale branch, or a re-import. Rows without a readable numeric id are
+    kept: we only delete what we can prove is a pre-2026 product.
+    """
+    rows = _cezma_load_shards()
+    kept = [row for row in rows if not (0 < _cezma_row_id(row) < CEZMA_MIN_ID)]
+    removed = len(rows) - len(kept)
+    if removed:
+        _cezma_write_shards(kept)
+        log(f'cezma 2026-only: removed {removed} products created before 2026 (id < {CEZMA_MIN_ID}); retained {len(kept)}')
+    pruned_unavailable = _cezma_prune_pre_2026_unavailable_ids()
+    if pruned_unavailable:
+        log(f'cezma 2026-only: pruned {pruned_unavailable} unavailable ids of deleted 2025 products')
+    summary['cezma_2026_only'] = {
+        'minimum_id': CEZMA_MIN_ID,
+        'removed': removed,
+        'retained': len(kept),
+        'pruned_unavailable_ids': pruned_unavailable,
+    }
+    return removed
+
 
 def remove_low_price_cezma():
     """Permanently remove Cezma products below the EGP floor from every shard."""
@@ -3564,6 +3620,9 @@ if __name__ == '__main__':
             log(f'❌ {step} failed: {e}'); summary[step] = {'error': str(e)[:200]}
     # Prune unavailable Cezma placeholder records on every run, including deploy-only runs.
     remove_cezma_unavailable_notice_products()
+    # سيزما بقت 2026 بس: احذف أي منتج اتعمل قبل 2026 في كل تشغيل (بما فيها تشغيل النشر فقط)،
+    # عشان منتجات 2025 ماترجعش من شظية قديمة أو فرع تاني أو إعادة استيراد.
+    remove_pre_2026_cezma()
     # Enforce the Cezma price floor on every run, including deploy-only runs,
     # so removed products cannot return through a partial/update-skipped run.
     remove_low_price_cezma()
@@ -3617,7 +3676,7 @@ if __name__ == '__main__':
     except Exception as _ve:
         log('❌ visual_features failed:', str(_ve)[:200])
         summary['visual_features'] = {'error': str(_ve)[:200]}
-    # فهرس البحث بالصورة لسيزما (90 ألف صورة): بحد زمني في كل تشغيل، والباقي بيكمل في التشغيلات الجاية
+    # فهرس البحث بالصورة لسيزما (43 ألف منتج — 2026 بس): بحد زمني في كل تشغيل، والباقي بيكمل في التشغيلات الجاية
     # الملفات مش في الريبو (كبيرة)، الـ workflow بيرجّعها من الكاش قبل التشغيل عشان نكمّل من آخر حالة
     try:
         import visual_cezma
