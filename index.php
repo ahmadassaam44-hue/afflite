@@ -509,6 +509,7 @@ if ($is_digital_only) {
 } else {
     $grid_seed = (($mode === 'physical' || $mode === '') && $country === 'all' && $cat === 'all' && $col === '' && $q === '' && $plat_view === '') ? $home_seed : null;
     if ($grid_seed !== null) $GLOBALS['home_seed_url'] = $grid_seed;
+    $GLOBALS['wf_home_page'] = $page;
     // حُمّل فقط ما يكفي للصفحة المطلوبة؛ زيادة النافذة تحفظ ترتيب التناوب وتملأ
     // الصفحة حتى مع المنتجات المخفية أو التي لا تملك صورة صالحة.
     $source_limit = $fast_physical_listing ? ($page * $per + 100) : null;
@@ -542,10 +543,16 @@ if ($fast_physical_listing) {
     if (is_array($catalog_counts) && array_key_exists('physical_with_images', $catalog_counts)) {
         // الملخص يحافظ على إجمالي الترقيم من دون فكّ كتالوج سيزما عند كل طلب.
         $total = max(0, (int)$catalog_counts['physical_with_images']);
+        $manual_visible = 0;
         foreach (manual_products_all() as $manual_product) {
             $manual_product = normalize_product_record($manual_product, 'manual');
-            if (!empty($manual_product['images'])) $total++;
+            if (!empty($manual_product['images'])) $manual_visible++;
         }
+        // لو الرئيسية استبعدت منتجات اليدوي في الزيارة دي، منحسبهاش في الترقيم.
+        if (array_key_exists('wf_home_manual_shown', $GLOBALS)) {
+            $manual_visible = min($manual_visible, max(0, (int)$GLOBALS['wf_home_manual_shown']));
+        }
+        $total += $manual_visible;
         // تصحيحات الأدمن قليلة؛ نتحقق من سجلاتها فقط كي يظل الإجمالي دقيقًا مع الإخفاء/الصورة البديلة.
         $physical_override_plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'cezma', 'manual'];
         foreach (product_overrides() as $override_key => $override) {

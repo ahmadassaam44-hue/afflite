@@ -2346,6 +2346,18 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
             $arr = array_merge($top, array_slice($arr, $pool));
         }
         if ($source_limit !== null) $arr = array_slice($arr, 0, max(1, (int)$source_limit));
+        // منتجات اليدوي على الرئيسية: متظهرش في كل زيارة — تقريبًا زيارة من كل 3، وبحد أقصى منتجين.
+        // الصفوف الأفقية وصفحات «التالي» من غير منتجات يدوي، لكن الأقسام والبحث وأحدث المنتجات بتعرضهم عادي.
+        if ($pk === 'manual' && $source_limit !== null && $shuffle_seed !== null) {
+            $home_page = isset($GLOBALS['wf_home_page']) ? (int)$GLOBALS['wf_home_page'] : 1;
+            $home_show = ($type === 'all' && $home_page <= 1 && (((int)$shuffle_seed % 3) === 0));
+            if ($home_show) {
+                $arr = array_slice($arr, 0, 1 + ((int)floor($shuffle_seed / 3) % 2));
+            } else {
+                $arr = [];
+            }
+            if ($type === 'all') $GLOBALS['wf_home_manual_shown'] = count($arr);
+        }
         $by_plat[$pk] = $arr;
         wfp('physCOL plat ' . $pk . ': ' . count($arr));
     }
