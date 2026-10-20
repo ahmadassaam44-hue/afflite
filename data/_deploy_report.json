@@ -75,9 +75,9 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 314028,
+   "remote_size": 313983,
    "on_server": true,
-   "local_size": 314028,
+   "local_size": 313983,
    "match": true
   },
   "dashboard/layout.php": {
@@ -87,9 +87,9 @@
    "match": true
   },
   "dashboard/marketer.php": {
-   "remote_size": 110704,
+   "remote_size": 110527,
    "on_server": true,
-   "local_size": 110704,
+   "local_size": 110527,
    "match": true
   },
   "assets/style.css": {
