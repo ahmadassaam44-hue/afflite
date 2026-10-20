@@ -2229,7 +2229,7 @@ def site_deploy_files():
                 out.add(fn)
     # ملفات مساعدة لا يعيد المحدّث بناءها لكنها مطلوبة على الموقع
     # (visual_index.json يشغّل البحث بالصورة في api_image_search.php)
-    for extra_fn in ('data/id_index.json', 'data/detail_index.json', 'data/catalog_counts.json', 'data/shipping.json', 'data/shipping_cities_shopmart.json', 'data/visual_index.json', 'data/visual_features.json'):
+    for extra_fn in ('data/id_index.json', 'data/detail_index.json', 'data/catalog_counts.json', 'data/shipping.json', 'data/shipping_cities_shopmart.json', 'data/shipping_cities_gulf.json', 'data/visual_index.json', 'data/visual_features.json'):
         if os.path.isfile(os.path.join(ROOT, extra_fn)):
             out.add(extra_fn)
     out.update(os.path.relpath(f, ROOT).replace(os.sep, '/') for f in sorted(_g.glob(os.path.join(DATA, 'visual_cezma.*.part-*'))))

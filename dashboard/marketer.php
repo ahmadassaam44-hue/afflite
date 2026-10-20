@@ -531,7 +531,7 @@ elseif ($mtab === 'store') { wfp('MTAB store');
             $cust_p = round($base_p + $ex_c, 2);
             $lp_href = wf_client_order_url($ppid, $ppl, $code, $ex_c, true);
             $lp_url = wf_client_order_url($ppid, $ppl, $code, $ex_c, false);
-            $eo_p = json_encode(['id' => $ppid, 'plat' => $ppl, 'name' => $pname_c, 'price' => $cust_p, 'base_price' => $base_p, 'extra_comm' => $ex_c, 'img' => $pimg, 'ref' => $code, 'currency' => wf_ui_currency($fp), 'colors' => clean_product_colors($fp, $ppl), 'sizes' => clean_product_sizes($fp, $ppl)], JSON_UNESCAPED_UNICODE);
+            $eo_p = json_encode(['id' => $ppid, 'plat' => $ppl, 'name' => $pname_c, 'price' => $cust_p, 'base_price' => $base_p, 'extra_comm' => $ex_c, 'img' => $pimg, 'ref' => $code, 'currency' => wf_ui_currency($fp), 'country' => wf_product_country($fp), 'ship_fee' => function_exists('wf_product_shipping') ? wf_product_shipping($fp) : null, 'colors' => clean_product_colors($fp, $ppl), 'sizes' => clean_product_sizes($fp, $ppl)], JSON_UNESCAPED_UNICODE);
             echo '<tr>';
             echo '<td><img alt="صورة المنتج" src="' . esc($pimg) . '" data-ui="u-aef7c762 d87 d88 d5q d1u d4u dt"></td>';
             echo '<td><b>' . esc(mb_substr($pname_c, 0, 50)) . '</b><div class="mut" data-ui="u-5d985ec3 do">' . esc($fp['category'] ?? '') . ($is_digital_row ? ' • منتج رقمي/خدمة — يُطلب من صفحة الطلب' : '') . '</div></td>';
@@ -774,7 +774,7 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
             $order_btn_label = $is_digital_card ? 'اطلب لعميل' : 'طلب لعميل';
             $card_uid = 'mkc_' . $idx_m . '_' . preg_replace('/[^a-zA-Z0-9]/', '', $pid_m);
 
-            $mk_ui_states[$card_uid] = ['id'=>$pid_m,'plat'=>$pl,'name'=>$cname_m,'base_price'=>(float)$base_p,'img'=>$img,'ref'=>$code,'currency'=>wf_ui_currency($full_mp),'colors'=>$cols_m,'sizes'=>$sizes_m,'copy'=>$ad_copy_base];
+            $mk_ui_states[$card_uid] = ['id'=>$pid_m,'plat'=>$pl,'name'=>$cname_m,'base_price'=>(float)$base_p,'img'=>$img,'ref'=>$code,'currency'=>wf_ui_currency($full_mp),'country'=>wf_product_country($full_mp),'ship_fee'=>function_exists('wf_product_shipping') ? wf_product_shipping($full_mp) : null,'colors'=>$cols_m,'sizes'=>$sizes_m,'copy'=>$ad_copy_base];
             echo '<article class="pcard marketer-product" id="' . esc($card_uid) . '" data-commission="' . esc($tot_c) . '" data-price="' . esc($sale_p) . '" data-name="' . esc($cname_m) . '" data-plat="' . esc($pl) . '" data-country="' . esc($full_mp['country'] ?? '') . '" data-card-state="1">';
             echo '<div class="pcard-img"><a href="' . esc($clean_p_url) . '" aria-label="' . esc($cname_m) . '"><img src="' . esc($img) . '" alt="' . esc($cname_m) . '" width="260" height="260" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><span class="badge ' . ($in_st ? 'green' : 'neutral') . ' marketer-store-badge" id="badge_' . esc($card_uid) . '">' . ($in_st ? 'في متجرك' : esc(wf_normalize_category($full_mp['category'] ?? '', 'منتج'))) . '</span></div>';
             echo '<h3 class="pcard-title"><a href="' . esc($clean_p_url) . '">' . esc($cname_m) . '</a></h3>';

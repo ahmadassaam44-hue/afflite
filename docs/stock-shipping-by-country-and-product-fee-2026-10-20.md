@@ -99,7 +99,7 @@
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 306 assertion — 0 فشل
+node tests/ui/manual-country-currency.cjs   # 307 assertion — 0 فشل (بعد إضافات 2026-10-21)
 ```
 
 أهم الفحوص الجديدة (PHP 8.3 حقيقي في WASM على بيانات المستودع الفعلية):
