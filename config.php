@@ -4329,7 +4329,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
                 </div>
                 <div class="eo-field">
                   <label id="eoBuyerDistrictLbl" for="eoBuyerDistrictSel"><svg class=wf-ico aria-hidden=true><use href=#icon-map></use></svg> المدينة / المركز <span data-ui="u-ce5bc718 uex">*</span></label>
-                  <select name="district" id="eoBuyerDistrictSel" data-ui-field="1" disabled><option value="">-- اختر المحافظة أولاً --</option></select>
+                  <select name="district" id="eoBuyerDistrictSel" data-ui-field="1" disabled><option value="">-- اختر <?php echo ($default_country !== '' && $default_country !== 'مصر') ? 'المنطقة' : 'المحافظة'; ?> أولاً --</option></select>
                   <input type="text" name="district" id="eoBuyerDistrict" data-ui-field="1" aria-labelledby="eoBuyerDistrictLbl" placeholder="اكتب اسم المدينة أو المركز أو الحي" hidden disabled>
                 </div>
               </div>

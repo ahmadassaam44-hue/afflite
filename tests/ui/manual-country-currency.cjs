@@ -171,6 +171,7 @@ chk($out,$fail,'dialog currency m5zoon default',($__curs['m5zoon'] ?? ''),'ج.م
 chk($out,$fail,'dialog currency default key = rendered case',($__curs['default'] ?? ''),'ر.س');
 chk($out,$fail,'dialog default state = rendered case',($__state['default'] ?? []),($__state['manual:السعودية'] ?? []));
 chk($out,$fail,'dialog rendered saudi uses manual table',mb_strpos($__dlg,'data-ship-currency="ر.س"')!==false,true);
+chk($out,$fail,'dialog district placeholder follows country',mb_strpos($__dlg,'-- اختر المنطقة أولاً --')!==false&&mb_strpos($__dlg,'-- اختر المحافظة أولاً --')===false,true);
 // ---- 8c) مدن دول الخليج (القايمة التانية بقت منسدلة زي مصر) ----
 $eg_map = wf_ship_cities_map();
 chk($out,$fail,'cities egypt default count',count($eg_map),26);
@@ -358,6 +359,26 @@ const uijs=src('assets/ui.js');
 assert.ok(/function eoBulkApplies\(plat,cfg,currency\)/.test(uijs)&&/cfg\.egp_only/.test(uijs),'ui.js must skip the discount preview for non-EGP products');
 assert.ok(/eoBulkApplies\(e&&e\.plat,cfg,e&&e\.currency\)/.test(uijs),'the easy-order dialog must check the clicked product currency');
 assert.ok(/function eoPageBulk\(q,plat,currency\)/.test(uijs)&&/eoPageBulk\(q,p,c\)/.test(uijs),'the product page bulk preview must use the product currency');
+// كل زر بيفتح نافذة الطلب لازم يبعت دولة المنتج وسعر شحنه — وإلا النافذة ترجع لمحافظات مصر
+const dialogOpeners=[
+  ['dashboard/product.php',/onclick="openProductCheckoutDialog\(\)"/],
+  ['dashboard/product.php',/"country"=>wf_product_country\(\$r\)/],
+  ['dashboard/product.php',/"ship_fee"=>function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$r\) : null/],
+  ['dashboard/marketer.php',/'country' => wf_product_country\(\$fp\)/],
+  ['dashboard/marketer.php',/'ship_fee' => function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$fp\) : null/],
+  ['dashboard/marketer.php',/'country'=>wf_product_country\(\$full_mp\)/],
+  ['dashboard/marketer.php',/'ship_fee'=>function_exists\('wf_product_shipping'\) \? wf_product_shipping\(\$full_mp\) : null/],
+  ['landing.php',/id="lpInlineGov" data-shipping-country="/],
+];
+for(const [file,re] of dialogOpeners)assert.ok(re.test(src(file)),file+' must pass the product country to the order dialog');
+// صفحة التفاصيل: حوار الطلب بيقرأ الدولة وسعر الشحن من wfProductState ويمرّرهم للنافذة
+assert.ok(/country:t\.country,ship_fee:t\.ship_fee/.test(uijs),'the product-page checkout dialog must pass country and ship_fee to the easy-order modal');
+// نص placeholder قائمة المدينة يتبدّل حسب الدولة (مش «المحافظة» لكل الدول)
+assert.ok(/var cn=\(c\.dataset&&\(c\.dataset\.shippingCountry\|\|c\.dataset\.country\)\)\|\|"",word=cn&&cn!=="مصر"\?"المنطقة":"المحافظة";/.test(uijs),'the city list placeholder must use the country region word');
+assert.ok(/s\.dataset\.wordFor!==word/.test(uijs),'the city select must rebuild when the country word changes');
+for(const file of ['config.php','landing.php'])assert.ok(/اختر <\?php echo \(\$[a-z_]+ !== '' && \$[a-z_]+ !== 'مصر'\) \? 'المنطقة' : 'المحافظة'; \?> أولاً/.test(src(file)),file+' must render the district placeholder with the country region word');
+// ملف مدن الخليج لازم يدخل قائمة النشر على الاستضافة (كان ساقط ⇒ القوايم المنسدلة مش بتوصل)
+assert.ok(/'data\/shipping_cities_gulf\.json'/.test(src('updater/update_catalog.py')),'site_deploy_files() must upload data/shipping_cities_gulf.json');
 // الشحن حسب الدولة: كل مكان بيعرض/يحسب رسوم لازم يكون country-aware
 const shipCallers=[
   ['dashboard/orders.php',/site_ship_map\(\$plat, \$ord_country\)/],

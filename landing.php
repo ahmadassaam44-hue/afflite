@@ -306,7 +306,7 @@ if (function_exists('wf_event')) {
       <div data-ui="u-578211d7 uho uk4 ugg">
         <div>
           <label data-ui="u-c6c3b1ec uf1 ue6 udi ugv uew"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-map></use></svg> <?php echo esc($region_word); ?> *</label>
-          <select name="gov" id="lpInlineGov" required onchange="updateLpInlineSummary();wfFillCityList('lpInlineGov','lpInlineDistrictSel','lpInlineDistrict','lpInlineDistrictLbl')" data-ui="u-b0da173d uem uk3 uig udf ufr uda ueg">
+          <select name="gov" id="lpInlineGov" data-shipping-country="<?php echo esc($lp_country); ?>" required onchange="updateLpInlineSummary();wfFillCityList('lpInlineGov','lpInlineDistrictSel','lpInlineDistrict','lpInlineDistrictLbl')" data-ui="u-b0da173d uem uk3 uig udf ufr uda ueg">
             <option value="">— اختر <?php echo esc($region_word); ?> —</option>
             <?php foreach ($ship_rates as $g_name => $g_cost): ?>
               <option value="<?php echo esc($g_name); ?>" data-ship="<?php echo (int)$g_cost; ?>"><?php echo esc($g_name); ?> (شحن <?php echo (int)$g_cost; ?> <?php echo esc($ship_cur); ?>)</option>
@@ -315,7 +315,7 @@ if (function_exists('wf_event')) {
         </div>
         <div>
           <label id="lpInlineDistrictLbl" for="lpInlineDistrictSel" data-ui="u-c6c3b1ec uf1 ue6 udi ugv uew"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-map></use></svg> المدينة / المركز *</label>
-          <select name="district" id="lpInlineDistrictSel" data-ui-field="1" disabled data-ui="u-b0da173d uem uk3 uig udf ufr uda ueg"><option value="">-- اختر المحافظة أولاً --</option></select>
+          <select name="district" id="lpInlineDistrictSel" data-ui-field="1" disabled data-ui="u-b0da173d uem uk3 uig udf ufr uda ueg"><option value="">-- اختر <?php echo ($lp_country !== '' && $lp_country !== 'مصر') ? 'المنطقة' : 'المحافظة'; ?> أولاً --</option></select>
           <input type="text" name="district" id="lpInlineDistrict" data-ui-field="1" aria-labelledby="lpInlineDistrictLbl" placeholder="<?php echo esc($lp_country === 'مصر' ? 'مثال: مدينة نصر، المعادي، طنطا...' : 'اكتب المدينة والحي بالتفصيل'); ?>" hidden disabled data-ui="u-4aefbbed uem uk3 uig udf ufr uda">
         </div>
       </div>

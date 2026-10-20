@@ -740,7 +740,7 @@ if (!$rel) {
 <div class="pcard-price"><?php echo wf_ui_money($rpr); ?> <small><?php echo esc($r['currency'] ?? $cur); ?></small></div>
 <?php if ($show_comm_rel && $rcomm > 0): ?><div data-ui="u-234050a1 do dn d3i">عمولة: <b data-ui="u-61a4e8ed d1x"><?php echo wf_ui_money($rcomm); ?></b></div><?php endif; ?>
 <div data-ui="u-63c618f4 d62 dh di">
-<button type="button" class="btn sm" data-ui="u-cc6dd4b9 d2i dw d4e d3v" data-easy-order="<?php echo esc(json_encode(["id"=>(string)$r["id"],"plat"=>$rpl,"name"=>$rname,"price"=>$rpr,"base_price"=>list_price($r,$rpl)?:display_price($r,$rpl),"extra_comm"=>marketer_store_product_comm($ref,$rpl,(string)$r["id"]),"img"=>$rimg,"ref"=>$ref], JSON_UNESCAPED_UNICODE)); ?>"> اطلب الآن</button>
+<button type="button" class="btn sm" data-ui="u-cc6dd4b9 d2i dw d4e d3v" data-easy-order="<?php echo esc(json_encode(["id"=>(string)$r["id"],"plat"=>$rpl,"name"=>$rname,"price"=>$rpr,"base_price"=>list_price($r,$rpl)?:display_price($r,$rpl),"extra_comm"=>marketer_store_product_comm($ref,$rpl,(string)$r["id"]),"img"=>$rimg,"ref"=>$ref,"currency"=>wf_ui_currency($r),"country"=>wf_product_country($r),"ship_fee"=>function_exists('wf_product_shipping') ? wf_product_shipping($r) : null], JSON_UNESCAPED_UNICODE)); ?>"> اطلب الآن</button>
 </div>
 </div>
 <?php endforeach; ?>

@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 306 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 307 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -146,3 +146,13 @@ fall back to the country/region table. Wiring checks require `ship_fee` in the f
 country, productShip)` plus `e.ship_fee` in `assets/ui.js`, the `ship_fee` form field and CSV column,
 and `_m5zoon_country()` (with no hardcoded `'country': 'مصر'` left inside `update_m5zoon()`).
 Documented in `docs/stock-shipping-by-country-and-product-fee-2026-10-20.md`.
+
+Every opener of the order dialog must carry the product country and its stored shipping fee, or the
+modal silently falls back to the Egyptian governorate table: the product-page checkout button
+(`openProductCheckoutDialog`), the related-product cards, the marketer store row button and the
+marketer catalogue cards now pass `country`/`ship_fee` like the homepage/store/landing payloads do,
+and the city-list placeholder («المنطقة» vs «المحافظة») follows the country in the dialog, the landing
+inline form and `wfFillCityList`. The test also guards the deployment path: `site_deploy_files()` in
+`updater/update_catalog.py` must list `data/shipping_cities_gulf.json`, otherwise the Gulf city
+dropdowns can never reach the hosting even with correct code. Documented in
+`docs/order-dialogs-per-country-and-deploy-sync-2026-10-21.md`.
