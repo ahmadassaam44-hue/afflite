@@ -28,8 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['name'])) {
         $unit = $line['unit_price'];
         $base = $line['base_price'];
         $ship = ($n === 0 ? $fee : 0);
-        // خصم الكمية لكل سطر: 70 ج.م عن كل قطعة بعد الأولى (الرقمي والسوشيال مستثنيان)
-        $line_disc = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($qty, $pl) : 0.0;
+        // خصم الكمية لكل سطر: 70 ج.م عن كل قطعة بعد الأولى (الرقمي والسوشيال مستثنيان،
+        // وكمان أي منتج سعره مش بالجنيه — العملة من المنتج نفسه اللي جابه السيرفر)
+        $line_disc = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($qty, $pl, $prod) : 0.0;
 
         $district = mb_substr(trim((string)($_POST['district'] ?? '')), 0, 80);
         $raw_addr = trim((string)($_POST['address'] ?? ''));
@@ -124,7 +125,7 @@ $cart_disc = 0.0;
 foreach ($_SESSION['cart'] as $cd) {
     if (!is_array($cd)) continue;
     $cd_qty = max(1, min(999, (int)($cd['qty'] ?? 1)));
-    $cart_disc += function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($cd_qty, resolve_plat((string)($cd['id'] ?? ''), $cd['plat'] ?? '')) : 0.0;
+    $cart_disc += function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($cd_qty, resolve_plat((string)($cd['id'] ?? ''), $cd['plat'] ?? ''), wf_ui_currency($cd)) : 0.0;
 }
 $cart_disc = round($cart_disc, 2);
 $shiprows = site_ship_regions($_SESSION['cart'][0]['plat'] ?? 'vendoor');

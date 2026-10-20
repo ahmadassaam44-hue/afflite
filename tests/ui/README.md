@@ -96,12 +96,19 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 81 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 109 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
 in the existing `details` JSON, the currency is always derived from it (never stored, never converted),
 legacy rows default to مصر/ج.م, and an unknown country in a form/CSV row is rejected with an explicit
-message so a price can never be saved under the wrong currency. The test does not assert shipping fees
-or the EGP-denominated quantity discount for non-EGP products — both are open owner decisions listed
-in that document.
+message so a price can never be saved under the wrong currency. Shipping fees for Gulf manual products
+are still an open owner decision (`data/shipping.json` has no `manual` table), so the test asserts
+nothing about them.
+
+The same script now also covers the owner decision of 2026-10-20 that the EGP-denominated quantity
+discount (`LP_BUNDLE_DISCOUNT`) applies **only** to products whose price is in Egyptian pounds:
+`wf_bulk_discount_plat_ok/wf_bulk_discount/wf_bundle_total/wf_bulk_discount_state` take an optional
+currency (or product array), every server call site passes it, `wf_bulk_discount_state` ships
+`egp_only`/`egp`/`currency` to the browser, and `assets/ui.js` refuses the live discount preview for
+non-EGP products so the preview always matches the server-side order total.

@@ -424,37 +424,76 @@ define('LP_BUNDLE_DISCOUNT', 70);
 // (أي خدمة أقل من 10 قروش بيتضاف عليها 10 قروش) — الاتنين قابلين للتعديل من الإعدادات.
 define('DIGITAL_USD_EGP', 56.0);
 define('SOCIAL_PRICE_ADDON', 0.10);
-// المنتجات الرقمية وخدمات السوشيال ميديا خارج خصم الكمية (سعرها ثابت وتنفيذها آلي)
-function wf_bulk_discount_plat_ok($plat = '') {
-    return !function_exists('wf_is_digital_plat') || !wf_is_digital_plat($plat);
+// عملة المنتج (من المنتج نفسه أو من دولته) — المصدر الوحيد لقرار «هل الخصم بالجنيه ينطبق؟»
+// نفس ترتيب wf_ui_currency: عملة مخزّنة ⇒ عملة الدولة ⇒ ومصدر m5zoon بيسبق الاتنين.
+function wf_product_currency($p, $plat = '') {
+    if (!is_array($p)) $p = [];
+    $plat = trim((string)($plat !== '' ? $plat : ($p['_plat'] ?? $p['plat'] ?? '')));
+    $cur = trim((string)($p['currency'] ?? ''));
+    if ($cur === '') $cur = wf_country_currency($p['country'] ?? 'مصر');
+    if ($plat === 'm5zoon' && function_exists('mz_src_currency')) {
+        $src = trim((string)mz_src_currency($p));
+        if ($src !== '') $cur = $src;
+    }
+    return $cur;
 }
-// قيمة الخصم لإجمالي كمية معيّنة — 70 ج.م × عدد القطع الزائدة عن القطعة الأولى
-function wf_bulk_discount($qty, $plat = '') {
-    if (!wf_bulk_discount_plat_ok($plat)) return 0.0;
+// الكتابات اللي بتعني الجنيه المصري (فاضية = مجهول = معاملة الجنيه، لأن أغلب الكتالوج مصري)
+function wf_egp_currency_labels() {
+    return ['', 'ج.م', 'جنيه', 'جنيه مصري', 'EGP', 'LE', 'E£'];
+}
+function wf_is_egp_currency($currency) {
+    $c = trim((string)$currency);
+    foreach (wf_egp_currency_labels() as $label) {
+        if (strcasecmp($c, trim((string)$label)) === 0) return true;
+    }
+    return false;
+}
+// المنتجات الرقمية وخدمات السوشيال ميديا خارج خصم الكمية (سعرها ثابت وتنفيذها آلي)
+// وكمان أي منتج سعره مش بالجنيه: الخصم مبلغ ثابت بالجنيه (LP_BUNDLE_DISCOUNT) والموقع
+// ما بيحوّلش عملات، فتطبيقه على سعر بالريال/الدرهم يبقى خصم أكبر بكتير من المقصود.
+// $currency: عملة المنتج أو المنتج نفسه (array) — null/'' = مجهول = جنيه.
+function wf_bulk_discount_plat_ok($plat = '', $currency = null) {
+    if (function_exists('wf_is_digital_plat') && wf_is_digital_plat($plat)) return false;
+    return wf_bulk_currency_ok($currency);
+}
+function wf_bulk_currency_ok($currency = null) {
+    if ($currency === null) return true;
+    if (is_array($currency)) $currency = wf_product_currency($currency);
+    return wf_is_egp_currency($currency);
+}
+// قيمة الخصم لإجمالي كمية معيّنة — 70 ج.م × عدد القطع الزائدة عن القطعة الأولى (للجنيه فقط)
+function wf_bulk_discount($qty, $plat = '', $currency = null) {
+    if (!wf_bulk_discount_plat_ok($plat, $currency)) return 0.0;
     $q = max(1, min(999, (int)$qty));
     return $q >= 2 ? round((float)LP_BUNDLE_DISCOUNT * ($q - 1), 2) : 0.0;
 }
 // القيم اللي بتستخدمها الواجهة للحساب الحيّ (عرض فقط — السيرفر هو المرجع)
-function wf_bulk_discount_state($plat = '') {
+function wf_bulk_discount_state($plat = '', $currency = null) {
     $plat = trim((string)$plat);
     return [
         'per_piece' => (float)LP_BUNDLE_DISCOUNT,
         'max_qty'   => 99,
-        'applies'   => $plat === '' ? null : wf_bulk_discount_plat_ok($plat),
+        'applies'   => ($plat === '' && $currency === null) ? null : wf_bulk_discount_plat_ok($plat, $currency),
         'label'     => 'خصم ' . (int)LP_BUNDLE_DISCOUNT . ' ج.م لكل قطعة إضافية بعد القطعة الأولى',
         // نفس predicate اللي بيقولده wf_is_digital_plat — بتستخدمه الواجهة عشان متطبّقش الخصم
         'digital'   => ['g2g', 'social', 'smm', 'hevo'],
+        // الخصم بالجنيه بس: الواجهة بتقارن عملة المنتج اللي اتفتح بيه نافذة الطلب
+        'egp_only'  => true,
+        'egp'       => array_values(array_filter(wf_egp_currency_labels(), function ($l) { return $l !== ''; })),
+        // عملة المنتج لو الصفحة عندها منتج محدد (صفحة المنتج / صفحة الهبوط)
+        'currency'  => $currency === null ? '' : (is_array($currency) ? wf_product_currency($currency) : trim((string)$currency)),
     ];
 }
 // إجمالي الكمية بعد الخصم — المصدر الوحيد للسعر على السيرفر
-function wf_bundle_total($unit, $qty, $plat = '') {
+function wf_bundle_total($unit, $qty, $plat = '', $currency = null) {
     $unit = max(0, round((float)$unit, 2));
     $qty = max(1, min(999, (int)$qty));
-    return max(0, round($unit * $qty - wf_bulk_discount($qty, $plat), 2));
+    return max(0, round($unit * $qty - wf_bulk_discount($qty, $plat, $currency), 2));
 }
-// الخصم بقى عام لكل الطلبات (مش صفحة الهبوط بس) للمنتجات التقليدية — الرقمی والسوشيال مستثنيان
-function wf_landing_bundle_discount($qty, $from_landing = false, $plat = '') {
-    return wf_bulk_discount($qty, $plat);
+// الخصم بقى عام لكل الطلبات (مش صفحة الهبوط بس) للمنتجات التقليدية — الرقمی والسوشيال
+// وأي منتج سعره مش بالجنيه مستثنيان
+function wf_landing_bundle_discount($qty, $from_landing = false, $plat = '', $currency = null) {
+    return wf_bulk_discount($qty, $plat, $currency);
 }
 
 function server_order_line($pid, $plat, $qty = 1, $requested_price = null, $ref = '', $explicit_extra_comm = null, $honor_requested = false) {
@@ -4086,7 +4125,7 @@ function order_variant_label($order) {
 
 // ===== نافذة إتمام الطلب الفوري للعميل =====
 // خانة «سعر الاتفاق مع العميل» اتشالت من الموقع كله: سعر العميل دايمًا هو سعر الرابط المحسوب على السيرفر.
-function render_easyorder_dialog_html($default_ref = '', $default_plat = '') {
+function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $default_currency = null) {
     require_once __DIR__ . '/ui-components.php';
     static $rendered = false;
     if ($rendered) return;
@@ -4112,7 +4151,8 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '') {
     
     <?php wf_ui_sprite(); ?>
     <script type="application/json" id="wfShippingState"><?php echo json_encode($ship_by_platform, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
-    <?php $bulk_state = function_exists('wf_bulk_discount_state') ? wf_bulk_discount_state($default_plat) : ['per_piece' => 0, 'max_qty' => 99]; ?>
+    <?php // الخصم بالجنيه بس: لو الصفحة عندها منتج بعملة تانية (ر.س/د.إ/…) الـ state بيقول للواجهة متطبّقوش
+    $bulk_state = function_exists('wf_bulk_discount_state') ? wf_bulk_discount_state($default_plat, $default_currency) : ['per_piece' => 0, 'max_qty' => 99]; ?>
     <script type="application/json" id="wfCityState"><?php echo json_encode(wf_ship_cities_map(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <script type="application/json" id="wfBulkState"><?php echo json_encode($bulk_state, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <div id="eoCheckoutDialog" class="eo-modal-backdrop" onclick="if(event.target===this)closeEasyOrderModal()">
@@ -4137,7 +4177,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '') {
                 </div>
               </div>
             </div>
-            <div class="alert info" id="eoBulkHint"<?php echo ($default_plat !== '' && function_exists('wf_bulk_discount_plat_ok') && wf_bulk_discount_plat_ok($default_plat)) ? '' : ' hidden'; ?> data-per-piece="<?php echo (float)($bulk_state['per_piece'] ?? 0); ?>">🎁 <?php echo esc($bulk_state['label'] ?? ('خصم ' . (int)LP_BUNDLE_DISCOUNT . ' ج.م لكل قطعة إضافية بعد القطعة الأولى')); ?> — بيتحسب أوتوماتيك في الإجمالي (ما بيطبّقش على المنتجات الرقمية أو خدمات السوشيال ميديا).</div>
+            <div class="alert info" id="eoBulkHint"<?php echo ($default_plat !== '' && function_exists('wf_bulk_discount_plat_ok') && wf_bulk_discount_plat_ok($default_plat, $default_currency)) ? '' : ' hidden'; ?> data-per-piece="<?php echo (float)($bulk_state['per_piece'] ?? 0); ?>">🎁 <?php echo esc($bulk_state['label'] ?? ('خصم ' . (int)LP_BUNDLE_DISCOUNT . ' ج.م لكل قطعة إضافية بعد القطعة الأولى')); ?> — بيتحسب أوتوماتيك في الإجمالي (ما بيطبّقش على المنتجات الرقمية أو خدمات السوشيال ميديا).</div>
 
             <form id="eoOrderForm" method="post" action="<?php echo esc($orders_url); ?>" onsubmit="return submitEasyOrderForm(event)">
               <input type="hidden" name="csrf_token" value="<?php echo esc($csrf_val); ?>">

@@ -101,6 +101,36 @@ chk($out,$fail,'ui currency emirati',wf_ui_currency($ae),'د.إ');
 chk($out,$fail,'ui currency default',wf_ui_currency(['price'=>100]),'ج.م');
 // منتجات يدوية مش بعمولة — السعر المخزّن هو سعر البيع
 chk($out,$fail,'manual no commission',wf_plat_no_commission('manual'),true);
+// ---- 8) خصم الكمية (70 ج.م) للجنيه بس — قرار الإدارة 2026-10-20 ----
+chk($out,$fail,'egp label ج.م',wf_is_egp_currency('ج.م'),true);
+chk($out,$fail,'egp label EGP',wf_is_egp_currency('EGP'),true);
+chk($out,$fail,'egp label جنيه مصري',wf_is_egp_currency('جنيه مصري'),true);
+chk($out,$fail,'egp label empty = unknown = egp',wf_is_egp_currency(''),true);
+chk($out,$fail,'egp label ر.س',wf_is_egp_currency('ر.س'),false);
+chk($out,$fail,'egp label د.إ',wf_is_egp_currency('د.إ'),false);
+chk($out,$fail,'egp label درهم',wf_is_egp_currency('درهم'),false);
+chk($out,$fail,'product currency from country',wf_product_currency(['country'=>'السعودية']),'ر.س');
+chk($out,$fail,'product currency default',wf_product_currency(['price'=>100]),'ج.م');
+chk($out,$fail,'product currency stored wins',wf_product_currency(['currency'=>'د.أ','country'=>'مصر']),'د.أ');
+chk($out,$fail,'product currency m5zoon source wins',wf_product_currency(['country'=>'مصر','extra'=>['cost'=>'77 درهم']],'m5zoon'),'درهم');
+chk($out,$fail,'discount egp 2 pcs',wf_bulk_discount(2,'manual','ج.م'),70.0);
+chk($out,$fail,'discount egp 3 pcs',wf_bulk_discount(3,'manual','ج.م'),140.0);
+chk($out,$fail,'discount unknown currency = egp',wf_bulk_discount(3,'manual'),140.0);
+chk($out,$fail,'discount sar 3 pcs = 0',wf_bulk_discount(3,'manual','ر.س'),0.0);
+chk($out,$fail,'discount aed word = 0',wf_bulk_discount(2,'m5zoon','درهم'),0.0);
+chk($out,$fail,'discount from product array (saudi)',wf_bulk_discount(2,'manual',['country'=>'السعودية','price'=>250]),0.0);
+chk($out,$fail,'discount from product array (egypt)',wf_bulk_discount(2,'manual',['country'=>'مصر','price'=>250]),70.0);
+chk($out,$fail,'digital still excluded in egp',wf_bulk_discount(3,'g2g','ج.م'),0.0);
+chk($out,$fail,'bundle total sar no discount',wf_bundle_total(250,2,'manual','ر.س'),500.0);
+chk($out,$fail,'bundle total egp with discount',wf_bundle_total(100,2,'manual','ج.م'),130.0);
+chk($out,$fail,'landing discount sar = 0',wf_landing_bundle_discount(3,false,'manual','ر.س'),0.0);
+$st_sar=wf_bulk_discount_state('manual','ر.س');$st_egp=wf_bulk_discount_state('manual','ج.م');$st_none=wf_bulk_discount_state('');
+chk($out,$fail,'state sar applies false',$st_sar['applies'],false);
+chk($out,$fail,'state egp applies true',$st_egp['applies'],true);
+chk($out,$fail,'state without product applies null',$st_none['applies'],null);
+chk($out,$fail,'state egp_only flag',$st_sar['egp_only'],true);
+chk($out,$fail,'state currency for js',$st_sar['currency'],'ر.س');
+chk($out,$fail,'state egp labels for js',in_array('ج.م',$st_sar['egp'],true),true);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -124,11 +154,32 @@ assert.ok(/id="mpCountry"/.test(admin)&&/mpSyncCurrency/.test(admin),'admin form
 assert.ok(/wf_country_list\(\)/.test(admin)&&/wf_country_currency\(/.test(admin),'admin page must use the shared country/currency helpers');
 const csvTemplate=fs.readFileSync(path.join(repo,'manual_products_import.csv'),'utf8').replace(/^\uFEFF/,'');
 assert.deepStrictEqual(csvTemplate.split('\n')[0].split(','),['name','price','country','category','stock','sku','description','colors','sizes','material','weight','dimensions','images','faqs'],'CSV template header must include country after price');
+// خصم الكمية (70 ج.م) بقى للجنيه بس: كل مكان بيحسب الخصم لازم يمرّر العملة/المنتج
+const src=file=>fs.readFileSync(path.join(repo,file),'utf8');
+const bulkCallers=[
+  ['dashboard/orders.php',/wf_bulk_discount\(\$qty, \$plat, \$prod\)/],
+  ['dashboard/checkout_cart.php',/wf_bulk_discount\(\$qty, \$pl, \$prod\)/],
+  ['dashboard/checkout_cart.php',/wf_bulk_discount\(\$cd_qty, [^;]*wf_ui_currency\(\$cd\)\)/],
+  ['dashboard/cart.php',/wf_bulk_discount\([^;]*\$c_cur\)/],
+  ['dashboard/product.php',/wf_bulk_discount_plat_ok\(\$plat, \$cur\)/],
+  ['landing.php',/wf_bulk_discount_plat_ok\(\$plat, wf_ui_currency\(\$p\)\)/],
+  ['landing.php',/wf_bulk_discount\(2, \$plat, \$lp_cur\)/],
+  ['landing.php',/wf_bundle_total\(\$final_price, 3, \$plat, \$lp_cur\)/],
+  ['landing.php',/render_easyorder_dialog_html\(\$ref, \$plat, wf_ui_currency\(\$p\)\)/],
+  ['config.php',/wf_bulk_discount_state\(\$default_plat, \$default_currency\)/],
+  ['config.php',/wf_bulk_discount_plat_ok\(\$default_plat, \$default_currency\)/],
+];
+for(const [file,re] of bulkCallers)assert.ok(re.test(src(file)),file+' must pass the product currency to the quantity-discount helpers');
+// معاينة الخصم في الواجهة لازم تطابق السيرفر (متوريشتش خصم على منتج مش بالجنيه)
+const uijs=src('assets/ui.js');
+assert.ok(/function eoBulkApplies\(plat,cfg,currency\)/.test(uijs)&&/cfg\.egp_only/.test(uijs),'ui.js must skip the discount preview for non-EGP products');
+assert.ok(/eoBulkApplies\(e&&e\.plat,cfg,e&&e\.currency\)/.test(uijs),'the easy-order dialog must check the clicked product currency');
+assert.ok(/function eoPageBulk\(q,plat,currency\)/.test(uijs)&&/eoPageBulk\(q,p,c\)/.test(uijs),'the product page bulk preview must use the product currency');
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){
   const Engine=require(path.join(NM,'php-parser'));
   const parser=new Engine({parser:{suppressErrors:false,version:'8.3'},ast:{withPositions:false},lexer:{comment_tokens:false}});
-  for(const file of ['config.php','manual_products_lib.php','ui-components.php','index.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php'])parser.parseCode(fs.readFileSync(path.join(repo,file),'utf8'),file);
+  for(const file of ['config.php','manual_products_lib.php','ui-components.php','index.php','landing.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php','dashboard/cart.php','dashboard/checkout_cart.php','dashboard/orders.php'])parser.parseCode(src(file),file);
 }
 (async()=>{
   const php=new PHP(await loadNodeRuntime('8.3',{emscriptenOptions:{processId:1,locateFile:p=>path.isAbsolute(p)?p:path.join(wasmDir,p)}}));
