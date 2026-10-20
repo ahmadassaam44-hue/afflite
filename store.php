@@ -213,6 +213,8 @@ function wf_store_card_html($p, $store_code) {
         'img' => $img,
         'ref' => $store_code,
         'currency' => wf_ui_currency($p),
+        // دولة المنتج: بتحدد جدول الشحن (مصر = محافظات بالجنيه، الخليج = مناطق الدولة بعملتها)
+        'country' => wf_product_country($p),
         'colors' => $cols,
         'sizes' => $sizes,
     ], JSON_UNESCAPED_UNICODE);

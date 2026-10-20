@@ -36,7 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
         if ($district !== '' && mb_stripos($raw_addr, $district) === false) {
             $raw_addr = $district . ($raw_addr !== '' ? ' - ' . $raw_addr : '');
         }
-        $ship_map = function_exists('site_ship_map') ? site_ship_map($plat) : [];
+        // جدول الشحن حسب دولة المنتج: مصر = محافظات بالجنيه، والخليج = مناطق الدولة بعملة الدولة
+        $ord_country = wf_product_country($prod);
+        $ord_cur = function_exists('wf_ui_currency') ? wf_ui_currency($prod) : wf_product_currency($prod, $plat);
+        $ship_cur = wf_ship_currency($plat, $ord_country);
+        $ship_map = function_exists('site_ship_map') ? site_ship_map($plat, $ord_country) : [];
         $shipfee = max(0, min(2000, (float)($_POST['ship_fee'] ?? ($ship_map[$city] ?? 0))));
         $phone = preg_replace('/\D+/', '', (string)($_POST['phone'] ?? ''));
         $phone = mb_substr($phone, 0, 20);
@@ -123,8 +127,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
                 '🧾 طلب جديد: ' . $ord_no,
                 '📦 المنتج: ' . $ord_name . ($plat !== '' ? ' (' . $plat . ')' : ''),
                 '🔢 الكمية: ' . $qty . ($selection['variant'] !== '' ? ' — ' . $selection['variant'] : ''),
-                '💵 سعر الوحدة: ' . number_format($unit, 2) . ' ج.م — سعر الرابط المحسوب',
-                '🚚 الشحن: ' . number_format($shipfee, 2) . ' ج.م — الإجمالي: ' . number_format($ord_total, 2) . ' ج.م'
+                '💵 سعر الوحدة: ' . number_format($unit, 2) . ' ' . $ord_cur . ' — سعر الرابط المحسوب' . ($ord_country !== 'مصر' ? ' (' . $ord_country . ')' : ''),
+                // الشحن بعملة دولة المنتج (مفيش تحويل)، وخصم الكمية بالجنيه دايمًا لأنه ما ينطبقش على غير الجنيه
+                '🚚 الشحن: ' . number_format($shipfee, 2) . ' ' . $ship_cur . ' — الإجمالي: ' . number_format($ord_total, 2) . ' ' . $ord_cur
                     . ($bundle_disc > 0 ? ' — خصم الكمية (' . (int)$qty . ' قطع): ' . number_format($bundle_disc, 2) . ' ج.م' : ''),
                 '👤 العميل: ' . $new_order['cname'] . ' — ' . $phone . ($phone2 !== '' ? ' / ' . $phone2 : ''),
                 '📍 ' . trim($city . ($district !== '' ? ' — ' . $district : '') . ' — ' . $new_order['address'], ' —'),

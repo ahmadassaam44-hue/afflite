@@ -256,6 +256,8 @@ function pcard2($p, $soldmap) {
             'img' => $img,
             'ref' => $ref_cur,
             'currency' => wf_ui_currency($p),
+            // دولة المنتج: بتحدد جدول الشحن (مصر = محافظات بالجنيه، الخليج = مناطق الدولة بعملتها)
+            'country' => wf_product_country($p),
             'colors' => array_slice($cols, 0, 15),
             'sizes' => array_slice($sizes_clean, 0, 20),
         ], JSON_UNESCAPED_UNICODE);

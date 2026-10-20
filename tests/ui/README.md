@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 109 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 205 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -112,3 +112,19 @@ discount (`LP_BUNDLE_DISCOUNT`) applies **only** to products whose price is in E
 currency (or product array), every server call site passes it, `wf_bulk_discount_state` ships
 `egp_only`/`egp`/`currency` to the browser, and `assets/ui.js` refuses the live discount preview for
 non-EGP products so the preview always matches the server-side order total.
+
+Shipping is country-aware on the same script: it loads the repository's real `data/shipping.json`
+into the WASM filesystem and asserts that manual products in مصر reuse the TimeHand governorate
+table in EGP, while السعودية/الإمارات/الأردن/عُمان get their own region tables (13/7/12/11 regions,
+no Egyptian governorates, fees zero until the owner fills them) in ر.س/د.إ/د.أ/ر.ع. It also renders
+`render_easyorder_dialog_html('', 'manual', 'ر.س', 'السعودية')` and asserts on the produced HTML
+(region options with the right currency, «المنطقة / المدينة», `wfShippingCurrency`, and no
+«القاهرة»/ج.م shipping label), plus regressions for cezma→TimeHand, vendoor/safka/shopmart counts,
+m5zoon's four country rows, and the unknown-platform fallback. Documented in
+`docs/manual-shipping-by-country-2026-10-20.md`.
+
+Gulf city lists live in `data/shipping_cities_gulf.json` (major cities per region) and are read by
+`wf_ship_cities_map($country)`; `wf_ship_governorates()` stays Egypt-only because `register.php` and
+`marketer_complete.php` validate the account address against it, while the order dialog uses the new
+merged `wf_ship_cities_map_all()`. The test asserts that every manual Gulf region has cities, that no
+Gulf region name collides with an Egyptian governorate, and that the merged map keeps Cairo's 54 cities.

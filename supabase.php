@@ -59,13 +59,29 @@ function site_shipping() {
     return jload('shipping.json', []);
 }
 
-function site_ship_regions($plat) {
+// جدول مناطق/رسوم الشحن لمنصة معيّنة — ولو المنصة بتشتغل في أكتر من دولة (المنتجات اليدوية)
+// بيتحدّد الجدول بالدولة: مصر = جدول تايم هاند، وكل دولة خليجية = جدول مناطقها اللي المالك بيدخل رسومه.
+function site_ship_regions($plat, $country = '') {
+    $plat = strtolower(trim((string)$plat));
     // Cezma بيستخدم نفس جدول شحن TimeHand بالكامل (نفس أسعار المحافظات ونفس الملاحظات).
-    $lookup = (strtolower(trim((string)$plat)) === 'cezma') ? 'timehand' : $plat;
-    foreach (site_shipping() as $p) {
-        if ($p['platform'] === $lookup || ($lookup === 'safqa' && $p['platform'] === 'safka')) return $p['regions'];
-    }
+    $lookup = ($plat === 'cezma') ? 'timehand' : $plat;
+    $cn = function_exists('wf_match_country') ? wf_match_country($country, '') : trim((string)$country);
+    // المنتجات اليدوية في مصر (أو من غير دولة محددة) = نفس جدول تايم هاند بالجنيه.
+    if ($plat === 'manual' && ($cn === '' || $cn === 'مصر')) $lookup = 'timehand';
     $all = site_shipping();
+    foreach ($all as $p) {
+        $is_match = (($p['platform'] ?? '') === $lookup) || ($lookup === 'safqa' && ($p['platform'] ?? '') === 'safka');
+        if (!$is_match) continue;
+        if ($lookup !== 'manual') return $p['regions'];
+        // أكتر من جدول يدوي (جدول لكل دولة): لازم الدولة تتطابق — مش بنخمن رسوم دولة تانية
+        $pc = function_exists('wf_match_country') ? wf_match_country($p['country'] ?? '', '') : trim((string)($p['country'] ?? ''));
+        if ($pc !== '' && $pc === $cn) return $p['regions'];
+    }
+    if ($lookup === 'manual') {
+        // دولة مالهاش جدول (أو دولة خليجية من غير رسوم مدخلة): مفيش مناطق — أحسن من رسوم غلط
+        error_log('site_ship_regions: مفيش جدول شحن للمنتجات اليدوية في دولة "' . $cn . '"');
+        return [];
+    }
     return $all ? $all[0]['regions'] : [];
 }
 
