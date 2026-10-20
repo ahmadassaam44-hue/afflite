@@ -1224,8 +1224,7 @@ function is_admin_user() {
 function require_admin_or_die() {
     if (is_admin_user()) return;
     $u = current_user();
-    $fresh = ($u && !empty($u['email'])) ? find_user($u['email']) : null;
-    $role = $fresh['role'] ?? ($u['role'] ?? '');
+    $role = wf_user_role($u);   // حساب العميل اتلغى: أي حساب مش أدمن = مسوق
     if (!$u) header('Location: ../login.php');
     elseif ($role === 'marketer') header('Location: marketer.php');
     else header('Location: ./');
@@ -2646,10 +2645,8 @@ function find_marketer_by_code($code) {
 }
 
 // ============================================================================
-//  نوع الحساب: «عميل» (buyer) أو «مسوق» (marketer) أو «أدمن»
-//  الحساب الجديد من «حساب جديد» = عميل: يشوف الموقع الأساسي زي الزائر بالظبط
-//  ومميزاتُه هي التقييم والتعليقات + تتبع الشحنة + وصول أحدث العروض والأخبار.
-//  أدوات الأفلييت (عمولة/متجر/صفحة هبوط) تظهر لحساب المسوق فقط.
+//  نوع الحساب: «مسوق» (marketer) أو «أدمن» فقط — حساب العميل اتلغى
+//  أي حساب مش أدمن بيتعامل كمسوق (حتى الحسابات القديمة اللي دورها buyer/customer).
 // ============================================================================
 function wf_user_role($u = null) {
     static $memo = [];
@@ -2662,9 +2659,10 @@ function wf_user_role($u = null) {
     $fresh = find_user($u['email']);
     $db_role = is_array($fresh) ? strtolower(trim((string)($fresh['role'] ?? ''))) : '';
     if ($role === '') $role = $db_role;
-    // حساب قديم مفيش عليه دور صريح في القاعدة = كان بيشتغل بأدوات الأفلييت: يفضل مسوّق
-    if ($db_role === '' && $role === 'buyer') $role = 'marketer';
-    if (!in_array($role, ['buyer', 'customer', 'marketer', 'admin'], true)) $role = $role === '' ? 'marketer' : 'buyer';
+    if ($role === '') $role = 'marketer';
+    // حساب العميل اتلغى: buyer/customer = مسوق
+    if (in_array($role, ['buyer', 'customer'], true)) $role = 'marketer';
+    if (!in_array($role, ['marketer', 'admin'], true)) $role = 'marketer';
     $memo[$key] = $role;
     return $role;
 }
@@ -4996,7 +4994,7 @@ function visitor_meta() {
         'balance.php' => 'الرصيد 💰',
         'shipping.php' => 'الشحن 🚚',
         'login.php' => 'تسجيل الدخول 🔐',
-        'register.php' => 'حساب جديد ✨',
+        'register.php' => 'تسجيل مسوق ✨',
     ];
     $page_lbl = $page_map[$script] ?? $script;
     return ['device' => $dev, 'browser' => $br, 'source' => $src, 'page' => $page_lbl, 'script' => $script];

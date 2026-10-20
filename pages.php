@@ -33,7 +33,7 @@ if ($k === 'faq') {
        . '<details class="card" data-ui="u-05845e00 udc ufu" open><summary data-ui="u-0cff833d ue6 uhm">كيف أطلب منتجاً من ' . esc($b) . '؟</summary><p class="mut" data-ui="u-49e0de07 ujt">اختر المنتج واضغط «اطلب الآن» وأدخل الاسم ورقم الموبايل والمحافظة والمدينة والعنوان، وسيتواصل معك فريق التأكيد قبل الشحن.</p></details>'
        . '<details class="card" data-ui="u-05845e00 udc ufu"><summary data-ui="u-0cff833d ue6 uhm">هل الدفع عند الاستلام متاح لجميع المحافظات؟</summary><p class="mut" data-ui="u-49e0de07 ujt">نعم، الدفع نقداً عند الاستلام متاح لجميع محافظات الجمهورية مع إمكانية معاينة الطلب.</p></details>'
        . '<details class="card" data-ui="u-05845e00 udc ufu"><summary data-ui="u-0cff833d ue6 uhm">ما هي سياسة الاستبدال والاسترجاع؟</summary><p class="mut" data-ui="u-49e0de07 ujt">يمكنك طلب استبدال أو استرجاع المنتج خلال 14 يوماً من تاريخ الاستلام بشرط الحفاظ على حالته الأصلية.</p></details>'
-       . '<details class="card" data-ui="u-05845e00 udc ufu"><summary data-ui="u-0cff833d ue6 uhm">كيف أنضم لبرنامج التسويق بالعمولة؟</summary><p class="mut" data-ui="u-49e0de07 ujt">سجّل من «برنامج المسوقين» (مش حساب العميل العادي) — اكتب الاسم والبريد ورقم الموبايل والمحافظة والمدينة، وبعدها تحصل على كود مسوق خاص ومتجر مستقل وصفحات هبوط جاهزة، وتحدد عمولتك بنفسك على كل منتج.</p></details>'
+       . '<details class="card" data-ui="u-05845e00 udc ufu"><summary data-ui="u-0cff833d ue6 uhm">كيف أنضم لبرنامج التسويق بالعمولة؟</summary><p class="mut" data-ui="u-49e0de07 ujt">الموقع بقى للمسوقين فقط — سجّل من «برنامج المسوقين» واكتب الاسم والبريد ورقم الموبايل والمحافظة والمدينة، وبعدها تحصل على كود مسوق خاص ومتجر مستقل وصفحات هبوط جاهزة، وتحدد عمولتك بنفسك على كل منتج.</p></details>'
        . '</div>';
 } else {
     echo $html;

@@ -11,7 +11,7 @@ $is_admin = is_admin_user();
 
 $user_key = !empty($cu['email']) ? strtolower(trim($cu['email'])) : ('guest_' . substr(preg_replace('/[^a-zA-Z0-9_-]/', '', $vid), 0, 24));
 $user_name = !empty($cu['name']) ? $cu['name'] : ('مسوق / زائر #' . substr($vid, 0, 6));
-$user_role = $cu['role'] ?? 'marketer';
+$user_role = $cu ? wf_user_role($cu) : 'marketer';
 $user_ref  = $cu['ref_code'] ?? '';
 
 $channel = $_REQUEST['channel'] ?? 'support'; // 'support' | 'product_request'

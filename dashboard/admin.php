@@ -402,7 +402,7 @@ if (isset($_GET['del_user'])) {
 // تعديل دور مستخدم أو رصيده (مع حماية: منع تغيير دور الذات + تسجيل في Audit Log)
 if (isset($_POST['edit_email'], $_POST['new_role'])) {
     $tgt_email = (string)$_POST['edit_email'];
-    $new_role  = in_array($_POST['new_role'], ['buyer', 'marketer', 'admin'], true) ? $_POST['new_role'] : 'buyer';
+    $new_role  = in_array($_POST['new_role'], ['marketer', 'admin'], true) ? $_POST['new_role'] : 'marketer'; // حساب العميل اتلغى
     $before = find_user($tgt_email);
     $is_self = !empty($user['email']) && strcasecmp((string)$user['email'], $tgt_email) === 0;
 
@@ -415,7 +415,7 @@ if (isset($_POST['edit_email'], $_POST['new_role'])) {
         if (($before['role'] ?? '') === 'admin' && $new_role !== 'admin' && count($admins) <= 1) {
             $msg = '⛔ لازم يفضل أدمن واحد على الأقل في النظام';
         } else {
-            $old_role = $before['role'] ?? 'buyer';
+            $old_role = $before['role'] ?? 'marketer';
             $old_bal  = (float)($before['balance'] ?? 0);
             $new_bal  = null;
             if (isset($_POST['new_balance']) && $_POST['new_balance'] !== '') $new_bal = (float)$_POST['new_balance'];
@@ -427,7 +427,7 @@ if (isset($_POST['edit_email'], $_POST['new_role'])) {
 
             if ($old_role !== $new_role) {
                 log_audit('change_user_role', $tgt_email, ['from' => $old_role, 'to' => $new_role]);
-                notify_user($tgt_email, '🔔 تم تحديث صلاحيات حسابك إلى: ' . ($new_role === 'admin' ? 'مدير' : ($new_role === 'marketer' ? 'مسوق' : 'مشتري')), 'dashboard/');
+                notify_user($tgt_email, '🔔 تم تحديث صلاحيات حسابك إلى: ' . ($new_role === 'admin' ? 'مدير' : 'مسوق'), 'dashboard/');
             }
             if ($new_bal !== null && abs($new_bal - $old_bal) > 0.001) {
                 log_audit('change_user_balance', $tgt_email, ['from' => $old_bal, 'to' => $new_bal, 'diff' => round($new_bal - $old_bal, 2)]);
@@ -649,7 +649,8 @@ $mout = array_sum(array_map(function ($o) { return (float)($o['m_earn'] ?? 0); }
 $delivered = count(array_filter($orders, function ($o) { return ($o['status'] ?? '') === 'تم التوصيل'; }));
 $pending = count(array_filter($orders, function ($o) { return status_key($o['status'] ?? '') === 'pending'; }));
 $all_users = users();
-$marketers = array_filter($all_users, function ($u) { return ($u['role'] ?? '') === 'marketer'; });
+// حساب العميل اتلغى: كل حساب مش أدمن = مسوق
+$marketers = array_filter($all_users, function ($u) { return ($u['role'] ?? '') !== 'admin'; });
 
 // ===== بيانات أنظمة الشات وطلبات المنتجات والعمولات =====
 $audit_logs = jload('audit_logs.json', []);
@@ -900,7 +901,7 @@ if ($tab === 'overview') {
     $online_now = wf_online_now(5);
     $ws = wf_stats(30);
     $rec = ['pending' => 0, 'available' => 0, 'paid' => 0, 'requested' => 0, 'rejected' => 0];
-    foreach (users() as $uu) { if (($uu['role'] ?? '') !== 'marketer') continue; $rec['pending'] += (float)($uu['pending_balance'] ?? 0); $rec['available'] += (float)($uu['balance'] ?? 0); }
+    foreach (users() as $uu) { if (($uu['role'] ?? '') === 'admin') continue; $rec['pending'] += (float)($uu['pending_balance'] ?? 0); $rec['available'] += (float)($uu['balance'] ?? 0); }
     foreach (jload('payouts.json', []) as $pp) { $st = $pp['status'] ?? ''; $a = (float)($pp['amount'] ?? 0); if (in_array($st, ['موافق عليه', 'approved', 'paid'], true)) $rec['paid'] += $a; elseif ($st === 'مرفوض') $rec['rejected'] += $a; else $rec['requested'] += $a; }
     echo '<div class="adm-grid-2" data-ui="u-f2235598 d1r">';
     echo '<div class="adm-box"><h2><span> متواجدون الآن</span><span class="badge green">آخر 5 دقائق</span></h2><div data-ui="u-1f01646e d20 d1 d1x">' . $online_now . '</div>';
@@ -1589,7 +1590,8 @@ elseif ($tab === 'users') {
         $user_wa = trim((string)($u['whatsapp'] ?? $u['phone'] ?? ''));
         echo '<td dir="ltr">' . ($user_wa !== '' ? '<a href="' . esc(wa_link($user_wa)) . '" target="_blank" rel="noopener" data-ui="u-8b877a44 d1x dc">' . esc($user_wa) . ' </a>' : '—') . '</td>';
         echo '<td><form data-confirm="سيتم تحديث دور هذا المستخدم ورصيده؛ تغيير الدور يؤثر على الصلاحيات. راجع القيم ثم أكد التنفيذ." method="post" data-ui="u-fd0a8ea7 d3e di d1p d19"><input type="hidden" name="edit_email" value="' . esc($u['email'] ?? '') . '"><select name="new_role" data-ui="u-a8b13c04 d4k dt d2w d1v">';
-        foreach (['buyer' => 'مشتري', 'marketer' => 'مسوق', 'admin' => 'مدير'] as $rv => $rl) echo '<option value="' . $rv . '"' . (($u['role'] ?? 'buyer') === $rv ? ' selected' : '') . '>' . $rl . '</option>';
+        $u_role = (($u['role'] ?? '') === 'admin') ? 'admin' : 'marketer'; // حساب العميل اتلغى
+        foreach (['marketer' => 'مسوق', 'admin' => 'مدير'] as $rv => $rl) echo '<option value="' . $rv . '"' . ($u_role === $rv ? ' selected' : '') . '>' . $rl . '</option>';
         echo '</select><input type="number" step="0.5" name="new_balance" value="' . esc($u['balance'] ?? 0) . '" data-ui="u-edbe590c d4l d4k dt d2w"><button class="btn sm">حفظ</button></form></td>';
         echo '<td><b>' . number_format((float)($u['balance'] ?? 0), 2) . ' ج.م</b></td>';
         echo '<td dir="ltr">' . esc($u['ref_code'] ?? '—') . '</td>';

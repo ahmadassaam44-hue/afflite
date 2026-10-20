@@ -219,7 +219,7 @@ function wf_site_topbar_links($args = []) {
     } else {
         $links[] = ['href' => $pre . 'login.php', 'label' => 'تسجيل الدخول', 'icon' => 'user'];
         $links[] = ['href' => $pre . 'affiliate-register.php', 'label' => 'برنامج المسوقين', 'class' => 'hidden sm:inline'];
-        $links[] = ['href' => $pre . 'register.php', 'label' => 'حساب جديد', 'class' => 'badge yellow'];
+        $links[] = ['href' => $pre . 'register.php', 'label' => 'تسجيل مسوق', 'class' => 'badge yellow'];
     }
     return $links;
 }

@@ -16,16 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_harden();                       // تجديد معرّف الجلسة (منع Session Fixation)
             // لا تسمح بانتقال صلاحيات إدارية قديمة إلى حساب مسوق/مشتري آخر.
             unset($_SESSION['is_admin'], $_SESSION['admin_role'], $_SESSION['admin_gate'], $_SESSION['admin_seen_at']);
+            $login_role = wf_user_role($found);     // حساب العميل اتلغى: أي حساب مش أدمن = مسوق
             $_SESSION['user'] = [
                 'name'  => $found['name'],
                 'email' => $found['email'],
-                'role'  => $found['role'] ?? 'buyer',
+                'role'  => $login_role,
             ];
             session_bind();                          // تثبيت الجلسة على IP/المتصفح
-            $login_role = (string)(($found['role'] ?? '') ?: 'customer');
-            // حساب العميل العادي يرجع للموقع الأساسي بنفس شكل الزائر — مميزات الحساب في «حسابي»
-            $login_dest = $login_role === 'admin' ? 'dashboard/admin.php'
-                : ($login_role === 'marketer' ? 'dashboard/marketer.php' : 'index.php');
+            $login_dest = $login_role === 'admin' ? 'dashboard/admin.php' : 'dashboard/marketer.php';
             header('Location: ' . $login_dest);
             exit;
         }
@@ -67,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <button type="submit" class="btn pri" data-ui="u-5cf62db6 uf9 uem ukk">تسجيل الدخول</button>
   </form>
   <div data-ui="u-4291c26c ukl ukm ukn udn">
-    <p data-ui="u-02ba62cc uko ufc">ليس لديك حساب؟ <a href="register.php" data-ui="u-0c7828ab ue6 ued">إنشاء حساب جديد</a></p>
+    <p data-ui="u-02ba62cc uko ufc">ليس لديك حساب؟ <a href="register.php" data-ui="u-0c7828ab ue6 ued">تسجيل مسوق جديد</a></p>
     <p data-ui="u-bbdbc123 ui2"><a href="affiliate-register.php" data-ui="u-82e75fd0 uhn ue6">برنامج المسوقين بالعمولة</a> • <a href="index.php" class="mut">العودة للمتجر</a></p>
   </div>
 </main>
