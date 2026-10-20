@@ -566,11 +566,16 @@ function hero_product_slides() {
         $plat = $p['_plat'] ?? resolve_plat($p['id'] ?? '');
         $img = product_first_image($p, $plat) ?: wf_product_placeholder($plat);
         $price = (float)display_price($p, $plat);
+        // العملة من المنتج نفسه (منتج يدوي سعودي = ر.س، إماراتي = د.إ …) — عرض فقط ومن غير أي تحويل
+        $cur = trim((string)($p['currency'] ?? ''));
+        if ($cur === '' && $plat === 'm5zoon' && function_exists('mz_src_currency')) $cur = mz_src_currency($p);
+        if ($cur === '') $cur = wf_country_currency($p['country'] ?? 'مصر');
+        if (function_exists('wf_ui_currency_label')) $cur = wf_ui_currency_label($cur);
         $out[] = [
             'link'  => 'dashboard/product.php?id=' . urlencode((string)$p['id']),
             'image' => $img,
             'title' => (string)($p['name'] ?? ''),
-            'price' => $price > 0 ? number_format($price, 0) . ' ج.م' : '',
+            'price' => $price > 0 ? number_format($price, 0) . ' ' . $cur : '',
         ];
     }
     return $out;
@@ -2265,11 +2270,12 @@ function mix_by_platform($items, $order = ['timehand', 'safqa', 'vendoor', 'anga
 // بحيث يحتوي كل قسم على منتج من كل أفلييت بجانب الآخر بالتناوب
 function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q = '', $plat_filter = 'all', $shuffle_seed = null, $source_limit = null) {
     wfp('physCOL start ' . $type . '/' . $country . '/' . $cat . '/' . substr((string)$q, 0, 20));
-    $gulf = ['الإمارات', 'السعودية', 'الأردن', 'عُمان'];
+    $gulf = wf_gulf_countries();
     if ($plat_filter !== '' && $plat_filter !== 'all') {
         $plats = [$plat_filter];
     } elseif (in_array($country, $gulf, true)) {
-        $plats = ['m5zoon'];
+        // الخليج: مخزون + المنتجات اليدوية (المنتج اليدوي بيحدد دولته وعملته بنفسه)
+        $plats = ['m5zoon', 'manual'];
     } else {
         // الترتيب المطلوب بالضبط: تايم هاند → صفقة → فيندور → ليدجر → أنجزني → شوب مارت → سيزما
         $plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'cezma', 'manual'];
@@ -2410,6 +2416,71 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
     $out = mix_by_platform($flat, $plats);
     wfp('physCOL end: ' . count($out));
     return $out;
+}
+
+// ===== الدول والعملات: قايمة واحدة لكل الموقع =====
+// نفس الدول اللي في فلاتر الدولة (الرئيسية / الكتالوج / لوحة المسوّق)، وكل دولة بعملتها المحلية.
+// المنتجات اليدوية بتختار الدولة من القايمة دي، والسعر بيتسجّل وبيتعرض بعملة الدولة نفسها
+// (مفيش تحويل عملات — نفس قاعدة باقي المنصات: المبلغ بعملة منتجه).
+function wf_country_currencies() {
+    static $map = null;
+    // الترتيب ده هو نفس ترتيب تبويبات الدول في الرئيسية والكتالوج ولوحة المسوّق
+    if ($map === null) $map = ['مصر' => 'ج.م', 'الإمارات' => 'د.إ', 'السعودية' => 'ر.س', 'الأردن' => 'د.أ', 'عُمان' => 'ر.ع'];
+    return $map;
+}
+function wf_country_list() {
+    return array_keys(wf_country_currencies());
+}
+// دول الخليج/المصادر العربية (كانت مكتوبة باليد في أكتر من مكان)
+function wf_gulf_countries() {
+    static $gulf = null;
+    if ($gulf === null) $gulf = ['الإمارات', 'السعودية', 'الأردن', 'عُمان'];
+    return $gulf;
+}
+function wf_is_gulf_country($country) {
+    return in_array(wf_match_country($country, ''), wf_gulf_countries(), true);
+}
+// مفتاح مقارنة: من غير تشكيل ولا تطويل، أ/إ/آ = ا، ة = ه، ى = ي، ومسافة واحدة
+function wf_country_key($value) {
+    $s = preg_replace('/[\x{064B}-\x{0652}\x{0640}\x{0670}]/u', '', (string)$value);
+    $s = str_replace(['أ', 'إ', 'آ', 'ٱ'], 'ا', $s);
+    $s = str_replace(['ة', 'ى', 'ؤ'], ['ه', 'ي', 'و'], $s);
+    $s = preg_replace('/\s+/u', ' ', trim($s));
+    return mb_strtolower($s, 'UTF-8');
+}
+// تطبيع اسم الدولة: يقبل الاسم الرسمي، اسم شائع/مختصر/إنجليزي، أو اسم العملة (ريال/درهم/دينار).
+// بيرجع اسم الدولة من القايمة الموحّدة، أو $fallback لو القيمة مش معروفة.
+function wf_match_country($value, $fallback = '') {
+    $raw = trim((string)$value);
+    if ($raw === '') return (string)$fallback;
+    // رموز العملة بالنقط لازم تتطابق على النص الأصلي: بعد توحيد الحروف (إ/أ => ا) بيصبح
+    // «د.إ» (الإمارات) و«د.أ» (الأردن) نفس المفتاح — فبنقارنها قبل أي توحيد.
+    $compact = preg_replace('/\s+/u', '', $raw);
+    foreach (wf_country_currencies() as $cn => $cur) {
+        if ($raw === $cur || $compact === $cur) return $cn;
+    }
+    static $aliases = null;
+    if ($aliases === null) {
+        $aliases = [];
+        $table = [
+            'مصر' => ['مصر', 'مصريه', 'جمهوريه مصر العربيه', 'مصر العربيه', 'egypt', 'eg', 'egp', 'جنيه', 'جنيه مصري'],
+            'السعودية' => ['السعوديه', 'سعودي', 'المملكه العربيه السعوديه', 'ksa', 'saudi', 'saudi arabia', 'sa', 'sar', 'ريال', 'ريال سعودي'],
+            'الإمارات' => ['الامارات', 'امارات', 'الامارات العربيه المتحده', 'uae', 'emirates', 'dubai', 'ae', 'aed', 'درهم', 'درهم اماراتي'],
+            'الأردن' => ['الاردن', 'اردن', 'المملكه الاردنيه الهاشميه', 'jordan', 'jo', 'jod', 'دينار', 'دينار اردني'],
+            'عُمان' => ['عمان', 'سلطنه عمان', 'oman', 'om', 'omr', 'ريال عماني'],
+        ];
+        foreach ($table as $country => $names) {
+            foreach ($names as $name) $aliases[wf_country_key($name)] = $country;
+        }
+    }
+    $key = wf_country_key($raw);
+    return isset($aliases[$key]) ? $aliases[$key] : (string)$fallback;
+}
+// عملة الدولة (ج.م / ر.س / د.إ / د.أ / ر.ع) — من اسم الدولة أو من اسم العملة نفسه
+function wf_country_currency($country, $fallback = 'ج.م') {
+    $map = wf_country_currencies();
+    $c = wf_match_country($country, '');
+    return ($c !== '' && isset($map[$c])) ? $map[$c] : (string)$fallback;
 }
 
 // إرجاع التصنيفات الخاصة بكل نوع منفصلاً (فيزيكال فقط / رقمي فقط / سوشيال فقط)
@@ -2636,12 +2707,13 @@ function categories_by_mode($mode = 'physical', $country = 'all', $include_cezma
         return $cats;
     }
     // فيزيكال فقط (بدون أي تصنيف رقمي أو سوشيال)
-    $gulf = ['الإمارات', 'السعودية', 'الأردن', 'عُمان'];
+    $gulf = wf_gulf_countries();
     $plats = in_array($country, $gulf, true)
         ? ['m5zoon']
         : ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart'];
     if (!in_array($country, $gulf, true) && $include_cezma) $plats[] = 'cezma';
-    if (!in_array($country, $gulf, true)) $plats[] = 'manual';
+    // المنتجات اليدوية لكل الدول: كل منتج بياخد دولته (وعملتها) من لوحة الأدمن
+    $plats[] = 'manual';
     $cats = [];
     foreach ($plats as $pk) {
         if ($pk === 'cezma') {

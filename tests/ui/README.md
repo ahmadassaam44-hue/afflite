@@ -82,3 +82,26 @@ CHROMIUM_PATH=/path/to/chromium node tests/ui/product-experience.cjs
 ```
 
 This local-only script adds media to synthetic `UI-CHOICES` records, generates only a copied-site media probe, and checks original Drive fields, invalid-host rejection, missing-link/no-JS fallback, public-login-link removal with auth handlers intact, hidden supplier controls with supplier data intact, gallery/focus/selection/quantity controls and guest/marketer radio/standard detail pages at six widths. Presentation interactions must send zero POSTs. Reset the copied site before other mutating suites. The catalogue test's supplier-selector/tab assertions now enforce their removal, as requested, while preserving its country/source/filter/sort/save/order checks. Results and limits: `docs/ui/product-experience-2026-10-03.md` / `.json`. No Drive API/upload endpoint or hosting build dependency was added.
+
+## 2026-10-20 manual products per country / currency
+
+`manual-country-currency.cjs` runs the real PHP 8.3 in WASM (no `php` CLI, no database) against
+`config.php` + `manual_products_lib.php` + `ui-components.php`, so the country/currency helpers,
+`manual_row_to_product`, `manual_validate_row`, `manual_details_json`, `manual_parse_csv` and the
+repository's own `manual_products_import.csv` template are all executed, not just inspected. It adds
+source-level checks that manual products stay inside the Gulf views (`physical_collection`,
+`categories_by_mode`), that every country tab comes from `wf_country_list()`, that the admin form has
+the country select + `mpSyncCurrency`, and it parses the changed PHP files with `php-parser`.
+No production data is touched; the summary is written to `.cache/manual-country-currency.json`.
+
+```bash
+npm install --prefix .cache/ui-tools @php-wasm/node php-parser
+node tests/ui/manual-country-currency.cjs   # 81 PHP assertions + wiring checks
+```
+
+Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
+in the existing `details` JSON, the currency is always derived from it (never stored, never converted),
+legacy rows default to مصر/ج.م, and an unknown country in a form/CSV row is rejected with an explicit
+message so a price can never be saved under the wrong currency. The test does not assert shipping fees
+or the EGP-denominated quantity discount for non-EGP products — both are open owner decisions listed
+in that document.

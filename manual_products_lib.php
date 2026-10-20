@@ -69,6 +69,9 @@ function manual_row_to_product($r) {
     $d = manual_decode_details($r);
     $price = (float)$r['price'];
     $desc = (string)($r['description'] ?? '');
+    // الدولة (ومنّها العملة): المنتجات القديمة من غير دولة في التفاصيل = مصر / ج.م
+    $country = wf_match_country($d['country'] ?? '', 'مصر');
+    $currency = wf_country_currency($country);
     $extra = ['manual_id' => (int)$r['id'], 'colors' => array_values((array)($d['colors'] ?? []))];
     foreach (['material', 'weight', 'dimensions'] as $k) {
         if (!empty($d[$k])) $extra[$k] = (string)$d[$k];
@@ -81,9 +84,9 @@ function manual_row_to_product($r) {
         'price' => $price,
         'old_price' => 0,
         'discount' => 0.0,
-        'price_text' => rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.') . ' ج.م',
-        'currency' => 'ج.م',
-        'country' => 'مصر',
+        'price_text' => rtrim(rtrim(number_format($price, 2, '.', ''), '0'), '.') . ' ' . $currency,
+        'currency' => $currency,
+        'country' => $country,
         'category' => (string)$r['category'],
         'stock' => (int)$r['stock'],
         'images' => manual_row_images($r, $d),
@@ -142,6 +145,7 @@ function manual_product_form_values($id) {
         'id' => (int)$r['id'],
         'name' => (string)$r['name'],
         'price' => (string)(float)$r['price'],
+        'country' => wf_match_country($d['country'] ?? '', 'مصر'),
         'category' => (string)$r['category'],
         'stock' => (string)(int)$r['stock'],
         'sku' => (string)($d['sku'] ?? ''),
@@ -189,6 +193,8 @@ function manual_details_json($c) {
         'weight' => $c['weight'],
         'dimensions' => $c['dimensions'],
         'faqs' => $c['faqs'],
+        // دولة المنتج (ومنها العملة في manual_row_to_product) — الافتراضي مصر
+        'country' => wf_match_country($c['country'] ?? '', 'مصر'),
     ];
     // ملامح البحث بالصورة (h/t) — بتتحسب مرة واحدة وبتتحدّث لما الصورة الرئيسية تتغير
     if (!empty($c['vf']) && is_array($c['vf'])) $d['vf'] = $c['vf'];
@@ -255,6 +261,14 @@ function manual_validate_row($in) {
     $cat_in = trim((string)($in['category'] ?? ''));
     $cat = in_array($cat_in, wf_category_canonical(), true) ? $cat_in : wf_normalize_category($cat_in, '', false);
     if ($cat === '' || in_array($cat, ['منتجات رقمية', 'سوشيال ميديا'], true)) return [null, 'القسم مش معروف: ' . $cat_in];
+    // الدولة: منها العملة (مصر=ج.م، السعودية=ر.س، الإمارات=د.إ، الأردن=د.أ، عُمان=ر.ع).
+    // فاضية = مصر (زي المنتجات القديمة)، وأي قيمة تانية مش معروفة = خطأ صريح عشان السعر مايتسجلش بعملة غلط.
+    $country_in = trim((string)($in['country'] ?? ''));
+    $country = wf_match_country($country_in, '');
+    if ($country_in !== '' && $country === '') {
+        return [null, 'الدولة مش معروفة: ' . $country_in . ' — المسموح: ' . implode('، ', wf_country_list()) . ' (' . $name . ')'];
+    }
+    if ($country === '') $country = 'مصر';
     $stock_raw = trim((string)($in['stock'] ?? ''));
     $stock = ($stock_raw === '') ? 999999 : (int)$stock_raw;
     if ($stock < 0) return [null, 'الكمية مينفعش تكون سالبة'];
@@ -271,6 +285,7 @@ function manual_validate_row($in) {
         'name' => $name,
         'price' => round((float)$price_raw, 2),
         'category' => $cat,
+        'country' => $country,
         'stock' => $stock,
         'images' => $images,
         'description' => mb_substr($desc, 0, 5000),
@@ -308,7 +323,8 @@ function manual_save_uploads($files) {
 }
 
 // قراءة ملف CSV (UTF-8 أو ويندوز عربي من Excel). بترجع [صفوف_صحيحة, أخطاء]
-// الأعمدة: name,price,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs
+// الأعمدة: name,price,country,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs
+// (الترتيب مش مهم — الأعمدة بتتقرا بالاسم، وعمود country اختياري وافتراضيه مصر)
 // داخل الخلية: القيم المتعددة مفصولة بـ | (والصور كمان بسطر جديد)، والأسئلة: السؤال::الجواب|السؤال::الجواب
 function manual_parse_csv($path, $max_rows = 2000) {
     $raw = (string)@file_get_contents($path);
@@ -322,7 +338,7 @@ function manual_parse_csv($path, $max_rows = 2000) {
     $cols = array_map(function ($h) { return strtolower(trim((string)$h)); }, $header);
     if (!in_array('name', $cols, true) || !in_array('price', $cols, true)) {
         fclose($fh);
-        return [[], ['أول صف لازم يكون فيه العناوين: name,price,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs']];
+        return [[], ['أول صف لازم يكون فيه العناوين: name,price,country,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs']];
     }
     $rows = []; $errors = []; $line = 1;
     while (($cells = fgetcsv($fh)) !== false) {

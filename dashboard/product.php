@@ -71,8 +71,7 @@ if ($plat === 'm5zoon') {
     $ex['variant_codes'] = [];
 }
 $base_cart = $unit0;
-$curmap = ['مصر' => 'ج.م', 'الإمارات' => 'د.إ', 'السعودية' => 'ر.س', 'الأردن' => 'د.أ', 'عُمان' => 'ر.ع'];
-$cur = $p['currency'] ?? ($curmap[$p['country'] ?? 'مصر'] ?? 'ج.م');
+$cur = $p['currency'] ?? wf_country_currency($p['country'] ?? 'مصر');
 if ($plat === 'm5zoon') { $mzCur = mz_src_currency($p); if ($mzCur !== '') $cur = $mzCur; }
 
 // === FAVORITES (logged-in = saved to file, guest = session) ===

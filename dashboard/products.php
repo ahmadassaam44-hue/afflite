@@ -79,7 +79,9 @@ echo wf_tabs([
 if ($ptype === 'physical') {
     // فلاتر الدول
     $country_tabs = [];
-    foreach ([['c' => 'all', 'n' => 'جميع الدول'], ['c' => 'مصر', 'n' => 'مصر'], ['c' => 'الإمارات', 'n' => 'الإمارات'], ['c' => 'السعودية', 'n' => 'السعودية'], ['c' => 'الأردن', 'n' => 'الأردن'], ['c' => 'عُمان', 'n' => 'عُمان']] as $c) {
+    $country_tab_defs = [['c' => 'all', 'n' => 'جميع الدول']];
+    foreach (wf_country_list() as $country_name) $country_tab_defs[] = ['c' => $country_name, 'n' => $country_name];
+    foreach ($country_tab_defs as $c) {
         $country_tabs[] = ['href' => $qs(['c' => $c['c']]), 'label' => $c['n'], 'on' => ($country === $c['c'])];
     }
     echo wf_tabs($country_tabs, ['label' => 'فلترة الدول']);
