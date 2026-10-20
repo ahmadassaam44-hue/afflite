@@ -1,7 +1,18 @@
 <?php $PUBLIC_PAGE = true; require 'layout.php';
 if (empty($_SESSION['cart'])) { header('Location: cart.php'); exit; }
+// دولة الشحن من السيرفر (مش من المتصفح): أول منتج في السلة هو اللي بيحدد الجدول والعملة.
+// المنتجات اليدوية: مصر = جدول تايم هاند بالجنيه، والخليج = جدول مناطق الدولة بعملة الدولة.
+$__first_cart = is_array($_SESSION['cart'][0] ?? null) ? $_SESSION['cart'][0] : [];
+$ship_plat = function_exists('resolve_plat') ? resolve_plat((string)($__first_cart['id'] ?? ''), $__first_cart['plat'] ?? '') : (string)($__first_cart['plat'] ?? '');
+$ship_country = 'مصر';
+if (!empty($__first_cart['id'])) {
+    $__fp = function_exists('find_product_by_id') ? find_product_by_id((string)$__first_cart['id'], (string)$ship_plat) : null;
+    if ($__fp) $ship_country = wf_product_country($__fp);
+}
+$ship_currency = wf_ship_currency($ship_plat, $ship_country);
+$region_word = wf_ship_region_label($ship_country);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['name'])) {
-    $shiprows = site_ship_regions($_POST['plat0'] ?? ''); $fee = 0;
+    $shiprows = site_ship_regions($ship_plat !== '' ? $ship_plat : ($_POST['plat0'] ?? ''), $ship_country); $fee = 0;
     foreach ($shiprows as $sr) {
         if (($sr['region'] ?? '') === ($_POST['city'] ?? '')) { $fee = max(0, min(2000, (float)$sr['fee'])); break; }
     }
@@ -128,7 +139,7 @@ foreach ($_SESSION['cart'] as $cd) {
     $cart_disc += function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($cd_qty, resolve_plat((string)($cd['id'] ?? ''), $cd['plat'] ?? ''), wf_ui_currency($cd)) : 0.0;
 }
 $cart_disc = round($cart_disc, 2);
-$shiprows = site_ship_regions($_SESSION['cart'][0]['plat'] ?? 'vendoor');
+$shiprows = site_ship_regions($ship_plat !== '' ? $ship_plat : ($_SESSION['cart'][0]['plat'] ?? 'vendoor'), $ship_country);
 $first_fee = isset($shiprows[0]['fee']) ? (float)$shiprows[0]['fee'] : 0;
 layout_top('إتمام الطلب', 'orders'); ?>
 <div class="checkout-stepper" aria-label="خطوات إتمام الطلب">
@@ -145,8 +156,8 @@ layout_top('إتمام الطلب', 'orders'); ?>
 <div class="form-grid">
   <div><label for="checkoutName" class="field-label">اسم العميل</label><input id="checkoutName" name="name" autocomplete="name" required placeholder="الاسم بالكامل"></div>
   <div><label for="checkoutPhone" class="field-label">رقم الموبايل</label><input id="checkoutPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="01xxxxxxxxx" dir="ltr"></div>
-  <div><label for="checkoutCity" class="field-label">المحافظة</label><select id="checkoutCity" name="city" required>
-  <?php foreach ($shiprows as $sr): ?><option value="<?php echo esc($sr['region']); ?>" data-ship="<?php echo esc($sr['fee'] ?? 0); ?>"><?php echo esc($sr['region']); ?> (+<?php echo esc($sr['fee'] ?? 0); ?>)</option><?php endforeach; ?></select></div>
+  <div><label for="checkoutCity" class="field-label"><?php echo esc($region_word); ?> <?php if ($ship_country !== 'مصر'): ?><span class="mut">(<?php echo esc($ship_country); ?>)</span><?php endif; ?></label><select id="checkoutCity" name="city" required data-ship-currency="<?php echo esc($ship_currency); ?>">
+  <?php foreach ($shiprows as $sr): ?><option value="<?php echo esc($sr['region']); ?>" data-ship="<?php echo esc($sr['fee'] ?? 0); ?>"><?php echo esc($sr['region']); ?> (+<?php echo esc($sr['fee'] ?? 0); ?> <?php echo esc($ship_currency); ?>)</option><?php endforeach; ?></select></div>
   <div><label for="checkoutDistrict" class="field-label">المدينة / المركز</label><input id="checkoutDistrict" name="district" required autocomplete="address-level2" placeholder="المدينة أو الحي"></div>
 </div>
 <input name="plat0" type="hidden" value="<?php echo esc($_SESSION['cart'][0]['plat'] ?? 'vendoor'); ?>">
@@ -169,8 +180,8 @@ layout_top('إتمام الطلب', 'orders'); ?>
 <?php if ($cart_disc > 0): ?>
 <div class="summary-row"><span>خصم الكمية (70 ج.م لكل قطعة إضافية)</span><b id="chkBulkDisc" style="color:var(--success)">-<?php echo number_format($cart_disc, 2); ?> ج.م</b></div>
 <?php endif; ?>
-<div class="summary-row"><span>رسوم الشحن المسجلة</span><b id="chkShipFee"><?php echo number_format($first_fee,2); ?> ج.م</b></div>
-<div class="summary-row summary-total"><span>الإجمالي</span><b id="chkGrandTotal"><?php echo count(wf_ui_currencies($_SESSION['cart'])) > 1 || (wf_ui_currencies($_SESSION['cart'])[0] ?? 'ج.م') !== 'ج.م' ? 'منتجات بعملتها + شحن بالجنيه' : number_format(max(0, $sum + $first_fee - $cart_disc),2) . ' ' . esc(wf_ui_currencies($_SESSION['cart'])[0] ?? 'ج.م'); ?></b></div>
+<div class="summary-row"><span>رسوم الشحن المسجلة<?php if ($ship_country !== 'مصر'): ?> (<?php echo esc($ship_country); ?>)<?php endif; ?></span><b id="chkShipFee"><?php echo number_format($first_fee,2); ?> <?php echo esc($ship_currency); ?></b></div>
+<div class="summary-row summary-total"><span>الإجمالي</span><b id="chkGrandTotal"><?php $__pc = wf_ui_currencies($_SESSION['cart'])[0] ?? 'ج.م'; echo count(wf_ui_currencies($_SESSION['cart'])) > 1 ? 'عملات متعددة — راجع السطور' : (($__pc !== $ship_currency) ? 'منتجات بـ' . esc($__pc) . ' + شحن بـ' . esc($ship_currency) : number_format(max(0, $sum + $first_fee - $cart_disc),2) . ' ' . esc($__pc)); ?></b></div>
 <p class="field-hint">رسوم الشحن تُراجع على الخادم عند إرسال الطلب. لا تقوم الواجهة بتحويل العملات.</p>
 </aside>
 </div>

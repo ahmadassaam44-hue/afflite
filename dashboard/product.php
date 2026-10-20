@@ -308,7 +308,7 @@ if (!wf_is_digital_plat($plat) && function_exists('wf_current_is_marketer') && w
 ?>
 <ul class="product-assurance" aria-label="معلومات الشراء">
 <li><?php echo wf_svg_icon('wallet',18); ?>الدفع عند الاستلام</li>
-<li><?php echo wf_svg_icon('truck',18); ?>تكلفة الشحن تظهر بعد اختيار المحافظة</li>
+<li><?php echo wf_svg_icon('truck',18); ?>تكلفة الشحن تظهر بعد اختيار <?php echo esc(wf_ship_region_label(wf_product_country($p))); ?><?php if (wf_product_country($p) !== 'مصر'): ?> (<?php echo esc(wf_product_country($p)); ?>)<?php endif; ?></li>
 <li><a href="../pages.php?p=returns"><?php echo wf_svg_icon('refresh',18); ?>سياسة الاسترجاع والاستبدال</a></li>
 </ul>
 <nav class="product-section-nav" aria-label="معلومات المنتج"><a href="#pane-desc">التفاصيل والمواصفات</a><?php if (!empty($media_html)): ?><a href="#productMedia">صور وفيديوهات</a><?php endif; ?><a href="#pane-revs">التقييمات</a></nav>
@@ -780,5 +780,5 @@ if (!$rel) {
   <button type="button" class="btn" data-ui="u-b3d80fb8 d4e d3v dc2" onclick="openProductCheckoutDialog()">اطلب الآن</button>
 </div>
 
-<div hidden id="wfProductState" data-state="<?php echo esc(json_encode(['id'=>(string)$p['id'], 'plat'=>(string)$plat, 'name'=>$dname, 'unit'=>(float)$unit0, 'base_price'=>(float)$base_store_price, 'extra_comm'=>(float)$extra_comm, 'img'=>asset_url($imgs[0] ?? ''), 'ref'=>(string)$ref, 'currency'=>$cur, 'colors'=>array_values(array_map('color_name', array_slice($colors_eff ?? [], 0, 20))), 'sizes'=>array_values(array_slice($sf_sizes ?? [], 0, 30)), 'mk_landing_url'=>!empty($mcode) ? (($host_base ?? '') . '/landing.php?id=' . urlencode($p['id']) . '&ref=' . urlencode($mcode)) : '', 'mk_landing_rel'=>!empty($mcode) ? ('../landing.php?id=' . urlencode($p['id']) . '&ref=' . urlencode($mcode)) : ''], JSON_UNESCAPED_UNICODE)); ?>"></div>
+<div hidden id="wfProductState" data-state="<?php echo esc(json_encode(['id'=>(string)$p['id'], 'plat'=>(string)$plat, 'name'=>$dname, 'unit'=>(float)$unit0, 'base_price'=>(float)$base_store_price, 'extra_comm'=>(float)$extra_comm, 'img'=>asset_url($imgs[0] ?? ''), 'ref'=>(string)$ref, 'currency'=>$cur, 'country'=>wf_product_country($p), 'colors'=>array_values(array_map('color_name', array_slice($colors_eff ?? [], 0, 20))), 'sizes'=>array_values(array_slice($sf_sizes ?? [], 0, 30)), 'mk_landing_url'=>!empty($mcode) ? (($host_base ?? '') . '/landing.php?id=' . urlencode($p['id']) . '&ref=' . urlencode($mcode)) : '', 'mk_landing_rel'=>!empty($mcode) ? ('../landing.php?id=' . urlencode($p['id']) . '&ref=' . urlencode($mcode)) : ''], JSON_UNESCAPED_UNICODE)); ?>"></div>
 <?php layout_end(); ?>

@@ -4042,17 +4042,38 @@ function aff_clean_html($html) {
     return $html;
 }
 
-// تحويل بيانات الشحن إلى خريطة (المحافظة => التكلفة بالجنيه)
-function site_ship_map($plat = '') {
+// دولة المنتج (بتفرق في شحن المنتجات اليدوية) — الافتراضي مصر زي باقي الموقع
+function wf_product_country($p) {
+    if (!is_array($p)) $p = [];
+    return wf_match_country($p['country'] ?? '', 'مصر');
+}
+// عملة رسوم الشحن: الجنيه لمصر، وعملة الدولة نفسها للخليج (مفيش تحويل عملات)
+function wf_ship_currency($plat = '', $country = '') {
+    $cn = wf_match_country($country, '');
+    return ($cn !== '' && $cn !== 'مصر') ? wf_country_currency($cn) : 'ج.م';
+}
+// اسم حقل المنطقة: «المحافظة» لمصر، و«المنطقة / المدينة» لدول الخليج
+function wf_ship_region_label($country = '') {
+    $cn = wf_match_country($country, '');
+    return ($cn !== '' && $cn !== 'مصر') ? 'المنطقة / المدينة' : 'المحافظة';
+}
+// تحويل بيانات الشحن إلى خريطة (المنطقة => التكلفة بعملة الدولة)
+// $country بتفرق مع المنتجات اليدوية: مصر = جدول تايم هاند بالجنيه، وكل دولة خليجية = جدول
+// مناطقها بعملة الدولة (والرسوم بيدخلها المالك من لوحة إدارة الشحن).
+function site_ship_map($plat = '', $country = '') {
     $out = [];
+    $cn = function_exists('wf_match_country') ? wf_match_country($country, '') : trim((string)$country);
+    // دولة غير مصر: ممنوع الرجوع لأي جدول مصري (محافظات/أسعار بالجنيه) — أحسن من رسوم غلط
+    $foreign = ($cn !== '' && $cn !== 'مصر');
+    $lookup_plat = trim((string)$plat) !== '' ? trim((string)$plat) : ($foreign ? 'manual' : 'vendoor');
     if (function_exists('site_ship_regions')) {
-        foreach ((array)site_ship_regions($plat ?: 'vendoor') as $r) {
+        foreach ((array)site_ship_regions($lookup_plat, $cn) as $r) {
             if (is_array($r) && !empty($r['region'])) {
                 $out[trim((string)$r['region'])] = max(0, (float)($r['fee'] ?? 0));
             }
         }
     }
-    if (!$out && function_exists('site_shipping')) {
+    if (!$out && !$foreign && function_exists('site_shipping')) {
         foreach ((array)site_shipping() as $k => $v) {
             if (is_string($k) && is_numeric($v)) {
                 $out[$k] = max(0, (float)$v);
@@ -4065,7 +4086,7 @@ function site_ship_map($plat = '') {
             }
         }
     }
-    if (!$out) {
+    if (!$out && !$foreign) {
         // احتياطي آخر: يطابق أسعار الشحن الحقيقية لمحافظات مصر الـ27 (تُحدَّث من بيانات شوب مارت).
         $out = [
             'القاهرة' => 70, 'الجيزة' => 70, 'الإسكندرية' => 75, 'القليوبية' => 75,
@@ -4125,7 +4146,7 @@ function order_variant_label($order) {
 
 // ===== نافذة إتمام الطلب الفوري للعميل =====
 // خانة «سعر الاتفاق مع العميل» اتشالت من الموقع كله: سعر العميل دايمًا هو سعر الرابط المحسوب على السيرفر.
-function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $default_currency = null) {
+function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $default_currency = null, $default_country = '') {
     require_once __DIR__ . '/ui-components.php';
     static $rendered = false;
     if ($rendered) return;
@@ -4139,18 +4160,39 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
         $ship_by_platform[$ship_platform] = site_ship_map($ship_platform);
     }
     $ship_by_platform['safka'] = $ship_by_platform['safqa'];
-    // أول ما يفتح المتصفح الصفحة، قائمة المحافظات تظهر بأسعار المنصة نفسها (بدل جدول عام)
+    // المنتجات اليدوية: مصر بتستخدم جدول تايم هاند بالجنيه، وكل دولة خليجية ليها جدول مناطقها
+    // بعملة الدولة (الرسوم بيدخلها المالك من dashboard/admin_shipping.php) — مفيش تحويل عملات.
+    $ship_currency_by_key = [];
+    $ship_by_platform['manual'] = site_ship_map('manual', 'مصر');
+    $ship_currency_by_key['manual'] = wf_ship_currency('manual', 'مصر');
+    foreach (wf_gulf_countries() as $ship_country) {
+        $ship_key = 'manual:' . $ship_country;
+        $ship_by_platform[$ship_key] = site_ship_map('manual', $ship_country);
+        $ship_currency_by_key[$ship_key] = wf_ship_currency('manual', $ship_country);
+    }
+    foreach (array_keys($ship_by_platform) as $ship_key) {
+        if (!isset($ship_currency_by_key[$ship_key])) $ship_currency_by_key[$ship_key] = 'ج.م';
+    }
+    // أول ما يفتح المتصفح الصفحة، قائمة المناطق تظهر بأسعار المنصة/الدولة نفسها (بدل جدول عام)
     $default_plat = trim((string)$default_plat);
-    $ship_rates = ($default_plat !== '' && !empty($ship_by_platform[$default_plat]))
-        ? $ship_by_platform[$default_plat]
+    $default_country = wf_match_country($default_country, '');
+    $default_key = ($default_plat === 'manual' && $default_country !== '' && $default_country !== 'مصر')
+        ? 'manual:' . $default_country
+        : $default_plat;
+    $ship_rates = ($default_key !== '' && !empty($ship_by_platform[$default_key]))
+        ? $ship_by_platform[$default_key]
         : site_ship_map();
+    $ship_currency = $ship_currency_by_key[$default_key] ?? 'ج.م';
+    $region_label = wf_ship_region_label($default_country);
     $ship_by_platform = ['default' => $ship_rates] + $ship_by_platform;
+    $ship_currency_by_key = ['default' => $ship_currency] + $ship_currency_by_key;
     $ref_val = active_ref($default_ref);
     $csrf_val = csrf_token();
     ?>
     
     <?php wf_ui_sprite(); ?>
     <script type="application/json" id="wfShippingState"><?php echo json_encode($ship_by_platform, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
+    <script type="application/json" id="wfShippingCurrency"><?php echo json_encode($ship_currency_by_key, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
     <?php // الخصم بالجنيه بس: لو الصفحة عندها منتج بعملة تانية (ر.س/د.إ/…) الـ state بيقول للواجهة متطبّقوش
     $bulk_state = function_exists('wf_bulk_discount_state') ? wf_bulk_discount_state($default_plat, $default_currency) : ['per_piece' => 0, 'max_qty' => 99]; ?>
     <script type="application/json" id="wfCityState"><?php echo json_encode(wf_ship_cities_map(), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_HEX_APOS); ?></script>
@@ -4222,11 +4264,11 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
 
               <div class="eo-field-grid">
                 <div class="eo-field">
-                  <label><svg class=wf-ico aria-hidden=true><use href=#icon-truck></use></svg> المحافظة <span data-ui="u-ce5bc718 uex">*</span></label>
-                  <select name="city" id="eoBuyerCity" required onchange="eoRecalc();eoFillDistricts()">
-                    <option value="" data-ship="0">-- اختر المحافظة --</option>
+                  <label id="eoBuyerCityLbl" for="eoBuyerCity"><svg class=wf-ico aria-hidden=true><use href=#icon-truck></use></svg> <span class="eo-region-word"><?php echo esc($region_label); ?></span> <span data-ui="u-ce5bc718 uex">*</span></label>
+                  <select name="city" id="eoBuyerCity" required onchange="eoRecalc();eoFillDistricts()" data-ship-currency="<?php echo esc($ship_currency); ?>">
+                    <option value="" data-ship="0">-- اختر <?php echo esc($region_label); ?> --</option>
                     <?php foreach ($ship_rates as $gov => $cost): ?>
-                      <option value="<?php echo esc($gov); ?>" data-ship="<?php echo (float)$cost; ?>"><?php echo esc($gov); ?> (الشحن: <?php echo (float)$cost; ?> ج.م)</option>
+                      <option value="<?php echo esc($gov); ?>" data-ship="<?php echo (float)$cost; ?>"><?php echo esc($gov); ?> (الشحن: <?php echo (float)$cost; ?> <?php echo esc($ship_currency); ?>)</option>
                     <?php endforeach; ?>
                   </select>
                 </div>

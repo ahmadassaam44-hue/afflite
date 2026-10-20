@@ -97,7 +97,11 @@ $total_comm = round($extra_comm, 2);
 
 $colors = clean_product_colors($p, $plat);
 $sizes = clean_product_sizes($p, $plat);
-$ship_rates = function_exists('site_ship_map') ? site_ship_map($plat) : ['القاهرة' => 70, 'الجيزة' => 70, 'الإسكندرية' => 75];
+// دولة المنتج بتحدد جدول الشحن: مصر = محافظات بالجنيه (جدول تايم هاند)، والخليج = مناطق الدولة بعملتها
+$lp_country = wf_product_country($p);
+$ship_rates = function_exists('site_ship_map') ? site_ship_map($plat, $lp_country) : ['القاهرة' => 70, 'الجيزة' => 70, 'الإسكندرية' => 75];
+$ship_cur = wf_ship_currency($plat, $lp_country);
+$region_word = wf_ship_region_label($lp_country);
 $store_cfg = $ref !== '' ? marketer_store_get($ref) : ['title' => BRAND, 'whatsapp' => ''];
 
 $eo_payload = json_encode([
@@ -113,6 +117,8 @@ $eo_payload = json_encode([
     'img' => asset_url($imgs[0]),
     'ref' => $ref,
     'currency' => wf_ui_currency($p),
+    // دولة المنتج: بتحدد جدول الشحن (مصر = محافظات بالجنيه، الخليج = مناطق الدولة بعملتها)
+    'country' => wf_product_country($p),
     'colors' => $colors,
     'sizes' => $sizes,
 ], JSON_UNESCAPED_UNICODE);
@@ -294,18 +300,18 @@ if (function_exists('wf_event')) {
       </div>
       <div data-ui="u-578211d7 uho uk4 ugg">
         <div>
-          <label data-ui="u-c6c3b1ec uf1 ue6 udi ugv uew"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-map></use></svg> المحافظة *</label>
+          <label data-ui="u-c6c3b1ec uf1 ue6 udi ugv uew"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-map></use></svg> <?php echo esc($region_word); ?> *</label>
           <select name="gov" id="lpInlineGov" required onchange="updateLpInlineSummary();wfFillCityList('lpInlineGov','lpInlineDistrictSel','lpInlineDistrict','lpInlineDistrictLbl')" data-ui="u-b0da173d uem uk3 uig udf ufr uda ueg">
-            <option value="">— اختر المحافظة —</option>
+            <option value="">— اختر <?php echo esc($region_word); ?> —</option>
             <?php foreach ($ship_rates as $g_name => $g_cost): ?>
-              <option value="<?php echo esc($g_name); ?>" data-ship="<?php echo (int)$g_cost; ?>"><?php echo esc($g_name); ?> (شحن <?php echo (int)$g_cost; ?> ج.م)</option>
+              <option value="<?php echo esc($g_name); ?>" data-ship="<?php echo (int)$g_cost; ?>"><?php echo esc($g_name); ?> (شحن <?php echo (int)$g_cost; ?> <?php echo esc($ship_cur); ?>)</option>
             <?php endforeach; ?>
           </select>
         </div>
         <div>
           <label id="lpInlineDistrictLbl" for="lpInlineDistrictSel" data-ui="u-c6c3b1ec uf1 ue6 udi ugv uew"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-map></use></svg> المدينة / المركز *</label>
           <select name="district" id="lpInlineDistrictSel" data-ui-field="1" disabled data-ui="u-b0da173d uem uk3 uig udf ufr uda ueg"><option value="">-- اختر المحافظة أولاً --</option></select>
-          <input type="text" name="district" id="lpInlineDistrict" data-ui-field="1" aria-labelledby="lpInlineDistrictLbl" placeholder="مثال: مدينة نصر، المعادي، طنطا..." hidden disabled data-ui="u-4aefbbed uem uk3 uig udf ufr uda">
+          <input type="text" name="district" id="lpInlineDistrict" data-ui-field="1" aria-labelledby="lpInlineDistrictLbl" placeholder="<?php echo esc($lp_country === 'مصر' ? 'مثال: مدينة نصر، المعادي، طنطا...' : 'اكتب المدينة والحي بالتفصيل'); ?>" hidden disabled data-ui="u-4aefbbed uem uk3 uig udf ufr uda">
         </div>
       </div>
       <div>
@@ -344,7 +350,7 @@ if (function_exists('wf_event')) {
   </button>
 </div>
 
-<?php render_easyorder_dialog_html($ref, $plat, wf_ui_currency($p)); ?>
+<?php render_easyorder_dialog_html($ref, $plat, wf_ui_currency($p), $lp_country); ?>
 
 <div hidden id="wfLandingState" data-state="<?php echo esc(json_encode(['id'=>(string)$p['id'], 'plat'=>$plat, 'ref'=>$ref, 'unit'=>(float)$final_price, 'bundle_discount'=>(int)LP_BUNDLE_DISCOUNT, 'bundle_max'=>99, 'bulk_applies'=>function_exists('wf_bulk_discount_plat_ok')?wf_bulk_discount_plat_ok($plat, wf_ui_currency($p)):true, 'currency'=>wf_ui_currency($p), 'payload'=>json_decode($eo_payload, true)], JSON_UNESCAPED_UNICODE)); ?>"></div>
 <?php if (!empty($store_cfg['whatsapp'])): ?>
