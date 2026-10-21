@@ -376,6 +376,7 @@ function order_status_list() {
         'confirmed'  => 'مؤكد',
         'shipped'    => 'مشحون',
         'delivered'  => 'تم التوصيل',
+        'no_answer'  => 'لم يتم الرد',
         'cancelled'  => 'ملغي',
         'returned'   => 'مرتجع',
     ];
@@ -404,7 +405,7 @@ function status_key($v) {
 // الحالات التي تُعتبر "نهائية إيجابية" (تُحرَّر فيها العمولة)
 function status_releases_commission($k) { return in_array(status_key($k), ['delivered'], true); }
 // الحالات التي تُلغي العمولة
-function status_reverses_commission($k) { return in_array(status_key($k), ['cancelled', 'returned'], true); }
+function status_reverses_commission($k) { return in_array(status_key($k), ['cancelled', 'returned', 'no_answer'], true); }
 // الحالات التي يسمح فيها العميل بالإلغاء
 function status_customer_cancellable($k) { return in_array(status_key($k), ['pending', 'confirmed'], true); }
 
@@ -2851,6 +2852,14 @@ function wf_admin_pending_counts() {
     return $c;
 }
 // هل من حق المسوق ده يعدّل/يلغي الطلب ده؟ (طلبه بالرف بتاعه + لسه قبل الشحن)
+// إلغاء/إرجاع المسوق: مسموح على أي حالة لسه مش منتهية — حتى بعد الشحن والتسليم
+function wf_marketer_can_cancel_order($o, $u) {
+    if (!is_array($o) || !is_array($u)) return false;
+    $ref = trim((string)($u['ref_code'] ?? ''));
+    if ($ref === '' || strcasecmp(trim((string)($o['ref'] ?? '')), $ref) !== 0) return false;
+    if (in_array(status_key($o['status'] ?? ''), ['cancelled', 'returned', 'no_answer'], true)) return false;
+    return trim((string)($o['order_no'] ?? '')) !== '';
+}
 function wf_marketer_can_edit_order($o, $u) {
     if (!is_array($o) || !is_array($u)) return false;
     $ref = trim((string)($u['ref_code'] ?? ''));
@@ -2858,64 +2867,339 @@ function wf_marketer_can_edit_order($o, $u) {
     if (!status_customer_cancellable($o['status'] ?? '')) return false;
     return trim((string)($o['order_no'] ?? '')) !== '';
 }
-// تعديل المسوق على طلبه: السيرفر بيعيد حساب الإجمالي وخصم الكمية — مفيش ثقة في أرقام المتصفح
+// ============================================================================
+//  تعديل الطلبات الكامل (مسوق + إدارة): كل التفاصيل بما فيها العمولة
+//  - التحقق والحسابات كلها سيرفر-سايد: الإجمالي = سعر القطعة × الكمية + الشحن − خصم الكمية
+//  - فرق العمولة بيتسوى في المحفظة بحسب حالة الطلب (معلقة/مؤكدة) — من غير ازدواج
+//  - الرقمي/السوشيال: مفيش عمولة إضافية (زي الإنشاء بالظبط)
+// ============================================================================
+function wf_order_edit_validate($in, $is_admin = false) {
+    $cname = mb_substr(trim((string)($in['cname'] ?? '')), 0, 100);
+    $cphone = preg_replace('/\D+/', '', (string)($in['cphone'] ?? ''));
+    if ($cname === '' || mb_strlen((string)$cphone) < 10) return ['error' => 'اسم العميل ورقم موبايل صحيح (10 أرقام على الأقل) مطلوبين'];
+    // الحقول الرقمية اختيارية: الغايب/الفاضي = سيب القيمة الحالية (التوافق مع أي نداء قديم)
+    $qty = null;
+    if (array_key_exists('qty', $in) && trim((string)$in['qty']) !== '') {
+        $qty = (int)$in['qty'];
+        if ($qty < 1 || $qty > 99) return ['error' => 'الكمية لازم تكون بين 1 و99'];
+    }
+    $unit = null;
+    if (array_key_exists('unit', $in) && trim((string)$in['unit']) !== '') {
+        $unit = round((float)$in['unit'], 2);
+        if (!is_finite($unit) || $unit < 0 || $unit > 200000) return ['error' => 'سعر القطعة غير صالح'];
+    }
+    $ship = null;
+    if (array_key_exists('ship', $in) && trim((string)$in['ship']) !== '') {
+        $ship = round((float)$in['ship'], 2);
+        if (!is_finite($ship) || $ship < 0 || $ship > 20000) return ['error' => 'مصاريف الشحن غير صالحة'];
+    }
+    $m_earn = null;
+    if (array_key_exists('m_earn', $in) && trim((string)$in['m_earn']) !== '') {
+        $m_earn = round((float)$in['m_earn'], 2);
+        if (!is_finite($m_earn) || $m_earn < 0 || $m_earn > 50000) return ['error' => 'قيمة العمولة غير صالحة'];
+    }
+    $extra = null;
+    if (array_key_exists('extra_comm', $in) && trim((string)$in['extra_comm']) !== '') {
+        $extra = round((float)$in['extra_comm'], 2);
+        if (!is_finite($extra) || $extra < 0 || $extra > (float)MAX_MARKUP_AMOUNT) return ['error' => 'العمولة الإضافية لازم تكون بين 0 و' . (float)MAX_MARKUP_AMOUNT];
+    }
+    $out = [
+        'cname' => $cname, 'cphone' => $cphone,
+        'cphone2' => preg_replace('/\D+/', '', (string)($in['cphone2'] ?? '')),
+        'city' => mb_substr(trim((string)($in['city'] ?? '')), 0, 60),
+        'district' => mb_substr(trim((string)($in['district'] ?? '')), 0, 60),
+        'address' => mb_substr(trim((string)($in['address'] ?? '')), 0, 300),
+        'notes' => mb_substr(trim((string)($in['notes'] ?? '')), 0, 500),
+        'pname' => mb_substr(trim((string)($in['pname'] ?? '')), 0, 120),
+        'variant' => mb_substr(trim((string)($in['variant'] ?? '')), 0, 60),
+        'color' => mb_substr(trim((string)($in['color'] ?? '')), 0, 60),
+        'size' => mb_substr(trim((string)($in['size'] ?? '')), 0, 60),
+        'qty' => $qty, 'unit' => $unit, 'ship' => $ship, 'm_earn' => $m_earn, 'extra_comm' => $extra,
+    ];
+    if ($is_admin) {
+        if (array_key_exists('sub', $in)) $out['sub'] = mb_substr(trim((string)$in['sub']), 0, 60);
+        if (isset($in['status']) && trim((string)$in['status']) !== '') {
+            $raw = trim((string)$in['status']);
+            // المقبول: مفاتيح الحالة الإنجليزية أو تسمياتها العربية (أو الأسماء القديمة) — أي حاجة تانية تترفض
+            $legacy = ['قيد التنفيذ', 'قيد المراجعة', 'تم التسليم', 'مرفوض', 'مكتمل'];
+            if (!array_key_exists($raw, order_status_list()) && !in_array($raw, order_status_list(), true) && !in_array($raw, $legacy, true)) {
+                return ['error' => 'حالة الطلب غير صالحة'];
+            }
+            $out['status'] = status_key($raw);
+        }
+        if (isset($in['ref'])) $out['ref'] = mb_substr(trim((string)$in['ref']), 0, 40);
+    }
+    return $out;
+}
+// كتابة القيم المعدَّلة في صف الطلب + إعادة حساب خصم الكمية والإجمالي من بيانات السيرفر
+// القاعدة: حقل ناقص/فاضي = سيب زي ما هو (مفيش مسح بالغلط)، والفلوس الغايب ما يصفّرش الموجود
+function wf_order_apply_row_edit(&$row, $v) {
+    $plat = (string)($row['plat'] ?? '');
+    $is_dig = function_exists('wf_is_digital_plat') && wf_is_digital_plat($plat);
+    $row['cname'] = $v['cname'];
+    $row['cphone'] = $v['cphone'];
+    if ($v['cphone2'] !== '') $row['cphone2'] = $v['cphone2'];
+    if ($v['city'] !== '') $row['city'] = $v['city'];
+    if ($v['district'] !== '') $row['district'] = $v['district'];
+    if ($v['address'] !== '') $row['address'] = $v['address'];
+    $row['notes'] = $v['notes'];
+    if ($v['pname'] !== '') $row['pname'] = $v['pname'];
+    if ($v['variant'] !== '') $row['variant'] = $v['variant'];
+    if ($v['color'] !== '') $row['color'] = $v['color'];
+    if ($v['size'] !== '') $row['size'] = $v['size'];
+    if ($v['qty'] !== null) $row['qty'] = $v['qty'];
+    if ($v['unit'] !== null) $row['unit'] = $v['unit'];
+    if ($v['ship'] !== null) $row['ship'] = $v['ship'];
+    // الرقمي والسوشيال: مافيش عمولة إضافية — نفس قاعدة الإنشاء
+    if ($is_dig) $row['extra_comm'] = 0.0;
+    elseif ($v['extra_comm'] !== null) $row['extra_comm'] = $v['extra_comm'];
+    if ($v['m_earn'] !== null) $row['m_earn'] = $v['m_earn'];
+    $qty = max(1, min(99, (int)($row['qty'] ?? 1)));
+    $row['qty'] = $qty;
+    $unit = round((float)($row['unit'] ?? 0), 2);
+    $ship = round((float)($row['ship'] ?? 0), 2);
+    $prod = function_exists('find_product_by_id') ? find_product_by_id((string)($row['id'] ?? ''), $plat) : null;
+    $cur = $prod ? wf_ui_currency($prod) : wf_ui_currency($row);
+    $disc = function_exists('wf_bulk_discount') ? (float)wf_bulk_discount($qty, $plat, $cur) : 0.0;
+    $row['discount'] = $disc;
+    $row['total'] = round(max(0, $unit * $qty + $ship - $disc), 2);
+    // حالة العمولة تتبع حالة الطلب والعمولة الفعلية (نفس خريطة معالج الحالة في الإدارة)
+    $earn = round((float)($row['m_earn'] ?? 0), 2);
+    $st = status_key($row['status'] ?? 'pending');
+    $row['comm_state'] = status_releases_commission($st) ? ($earn > 0 ? 'confirmed' : 'none')
+                       : (status_reverses_commission($st) ? 'reversed' : ($earn > 0 ? 'pending' : 'none'));
+}
+// قائمة الحقول اللي اتغيرت فعلًا (للأودت والرسائل)
+function wf_order_edit_changed_fields($old, $new) {
+    $keys = ['cname', 'cphone', 'cphone2', 'city', 'district', 'address', 'notes', 'pname',
+             'variant', 'color', 'size', 'qty', 'unit', 'ship', 'extra_comm', 'm_earn',
+             'discount', 'total', 'status', 'ref', 'sub'];
+    $changed = [];
+    foreach ($keys as $k) {
+        $a = is_array($old) ? ($old[$k] ?? '') : '';
+        $b = is_array($new) ? ($new[$k] ?? '') : '';
+        if (is_numeric($a) && is_numeric($b)) {
+            if (abs((float)$a - (float)$b) >= 0.01) $changed[$k] = [(float)$a, (float)$b];
+        } elseif ((string)$a !== (string)$b) {
+            $changed[$k] = [mb_substr((string)$a, 0, 60), mb_substr((string)$b, 0, 60)];
+        }
+    }
+    return $changed;
+}
+// تسوية فرق العمولة (Δ = جديد − قديم) في المحفظة بحسب حالة الطلب — الفريق بنفس نسبة الإنشاء
+function wf_order_comm_adjust($ref, $old, $new, $comm_state, $idx, $order_no) {
+    $old = round((float)$old, 2); $new = round((float)$new, 2);
+    $d = round($new - $old, 2);
+    if (abs($d) < 0.01) return 0.0;
+    // الطلب الملغي/المرفوض ميتفضلش ميتحرك في المحفظة
+    if (in_array((string)$comm_state, ['reversed', 'suspended'], true)) return 0.0;
+    $mk_email = ''; $par = null;
+    if ($ref !== '' && ($mk = find_marketer_by_code($ref))) {
+        $mk_email = (string)($mk['email'] ?? '');
+        if ($mk_email !== '' && !empty($mk['referred_by']) && ($pr = find_marketer_by_code((string)$mk['referred_by']))
+            && ($pr['status'] ?? 'approved') === 'approved') {
+            $joined = strtotime((string)($mk['at'] ?? 'now'));
+            if ($joined !== false && (time() - $joined) < 243 * 86400) $par = $pr;
+        }
+    }
+    if ($mk_email === '') return 0.0;
+    $team_d = $par ? round($d * REF_TEAM_RATE, 2) : 0.0;
+    if ($d > 0) {
+        commission_credit_pending($mk_email, $d, $idx, 'زيادة عمولة — تعديل الطلب ' . $order_no);
+        if ($par && $team_d > 0) commission_credit_pending((string)$par['email'], $team_d, $idx, 'عمولة فريق (إحالة)');
+        if ((string)$comm_state === 'confirmed') {
+            commission_release($mk_email, $d, $idx, 'تأكيد زيادة العمولة لطلب مُسلَّم ' . $order_no);
+            if ($par && $team_d > 0) team_commission_release_for_order($idx, 'تعديل طلب مُسلَّم ' . $order_no);
+        }
+    } else {
+        commission_reverse($mk_email, -$d, $idx, 'تخفيض عمولة — تعديل الطلب ' . $order_no);
+        if ($par && $team_d < 0) commission_reverse((string)$par['email'], -$team_d, $idx, 'إلغاء عمولة فريق (إحالة) — تعديل الطلب ' . $order_no);
+    }
+    return $d;
+}
+// تعديل المسوق لطلبه: كل التفاصيل (بيانات العميل/المنتج/الكمية/السعر/الشحن/العمولات) —
+// السيرفر بيعيد حساب الإجمالي وخصم الكمية وبيسوّي فرق العمولة في المحفظة
 function wf_marketer_apply_order_edit($order_no, $u, $in) {
     $order_no = mb_substr(trim((string)$order_no), 0, 40);
     if ($order_no === '' || !is_array($u) || trim((string)($u['ref_code'] ?? '')) === '') return ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
-    $qty = max(1, min(99, (int)($in['qty'] ?? 1)));
-    $cname = mb_substr(trim((string)($in['cname'] ?? '')), 0, 100);
-    $cphone = preg_replace('/\D+/', '', (string)($in['cphone'] ?? ''));
-    $cphone2 = preg_replace('/\D+/', '', (string)($in['cphone2'] ?? ''));
-    if ($cname === '' || mb_strlen($cphone) < 10) return ['ok' => false, 'msg' => 'اسم العميل ورقم موبايل صحيح (10 أرقام على الأقل) مطلوبين'];
-    $city = mb_substr(trim((string)($in['city'] ?? '')), 0, 60);
-    $district = mb_substr(trim((string)($in['district'] ?? '')), 0, 60);
-    $address = mb_substr(trim((string)($in['address'] ?? '')), 0, 300);
-    $notes = mb_substr(trim((string)($in['notes'] ?? '')), 0, 500);
+    $v = wf_order_edit_validate($in);
+    if (!empty($v['error'])) return ['ok' => false, 'msg' => $v['error']];
     $res = ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
-    jupdate('orders.json', function (&$os) use ($order_no, $u, $qty, $cname, $cphone, $cphone2, $city, $district, $address, $notes, &$res) {
+    jupdate('orders.json', function (&$os) use ($order_no, $u, $v, &$res) {
         if (!is_array($os)) return false;
         foreach ($os as $i => $o) {
             if (($o['order_no'] ?? '') !== $order_no) continue;
             if (!wf_marketer_can_edit_order($o, $u)) { $res['msg'] = 'الطلب مش بتاعك أو حالته مابقتش تقبل تعديل'; return false; }
-            $prod = function_exists('find_product_by_id') ? find_product_by_id((string)($o['id'] ?? ''), (string)($o['plat'] ?? '')) : null;
-            $cur = $prod ? wf_ui_currency($prod) : wf_ui_currency($o);
-            $disc = function_exists('wf_bulk_discount') ? wf_bulk_discount($qty, (string)($o['plat'] ?? ''), $cur) : 0.0;
-            $unit = (float)($o['unit'] ?? 0);
-            $ship = (float)($o['ship'] ?? 0);
-            $os[$i]['qty'] = $qty;
-            $os[$i]['discount'] = (float)$disc;
-            $os[$i]['total'] = round(max(0, $unit * $qty + $ship - $disc), 2);
-            $os[$i]['cname'] = $cname;
-            $os[$i]['cphone'] = $cphone;
-            if ($cphone2 !== '') $os[$i]['cphone2'] = $cphone2;
-            if ($city !== '') $os[$i]['city'] = $city;
-            if ($district !== '') $os[$i]['district'] = $district;
-            if ($address !== '') $os[$i]['address'] = $address;
-            $os[$i]['notes'] = $notes;
+            $old_earn = round((float)($o['m_earn'] ?? 0), 2);
+            $old_comm = (string)($o['comm_state'] ?? 'pending');
+            $old_status = status_key($o['status'] ?? 'pending');
+            wf_order_apply_row_edit($os[$i], $v);
+            // المسوق مايغيّرش الحالة/الكود/المصدر — يرجعوا زي ما كانوا (comm_state اتحسب من الحالة الحالية جوه apply)
+            $os[$i]['status'] = $o['status'] ?? 'pending';
+            $os[$i]['ref'] = $o['ref'] ?? '';
+            if (array_key_exists('sub', $o)) $os[$i]['sub'] = $o['sub'];
             $os[$i]['mk_edited_at'] = date('c');
             $os[$i]['mk_edited_by'] = 'marketer:' . (string)($u['ref_code'] ?? '');
-            $res = ['ok' => true, 'msg' => 'تم حفظ تعديلاتك على الطلب ✅', 'idx' => $i];
+            $new_earn = round((float)($os[$i]['m_earn'] ?? 0), 2);
+            $moved = 0.0;
+            if (abs($new_earn - $old_earn) >= 0.01) {
+                $moved = wf_order_comm_adjust((string)($o['ref'] ?? ''), $old_earn, $new_earn, $old_comm, $i, $order_no);
+            }
+            $changed = wf_order_edit_changed_fields($o, $os[$i]);
+            $res = ['ok' => true, 'idx' => $i, 'changed' => $changed,
+                    'msg' => 'تم حفظ تعديلاتك على الطلب ✅' . ($moved != 0.0 ? ' — فرق العمولة (' . number_format($moved, 2) . ' ج.م) اتسوّى في محفظتك' : '')];
             return true;
         }
         return false;
     }, []);
     return $res;
 }
-// «حذف» المسوق للطلب = إلغاء ناعم: الطلب بيفضل عند الإدارة بحالة «ملغي» ومش بيتمسح
-function wf_marketer_cancel_order($order_no, $u, $reason = '') {
+// تعديل الإدارة الكامل: كل تفاصيل الطلب + الحالة + كود المسوق (تحويل العمولة بين المسوقين)
+function wf_admin_apply_order_edit($order_no, $in) {
     $order_no = mb_substr(trim((string)$order_no), 0, 40);
-    $res = ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
-    jupdate('orders.json', function (&$os) use ($order_no, $u, $reason, &$res) {
+    if ($order_no === '') return ['ok' => false, 'msg' => 'رقم الطلب مطلوب'];
+    $v = wf_order_edit_validate($in, true);
+    if (!empty($v['error'])) return ['ok' => false, 'msg' => $v['error']];
+    $old_row = null; $old_idx = null;
+    foreach ((array)jload('orders.json', []) as $i => $o) {
+        if (($o['order_no'] ?? '') === $order_no) { $old_row = $o; $old_idx = $i; break; }
+    }
+    if ($old_row === null) return ['ok' => false, 'msg' => 'الطلب غير موجود'];
+    $old_ref  = trim((string)($old_row['ref'] ?? ''));
+    $new_ref  = array_key_exists('ref', $v) && $v['ref'] !== '' ? $v['ref'] : $old_ref;
+    $ref_changed = strcasecmp($new_ref, $old_ref) !== 0;
+    if ($ref_changed && find_marketer_by_code($new_ref) === null) {
+        return ['ok' => false, 'msg' => 'كود المسوق الجديد غير موجود: ' . $new_ref];
+    }
+    $old_key  = status_key($old_row['status'] ?? 'pending');
+    $new_key  = isset($v['status']) ? $v['status'] : $old_key;
+    $old_earn = round((float)($old_row['m_earn'] ?? 0), 2);
+    // عمولة ناقصة في المدخلات = سيب الحالية
+    $new_earn = $v['m_earn'] !== null ? $v['m_earn'] : $old_earn;
+    $old_comm = (string)($old_row['comm_state'] ?? 'pending');
+    $old_mk_email = ($old_ref !== '' && ($mk0 = find_marketer_by_code($old_ref))) ? (string)($mk0['email'] ?? '') : '';
+    $extra = '';
+
+    // ===== عمليات المحفظة قبل كتابة الصف (نفس نمط معالج تغيير الحالة) =====
+    if ($ref_changed) {
+        // سحب عمولة المسوق القديم (مباشرة + فريق) بحسب حالتها
+        if ($old_mk_email !== '' && $old_earn > 0 && in_array($old_comm, ['pending', 'confirmed'], true)) {
+            commission_reverse($old_mk_email, $old_earn, $old_idx, 'تحويل الطلب لمسوق آخر بقرار الإدارة');
+            team_commission_reverse_for_order($old_idx, 'تحويل الطلب لمسوق آخر بقرار الإدارة');
+        }
+        // تسجيل العمولة الجديدة كاملة للمسوق الجديد (فريقه بيتسجل تلقائيًا جوه الدالة)
+        if ($new_earn > 0 && !status_reverses_commission($new_key)) {
+            credit_affiliate_amount($new_ref, $new_earn, $old_idx, 'عمولة أوردر — تحويل الإدارة');
+            if (status_releases_commission($new_key)) {
+                $nmk = find_marketer_by_code($new_ref);
+                if ($nmk) {
+                    commission_release((string)$nmk['email'], $new_earn, $old_idx, 'طلب محوّل مُسلَّم بالفعل');
+                    team_commission_release_for_order($old_idx, 'طلب محوّل مُسلَّم بالفعل');
+                }
+            }
+        }
+        $extra = '🔁 العمولة بقت على كود المسوق ' . $new_ref;
+    } else {
+        if ($new_key !== $old_key && $old_mk_email !== '' && $old_earn > 0) {
+            // دورة حياة الحالة على القيمة القديمة (زي معالج الحالة بالظبط)
+            if (status_releases_commission($new_key) && !status_releases_commission($old_key)) {
+                commission_release($old_mk_email, $old_earn, $old_idx, 'تأكيد تسليم الأوردر');
+                team_commission_release_for_order($old_idx, 'تأكيد تسليم الأوردر');
+                $extra = '✅ تم تحرير عمولة ' . number_format($old_earn, 2) . ' ج.م للمسوق';
+            } elseif (status_reverses_commission($new_key) && !status_reverses_commission($old_key)) {
+                commission_reverse($old_mk_email, $old_earn, $old_idx, status_label($new_key));
+                team_commission_reverse_for_order($old_idx, status_label($new_key));
+                $extra = '↩️ تم سحب عمولة ' . number_format($old_earn, 2) . ' ج.م من المسوق';
+            } elseif (status_releases_commission($old_key) && !status_releases_commission($new_key)) {
+                commission_reverse($old_mk_email, $old_earn, $old_idx, 'تراجع عن التسليم: ' . status_label($new_key));
+                team_commission_reverse_for_order($old_idx, 'تراجع عن التسليم: ' . status_label($new_key));
+                $extra = '↩️ تم سحب العمولة بعد تغيير الحالة';
+            }
+        }
+        // فرق العمولة بعد تغيير الحالة (على الحالة الجديدة)
+        $mid_comm = status_releases_commission($new_key) ? 'confirmed' : (status_reverses_commission($new_key) ? 'reversed' : 'pending');
+        if (abs($new_earn - $old_earn) >= 0.01 && $old_mk_email !== '') {
+            $moved = wf_order_comm_adjust($old_ref, $old_earn, $new_earn, $mid_comm, $old_idx, $order_no);
+            if ($moved != 0.0) $extra = trim($extra . ($extra !== '' ? '<br>' : '') . '💰 فرق العمولة (' . number_format($moved, 2) . ' ج.م) اتسوّى في محفظة المسوق');
+        }
+    }
+
+    // ===== كتابة الصف =====
+    // سبب الإلغاء/الإرجاع/عدم الرد — يظهر للمسوق والعميل في تفاصيل الطلب
+    $st_reason = mb_substr(trim((string)($in['status_reason'] ?? '')), 0, 300);
+    $res = ['ok' => false, 'msg' => 'تعذر حفظ التعديلات'];
+    jupdate('orders.json', function (&$os) use ($order_no, $v, $new_key, $new_ref, $ref_changed, $old_row, $old_idx, $st_reason, &$res) {
         if (!is_array($os)) return false;
         foreach ($os as $i => $o) {
             if (($o['order_no'] ?? '') !== $order_no) continue;
-            if (!wf_marketer_can_edit_order($o, $u)) { $res['msg'] = 'الطلب مش بتاعك أو حالته مابقتش تقبل إلغاء'; return false; }
-            $os[$i]['status'] = 'cancelled';
+            wf_order_apply_row_edit($os[$i], $v);
+            if (array_key_exists('sub', $v)) $os[$i]['sub'] = $v['sub'];
+            if ($ref_changed) $os[$i]['ref'] = $new_ref;
+            if (status_key($o['status'] ?? 'pending') !== $new_key) {
+                $os[$i]['status'] = $new_key;
+                $os[$i]['status_at'] = date('c');
+            } else {
+                $os[$i]['status'] = $o['status'] ?? $new_key;
+            }
+            // حالة العمولة النهائية: من الحالة + العمولة الفعلية بعد التعديل
+            $eff18 = round((float)($os[$i]['m_earn'] ?? 0), 2);
+            $os[$i]['comm_state'] = status_releases_commission($new_key) ? ($eff18 > 0 ? 'confirmed' : 'none')
+                                  : (status_reverses_commission($new_key) ? 'reversed' : ($eff18 > 0 ? 'pending' : 'none'));
+            if ($st_reason !== '' && in_array($new_key, ['cancelled', 'no_answer'], true)) $os[$i]['cancel_reason'] = 'الإدارة: ' . $st_reason;
+            if ($st_reason !== '' && $new_key === 'returned') $os[$i]['return_reason'] = 'الإدارة: ' . $st_reason;
+            $os[$i]['adm_edited_at'] = date('c');
+            $os[$i]['adm_edited_by'] = function_exists('admin_actor') ? admin_actor() : 'admin';
+            $res = ['ok' => true, 'idx' => $i, 'changed' => wf_order_edit_changed_fields($old_row, $os[$i]),
+                    'status_changed' => status_key($o['status'] ?? 'pending') !== $new_key,
+                    'ref_changed' => $ref_changed, 'new_key' => $new_key];
+            return true;
+        }
+        return false;
+    }, []);
+    if (empty($res['ok'])) return $res;
+
+    // ===== إشعارات + أودت =====
+    $row_now = null;
+    foreach ((array)jload('orders.json', [], false) as $o2) if (($o2['order_no'] ?? '') === $order_no) { $row_now = $o2; break; }
+    if ($row_now) {
+        if (!empty($res['status_changed']) && !empty($row_now['user']) && strpos((string)$row_now['user'], 'guest:') !== 0) {
+            notify_user((string)$row_now['user'], '📦 حالة طلبك أصبحت: ' . status_label($new_key), 'dashboard/orders.php');
+        }
+        if ($new_ref !== '' && ($mkN = find_marketer_by_code($new_ref))) {
+            notify_user((string)$mkN['email'], '✏️ الإدارة عدّلت طلبًا على كودك: ' . $order_no
+                . ($ref_changed ? ' (اتحوّل لك)' : ''), 'dashboard/marketer.php?mtab=orders');
+        }
+        if ($ref_changed && $old_ref !== '' && ($mkO = find_marketer_by_code($old_ref))) {
+            notify_user((string)$mkO['email'], '🔁 الإدارة حوّلت الطلب ' . $order_no . ' لمسوق آخر — عمولته اتسحبت منه', 'dashboard/marketer.php?mtab=orders');
+        }
+    }
+    if (function_exists('log_audit')) {
+        log_audit('admin_order_full_edit', $new_ref ?: '-', [
+            'order_no' => $order_no, 'changed' => $res['changed'],
+            'status' => [$old_key, $new_key], 'ref_changed' => $ref_changed, 'm_earn' => [$old_earn, $new_earn],
+        ]);
+    }
+    $res['msg'] = 'تم حفظ تعديلات الطلب ✅' . ($extra !== '' ? ' — ' . $extra : '');
+    $res['extra'] = $extra;
+    return $res;
+}
+// «حذف» المسوق للطلب = إلغاء ناعم: الطلب بيفضل عند الإدارة بحالة «ملغي» ومش بيتمسح
+function wf_marketer_cancel_order($order_no, $u, $reason = '', $to = 'cancelled') {
+    $order_no = mb_substr(trim((string)$order_no), 0, 40);
+    $to = ($to === 'returned') ? 'returned' : 'cancelled';
+    $res = ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
+    jupdate('orders.json', function (&$os) use ($order_no, $u, $reason, $to, &$res) {
+        if (!is_array($os)) return false;
+        foreach ($os as $i => $o) {
+            if (($o['order_no'] ?? '') !== $order_no) continue;
+            if (!wf_marketer_can_cancel_order($o, $u)) { $res['msg'] = 'الطلب مش بتاعك أو حالته منتهية ومش تقبل إلغاء أو إرجاع'; return false; }
+            $os[$i]['status'] = $to;
             $os[$i]['comm_state'] = 'reversed';
-            $os[$i]['cancel_reason'] = 'إلغاء المسوق' . ($reason !== '' ? ': ' . $reason : '');
+            if ($to === 'returned') $os[$i]['return_reason'] = 'إرجاع المسوق' . ($reason !== '' ? ': ' . $reason : '');
+            else $os[$i]['cancel_reason'] = 'إلغاء المسوق' . ($reason !== '' ? ': ' . $reason : '');
             $os[$i]['cancelled_by'] = 'marketer:' . (string)($u['ref_code'] ?? '');
             $os[$i]['status_at'] = date('c');
-            $res = ['ok' => true, 'msg' => 'تم إلغاء الطلب — فضل مسجّل عند الإدارة بحالة «ملغي» ✅', 'idx' => $i, 'o' => $o];
+            $res = ['ok' => true, 'msg' => ($to === 'returned' ? 'تم إرجاع الطلب — فضل مسجّل عند الإدارة بحالة «مرتجع» ✅' : 'تم إلغاء الطلب — فضل مسجّل عند الإدارة بحالة «ملغي» ✅'), 'idx' => $i, 'o' => $o, 'to' => $to];
             return true;
         }
         return false;

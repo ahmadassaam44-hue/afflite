@@ -15,13 +15,13 @@ function wf_team_rate_display() {
 }
 function wf_order_badge($status) {
     $key = status_key($status);
-    $tone = in_array($key, ['cancelled', 'returned'], true) ? 'red' : ($key === 'delivered' ? 'green' : (in_array($key, ['confirmed', 'shipped'], true) ? 'blue' : 'yellow'));
+    $tone = in_array($key, ['cancelled', 'returned', 'no_answer'], true) ? 'red' : ($key === 'delivered' ? 'green' : (in_array($key, ['confirmed', 'shipped'], true) ? 'blue' : 'yellow'));
     $icon = $tone === 'red' ? 'close' : ($key === 'delivered' ? 'check' : ($key === 'shipped' ? 'truck' : 'clock'));
     return '<span class="badge ' . $tone . '" data-status="' . esc($key) . '">' . wf_icon($icon, 16) . esc(wf_ui_plain(status_label($status))) . '</span>';
 }
 function wf_order_timeline($status) {
     $key = status_key($status);
-    if (in_array($key, ['cancelled', 'returned'], true)) return '<div class="alert danger">' . wf_order_badge($status) . '</div>';
+    if (in_array($key, ['cancelled', 'returned', 'no_answer'], true)) return '<div class="alert danger">' . wf_order_badge($status) . '</div>';
     $steps = array_intersect_key(order_status_list(), array_flip(['pending', 'confirmed', 'shipped', 'delivered']));
     $keys = array_keys($steps);
     $position = array_search($key, $keys, true);
@@ -716,12 +716,13 @@ if (!function_exists('wf_order_reasons_btns')) {
 }
 if (!function_exists('wf_order_details_rows')) {
     /** صفوف التفاصيل الكاملة للطلب (تُستخدم في ديالوج «تفاصيل الطلب» بالأدمن ولوحة المسوق وصفحة العميل). */
-    function wf_order_details_rows($o) {
+    function wf_order_details_rows($o, $with_money = false) {
         $o = is_array($o) ? $o : [];
         $rows = [];
         $push = function ($l, $v) use (&$rows) { $v = trim((string)$v); if ($v !== '') $rows[] = [$l, $v]; };
         $push('رقم الطلب', (string)($o['order_no'] ?? ''));
         $push('التاريخ', substr((string)($o['at'] ?? ''), 0, 16));
+        if (function_exists('status_label')) $push('الحالة', wf_ui_plain(status_label($o['status'] ?? '')));
         $push('المنتج', (string)($o['pname'] ?? ''));
         if (function_exists('order_variant_label')) $push('اللون والمقاس', order_variant_label($o));
         $push('الكمية', (string)(int)($o['qty'] ?? 1));
@@ -733,6 +734,35 @@ if (!function_exists('wf_order_details_rows')) {
         $push('العنوان بالتفصيل', (string)($o['address'] ?? ''));
         $push('ملاحظات العميل', (string)($o['notes'] ?? ''));
         $push('رابط/بيانات الخدمة', (string)($o['link'] ?? ''));
+        if ($with_money) {
+            // صفوف الفلوس والعمولات: للمسوق والإدارة فقط — ماتظهرش في صفحات العميل
+            $cur = function_exists('wf_ui_currency') ? wf_ui_currency($o) : 'ج.م';
+            $ship_cur = function_exists('wf_ship_currency') ? wf_ship_currency((string)($o['plat'] ?? ''), (string)($o['ship_country'] ?? '')) : 'ج.م';
+            if (isset($o['unit'])) $push('سعر القطعة', number_format((float)$o['unit'], 2) . ' ' . $cur);
+            if (isset($o['ship'])) $push('مصاريف الشحن', number_format((float)$o['ship'], 2) . ' ' . $ship_cur);
+            if ((float)($o['discount'] ?? 0) > 0) $push('خصم الكمية', '−' . number_format((float)$o['discount'], 2) . ' ' . $cur);
+            if (isset($o['total'])) $push('الإجمالي', number_format((float)$o['total'], 2) . ' ' . $cur);
+            if ((float)($o['extra_comm'] ?? 0) > 0) $push('العمولة الإضافية على القطعة', number_format((float)$o['extra_comm'], 2) . ' ج.م');
+            $push('عمولة المسوق على الطلب', number_format((float)($o['m_earn'] ?? 0), 2) . ' ج.م');
+            $cs_labels = ['pending' => 'معلقة (تُصرف عند التسليم)', 'confirmed' => 'مؤكدة (قابلة للسحب)', 'reversed' => 'مسحوبة', 'none' => 'لا توجد', 'suspended' => 'موقوفة'];
+            $cs = (string)($o['comm_state'] ?? '');
+            if ($cs !== '') $push('حالة العمولة', $cs_labels[$cs] ?? $cs);
+            $ref = trim((string)($o['ref'] ?? ''));
+            if ($ref !== '') {
+                $mkn = (function_exists('find_marketer_by_code') && ($mk15 = find_marketer_by_code($ref))) ? trim((string)($mk15['name'] ?? '')) : '';
+                $push('المسوق', ($mkn !== '' ? $mkn . ' — ' : '') . $ref);
+            }
+            $pay_labels = ['cod' => 'الدفع عند الاستلام', 'proof_uploaded' => 'بانتظار مراجعة الإيصال', 'rejected' => 'الإيصال مرفوض', 'approved' => 'تم تأكيد الإيصال', 'paid' => 'مدفوع'];
+            $pay = (string)($o['payment_status'] ?? '');
+            if ($pay !== '') $push('حالة الدفع', $pay_labels[$pay] ?? $pay);
+        }
+        if (!empty($o['sub'])) $push('الحملة / المصدر', (string)$o['sub']);
+        if (isset($o['admin_notes']) && is_array($o['admin_notes'])) {
+            foreach (array_values($o['admin_notes']) as $an_i => $an_row) {
+                if (!is_array($an_row)) continue;
+                $push('ملاحظة إدارة ' . ($an_i + 1), trim((string)($an_row['note'] ?? '') . ' — ' . trim((string)($an_row['by'] ?? '') . ' ' . substr((string)($an_row['at'] ?? ''), 0, 16))));
+            }
+        }
         $push('سبب الإلغاء', (string)($o['cancel_reason'] ?? ''));
         $push('سبب الاسترجاع', (string)($o['return_reason'] ?? ''));
         $push('سبب رفض الإيصال', (string)($o['payment_reject_reason'] ?? ''));

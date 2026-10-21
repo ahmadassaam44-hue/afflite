@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 392 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 446 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -241,3 +241,22 @@ remember_login` in config.php (30-day `wf_remember` cookie `email|token`, only `
 stored in the Supabase profile, `hash_equals` compare, full session hardening + binding on auto
 login, cleared on logout), checkboxes on login.php (unchecked) and register.php (pre-checked, both
 success paths). Documented in `docs/wishlist-remember-robust-orders-2026-10-21.md`.
+
+Full order editing for marketers and admins (2026-10-21): «خلي المسوق او الاداره يعدل كل التفاصيل
+بما فيهم العموله وكل حاجه». `wf_marketer_apply_order_edit` was extended (and a new
+`wf_admin_apply_order_edit` added) on a shared engine in config.php: `wf_order_edit_validate`
+(missing/empty field = keep current value; strict ranges: qty 1–99, unit ≤ 200000, ship ≤ 20000,
+commission ≤ 50000, extra ≤ MAX_MARKUP_AMOUNT; admin-only status must be a real key/label and a
+changed marketer code must exist), `wf_order_apply_row_edit` (writes every customer/product/money
+field, forces extra_comm to 0 on digital/social, recomputes quantity discount + total server-side
+and derives comm_state from status + effective commission), `wf_order_comm_adjust` (settles the
+commission delta in the wallet per comm_state — pending credit / confirmed credit+release /
+reversal — with the team referral share at REF_TEAM_RATE using the exact ledger reasons
+`team_ledger_for_order` aggregates on; dead orders never move wallets) and
+`wf_order_edit_changed_fields` (old→new audit map). Admins additionally get the status lifecycle
+(release/reverse/team, identical to the status handler), marketer reassignment (reverse old
+marketer + team, credit the new one via `credit_affiliate_amount`, release immediately if already
+delivered), customer/marketer notifications and `log_audit('admin_order_full_edit')`. UI: the
+marketer orders edit form grew all money/product fields; the admin orders table got a
+«تعديل كامل» button per row opening a full form (status select, marketer code with transfer
+warning, sub, all fields). Documented in `docs/order-full-edit-2026-10-21.md`.

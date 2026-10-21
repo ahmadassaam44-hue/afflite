@@ -379,7 +379,12 @@ chk($out,$fail,'cancelled label is ملغي',status_label(status_key($ords[1]['s
 chk($out,$fail,'cancelled reverses comm',$ords[1]['comm_state'],'reversed');
 chk($out,$fail,'cancelled reason from marketer',mb_strpos($ords[1]['cancel_reason'],'إلغاء المسوق')===0,true);
 chk($out,$fail,'cancelled no longer editable',wf_marketer_can_edit_order($ords[1],$MK),false);
-chk($out,$fail,'cancel shipped rejected',wf_marketer_cancel_order('ORD-TEST-3',['email'=>'y@x.com','ref_code'=>'MK999'])['ok'],false);
+chk($out,$fail,'cancel by stranger rejected',wf_marketer_cancel_order('ORD-TEST-3',['email'=>'y@x.com','ref_code'=>'MK000'])['ok'],false);
+$cns=wf_marketer_cancel_order('ORD-TEST-3',['email'=>'y@x.com','ref_code'=>'MK999'],'ماتوصلش');
+chk($out,$fail,'cancel shipped by owner allowed',$cns['ok'],true);
+$ords3=jload('orders.json',[],false);
+chk($out,$fail,'owner cancel flips shipped row',$ords3[2]['status'],'cancelled');
+chk($out,$fail,'owner cancel reason prefix',mb_strpos($ords3[2]['cancel_reason'],'إلغاء المسوق')===0,true);
 // ---- 13) تخفيض 12% على الفيزيائي (نقطة مركزية واحدة) + «أحدث المنتجات» بختم added_at ----
 chk($out,$fail,'global discount constant',PRICE_GLOBAL_DISCOUNT,0.12);
 // timehand: 1000 ×1.02 = 1020 ×0.88 = 897.6 → تقريب 5/0 (ceil) = 900
@@ -481,6 +486,159 @@ $bn17b=wf_bottom_nav('home',['cart_count'=>0]);
 chk($out,$fail,'mobile nav hides wish without href',strpos($bn17b,'wishlist.php')===false,true);
 $bn17c=wf_bottom_nav('home',['cart_count'=>0,'wish_href'=>'dashboard/wishlist.php','hide'=>['wish']]);
 chk($out,$fail,'mobile nav wish respects hide list',strpos($bn17c,'wishlist.php')===false,true);
+// ---- 18) تعديل الطلبات الكامل: المسوق والإدارة (بما فيها العمولة والحالة وكود المسوق) ----
+unset($_SESSION['user']);
+$rd18=function($no){foreach((array)jload('orders.json',[],false) as $o18) if(($o18['order_no']??'')===$no) return $o18; return null;};
+// نفس الحقول اللي بتبعتها الفورمات الحقيقية — الناقص معناه «امسح القيمة»
+$mk18=function($o,$over=[]){return array_merge([
+ 'cname'=>(string)($o['cname']??''),'cphone'=>(string)($o['cphone']??''),'cphone2'=>(string)($o['cphone2']??''),
+ 'city'=>(string)($o['city']??''),'district'=>(string)($o['district']??''),'address'=>(string)($o['address']??''),
+ 'notes'=>(string)($o['notes']??''),'pname'=>(string)($o['pname']??''),'variant'=>(string)($o['variant']??''),
+ 'color'=>(string)($o['color']??''),'size'=>(string)($o['size']??''),
+ 'qty'=>(string)(int)($o['qty']??1),'unit'=>(string)(float)($o['unit']??0),'ship'=>(string)(float)($o['ship']??0),
+ 'm_earn'=>(string)(float)($o['m_earn']??0),'extra_comm'=>(string)(float)($o['extra_comm']??0)],$over);};
+// -- المسوق: تعديل كامل لطلب قيد التأكيد بتاعه --
+$u18=['email'=>'mk777@test.local','name'=>'مسوق 777','role'=>'marketer','ref_code'=>'MK777'];
+$r18=wf_marketer_apply_order_edit('ORD-TEST-4',$u18,$mk18($rd18('ORD-TEST-4'),[
+  'cname'=>'عميل معدّل','qty'=>'3','unit'=>'60','ship'=>'7','m_earn'=>'25','extra_comm'=>'5',
+  'pname'=>'اسم معدّل','variant'=>'عرض 2','color'=>'أحمر','size'=>'L','city'=>'القاهرة']));
+chk($out,$fail,'marketer full edit ok',!empty($r18['ok']),true);
+$t4=$rd18('ORD-TEST-4');
+chk($out,$fail,'marketer edit qty',(int)$t4['qty'],3);
+chk($out,$fail,'marketer edit unit',(float)$t4['unit'],60.0);
+chk($out,$fail,'marketer edit ship',(float)$t4['ship'],7.0);
+chk($out,$fail,'marketer edit m_earn',(float)$t4['m_earn'],25.0);
+chk($out,$fail,'marketer edit extra_comm',(float)$t4['extra_comm'],5.0);
+chk($out,$fail,'marketer edit color',$t4['color'],'أحمر');
+chk($out,$fail,'marketer edit size',$t4['size'],'L');
+chk($out,$fail,'marketer edit variant',$t4['variant'],'عرض 2');
+chk($out,$fail,'marketer edit pname',$t4['pname'],'اسم معدّل');
+chk($out,$fail,'marketer edit city',$t4['city'],'القاهرة');
+$cur18=wf_ui_currency($t4);
+$d18=function_exists('wf_bulk_discount')?(float)wf_bulk_discount(3,'manual',$cur18):0.0;
+chk($out,$fail,'marketer edit total recalced',(float)$t4['total'],round(max(0,60*3+7-$d18),2));
+chk($out,$fail,'marketer edit discount stored',(float)($t4['discount']??-1),$d18);
+chk($out,$fail,'marketer edit comm_state pending',$t4['comm_state'],'pending');
+chk($out,$fail,'marketer edit status untouched',status_key($t4['status']),'pending');
+chk($out,$fail,'marketer edit ref untouched',$t4['ref'],'MK777');
+chk($out,$fail,'marketer edit stamp',($t4['mk_edited_by']??''),'marketer:MK777');
+chk($out,$fail,'marketer edit changed map unit',($r18['changed']['unit']??null)===[50.0,60.0],true);
+// -- بوابات المسوق: طلبات الغير والحالات المتأخرة --
+$g18=wf_marketer_apply_order_edit('ORD-TEST-3',$u18,$mk18($rd18('ORD-TEST-3')));
+chk($out,$fail,'marketer blocked on others order',(empty($g18['ok'])&&strpos($g18['msg'],'مش بتاعك')!==false),true);
+$u18b=['email'=>'mk999@test.local','role'=>'marketer','ref_code'=>'MK999'];
+$g18b=wf_marketer_apply_order_edit('ORD-TEST-3',$u18b,$mk18($rd18('ORD-TEST-3')));
+chk($out,$fail,'marketer blocked on shipped status',empty($g18b['ok']),true);
+// -- تحقق الحقول: أرقام غلط تترفض والصف ما يتلمسش --
+$v18=wf_marketer_apply_order_edit('ORD-TEST-4',$u18,$mk18($t4,['qty'=>'0']));
+chk($out,$fail,'qty 0 rejected',strpos((string)($v18['msg']??''),'الكمية')!==false,true);
+$v18b=wf_marketer_apply_order_edit('ORD-TEST-4',$u18,$mk18($t4,['m_earn'=>'-5']));
+chk($out,$fail,'negative commission rejected',strpos((string)($v18b['msg']??''),'العمولة')!==false,true);
+$v18c=wf_marketer_apply_order_edit('ORD-TEST-4',$u18,$mk18($t4,['extra_comm'=>'99999']));
+chk($out,$fail,'extra_comm above max rejected',strpos((string)($v18c['msg']??''),'الإضافية')!==false,true);
+$v18d=wf_marketer_apply_order_edit('ORD-TEST-4',$u18,$mk18($t4,['cname'=>'','cphone'=>'123']));
+chk($out,$fail,'bad customer rejected',strpos((string)($v18d['msg']??''),'اسم العميل')!==false,true);
+$t4b=$rd18('ORD-TEST-4');
+chk($out,$fail,'rejected edits leave row intact',(float)$t4b['m_earn'],25.0);
+// -- الرقمي/السوشيال: العمولة الإضافية تتصفر حتى لو اتبعتت --
+$row18=['plat'=>'g2g','id'=>'g1','qty'=>1,'unit'=>10.0,'ship'=>0.0,'status'=>'pending'];
+wf_order_apply_row_edit($row18,['cname'=>'a','cphone'=>'01000000000','cphone2'=>'','city'=>'','district'=>'','address'=>'','notes'=>'','pname'=>'','variant'=>'','color'=>'','size'=>'','qty'=>2,'unit'=>15.0,'ship'=>0.0,'m_earn'=>5.0,'extra_comm'=>50.0]);
+chk($out,$fail,'digital extra_comm forced zero',(float)$row18['extra_comm'],0.0);
+chk($out,$fail,'digital row total',(float)$row18['total'],30.0);
+chk($out,$fail,'digital row comm_state',$row18['comm_state'],'pending');
+// -- الإدارة: حالة + فلوس في حفظ واحدة (ORD-TEST-1 عمولته مؤكدة) --
+$r18a=wf_admin_apply_order_edit('ORD-TEST-1',$mk18($rd18('ORD-TEST-1'),[
+  'cname'=>'عميل أدمن','qty'=>'2','unit'=>'90','m_earn'=>'40','extra_comm'=>'5','status'=>'cancelled','sub'=>'حملة-1']));
+chk($out,$fail,'admin full edit ok',!empty($r18a['ok']),true);
+$t1=$rd18('ORD-TEST-1');
+chk($out,$fail,'admin edit status cancelled',$t1['status'],'cancelled');
+chk($out,$fail,'admin edit comm_state reversed',$t1['comm_state'],'reversed');
+chk($out,$fail,'admin edit m_earn',(float)$t1['m_earn'],40.0);
+chk($out,$fail,'admin edit qty',(int)$t1['qty'],2);
+chk($out,$fail,'admin edit sub',$t1['sub'],'حملة-1');
+chk($out,$fail,'admin edit ref untouched',$t1['ref'],'MK123');
+chk($out,$fail,'admin edit status_at set',!empty($t1['status_at']),true);
+chk($out,$fail,'admin edit stamp set',!empty($t1['adm_edited_at']),true);
+$d18a=function_exists('wf_bulk_discount')?(float)wf_bulk_discount(2,'manual',wf_ui_currency($t1)):0.0;
+chk($out,$fail,'admin edit total recalced',(float)$t1['total'],round(max(0,90*2+10-$d18a),2));
+chk($out,$fail,'admin changed map has status',isset($r18a['changed']['status']),true);
+// -- الإدارة: كود مسوق مش موجود يترفض والصف يسلم --
+$r18r=wf_admin_apply_order_edit('ORD-TEST-2',$mk18($rd18('ORD-TEST-2'),['ref'=>'NOSUCHCODE']));
+chk($out,$fail,'admin bad ref rejected',(empty($r18r['ok'])&&strpos($r18r['msg'],'غير موجود')!==false),true);
+$t2=$rd18('ORD-TEST-2');
+chk($out,$fail,'bad ref leaves row intact',$t2['ref'],'MK123');
+// -- الإدارة: حالة غلط / طلب مش موجود --
+$r18st=wf_admin_apply_order_edit('ORD-TEST-2',$mk18($t2,['status'=>'flying']));
+chk($out,$fail,'admin bad status rejected',strpos((string)($r18st['msg']??''),'حالة الطلب')!==false,true);
+$r18no=wf_admin_apply_order_edit('ORD-NOPE',$mk18($t2));
+chk($out,$fail,'admin unknown order rejected',strpos((string)($r18no['msg']??''),'غير موجود')!==false,true);
+// -- الإدارة: تعديل فلوس بس على طلب ملغي (اتلغى في اختبارات مهمة 11) — القيمة تتحفظ والمحفظة ماتتحركش --
+$r18m=wf_admin_apply_order_edit('ORD-TEST-2',$mk18($rd18('ORD-TEST-2'),['m_earn'=>'45']));
+chk($out,$fail,'admin money edit on cancelled ok',!empty($r18m['ok']),true);
+$t2b=$rd18('ORD-TEST-2');
+chk($out,$fail,'admin money edit on cancelled m_earn',(float)$t2b['m_earn'],45.0);
+chk($out,$fail,'cancelled order comm_state stays reversed',$t2b['comm_state'],'reversed');
+chk($out,$fail,'admin money edit changed map',($r18m['changed']['m_earn']??null)===[30.0,45.0],true);
+// -- الإدارة: تعديل فلوس بس على طلب قيد التأكيد (T-4 بعد تعديل المسوق) --
+$r18p=wf_admin_apply_order_edit('ORD-TEST-4',$mk18($rd18('ORD-TEST-4'),['m_earn'=>'30']));
+$t4c=$rd18('ORD-TEST-4');
+chk($out,$fail,'admin money-only pending edit ok',!empty($r18p['ok']),true);
+chk($out,$fail,'admin money-only pending m_earn',(float)$t4c['m_earn'],30.0);
+chk($out,$fail,'admin money-only pending comm_state',$t4c['comm_state'],'pending');
+chk($out,$fail,'admin money-only pending status kept',status_key($t4c['status']),'pending');
+// -- الإدارة: تسليم يحرر العمولة (comm_state confirmed) --
+$r18d=wf_admin_apply_order_edit('ORD-TEST-3',$mk18($rd18('ORD-TEST-3'),['status'=>'delivered']));
+$t3=$rd18('ORD-TEST-3');
+chk($out,$fail,'admin delivered edit ok',!empty($r18d['ok']),true);
+chk($out,$fail,'admin delivered status',$t3['status'],'delivered');
+chk($out,$fail,'admin delivered comm_state confirmed',$t3['comm_state'],'confirmed');
+// ---- 19) تعديلات ما بعد PR#12: «لم يتم الرد» + إلغاء/إرجاع المسوق بعد الشحن + سبب الإدارة يظهر للمسوق + ديالوج واحد لكل التفاصيل ----
+$sl19=order_status_list();$ks19=array_keys($sl19);
+chk($out,$fail,'no_answer label لم يتم الرد',$sl19['no_answer']??'','لم يتم الرد');
+chk($out,$fail,'no_answer sits above cancelled',array_search('no_answer',$ks19,true)===array_search('cancelled',$ks19,true)-1,true);
+chk($out,$fail,'no_answer reverses commission',status_reverses_commission('no_answer'),true);
+$u19=['email'=>'mk999@test.local','role'=>'marketer','ref_code'=>'MK999'];
+$t319=$rd18('ORD-TEST-3');
+chk($out,$fail,'can cancel delivered own order',wf_marketer_can_cancel_order($t319,$u19),true);
+chk($out,$fail,'cannot cancel others order',wf_marketer_can_cancel_order($t319,['email'=>'z@z.com','ref_code'=>'MK000']),false);
+$t219=$rd18('ORD-TEST-2');
+chk($out,$fail,'cannot cancel already cancelled',wf_marketer_can_cancel_order($t219,$MK),false);
+$r19a=wf_admin_apply_order_edit('ORD-TEST-4',$mk18($rd18('ORD-TEST-4'),['status'=>'no_answer','status_reason'=>'محدش رد على العميل']));
+$t419=$rd18('ORD-TEST-4');
+chk($out,$fail,'admin no_answer ok',!empty($r19a['ok']),true);
+chk($out,$fail,'admin no_answer status',$t419['status'],'no_answer');
+chk($out,$fail,'admin no_answer reverses comm',$t419['comm_state'],'reversed');
+chk($out,$fail,'admin no_answer reason visible',$t419['cancel_reason'],'الإدارة: محدش رد على العميل');
+$r19b=wf_admin_apply_order_edit('ORD-TEST-4',$mk18($rd18('ORD-TEST-4'),['status'=>'returned','status_reason'=>'العميل رجّع الشحنة']));
+$t419b=$rd18('ORD-TEST-4');
+chk($out,$fail,'admin returned reason visible',$t419b['return_reason'],'الإدارة: العميل رجّع الشحنة');
+chk($out,$fail,'marketer cancel returned rejected',wf_marketer_cancel_order('ORD-TEST-4',$u18,'')['ok'],false);
+$r19c=wf_marketer_cancel_order('ORD-TEST-3',$u19,'العميل رفض الاستلام','returned');
+$t319c=$rd18('ORD-TEST-3');
+chk($out,$fail,'marketer return delivered ok',!empty($r19c['ok']),true);
+chk($out,$fail,'marketer return status returned',$t319c['status'],'returned');
+chk($out,$fail,'marketer return reason prefix',mb_strpos($t319c['return_reason'],'إرجاع المسوق')===0,true);
+chk($out,$fail,'marketer return reverses comm',$t319c['comm_state'],'reversed');
+$r19d=wf_admin_apply_order_edit('ORD-TEST-3',$mk18($rd18('ORD-TEST-3'),['status'=>'shipped']));
+$r19e=wf_marketer_cancel_order('ORD-TEST-3',$u19,'مافيش رد من العميل','cancelled');
+$t319e=$rd18('ORD-TEST-3');
+chk($out,$fail,'admin reship returned order ok',!empty($r19d['ok']),true);
+chk($out,$fail,'marketer cancel shipped ok',!empty($r19e['ok']),true);
+chk($out,$fail,'marketer cancel shipped reason',mb_strpos($t319e['cancel_reason'],'إلغاء المسوق')===0,true);
+$o19=['order_no'=>'O19','status'=>'no_answer','cancel_reason'=>'الإدارة: س','unit'=>50,'ship'=>10,'total'=>110,'qty'=>2,'discount'=>0,'m_earn'=>12.5,'comm_state'=>'reversed','ref'=>'MK999','payment_status'=>'cod','plat'=>'manual','cname'=>'عميل','cphone'=>'01000000001','city'=>'القاهرة'];
+$rows19m=wf_order_details_rows($o19,true);
+$lbl19=function($rows19x,$want19){foreach($rows19x as $r19y) if($r19y[0]===$want19) return $r19y[1]; return null;};
+chk($out,$fail,'dialog money rows: status',$lbl19($rows19m,'الحالة'),'لم يتم الرد');
+chk($out,$fail,'dialog money rows: commission',$lbl19($rows19m,'عمولة المسوق على الطلب'),'12.50 ج.م');
+chk($out,$fail,'dialog money rows: comm state',$lbl19($rows19m,'حالة العمولة'),'مسحوبة');
+chk($out,$fail,'dialog money rows: payment',$lbl19($rows19m,'حالة الدفع'),'الدفع عند الاستلام');
+chk($out,$fail,'dialog money rows: unit',$lbl19($rows19m,'سعر القطعة'),'50.00 ج.م');
+chk($out,$fail,'dialog money rows: admin reason',$lbl19($rows19m,'سبب الإلغاء'),'الإدارة: س');
+chk($out,$fail,'dialog money rows: marketer ref',strpos((string)$lbl19($rows19m,'المسوق'),'MK999')!==false,true);
+$rows19c=wf_order_details_rows($o19);
+chk($out,$fail,'customer rows hide commission',$lbl19($rows19c,'عمولة المسوق على الطلب'),null);
+chk($out,$fail,'customer rows hide unit price',$lbl19($rows19c,'سعر القطعة'),null);
+chk($out,$fail,'customer rows still show reason',$lbl19($rows19c,'سبب الإلغاء'),'الإدارة: س');
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -503,18 +661,27 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(/window\.wfDetails\s*=/.test(js),'ui.js must expose wfDetails()');
   assert.ok(js.includes('[data-wf-details]'),'ui.js must wire data-wf-details buttons');
   assert.ok(/val\.textContent/.test(js),'dialog values must be rendered as text (XSS-safe)');
+  assert.ok(!js.includes('.get("variant")'),'success summary must not call .get on a DOM element (successful order shown as failure)');
+  assert.ok(js.includes('catch(sumErr)'),'success summary build must be crash-proof so e.ok always shows the success view');
   const css=fs.readFileSync(path.join(repo,'assets/style.css'),'utf8');
   for(const sel of ['.wf-det-backdrop{','.wf-det-card{','.wf-det-row{','.btn.wf-det-danger{','.wf-det-preview{'])
     assert.ok(css.includes(sel),'style.css must include '+sel);
   const adm=fs.readFileSync(path.join(repo,'dashboard/admin.php'),'utf8');
   assert.ok((adm.match(/wf_details_btn\(|wf_det_text\(/g)||[]).length>=10,'admin must open details dialogs (orders, notes, payouts, payments, audit, noon, errors)');
-  assert.ok(adm.includes('wf_order_reasons_btns('),'admin orders must surface cancel/return/payment-reject reasons');
+  assert.ok(adm.includes('wf_order_details_rows($o, true)')&&adm.includes('تفاصيل إضافية'),'admin order rows must open ONE dialog with all details incl. money');
+  assert.ok(adm.includes('status_reason'),'admin must capture a cancel/return/no-answer reason that reaches the marketer');
+  assert.ok(!adm.includes('wf_order_reasons_btns('),'reasons must live inside the details dialog, not as nested buttons');
   assert.ok(/payment_reject_reason/.test(adm),'payment reject reason must be visible to admin');
   assert.ok(/payout_reject_reason/.test(adm)&&/'reject_reason'\]/.test(adm),'payout reject must record a reason');
   const mk=fs.readFileSync(path.join(repo,'dashboard/marketer.php'),'utf8');
-  assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_reasons_btns('),'marketer orders must have details dialogs + reasons');
+  assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_details_rows($o, true)'),'marketer orders must have one full details dialog incl. commission');
+  assert.ok(mk.includes('value="return"')&&mk.includes('wf_marketer_can_cancel_order'),'marketer must be able to cancel/return orders even after shipping');
+  assert.ok(!mk.includes('هتلغي الطلب؟'),'the old cancel confirmation sentence must be gone');
+  assert.ok(!mk.includes('wf_order_reasons_btns('),'marketer rows must not carry nested reason buttons');
   const ord=fs.readFileSync(path.join(repo,'dashboard/orders.php'),'utf8');
-  assert.ok(ord.includes('wf_details_btn(')&&ord.includes('wf_order_reasons_btns('),'customer orders must show reasons and full details');
+  assert.ok(ord.includes('wf_details_btn(')&&ord.includes('تفاصيل إضافية'),'customer orders must show one full details dialog');
+  assert.ok(!ord.includes('wf_order_details_rows($o, true)'),'customer dialogs must NOT expose commission/money rows');
+  assert.ok(!ord.includes('wf_order_reasons_btns('),'customer rows must not carry nested reason buttons');
   const noon=fs.readFileSync(path.join(repo,'dashboard/noon.php'),'utf8');
   assert.ok(noon.includes('wf_det_text('),'noon reject notes must open a dialog');
   const po=fs.readFileSync(path.join(repo,'dashboard/_payout.php'),'utf8');
@@ -805,6 +972,23 @@ assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock r
   assert.ok(wishSrc.includes('guest_')&&wishSrc.includes('name="csrf"'),'wishlist page must key guests like the hearts and post csrf-protected cart adds');
   const cssSrc=src('assets/style.css');
   assert.ok(cssSrc.includes('.wish-count')&&cssSrc.includes('.wish-wrap'),'style.css must style the wishlist badge');
+}
+// ---- توصيلات التعديل الكامل للطلبات (مسوق + إدارة) ----
+{
+  const cfgSrc=src('config.php');
+  for(const fn of ['wf_order_edit_validate','wf_order_apply_row_edit','wf_order_edit_changed_fields','wf_order_comm_adjust','wf_admin_apply_order_edit'])
+    assert.ok(cfgSrc.includes('function '+fn),'config.php must define '+fn);
+  assert.ok(/REF_TEAM_RATE/.test(cfgSrc.slice(cfgSrc.indexOf('function wf_order_comm_adjust'))),'team commission share must be adjusted with the order commission');
+  assert.ok(cfgSrc.includes("in_array((string)$comm_state, ['reversed', 'suspended'], true)"),'dead orders must never move wallets on commission edits');
+  const mkSrc=src('dashboard/marketer.php');
+  for(const f of ['name="unit"','name="ship"','name="m_earn"','name="extra_comm"','name="pname"','name="variant"','name="color"','name="size"'])
+    assert.ok(mkSrc.includes(f),'marketer edit form must expose '+f);
+  assert.ok(mkSrc.includes("'changed' => $mk_res['changed'] ?? []"),'marketer edit audit must record the changed fields');
+  const admSrc=src('dashboard/admin.php');
+  assert.ok(admSrc.includes("wf_admin_apply_order_edit((string)$_POST['adm_order_no']"),'admin.php must route the full-edit POST');
+  assert.ok(admSrc.includes('adm_order_action')&&admSrc.includes('name="ref"')&&admSrc.includes('name="status"'),'admin full-edit form must include status + marketer code');
+  assert.ok(admSrc.includes('?tab=orders&edit=')&&admSrc.includes('تعديل كامل'),'admin orders table must link to the full-edit view');
+  assert.ok((admSrc.match(/name="m_earn"/g)||[]).length>=1&&admSrc.includes('name="extra_comm"'),'admin full-edit form must expose both commission fields');
 }
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){
