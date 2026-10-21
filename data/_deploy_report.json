@@ -5,8 +5,8 @@
   "config.php": {
    "remote_size": 357025,
    "on_server": true,
-   "local_size": 355329,
-   "match": false
+   "local_size": 357025,
+   "match": true
   },
   "index.php": {
    "remote_size": 51428,
@@ -89,8 +89,8 @@
   "dashboard/marketer.php": {
    "remote_size": 116881,
    "on_server": true,
-   "local_size": 116549,
-   "match": false
+   "local_size": 116881,
+   "match": true
   },
   "assets/style.css": {
    "remote_size": 157124,
