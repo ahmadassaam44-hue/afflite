@@ -1349,23 +1349,14 @@ elseif ($tab === 'orders') {
            . '<div style="grid-column:1/-1"><button class="btn pri" type="submit">حفظ كل التعديلات</button> <a class="btn outline" href="?tab=orders">رجوع للطلبات</a></div>'
            . '</form></div>';
     }
-    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف / واتساب</th><th>العنوان</th><th>كمية</th><th>السعر</th><th>العمولة</th><th>الشحن</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
+    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
     foreach ($rev_orders as $idx => $o) {
-        $ph_digits = preg_replace('/\D+/', '', (string)($o['cphone'] ?? ''));
-        if (strpos($ph_digits, '01') === 0) $ph_wa = '2' . $ph_digits;
-        else $ph_wa = $ph_digits;
         echo '<tr>';
         echo '<td><b>#' . ($idx + 1) . '</b><br><span class="mut" dir="ltr">' . esc($o['order_no'] ?? '') . '</span></td>';
         echo '<td dir="ltr">' . esc(substr($o['at'] ?? '', 0, 16)) . '</td>';
-        echo '<td><a href="product.php?id=' . urlencode($o['id'] ?? '') . '" target="_blank" data-ui="u-f14488a7 dc d2k d2l">' . esc(mb_substr(aff_clean($o['pname'] ?? '', true), 0, 38)) . '</a></td>';
-        echo '<td>' . esc(order_variant_label($o) ?: '—') . '</td>';
+        // كل التفاصيل (العميل والهاتف والعنوان والكمية والسعر والشحن والعمولة والملاحظات) في الديالوج الكبير — الجدول فضل بسيط
+        echo '<td><a href="product.php?id=' . urlencode($o['id'] ?? '') . '" target="_blank" data-ui="u-f14488a7 dc d2k d2l">' . esc(mb_substr(aff_clean($o['pname'] ?? '', true), 0, 38)) . '</a><br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td>';
         echo '<td><b>' . esc($o['cname'] ?? '') . '</b></td>';
-        echo '<td dir="ltr"><a href="https://wa.me/' . esc($ph_wa) . '" target="_blank" data-ui="u-46a42a97 d1x dc d2l"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chat></use></svg> ' . esc($o['cphone'] ?? '') . '</a></td>';
-        echo '<td>' . esc(($o['city'] ?? '') . ' - ' . mb_substr($o['address'] ?? '', 0, 45)) . '<br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td>';
-        echo '<td><b>' . (int)($o['qty'] ?? 1) . '</b></td>';
-        echo '<td>' . number_format((float)($o['unit'] ?? 0)) . ' ' . esc(wf_ui_currency($o)) . '</td>';
-        echo '<td class="comm">+' . number_format((float)($o['m_earn'] ?? 0), 2) . ' ج.م' . ((float)($o['extra_comm'] ?? 0) > 0 ? '<br><span class="mut">إضافية: ' . number_format((float)$o['extra_comm'], 2) . '</span>' : '') . '</td>';
-        echo '<td>' . number_format((float)($o['ship'] ?? 0)) . ' ' . esc(function_exists('wf_ship_currency') ? wf_ship_currency((string)($o['plat'] ?? ''), (string)($o['ship_country'] ?? '')) : 'ج.م') . '</td>';
         echo '<td><b data-ui="u-8bf4bd79 d2k">' . number_format((float)($o['total'] ?? 0),2) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         $mk_row = ((string)($o['ref'] ?? '') !== '') ? find_marketer_by_code((string)$o['ref']) : null;
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
@@ -1373,20 +1364,8 @@ elseif ($tab === 'orders') {
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
         echo '</select></form>'
            . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a></td>';
-        $an_list = (isset($o['admin_notes']) && is_array($o['admin_notes'])) ? $o['admin_notes'] : [];
+        // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
         echo '<td data-ui="u-5d985ec3 do">';
-        if ($an_list) {
-            $lastn = $an_list[count($an_list) - 1];
-            echo '<div class="mut" style="font-size:12px;margin-bottom:5px;max-width:190px;white-space:normal">' . esc(mb_substr((string)($lastn['note'] ?? ''), 0, 100));
-            if (count($an_list) > 1) echo ' <span style="opacity:.6">(+' . (count($an_list) - 1) . ')</span>';
-            echo '</div>';
-            // كل ملاحظات الإدارة في ديالوج بدل ما تتحشر في الخلية الصغيرة
-            $an_rows = [];
-            foreach ($an_list as $ai => $an) {
-                $an_rows[] = ['ملاحظة ' . ($ai + 1) . ' — ' . trim((string)($an['by'] ?? '') . ' ' . substr((string)($an['at'] ?? ''), 0, 16)), (string)($an['note'] ?? '')];
-            }
-            echo wf_details_btn('كل ملاحظات الإدارة للطلب ' . ($o['order_no'] ?? ''), $an_rows, 'كل الملاحظات (' . count($an_list) . ')');
-        }
         echo '<form method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></td>';
         $sync_st = $o['source_sync_status'] ?? 'pending';
         $sync_badges = ['pending' => ['⏳ لم يُرسل', 'var(--amber-100)', 'var(--amber-600)'], 'processing' => [' جارٍ الإرسال', '#dbeafe', 'var(--electro-blue)'], 'sent' => [' أُرسل للمصدر', '#dcfce7', 'var(--tone-15803d)'], 'failed' => [' فشل الإرسال', '#fee2e2', 'var(--red-700)']];
