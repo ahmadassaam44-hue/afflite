@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 363 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 376 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -208,3 +208,15 @@ so any deployed asset change rewrites the URL and old sessions refetch on their 
 load; error.php (standalone, no config) inlines `@filemtime`. HTML itself is `no-store` and prices
 are server-rendered per request, so content/price updates never depended on these versions.
 Documented in `docs/auto-asset-versioning-2026-10-21.md`.
+
+Details dialogs everywhere (2026-10-21): long details were being crammed into small table cells
+(truncated addresses/notes/reasons at 30–160 chars), and stored reject/cancel reasons were not
+shown at all in several places. New generic dialog: `wf_details_btn()` / `wf_det_text()` /
+`wf_order_reasons_btns()` / `wf_order_details_rows()` (ui-components.php) render a small button
+with a JSON payload (`data-wf-details`); `wfDetails()` in ui.js opens a scrollable key/value modal
+(values rendered via textContent — XSS-safe; styles `.wf-det-*` in style.css). Applied across
+admin orders (+overview), admin notes, source-sync errors, product-request notes, payout
+notes/reject reason (new `reject_reason` field + input), payment links + payment reject reason
+(stored before but never displayed), audit log, site error log, noon code reasons (admin +
+marketer), marketer orders, customer orders (cancel/return reasons now visible), manual products
+full details, and account reviews/news. Documented in `docs/details-dialog-2026-10-21.md`.

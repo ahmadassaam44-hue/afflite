@@ -189,3 +189,83 @@ var state=window._eoState;document.getElementById("eoInputVariant").value=state.
     input.click();
   };
 })();
+
+// ===== ديالوج التفاصيل العام (wfDetails) =====
+// أي زر فيه data-wf-details (JSON: {t: العنوان, r: [[عنوان, قيمة], ...]}) بيفتح ديالوج
+// بالتفاصيل الكاملة — بدل حشر نصوص طويلة في خلايا صغيرة. القيم بتترسم textContent (آمنة).
+(function () {
+  'use strict';
+  var detEl = null, detEsc = null;
+  function closeWfDetails() {
+    if (detEl && detEl.parentNode) detEl.parentNode.removeChild(detEl);
+    detEl = null;
+    if (detEsc) { document.removeEventListener('keydown', detEsc); detEsc = null; }
+    document.body.style.overflow = '';
+  }
+  function mostlyAscii(s) {
+    s = String(s || '');
+    if (!s) return false;
+    var a = (s.match(/[\u0000-\u007F]/g) || []).length;
+    return a / s.length > 0.7;
+  }
+  window.wfDetails = function (title, rows) {
+    closeWfDetails();
+    var wrap = document.createElement('div');
+    wrap.className = 'wf-det-backdrop';
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.setAttribute('aria-label', String(title || 'التفاصيل'));
+    var card = document.createElement('div');
+    card.className = 'wf-det-card';
+    var head = document.createElement('div');
+    head.className = 'wf-det-head';
+    var h = document.createElement('h3');
+    h.textContent = String(title || 'التفاصيل');
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'wf-det-close';
+    x.setAttribute('aria-label', 'إغلاق التفاصيل');
+    x.textContent = '\u00D7';
+    x.addEventListener('click', closeWfDetails);
+    head.appendChild(h);
+    head.appendChild(x);
+    var body = document.createElement('div');
+    body.className = 'wf-det-rows';
+    (Array.isArray(rows) ? rows : []).forEach(function (r) {
+      var l = String((r && r[0]) || '');
+      var v = String((r && r[1] !== undefined && r[1] !== null) ? r[1] : '');
+      if (!l && !v) return;
+      var row = document.createElement('div');
+      row.className = 'wf-det-row';
+      var lab = document.createElement('span');
+      lab.className = 'wf-det-l';
+      lab.textContent = l || '\u2014';
+      var val = document.createElement('span');
+      val.className = 'wf-det-v';
+      val.textContent = v || '\u2014';
+      if (mostlyAscii(v)) val.setAttribute('dir', 'ltr');
+      row.appendChild(lab);
+      row.appendChild(val);
+      body.appendChild(row);
+    });
+    card.appendChild(head);
+    card.appendChild(body);
+    wrap.appendChild(card);
+    wrap.addEventListener('click', function (ev) { if (ev.target === wrap) closeWfDetails(); });
+    detEsc = function (ev) { if (ev.key === 'Escape') closeWfDetails(); };
+    document.addEventListener('keydown', detEsc);
+    document.body.appendChild(wrap);
+    document.body.style.overflow = 'hidden';
+    detEl = wrap;
+    try { x.focus(); } catch (e) {}
+  };
+  window.wfDetailsClose = closeWfDetails;
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('[data-wf-details]') : null;
+    if (!btn) return;
+    ev.preventDefault();
+    var d = null;
+    try { d = JSON.parse(btn.getAttribute('data-wf-details') || 'null'); } catch (e) { d = null; }
+    if (d && (d.t || d.r)) window.wfDetails(d.t || 'التفاصيل', d.r || []);
+  });
+})();

@@ -417,6 +417,29 @@ chk($out,$fail,'asset version = filemtime',$v15,(string)(int)filemtime('/app/ass
 chk($out,$fail,'asset version memoized',wf_asset_v('style.css'),$v15);
 chk($out,$fail,'missing asset falls back numeric',ctype_digit(wf_asset_v('ui.js')),true);
 chk($out,$fail,'traversal stays numeric',ctype_digit(wf_asset_v('../../etc/passwd')),true);
+// ---- 16) ديالوج التفاصيل العام: التفاصيل الطويلة في ديالوج + أسباب الرفض/الإلغاء ظاهرة ----
+if(!function_exists('wf_details_btn'))require_once '/app/ui-components.php';
+$b16=wf_details_btn('سبب الإلغاء',[['السبب','العميل اعتذر عن الاستلام'],['حقل فاضي','']],'التفاصيل');
+chk($out,$fail,'details button attr',strpos($b16,'data-wf-details="')!==false,true);
+preg_match('/data-wf-details="([^"]*)"/',$b16,$m16);
+$d16=json_decode(html_entity_decode($m16[1],ENT_QUOTES,'UTF-8'),true);
+chk($out,$fail,'details payload title',$d16['t'],'سبب الإلغاء');
+chk($out,$fail,'details payload rows',count($d16['r']),2);
+chk($out,$fail,'empty value becomes dash',$d16['r'][1][1],'—');
+chk($out,$fail,'no rows no button',wf_details_btn('t',[['','']]),'');
+$pt16=wf_det_text(str_repeat('كلمة ',40),30,'عنوان','التفاصيل');
+chk($out,$fail,'preview truncated with ellipsis',strpos($pt16,'wf-det-preview')!==false&&strpos($pt16,'…')!==false,true);
+chk($out,$fail,'preview has dialog button',strpos($pt16,'data-wf-details')!==false,true);
+chk($out,$fail,'empty text renders dash only',wf_det_text(''),'—');
+$o16=['order_no'=>'ORD-16','cancel_reason'=>'إلغاء المسوق: العميل غير متاح','address'=>'شارع طويل جدا في مدينة كبيرة','city'=>'القاهرة','qty'=>2];
+chk($out,$fail,'cancel reason button shown',strpos(wf_order_reasons_btns($o16),'سبب الإلغاء')!==false,true);
+chk($out,$fail,'reason button danger style',strpos(wf_order_reasons_btns($o16),'wf-det-danger')!==false,true);
+chk($out,$fail,'no reasons no buttons',wf_order_reasons_btns(['order_no'=>'X']),'');
+$rows16=wf_order_details_rows($o16);
+$has16=false; foreach($rows16 as $r16x) if($r16x[0]==='العنوان بالتفصيل'&&$r16x[1]===$o16['address'])$has16=true;
+chk($out,$fail,'full address in dialog rows',$has16,true);
+$x16=wf_details_btn('t',[['سبب','<script>"x"</script>']]);
+chk($out,$fail,'payload is XSS-safe',strpos($x16,'<script>')===false&&strpos($x16,'&quot;')!==false,true);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -429,6 +452,36 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
     assert.ok(/wf_asset_v\(|filemtime/.test(srcx),f+' must version assets automatically');
   }
   assert.ok(/function wf_asset_v\(/.test(fs.readFileSync(path.join(repo,'config.php'),'utf8')),'wf_asset_v helper must exist in config.php');
+}
+// Task-15 wiring: ديالوج تفاصيل عام — التفاصيل الطويلة وأسباب الرفض/الإلغاء في ديالوج بدل الحشر في خلايا صغيرة
+{
+  const uic=fs.readFileSync(path.join(repo,'ui-components.php'),'utf8');
+  for(const fn of ['function wf_details_btn(','function wf_det_text(','function wf_order_reasons_btns(','function wf_order_details_rows('])
+    assert.ok(uic.includes(fn),'ui-components.php must define '+fn);
+  const js=fs.readFileSync(path.join(repo,'assets/ui.js'),'utf8');
+  assert.ok(/window\.wfDetails\s*=/.test(js),'ui.js must expose wfDetails()');
+  assert.ok(js.includes('[data-wf-details]'),'ui.js must wire data-wf-details buttons');
+  assert.ok(/val\.textContent/.test(js),'dialog values must be rendered as text (XSS-safe)');
+  const css=fs.readFileSync(path.join(repo,'assets/style.css'),'utf8');
+  for(const sel of ['.wf-det-backdrop{','.wf-det-card{','.wf-det-row{','.btn.wf-det-danger{','.wf-det-preview{'])
+    assert.ok(css.includes(sel),'style.css must include '+sel);
+  const adm=fs.readFileSync(path.join(repo,'dashboard/admin.php'),'utf8');
+  assert.ok((adm.match(/wf_details_btn\(|wf_det_text\(/g)||[]).length>=10,'admin must open details dialogs (orders, notes, payouts, payments, audit, noon, errors)');
+  assert.ok(adm.includes('wf_order_reasons_btns('),'admin orders must surface cancel/return/payment-reject reasons');
+  assert.ok(/payment_reject_reason/.test(adm),'payment reject reason must be visible to admin');
+  assert.ok(/payout_reject_reason/.test(adm)&&/'reject_reason'\]/.test(adm),'payout reject must record a reason');
+  const mk=fs.readFileSync(path.join(repo,'dashboard/marketer.php'),'utf8');
+  assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_reasons_btns('),'marketer orders must have details dialogs + reasons');
+  const ord=fs.readFileSync(path.join(repo,'dashboard/orders.php'),'utf8');
+  assert.ok(ord.includes('wf_details_btn(')&&ord.includes('wf_order_reasons_btns('),'customer orders must show reasons and full details');
+  const noon=fs.readFileSync(path.join(repo,'dashboard/noon.php'),'utf8');
+  assert.ok(noon.includes('wf_det_text('),'noon reject notes must open a dialog');
+  const po=fs.readFileSync(path.join(repo,'dashboard/_payout.php'),'utf8');
+  assert.ok(po.includes('wf_details_btn(')&&po.includes('reject_reason'),'marketer payout history must show reject reason + notes');
+  const mp=fs.readFileSync(path.join(repo,'dashboard/manual_products.php'),'utf8');
+  assert.ok(mp.includes('wf_details_btn('),'manual products list must open a full-details dialog');
+  const idx=fs.readFileSync(path.join(repo,'dashboard/index.php'),'utf8');
+  assert.ok(idx.includes('wf_det_text(')&&idx.includes('wf_details_btn('),'account page reviews/news must open dialogs for long text');
 }
 // Task-13 wiring: «تعذر الحفظ» في تعديل المنتجات + سعر الأدمن override = السعر النهائي
 {
@@ -679,7 +732,7 @@ assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock r
 if(fs.existsSync(path.join(NM,'php-parser'))){
   const Engine=require(path.join(NM,'php-parser'));
   const parser=new Engine({parser:{suppressErrors:false,version:'8.3'},ast:{withPositions:false},lexer:{comment_tokens:false}});
-  for(const file of ['config.php','manual_products_lib.php','ui-components.php','supabase.php','index.php','store.php','landing.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php','dashboard/cart.php','dashboard/checkout_cart.php','dashboard/orders.php','dashboard/admin_shipping.php','dashboard/shipping.php'])parser.parseCode(src(file),file);
+  for(const file of ['config.php','manual_products_lib.php','ui-components.php','supabase.php','index.php','store.php','landing.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php','dashboard/cart.php','dashboard/checkout_cart.php','dashboard/orders.php','dashboard/admin_shipping.php','dashboard/shipping.php','dashboard/admin.php','dashboard/noon.php','dashboard/_payout.php','dashboard/index.php'])parser.parseCode(src(file),file);
 }
 (async()=>{
   const php=new PHP(await loadNodeRuntime('8.3',{emscriptenOptions:{processId:1,locateFile:p=>path.isAbsolute(p)?p:path.join(wasmDir,p)}}));

@@ -205,6 +205,24 @@ if ($status !== '') {
         // شحن المنتج (لو المالك حدده) بيظهر في القائمة عشان يعرف أنهي منتجات ليها سعر ثابت
         $row_ship = (isset($d['ship_fee']) && is_numeric($d['ship_fee'])) ? (' — شحن ' . rtrim(rtrim(number_format((float)$d['ship_fee'], 2, '.', ''), '0'), '.') . ' ' . $row_cur) : '';
         echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ' . esc($row_cur) . esc($row_ship) . ' — ' . esc($row_country) . ' — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
+        // التفاصيل الإضافية (وصف/ألوان/مقاسات/خامة/وزن/أبعاد/SKU/أسئلة) في ديالوج بدل ما تتحشر في السطر
+        $mp_rows = [];
+        $mp_push = function ($l, $v) use (&$mp_rows) { $v = trim((string)$v); if ($v !== '') $mp_rows[] = [$l, $v]; };
+        $mp_push('السعر', $r['price'] . ' ' . $row_cur);
+        $mp_push('الدولة', $row_country);
+        $mp_push('القسم', (string)($r['category'] ?? ''));
+        $mp_push('الكمية', (string)($d['stock'] ?? ''));
+        $mp_push('كود SKU', (string)($d['sku'] ?? ''));
+        if (isset($d['ship_fee']) && is_numeric($d['ship_fee'])) $mp_push('سعر الشحن', rtrim(rtrim(number_format((float)$d['ship_fee'], 2, '.', ''), '0'), '.') . ' ' . $row_cur);
+        $mp_push('الخامة', (string)($d['material'] ?? ''));
+        $mp_push('الوزن', (string)($d['weight'] ?? ''));
+        $mp_push('الأبعاد', (string)($d['dimensions'] ?? ''));
+        $mp_push('الألوان', is_array($d['colors'] ?? null) ? implode(' | ', (array)$d['colors']) : (string)($d['colors'] ?? ''));
+        $mp_push('المقاسات', is_array($d['sizes'] ?? null) ? implode(' | ', (array)$d['sizes']) : (string)($d['sizes'] ?? ''));
+        $mp_push('الوصف التفصيلي', (string)($d['description'] ?? ''));
+        $mp_push('أسئلة شائعة', is_array($d['faqs'] ?? null) ? implode("\n", (array)$d['faqs']) : (string)($d['faqs'] ?? ''));
+        $mp_push('عدد الصور', count($imgs) . ' صورة');
+        echo wf_details_btn('تفاصيل المنتج #' . (int)$r['id'] . ' — ' . (string)$r['name'], $mp_rows) . ' ';
         echo '<a class="btn sm outline" href="?edit=' . (int)$r['id'] . '">تعديل</a> ';
         echo '<form method="post" style="display:inline">' . csrf_field() . '<input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="' . (int)$r['id'] . '"><button class="btn sm outline" type="submit">حذف</button></form>';
         echo '</div>';

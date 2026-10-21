@@ -492,10 +492,13 @@ if (isset($_POST['comm_email'], $_POST['comm_new_status'])) {
 // ===== رفض طلب سحب (مع إرجاع المبلغ لرصيد المسوق) =====
 if (isset($_POST['payout_reject'])) {
     $ri = (int)$_POST['payout_reject'];
-    jupdate('payouts.json', function (&$po) use ($ri) {
+    // سبب رفض السحب (اختياري) — بيتخزن ويظهر للمسوق في سجله وفي ديالوج التفاصيل
+    $r_reason = mb_substr(trim((string)($_POST['payout_reject_reason'] ?? '')), 0, 300);
+    jupdate('payouts.json', function (&$po) use ($ri, $r_reason) {
         if (!is_array($po) || !isset($po[$ri])) return false;
         if (($po[$ri]['status'] ?? '') !== 'قيد المراجعة') return false;
         $po[$ri]['status'] = 'مرفوض';
+        $po[$ri]['reject_reason'] = $r_reason;
         $po[$ri]['processed_at'] = date('c');
         $po[$ri]['processed_by'] = $user['email'] ?? 'admin';
         return true;
@@ -508,9 +511,9 @@ if (isset($_POST['payout_reject'])) {
             update_user($who, function (&$u) use ($amt) {
                 $u['balance'] = round((float)($u['balance'] ?? 0) + $amt, 2);
             });
-            notify_user($who, '↩️ تم رفض طلب السحب (' . number_format($amt, 2) . ' ج.م) ورجوع المبلغ لرصيدك', 'dashboard/balance.php');
+            notify_user($who, '↩️ تم رفض طلب السحب (' . number_format($amt, 2) . ' ج.م) ورجوع المبلغ لرصيدك' . ($r_reason !== '' ? ' — السبب: ' . $r_reason : ''), 'dashboard/balance.php');
         }
-        log_audit('reject_payout', $who, ['amount' => $amt, 'idx' => $ri]);
+        log_audit('reject_payout', $who, ['amount' => $amt, 'idx' => $ri, 'reason' => $r_reason]);
         if ($amt > 0 && $who !== '') balance_ledger_add($who, 'payout_refund', $amt, 'رفض طلب السحب — إرجاع المبلغ');
         $msg = 'تم رفض طلب السحب وإرجاع ' . number_format($amt, 2) . ' ج.م لرصيد المسوق ✅';
     }
@@ -818,7 +821,7 @@ if ($tab === 'overview') {
             echo '<tr><td dir="ltr">' . esc(substr((string)($er['at'] ?? ''), 0, 19)) . '</td>'
                . '<td dir="ltr">' . esc(mb_substr((string)($er['uri'] ?? ''), 0, 60)) . '</td>'
                . '<td dir="ltr">' . esc((string)($er['file'] ?? '')) . '</td>'
-               . '<td>' . esc(mb_substr((string)($er['msg'] ?? ''), 0, 160)) . '</td></tr>';
+               . '<td>' . wf_det_text($er['msg'] ?? '', 100, 'تفاصيل خطأ الموقع', 'الرسالة كاملة') . '</td></tr>';
         }
         echo '</table></div></section>';
     }
@@ -1031,7 +1034,7 @@ if ($tab === 'overview') {
     if ($last10) {
         echo '<table class="data-table rtable" data-ui-table="pending" aria-busy="true"><tr><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الهاتف</th><th>المحافظة</th><th>الإجمالي</th><th>الحالة</th></tr>';
         foreach ($last10 as $o) {
-            echo '<tr><td>' . esc(substr($o['at'] ?? '', 0, 16)) . '</td><td><b>' . esc(mb_substr(aff_clean($o['pname'] ?? '', true), 0, 35)) . '</b></td><td>' . esc($o['cname'] ?? '') . '</td><td dir="ltr">' . esc($o['cphone'] ?? '') . '</td><td>' . esc($o['city'] ?? '') . '</td><td><b data-ui="u-9aa26154 d2p">' . number_format($o['total'] ?? 0) . ' ج.م</b></td><td><span class="badge green">' . esc(status_label($o['status'] ?? '')) . '</span></td></tr>';
+            echo '<tr><td>' . esc(substr($o['at'] ?? '', 0, 16)) . '</td><td><b>' . esc(mb_substr(aff_clean($o['pname'] ?? '', true), 0, 35)) . '</b></td><td>' . esc($o['cname'] ?? '') . '</td><td dir="ltr">' . esc($o['cphone'] ?? '') . '</td><td>' . esc($o['city'] ?? '') . '</td><td><b data-ui="u-9aa26154 d2p">' . number_format($o['total'] ?? 0) . ' ج.م</b></td><td><span class="badge green">' . esc(status_label($o['status'] ?? '')) . '</span>' . wf_order_reasons_btns($o) . ' ' . wf_details_btn('تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o)) . '</td></tr>';
         }
         echo '</table>';
     } else {
@@ -1292,7 +1295,7 @@ elseif ($tab === 'orders') {
         echo '<td>' . esc(order_variant_label($o) ?: '—') . '</td>';
         echo '<td><b>' . esc($o['cname'] ?? '') . '</b></td>';
         echo '<td dir="ltr"><a href="https://wa.me/' . esc($ph_wa) . '" target="_blank" data-ui="u-46a42a97 d1x dc d2l"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chat></use></svg> ' . esc($o['cphone'] ?? '') . '</a></td>';
-        echo '<td>' . esc(($o['city'] ?? '') . ' - ' . mb_substr($o['address'] ?? '', 0, 45)) . '</td>';
+        echo '<td>' . esc(($o['city'] ?? '') . ' - ' . mb_substr($o['address'] ?? '', 0, 45)) . '<br>' . wf_details_btn('تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o), 'كل التفاصيل') . '</td>';
         echo '<td><b>' . (int)($o['qty'] ?? 1) . '</b></td>';
         echo '<td>' . number_format((float)($o['unit'] ?? 0)) . ' ' . esc(wf_ui_currency($o)) . '</td>';
         echo '<td class="comm">+' . number_format((float)($o['m_earn'] ?? 0), 2) . ' ج.م' . ((float)($o['extra_comm'] ?? 0) > 0 ? '<br><span class="mut">إضافية: ' . number_format((float)$o['extra_comm'], 2) . '</span>' : '') . '</td>';
@@ -1302,7 +1305,7 @@ elseif ($tab === 'orders') {
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
         echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
-        echo '</select></form></td>';
+        echo '</select></form>' . wf_order_reasons_btns($o) . '</td>';
         $an_list = (isset($o['admin_notes']) && is_array($o['admin_notes'])) ? $o['admin_notes'] : [];
         echo '<td data-ui="u-5d985ec3 do">';
         if ($an_list) {
@@ -1310,6 +1313,12 @@ elseif ($tab === 'orders') {
             echo '<div class="mut" style="font-size:12px;margin-bottom:5px;max-width:190px;white-space:normal">' . esc(mb_substr((string)($lastn['note'] ?? ''), 0, 100));
             if (count($an_list) > 1) echo ' <span style="opacity:.6">(+' . (count($an_list) - 1) . ')</span>';
             echo '</div>';
+            // كل ملاحظات الإدارة في ديالوج بدل ما تتحشر في الخلية الصغيرة
+            $an_rows = [];
+            foreach ($an_list as $ai => $an) {
+                $an_rows[] = ['ملاحظة ' . ($ai + 1) . ' — ' . trim((string)($an['by'] ?? '') . ' ' . substr((string)($an['at'] ?? ''), 0, 16)), (string)($an['note'] ?? '')];
+            }
+            echo wf_details_btn('كل ملاحظات الإدارة للطلب ' . ($o['order_no'] ?? ''), $an_rows, 'كل الملاحظات (' . count($an_list) . ')');
         }
         echo '<form method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></td>';
         $sync_st = $o['source_sync_status'] ?? 'pending';
@@ -1318,7 +1327,7 @@ elseif ($tab === 'orders') {
         echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $snb[1] . ';color:' . $snb[2] . '">' . wf_svg_icon('clock',16) . esc(wf_ui_plain($snb[0])) . '</span>';
         if ($sync_st === 'failed') {
             echo ' <form data-confirm="إعادة إرسال الطلب للمصدر قد تبدأ تنفيذه. تحقق من عدم إرساله بالفعل ثم أكد المحاولة." method="post" data-ui="u-dd31d1d6 d3a d19"><input type="hidden" name="retry_order" value="' . (int)$idx . '"><button class="btn sm outline" data-ui="u-45cb4c14 d3b do"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-refresh></use></svg> إعادة المحاولة</button></form>';
-            if (!empty($o['source_last_error'])) echo '<br><span class="mut" data-ui="u-5d985ec3 do">' . esc(mb_substr($o['source_last_error'], 0, 40)) . '</span>';
+            if (!empty($o['source_last_error'])) echo '<br>' . wf_det_text($o['source_last_error'], 40, 'خطأ الإرسال للمصدر — طلب ' . ($o['order_no'] ?? ''), 'تفاصيل الخطأ');
         }
         echo '</td>';
         echo '</tr>';
@@ -1762,7 +1771,7 @@ elseif ($tab === 'requests') {
             echo '<td><b>' . esc($r['product_name'] ?? '') . '</b><br><span dir="ltr" class="mut">#' . esc($rid) . '</span></td>';
             echo '<td><b>' . esc($r['user_name'] ?? '') . '</b><br><span dir="ltr" class="mut">' . esc($r['user_email'] ?? '') . '</span>' . (!empty($r['user_ref']) ? '<br><span class="badge blue">' . esc($r['user_ref']) . '</span>' : '') . '</td>';
             echo '<td>' . (!empty($r['expected_price']) ? '<b data-ui="u-61a4e8ed d1x">' . esc($r['expected_price']) . ' ج.م</b>' : '—') . '</td>';
-            echo '<td data-ui="u-5bb593c0 d4p">' . esc(mb_substr($r['notes'] ?? '', 0, 70)) . '</td>';
+            echo '<td data-ui="u-5bb593c0 d4p">' . wf_det_text($r['notes'] ?? '', 70, 'تفاصيل طلب التوفير #' . $rid, 'التفاصيل الكاملة') . '</td>';
             echo '<td><span style="padding:3px 10px;border-radius:99px;font-size:12px;font-weight:800;background:' . $sb[1] . ';color:' . $sb[2] . '">' . wf_svg_icon('clock',16) . esc(wf_ui_plain($sb[0])) . '</span></td>';
             echo '<td><b>' . count($r['messages'] ?? []) . '</b> رسالة' . ($unr > 0 ? ' <span class="badge neutral">' . $unr . ' جديد</span>' : '') . '</td>';
             echo '<td dir="ltr">' . esc(substr($r['updated_at'] ?? '', 0, 16)) . '</td>';
@@ -1902,8 +1911,10 @@ elseif ($tab === 'commissions') {
             echo '<td><b data-ui="u-5d7ebccb du">' . number_format((float)($p['amount'] ?? 0), 2) . ' ج.م</b></td>';
             echo '<td><span data-ui="u-f85aae59 d4z d36 do dc d50 d3s">' . esc(payout_method_icon($p['method'] ?? '') . ' ' . payout_method_label($p['method'] ?? '')) . '</span></td>';
             echo '<td dir="ltr"><b>' . esc($p['account_number'] ?? '—') . '</b></td>';
-            echo '<td data-ui="u-1839f8cc d51 do">' . esc($p['notes'] ?? '—') . '</td>';
-            echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $stc[0] . ';color:' . $stc[1] . '">' . esc($st) . '</span></td>';
+            echo '<td data-ui="u-1839f8cc d51 do">' . wf_det_text($p['notes'] ?? '', 40, 'ملاحظات طلب السحب — ' . (string)($p['name'] ?: ($p['user'] ?? '')), 'الملاحظات') . '</td>';
+            echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $stc[0] . ';color:' . $stc[1] . '">' . esc($st) . '</span>'
+               . ($st === 'مرفوض' && trim((string)($p['reject_reason'] ?? '')) !== '' ? '<br>' . wf_details_btn('سبب رفض طلب السحب — ' . (string)($p['name'] ?: ($p['user'] ?? '')), [['المبلغ', number_format((float)($p['amount'] ?? 0), 2) . ' ج.م'], ['السبب', (string)($p['reject_reason'] ?? '')], ['وقت القرار', substr((string)($p['processed_at'] ?? ''), 0, 16)]], 'سبب الرفض', 'wf-det-danger') : '')
+               . '</td>';
             echo '<td dir="ltr">' . esc($p['transfer_ref'] ?? '—') . '</td>';
             echo '<td dir="ltr">' . esc(substr($p['at'] ?? '', 0, 16)) . '</td>';
             echo '<td>';
@@ -1912,7 +1923,7 @@ elseif ($tab === 'commissions') {
                    . '<input type="hidden" name="payout_idx" value="' . (int)$pi . '">'
                    . '<input name="payout_transfer" placeholder="رقم التحويل..." data-ui="u-c3ef82dd d52 d39 dt d1u do">'
                    . '<button class="btn sm" data-ui="u-803b951b d4e d3v d4i do"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-check></use></svg> اعتماد</button></form> ';
-                echo '<form method="post" data-ui="u-dd31d1d6 d3a d19" data-confirm="رفض طلب السحب ورجوع المبلغ لرصيد المسوق؟">' . csrf_field() . '<input type="hidden" name="payout_reject" value="' . (int)$pi . '"><button class="btn sm outline" data-ui="u-21e1823e d4i do d53"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-close></use></svg> رفض</button></form>';
+                echo '<form method="post" data-ui="u-dd31d1d6 d3a d19" data-confirm="رفض طلب السحب ورجوع المبلغ لرصيد المسوق؟">' . csrf_field() . '<input type="hidden" name="payout_reject" value="' . (int)$pi . '"><input name="payout_reject_reason" maxlength="300" placeholder="سبب الرفض (يظهر للمسوق)" data-ui="u-452d5a05 d3f d59 do dt d2w"><button class="btn sm outline" data-ui="u-21e1823e d4i do d53"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-close></use></svg> رفض</button></form>';
             } else {
                 echo '<span class="mut">—</span>';
             }
@@ -1943,7 +1954,7 @@ elseif ($tab === 'payments') {
             echo '<td>' . esc($o['cname'] ?? '') . '<br><a dir="ltr" href="' . esc(wa_link($o['cphone'] ?? '')) . '" target="_blank" data-ui="u-5d985ec3 do">' . esc($o['cphone'] ?? '') . ' </a></td>';
             echo '<td>' . esc(mb_substr($o['pname'] ?? '', 0, 45)) . '<br><span class="mut">' . esc(order_variant_label($o)) . ' × ' . (int)($o['qty'] ?? 1) . '</span></td>';
             echo '<td><b>' . number_format((float)($o['total'] ?? 0), 2) . '</b></td>';
-            echo '<td dir="ltr" data-ui="u-5ddbf195 d55 d56 do">' . esc(mb_substr($o['link'] ?? $o['notes'] ?? '', 0, 90)) . '</td>';
+            echo '<td dir="ltr" data-ui="u-5ddbf195 d55 d56 do">' . wf_det_text($o['link'] ?? $o['notes'] ?? '', 60, 'رابط/بيانات خدمة الطلب ' . ($o['order_no'] ?? ''), 'البيانات كاملة') . '</td>';
             echo '<td>' . (!empty($pay['proof']) ? '<a href="' . esc(asset_url($pay['proof'])) . '" target="_blank"><img alt="إيصال تحويل الطلب" loading="lazy" width="64" height="64" src="' . esc(asset_url($pay['proof'])) . '" data-ui="u-87746886 d57 d58 d2t d1u dt"></a>' : '<span class="mut">—</span>') . '</td>';
             echo '<td data-ui="u-5d985ec3 do">' . esc(pay_channels()[$pay['channel'] ?? '']['label'] ?? ($pay['channel'] ?? '')) . '<br><span dir="ltr">' . esc($pay['sender'] ?? '') . '</span></td>';
             echo '<td><span style="background:' . $badge[0] . ';padding:3px 8px;border-radius:99px;font-size:12px;font-weight:800;white-space:nowrap">' . $badge[1] . '</span>' . (!empty($o['hevo_order']) ? '<br><span class="mut" dir="ltr">#' . esc($o['hevo_order']) . '</span>' : '') . '</td>';
@@ -1957,6 +1968,8 @@ elseif ($tab === 'payments') {
                 echo '<span class="mut" data-ui="u-5d985ec3 do">بانتظار الدفع والإيصال</span>';
             } elseif ($ps === 'rejected') {
                 echo '<span class="mut" data-ui="u-5d985ec3 do">بانتظار إعادة رفع الإيصال</span>';
+                // سبب رفض الإيصال كان بيتسجل وما بيظهرش في أي مكان — بقى ظاهر هنا وفي ديالوج
+                if (!empty($o['payment_reject_reason'])) echo '<br>' . wf_det_text($o['payment_reject_reason'], 30, 'سبب رفض إيصال الطلب ' . ($o['order_no'] ?? ''), 'سبب الرفض');
             } else {
                 echo '<span class="mut" data-ui="u-5d985ec3 do">لا يوجد إيصال للمراجعة</span>';
             }
@@ -1978,7 +1991,7 @@ elseif ($tab === 'audit') {
             echo '<td><span class="badge">' . esc($lg['actor_role'] ?? 'admin') . '</span></td>';
             echo '<td dir="ltr">' . esc($lg['action'] ?? '') . '</td>';
             echo '<td dir="ltr">' . esc($lg['target'] ?? '') . '</td>';
-            echo '<td data-ui="u-0b090b68 d5a">' . esc(mb_substr($lg['details'] ?? '', 0, 90)) . '</td>';
+            echo '<td data-ui="u-0b090b68 d5a">' . wf_det_text($lg['details'] ?? '', 90, 'تفاصيل العملية: ' . (string)($lg['action'] ?? ''), 'التفاصيل الكاملة') . '</td>';
             echo '<td dir="ltr" class="mut">' . esc($lg['ip'] ?? '') . '</td>';
             echo '</tr>';
         }
@@ -2269,7 +2282,7 @@ elseif ($tab === 'noon' && function_exists('noon_stats_for')) {
             echo '<tr><td data-label="المسوق">' . esc((string)($nc['name'] ?? '')) . '<br><small dir="ltr">' . esc((string)($nc['email'] ?? '')) . '</small></td>'
                . '<td data-label="الكود" dir="ltr"><b>' . esc((string)($nc['code'] ?? '')) . '</b></td>'
                . '<td data-label="الحالة">' . $slbl . '</td>'
-               . '<td data-label="السبب">' . esc((string)($nc['reject_note'] ?? '')) . '</td>'
+               . '<td data-label="السبب">' . wf_det_text($nc['reject_note'] ?? '', 30, 'سبب ' . $slbl . ' الكود ' . (string)($nc['code'] ?? ''), 'السبب كامل') . '</td>'
                . '<td data-label="وقت القرار">' . esc(substr((string)($nc['decided_at'] ?? ''), 0, 16)) . '</td>'
                . '<td data-label="بواسطة" dir="ltr">' . esc((string)($nc['decided_by'] ?? '')) . '</td></tr>';
         }
