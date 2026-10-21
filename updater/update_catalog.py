@@ -26,12 +26,71 @@ changed_files = set()
 # إشعارات «منتج جديد» لكل المسوقين: لقطه ids قبل التحديث، ومقارنة بعد التشغيل
 _NOTIFY_PLATFORMS = ('hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'sources', 'cezma')
 
-def snapshot_platform_ids():
-    return {p: {str(x.get('id')) for x in jload(p + '.json', [])} for p in _NOTIFY_PLATFORMS}
+def _cezma_shard_files():
+    import glob as _g
+    return sorted(_g.glob(os.path.join(DATA, 'cezma_shards', 'lite_cezma_*.json')))
 
-def push_new_product_notifications(pre_ids, cap_details=10):
-    new_rows = []
+def _cezma_shard_name(path):
+    return 'cezma_shards/' + os.path.basename(path)
+
+def snapshot_platform_ids():
+    snap = {p: {str(x.get('id')) for x in jload(p + '.json', [])} for p in _NOTIFY_PLATFORMS}
+    shards = {}
+    for path in _cezma_shard_files():
+        rel = os.path.relpath(path, ROOT).replace(os.sep, '/')
+        rows = jload(_cezma_shard_name(path), [])
+        shards[rel] = {str(x.get('id')) for x in rows if isinstance(x, dict)}
+    snap['cezma_shards'] = shards
+    return snap
+
+def stamp_new_products(pre_ids):
+    """ختم المنتجات الجديدة بـ added_at — عشان «أحدث المنتجات» تبقى اللي نزلت كل يوم فعلًا.
+
+    منصات المخزون بتتختم وقت الإضافة أصلًا؛ دي شبكة أمان لأي مسار نسي الختم.
+    سيزما (shards) مابتتختمش في cezma_build — فبنختم هنا الجديد منها،
+    وبنرجّع صفوفها الجديدة عشان تدخل في إشعارات المسوقين.
+    """
+    new_cezma = []
     for p in _NOTIFY_PLATFORMS:
+        if p == 'cezma':
+            continue
+        rows = jload(p + '.json', [])
+        if not isinstance(rows, list) or not rows:
+            continue
+        old = pre_ids.get(p) or set()
+        hit = False
+        for r in rows:
+            if isinstance(r, dict) and str(r.get('id')) not in old and not r.get('added_at'):
+                r['added_at'] = TODAY
+                hit = True
+        if hit and jsave(p + '.json', rows):
+            changed_files.add('data/' + p + '.json')
+    pre_shards = pre_ids.get('cezma_shards') or {}
+    for path in _cezma_shard_files():
+        rel = os.path.relpath(path, ROOT).replace(os.sep, '/')
+        name = _cezma_shard_name(path)
+        rows = jload(name, [])
+        if not isinstance(rows, list) or not rows:
+            continue
+        old = pre_shards.get(rel) or set()
+        hit = False
+        for r in rows:
+            if not isinstance(r, dict) or str(r.get('id')) in old:
+                continue
+            if str(r.get('name') or '').strip():
+                new_cezma.append(('cezma', r))
+            if not r.get('added_at'):
+                r['added_at'] = TODAY
+                hit = True
+        if hit and jsave(name, rows):
+            changed_files.add('data/' + name)
+    return new_cezma
+
+def push_new_product_notifications(pre_ids, extra_rows=(), cap_details=10):
+    new_rows = [t for t in extra_rows if str((t[1] or {}).get('name') or '').strip()]
+    for p in _NOTIFY_PLATFORMS:
+        if p == 'cezma':
+            continue
         old = pre_ids.get(p) or set()
         for r in jload(p + '.json', []):
             if str(r.get('id')) not in old and str(r.get('name') or '').strip():
@@ -3755,6 +3814,12 @@ if __name__ == '__main__':
     except Exception as _ce:
         log('❌ visual_cezma failed:', str(_ce)[:200])
         summary['visual_cezma'] = {'error': str(_ce)[:200]}
+    # ختم added_at للمنتجات الجديدة (قبل بناء البكتس عشان تطلع فيها هي كمان)
+    _new_cezma_rows = []
+    try:
+        _new_cezma_rows = stamp_new_products(_pre_platform_ids)
+    except Exception as _spe:
+        log('❌ stamp added_at failed:', str(_spe)[:200])
     try:
         rebuild_cezma_buckets()
     except Exception as _be:
@@ -3763,7 +3828,7 @@ if __name__ == '__main__':
     jsave('price_history.json', history)
     # إشعار كل المسوقين بالمنتجات اللي نزلت في التشغيل ده (فشل الإشعارات ما يوقفش النشر)
     try:
-        _new_cnt = push_new_product_notifications(_pre_platform_ids)
+        _new_cnt = push_new_product_notifications(_pre_platform_ids, _new_cezma_rows)
         if _new_cnt:
             summary['new_product_notifications'] = _new_cnt
             changed_files.add('data/notifications.json')

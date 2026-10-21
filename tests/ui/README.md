@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 336 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 345 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -173,3 +173,15 @@ reverses its commission. `wf_admin_pending_counts()` feeds red sidebar badges (p
 marketers registered in the last 7 days, payouts قيد المراجعة, pending product requests, support
 threads whose last message is from the user). Documented in
 `docs/marketer-notifications-order-edit-admin-counters-2026-10-21.md`.
+
+Physical price cut & true latest products (2026-10-21): owner decision — every physical sale price
+drops **12%** (`PRICE_GLOBAL_DISCOUNT = 0.12`), applied inside `wf_price_uplift()` (the single
+funnel every `store_price()`/`display_price()`/order path ends in) after the 2% margin, so source
+files stay untouched and hourly cron updates pick the cut up automatically. Manual products and
+digital platforms (`g2g`/`social`/`smm`/`hevo`) are outside `wf_is_physical_plat()` and keep their
+prices. «أحدث المنتجات» no longer trusts file order: the catalogue branch, the home window,
+`cezma_recent_products()` and the marketer «الأحدث» sort now order by the `added_at` stamp
+(desc; unstamped legacy rows keep reversed file order via PHP 8's stable usort). The updater gained
+`stamp_new_products()`: it snapshots ids (including cezma shards) before the run, stamps `added_at`
+on anything new, and feeds new cezma rows into the marketer notification broadcast. Documented in
+`docs/physical-price-cut-and-true-latest-2026-10-21.md`.

@@ -28,7 +28,12 @@ const FIXTURES={
  ],
  'product_requests.json':[{status:'pending',name:'ر1'},{status:'available',name:'ر2'},{status:'pending',name:'ر3'}],
  'support_chats.json':{t1:{messages:[{sender:'user'},{sender:'admin'}]},t2:{messages:[{sender:'admin'},{sender:'user'}]}},
- 'notifications.json':[]
+ 'notifications.json':[],
+ 'timehand.json':[
+  {id:'t1',name:'منتج قديم من غير ختم',price:1000,price_text:'1000 جنيه',currency:'جنيه',category:'إلكترونيات',stock:5,images:[]},
+  {id:'t2',name:'منتج نزل امبارح',price:500,price_text:'500 جنيه',currency:'جنيه',category:'إلكترونيات',stock:5,images:[],added_at:'2026-10-19'},
+  {id:'t3',name:'منتج نزل النهارده',price:250,price_text:'250 جنيه',currency:'جنيه',category:'إلكترونيات',stock:5,images:[],added_at:'2026-10-21'}
+ ]
 };
 const PHP_TESTS=String.raw`
 <?php
@@ -370,9 +375,38 @@ chk($out,$fail,'cancelled reverses comm',$ords[1]['comm_state'],'reversed');
 chk($out,$fail,'cancelled reason from marketer',mb_strpos($ords[1]['cancel_reason'],'إلغاء المسوق')===0,true);
 chk($out,$fail,'cancelled no longer editable',wf_marketer_can_edit_order($ords[1],$MK),false);
 chk($out,$fail,'cancel shipped rejected',wf_marketer_cancel_order('ORD-TEST-3',['email'=>'y@x.com','ref_code'=>'MK999'])['ok'],false);
+// ---- 13) تخفيض 12% على الفيزيائي (نقطة مركزية واحدة) + «أحدث المنتجات» بختم added_at ----
+chk($out,$fail,'global discount constant',PRICE_GLOBAL_DISCOUNT,0.12);
+// timehand: 1000 ×1.02 = 1020 ×0.88 = 897.6 → تقريب 5/0 (ceil) = 900
+chk($out,$fail,'uplift timehand discounted',wf_price_uplift('timehand',1000.0),900.0);
+chk($out,$fail,'uplift cezma discounted',wf_price_uplift('cezma',500.0),450.0);
+chk($out,$fail,'uplift digital untouched',wf_price_uplift('g2g',560.0),560.0);
+chk($out,$fail,'uplift social untouched',wf_price_uplift('social',75.0),75.0);
+chk($out,$fail,'uplift manual untouched',wf_price_uplift('manual',300.0),300.0);
+chk($out,$fail,'physical plat list covers stock cats',wf_is_physical_plat('shopmart')&&wf_is_physical_plat('m5zoon')&&!wf_is_physical_plat('manual')&&!wf_is_digital_plat('shopmart'),true);
+// نافذة الرئيسية: الترتيب بختم added_at — فالآخر = الأحدث فعلًا مش ترتيب الملف
+$w3=wf_home_platform_window('timehand',3);
+chk($out,$fail,'window sorted by added_at',array_column($w3,'id'),['t1','t2','t3']);
+$w2=wf_home_platform_window('timehand',2);
+chk($out,$fail,'window tail is newest stamped',array_column($w2,'id'),['t2','t3']);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
+// Task-12 wiring: تخفيض 12% مركزي + «أحدث المنتجات» = ختم added_at فعلًا
+{
+  const cfg12=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  assert.ok(/define\('PRICE_GLOBAL_DISCOUNT', 0\.12\)/.test(cfg12),'the 12% discount constant must exist');
+  const upl=cfg12.match(/function wf_price_uplift\([\s\S]*?\n\}/);
+  assert.ok(upl&&/round\(\$v \* \(1 - PRICE_GLOBAL_DISCOUNT\), 2\)/.test(upl[0]),'wf_price_uplift (the single physical sale-price funnel) must apply the 12% cut');
+  assert.ok(/usort\(\$arr, function \(\$a, \$b\) \{[\s\S]{0,140}added_at/.test(cfg12),'the catalog «أحدث المنتجات» branch must sort by added_at desc');
+  assert.ok(/usort\(\$all, function \(\$a, \$b\) \{[\s\S]{0,140}added_at/.test(cfg12),'the home window must sort by added_at before slicing the newest 900');
+  assert.ok(/usort\(\$newest_first,[\s\S]{0,160}added_at/.test(cfg12),'cezma_recent_products must prefer stamped rows');
+  const mk12=fs.readFileSync(path.join(repo,'dashboard/marketer.php'),'utf8');
+  assert.ok(/usort\(\$mall,[\s\S]{0,160}added_at/.test(mk12),'marketer «الأحدث» sort must use added_at');
+  const upd12=fs.readFileSync(path.join(repo,'updater/update_catalog.py'),'utf8');
+  assert.ok(/def stamp_new_products/.test(upd12)&&/r\['added_at'\] = TODAY/.test(upd12),'the updater must stamp added_at on new products (incl. cezma shards)');
+  assert.ok(/cezma_shards/.test(upd12)&&/_new_cezma_rows = stamp_new_products\(_pre_platform_ids\)/.test(upd12),'cezma shards must be snapshotted, stamped and fed to marketer notifications');
+}
 // Task-11 wiring: إشعارات لكل المسوقين + تعديل/إلغاء المسوق لطلباته + عدّادات سايدبار الأدمن
 {
   const cfg11=fs.readFileSync(path.join(repo,'config.php'),'utf8');
