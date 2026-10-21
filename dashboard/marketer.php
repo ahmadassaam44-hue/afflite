@@ -709,7 +709,13 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
         $digital_key = $mmode === 'digital' ? 'g2g' : 'social';
         $mres = sb_platform_products($digital_key, $mq, 1, PHP_INT_MAX, 'all', $mcat === 'all' ? '' : $mcat);
         $mall = $mres ? $mres[0] : [];
-        if ($msort === 'new') $mall = array_reverse($mall);
+        if ($msort === 'new') {
+            $mall = array_reverse($mall);
+            // الأحدث فعلًا: ختم added_at تنازليًا (usort مستقر — القديم من غير ختم يفضل بترتيبه)
+            usort($mall, function ($a, $b) {
+                return strcmp((string)($b['added_at'] ?? ''), (string)($a['added_at'] ?? ''));
+            });
+        }
         elseif ($msort === 'featured') {
             // Same existing featured heuristic as the homepage; no fabricated feature flags/ratings.
             usort($mall, static function ($a, $b) {

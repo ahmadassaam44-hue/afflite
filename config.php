@@ -872,13 +872,20 @@ function wf_round_price($v) {
 // زيادة 2% على أسعار المنتجات الفيزيكال بس (vendoor/timehand/safqa/angazny/m5zoon/shopmart/cezma).
 // الرقمي والسوشيال ميديا مش متأثرين. التقريب بيفضل زي تقريب الموقع (لأقرب 5 أو 0).
 define('PHYS_PRICE_UPLIFT', 0.02);
+// قرار الإدارة الدائم (2026-10-21): تخفيض 12% على كل أسعار البيع الفيزيائية
+// (المنصات في wf_is_physical_plat — اليدوي والرقمي g2g/social/smm/hevo خارج القاعدة).
+// بيُطبَّق في wf_price_uplift وقت القراءة، فملفات المصدر بتفضل زي ما هي وكل تحديث cron بياخده تلقائي.
+if (!defined('PRICE_GLOBAL_DISCOUNT')) define('PRICE_GLOBAL_DISCOUNT', 0.12);
 function wf_is_physical_plat($plat) {
     return in_array(strtolower(trim((string)$plat)), ['vendoor', 'timehand', 'safqa', 'angazny', 'm5zoon', 'shopmart', 'cezma'], true);
 }
 function wf_price_uplift($plat, $v) {
     $v = (float)$v;
     if ($v <= 0 || !wf_is_physical_plat($plat)) return $v;
-    return wf_round_price(round($v * (1 + PHYS_PRICE_UPLIFT), 2));
+    $v = round($v * (1 + PHYS_PRICE_UPLIFT), 2);
+    // التخفيض الدائم 12% بعد هامش الربح — السعر النهائي ≈ السعر القديم × 0.88 (بتقريب 5/0 المعتاد)
+    $v = round($v * (1 - PRICE_GLOBAL_DISCOUNT), 2);
+    return wf_round_price($v);
 }
 function round_half_or_one($v) {
     $v = (float)$v;
@@ -1569,6 +1576,10 @@ function wf_home_platform_window($pk, $limit) {
     }
     if ($items === null) {
         $all = ($key === 'cezma') ? cezma_recent_products(900) : platform_products_lite($key);
+        // ترتيب ascending بختم added_at (اللي من غير ختم يفضلوا الأول بترتيب الملف) — فالآخر يبقى الأحدث فعلًا
+        usort($all, function ($a, $b) {
+            return strcmp((string)($a['added_at'] ?? ''), (string)($b['added_at'] ?? ''));
+        });
         if (count($all) > 900) $all = array_slice($all, -900);
         $items = array_values($all);
         if (!is_dir($dir)) @mkdir($dir, 0775, true);
@@ -1935,6 +1946,10 @@ function cezma_recent_products($limit) {
         }
     }
 
+    // المنتجات المختومة بـ added_at (الجديد اليومي) تتقدم على ترتيب ذيول الشظايا
+    usort($newest_first, function ($a, $b) {
+        return strcmp((string)($b['added_at'] ?? ''), (string)($a['added_at'] ?? ''));
+    });
     $tail = array_reverse(array_slice($newest_first, 0, $limit));
     return apply_product_overrides($tail, 'cezma');
 }
@@ -2384,8 +2399,12 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         if ($n === 0) continue;
 
         if ($type === 'new' || $cat === 'أحدث المنتجات') {
-            // أحدث المنتجات من كل منصة
+            // الأحدث فعلًا: ترتيب تنازلي بختم added_at (اللي بينزل جديد كل يوم) —
+            // والمنتجات القديمة من غير ختم تيجي بعدها بترتيب الملف مقلوب (usort مستقر في PHP8)
             $arr = array_reverse($arr);
+            usort($arr, function ($a, $b) {
+                return strcmp((string)($b['added_at'] ?? ''), (string)($a['added_at'] ?? ''));
+            });
         } elseif ($type === 'best' || $cat === 'الأكثر مبيعاً') {
             // الأكثر مبيعاً من كل منصة (مع تدوير لضمان تنوع المنتجات عن بداية القائمة)
             $off = max(1, (int)floor($n * 0.2));
