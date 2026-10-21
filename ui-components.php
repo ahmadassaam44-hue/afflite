@@ -280,6 +280,9 @@ function wf_store_header($args = []) {
     $value   = (string)($args['search_value'] ?? '');
     $holder  = (string)($args['search_placeholder'] ?? 'ابحث عن منتج بالاسم أو القسم...');
     $hidden  = is_array($args['hidden'] ?? null) ? $args['hidden'] : [];
+    // المفضلة ❤ — تُعرض كأيكونة قلب بعدد المنتجات المحفوظة (رابط فاضي = تتخفى)
+    $wish    = array_key_exists('wish_href', $args) ? (string)$args['wish_href'] : '';
+    $wish_n  = (int)($args['wish_count'] ?? 0);
     $cart    = (string)($args['cart_href'] ?? 'dashboard/cart.php');
     $cnt     = (int)($args['cart_count'] ?? 0);
     $cart_t  = array_key_exists('cart_total', $args) && $args['cart_total'] !== null ? (float)$args['cart_total'] : null;
@@ -314,6 +317,10 @@ function wf_store_header($args = []) {
         $html .= '<a class="icon-btn" href="' . esc((string)($account['href'] ?? 'login.php')) . '" aria-label="' . esc((string)($account['label'] ?? 'حسابي')) . '">'
               .  '<span class="avatar">' . esc(mb_substr((string)($account['initial'] ?? 'ح'), 0, 1)) . '</span>'
               .  '<span class="text-right hidden md:block"><span class="acct-cap">' . esc((string)($account['caption'] ?? 'حسابي')) . '</span><span class="acct-name">' . esc((string)($account['label'] ?? 'حسابي')) . '</span></span></a>';
+    }
+    if ($wish !== '') {
+        $html .= '<a href="' . esc($wish) . '" class="icon-btn wish-wrap" aria-label="المفضلة (' . $wish_n . ' منتجات)" title="المفضلة">'
+              .  wf_icon('heart', 20) . ($wish_n > 0 ? '<span class="wish-count">' . $wish_n . '</span>' : '') . '</a>';
     }
     $html .= '<a href="' . esc($cart) . '" class="cart-wrap" aria-label="عربة التسوق (' . $cnt . ' منتجات)">'
           .  '<span class="cart-icon-wrap">' . wf_icon('cart', 22) . '<span class="cart-count">' . $cnt . '</span></span>'
@@ -361,6 +368,7 @@ function wf_site_section_tabs($pre = '') {
                 ['برامج جوميا', $pre . 'affiliate-program.php?p=jumia'],
                 ['تتبع طلبك', $pre . 'dashboard/orders.php'],
                 ['عربة التسوق', $pre . 'dashboard/cart.php'],
+                ['المفضلة', $pre . 'dashboard/wishlist.php'],
                 ['الدعم والمساعدة', $pre . 'dashboard/support.php?ctx=customer'],
                 ['سياسة الاسترجاع والاستبدال', $pre . 'pages.php?p=returns'],
                 ['الشروط والأحكام', $pre . 'pages.php?p=terms'],
@@ -386,6 +394,14 @@ function wf_bottom_nav($active = 'home', $args = []) {
         'cart'    => ['dashboard/cart.php', 'cart', 'السلة' . ($cnt ? ' (' . $cnt . ')' : '')],
         'support' => ['dashboard/support.php', 'chat', 'الدعم'],
     ];
+    // المفضلة ❤ جنب السلة في شريط الموبايل — تظهر بس لما الصفحة تمرر wish_href
+    $wish_href = (string)($args['wish_href'] ?? '');
+    $wish_n    = (int)($args['wish_count'] ?? 0);
+    if ($wish_href !== '') {
+        $items = array_slice($items, 0, 3, true)
+               + ['wish' => [$wish_href, 'heart', 'المفضلة' . ($wish_n ? ' (' . $wish_n . ')' : '')]]
+               + array_slice($items, 3, null, true);
+    }
     foreach ($hide as $hide_key) unset($items[$hide_key]);
     $account_href = (string)($args['account_href'] ?? 'dashboard/');
     if ($user) $items['account'] = [$account_href, 'user', 'حسابي'];

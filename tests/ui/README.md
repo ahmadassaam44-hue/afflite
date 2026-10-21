@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 376 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 392 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -220,3 +220,24 @@ notes/reject reason (new `reject_reason` field + input), payment links + payment
 (stored before but never displayed), audit log, site error log, noon code reasons (admin +
 marketer), marketer orders, customer orders (cancel/return reasons now visible), manual products
 full details, and account reviews/news. Documented in `docs/details-dialog-2026-10-21.md`.
+
+Wishlist everywhere, robust order JSON, quantity caps, marketer commission field and remember-me
+(2026-10-21): (1) a real `dashboard/wishlist.php` page now lists the hearts (same storage key as
+every `[data-wishlist]` button: email for members, `guest_<visitor_id>` otherwise) with server-side
+prices, link-based removal (`?rm=plat%23id`), csrf-protected add-to-cart and `data-easy-order`
+«اطلب الآن»; the heart + its count appear in `wf_store_header` (homepage & storefront),
+`wf_bottom_nav` (mobile, opt-in via `wish_href`), the panel topbar and both sidebars — logged-in
+users also got the cart icon in the panel topbar. (2) «تعذر تأكيد استجابة الخادم» fixed at both
+ends: orders.php now answers every ajax order POST as JSON (missing id, `ob_end_clean` before
+echo, `register_shutdown_function` fallback), config.php suppresses `display_errors` for XHR, and
+ui.js parses responses leniently (`wfParseJsonLoose`: raw JSON, else the first `{…"ok"…}` object)
+with honest copy that tells the user to check «طلباتي» before resubmitting; the landing inline
+order finally sends `X-Requested-With`. (3) Quantity: `eoRecalc` writes the clamped qty back into
+the visible input, `updateTotal`/bqty are capped at 99 (input `max` + inline clamp). (4) The order
+dialog renders the marketer extra-commission field (`#eoMkExtraInput`, gated to logged-in marketer
+accounts, seeded with their own ref code when the payload has none) — ui.js already recalculated
+with it, the field simply never existed. (5) «تذكرني»: `remember_issue/remember_clear/
+remember_login` in config.php (30-day `wf_remember` cookie `email|token`, only `sha256(token)`
+stored in the Supabase profile, `hash_equals` compare, full session hardening + binding on auto
+login, cleared on logout), checkboxes on login.php (unchecked) and register.php (pre-checked, both
+success paths). Documented in `docs/wishlist-remember-robust-orders-2026-10-21.md`.

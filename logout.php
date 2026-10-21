@@ -1,6 +1,10 @@
 <?php
 require_once __DIR__ . '/config.php';
 
+// «تذكرني»: مسح الكوكي الدائم + التوكن من البروفايل قبل تدمير الجلسة
+$lo_email = (string)($_SESSION['user']['email'] ?? '');
+if (function_exists('remember_clear')) remember_clear($lo_email);
+
 // تنظيف جلسة آمن: تفريغ البيانات + حذف الكوكي + تدمير الجلسة
 $_SESSION = [];
 if (ini_get("session.use_cookies")) {

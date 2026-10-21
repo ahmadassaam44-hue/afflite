@@ -972,6 +972,12 @@ if (session_status() === PHP_SESSION_NONE) {
     ]);
     @session_start();
 }
+// طلبات الـ AJAX (fetch): أي تحذير PHP مطبوع كان بيكسر رد الـ JSON فيظهر للمستخدم
+// «تعذر تأكيد استجابة الخادم» رغم إن الطلب اتسجل — نخفي العرض ونكتفي باللوج.
+if (strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest') {
+    @ini_set('display_errors', '0');
+    @ini_set('log_errors', '1');
+}
 // صفحات النماذج/التوكنات لا تُخزّن مؤقتاً حتى لا يُعاد نموذج بتوكن جلسة قديمة أو مشتركة.
 if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
@@ -4388,6 +4394,15 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
     $ship_currency_by_key = ['default' => $ship_currency] + $ship_currency_by_key;
     $ref_val = active_ref($default_ref);
     $csrf_val = csrf_token();
+    // خانة العمولة الإضافية في ديالوج الطلب: لأي حساب مسوق مسجّل دخول — من أي صفحة
+    // (الرئيسية / تفاصيل المنتج / اللوحة). لو الديالوج اتفتح من غير ref، الطلب بيتسجّل
+    // بكود المسوق نفسه عشان العمولة تضاف لرصيده.
+    $eo_mk_code = '';
+    if (MARKETER_EXTRA_COMM_ON && function_exists('wf_is_marketer_account') && ($eo_u = current_user()) && wf_is_marketer_account($eo_u)) {
+        $eo_aff = function_exists('ensure_user_affiliate') ? ensure_user_affiliate((string)($eo_u['email'] ?? '')) : null;
+        $eo_mk_code = (string)($eo_aff['ref_code'] ?? '');
+        if ($eo_mk_code !== '' && $ref_val === '') $ref_val = $eo_mk_code;
+    }
     ?>
     
     <?php wf_ui_sprite(); ?>
@@ -4488,6 +4503,14 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
                 <label><svg class=wf-ico aria-hidden=true><use href=#icon-edit></use></svg> ملاحظات إضافية للمندوب (اختياري)</label>
                 <input type="text" name="notes" id="eoBuyerNotes" placeholder="مثال: الاتصال قبل الوصول بنصف ساعة">
               </div>
+
+              <?php if ($eo_mk_code !== ''): ?>
+              <div class="eo-field" id="eoMkExtraWrap">
+                <label for="eoMkExtraInput"><svg class=wf-ico aria-hidden=true focusable="false"><use href=#icon-wallet></use></svg> عمولتك الإضافية على كل قطعة (ج.م) — اختيارية</label>
+                <input type="number" id="eoMkExtraInput" name="mk_extra" min="0" max="<?php echo (float)MAX_MARKUP_AMOUNT; ?>" step="1" value="0" inputmode="decimal" placeholder="0" oninput="eoRecalc()" onchange="eoRecalc()">
+                <p class="field-hint" style="margin:4px 0 0;font-size:12px">بتتحسب فوق سعر القطعة — العميل بيدفعها ضمن الإجمالي، وانت بتكسبها عمولة على كودك <b dir="ltr"><?php echo esc($eo_mk_code); ?></b> (الحد الأقصى <?php echo (float)MAX_MARKUP_AMOUNT; ?> ج.م).</p>
+              </div>
+              <?php endif; ?>
 
               <div class="eo-invoice">
                 <div class="eo-inv-row"><span>قيمة المنتجات (<span id="eoInvQty">1</span> قطعة):</span><span><b id="eoInvSub">0</b> <span data-eo-currency>ج.م</span></span></div>
@@ -6047,3 +6070,68 @@ function ensure_admin_account() {
     }
 }
 ensure_admin_account();
+
+// ============================================================================
+// «تذكرني» — دخول تلقائي بكوكي دائم (30 يوم) من غير ما يطلب الإيميل والباسورد تاني
+//  - الكوكي: wf_remember = email|token — والتوكن نفسه بيتخزن كـ sha256 في بروفايل
+//    المستخدم (جدول profiles على Supabase) فما حدش يقدر يستخرجه من قاعدة البيانات.
+//  - التحقق بيقارن hash_equals على الهاش — وكوكي httponly/samesite=Lax/secure على HTTPS.
+//  - الخروج (logout.php) بي مسح الكوكي + التوكن من البروفايل.
+// ============================================================================
+function remember_cookie_secure() {
+    return !empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off';
+}
+function remember_issue($email) {
+    $email = strtolower(trim((string)$email));
+    if ($email === '' || !function_exists('update_user')) return false;
+    $tok  = bin2hex(random_bytes(32));
+    $hash = hash('sha256', $tok);
+    update_user($email, function (&$u) use ($hash) { $u['remember_token'] = $hash; });
+    $val = rawurlencode($email) . '|' . $tok;
+    if (!headers_sent()) {
+        setcookie('wf_remember', $val, [
+            'expires'  => time() + 30 * 86400,
+            'path'     => '/',
+            'secure'   => remember_cookie_secure(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+    $_COOKIE['wf_remember'] = $val;
+    return true;
+}
+function remember_clear($email = '') {
+    if (isset($_COOKIE['wf_remember']) && !headers_sent()) {
+        setcookie('wf_remember', '', ['expires' => time() - 86400, 'path' => '/', 'secure' => remember_cookie_secure(), 'httponly' => true, 'samesite' => 'Lax']);
+    }
+    unset($_COOKIE['wf_remember']);
+    // مسح التوكن من البروفايل كمان عشان أي نسخة قديمة من الكوكي تبطل فورًا
+    $email = strtolower(trim((string)$email));
+    if ($email !== '' && function_exists('update_user')) {
+        update_user($email, function (&$u) { unset($u['remember_token']); });
+    }
+}
+function remember_login() {
+    if (session_status() !== PHP_SESSION_ACTIVE || !empty($_SESSION['user'])) return;
+    if (empty($_COOKIE['wf_remember']) || strpos((string)$_COOKIE['wf_remember'], '|') === false) return;
+    [$b64email, $tok] = explode('|', (string)$_COOKIE['wf_remember'], 2);
+    $email = strtolower(trim(rawurldecode((string)$b64email)));
+    $tok   = trim((string)$tok);
+    if ($email === '' || strpos($email, '@') === false || $tok === '') { remember_clear(); return; }
+    $u = function_exists('find_user') ? find_user($email) : null;
+    if (!$u || empty($u['remember_token']) || !hash_equals((string)$u['remember_token'], hash('sha256', $tok))) {
+        remember_clear();
+        return;
+    }
+    // دخول تلقائي: نفس خطوات login.php (تجديد معرّف الجلسة + تثبيتها + منع صلاحيات قديمة)
+    session_harden();
+    unset($_SESSION['is_admin'], $_SESSION['admin_role'], $_SESSION['admin_gate'], $_SESSION['admin_seen_at']);
+    $_SESSION['user'] = [
+        'name'  => (string)($u['name'] ?? $email),
+        'email' => $email,
+        'role'  => wf_user_role($u),
+    ];
+    if (!empty($u['ref_code'])) $_SESSION['user']['ref_code'] = (string)$u['ref_code'];
+    session_bind();
+}
+remember_login();

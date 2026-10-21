@@ -23,6 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'role'  => $login_role,
             ];
             session_bind();                          // تثبيت الجلسة على IP/المتصفح
+            // «تذكرني»: كوكي دائم 30 يوم — يدخل تلقائيًا من غير ما يطلب الإيميل والباسورد تاني
+            if (!empty($_POST['remember'])) remember_issue((string)$found['email']);
             $login_dest = $login_role === 'admin' ? 'dashboard/admin.php' : 'dashboard/marketer.php';
             header('Location: ' . $login_dest);
             exit;
@@ -61,7 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input id="loginPass" type="password" name="password" autocomplete="current-password" placeholder="••••••••" required data-ui="u-ed3f6d2a uke">
       <button type="button" data-password-toggle="loginPass" aria-pressed="false" data-ui="u-05f0db69 ujp ukf ukg ukh uki ude uh2 udd udt ue6 uhm">إظهار</button>
     </div>
-    <div data-ui="u-c13c8048 ug4 ukj"><a href="forgot.php" data-ui="u-5e65e7af ued ui2 ue6">نسيت كلمة السر؟</a></div>
+    <div data-ui="u-c13c8048 ug4 ukj" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin:0"><input type="checkbox" name="remember" value="1"> تذكرني — ادخل تلقائيًا من غير باسورد</label>
+      <a href="forgot.php" data-ui="u-5e65e7af ued ui2 ue6">نسيت كلمة السر؟</a>
+    </div>
     <button type="submit" class="btn pri" data-ui="u-5cf62db6 uf9 uem ukk">تسجيل الدخول</button>
   </form>
   <div data-ui="u-4291c26c ukl ukm ukn udn">
