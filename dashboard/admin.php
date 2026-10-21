@@ -262,7 +262,14 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
             $msg = 'نوع التعديل غير معروف.';
         } else {
             $saved = false;
-            jupdate('product_overrides.json', function (&$ov) use ($ok, $action, &$saved) {
+            $fail_reason = '';
+            // قسم المنتج الحالي وقت التعديل: الفورم بيعرضه كخيار، فالسيرفر لازم يقبله حتى لو مش من الأقسام الموحدة
+            $cur_cat = '';
+            if ($action === 'full_details' || $action === 'category') {
+                $cur_prod = function_exists('find_product_by_id') ? find_product_by_id($raw_id, $plat) : null;
+                $cur_cat = is_array($cur_prod) ? trim((string)($cur_prod['category'] ?? '')) : '';
+            }
+            jupdate('product_overrides.json', function (&$ov) use ($ok, $action, &$saved, &$fail_reason, $cur_cat) {
                 if (!is_array($ov)) $ov = [];
                 if (!isset($ov[$ok]) || !is_array($ov[$ok])) $ov[$ok] = [];
                 if ($action === 'hide') $ov[$ok]['hidden'] = empty($ov[$ok]['hidden']);
@@ -273,30 +280,34 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
                 } elseif ($action === 'title') $ov[$ok]['title'] = mb_substr(trim((string)($_POST['ov_title'] ?? '')), 0, 160);
                 elseif ($action === 'category') {
                     $category = trim((string)($_POST['ov_category'] ?? ''));
-                    if ($category === '' || in_array($category, wf_category_canonical(), true)) $ov[$ok]['category'] = $category;
+                    if ($category === '' || in_array($category, wf_category_canonical(), true) || ($cur_cat !== '' && $category === $cur_cat)) $ov[$ok]['category'] = $category;
+                    else { $fail_reason = 'القسم المختار غير معروف: ' . mb_substr($category, 0, 60); return false; }
                 } elseif ($action === 'image') {
                     $image = trim((string)($_POST['ov_image'] ?? ''));
-                    if ($image === '' || preg_match('~^(https?://|/)~i', $image)) $ov[$ok]['image'] = mb_substr($image, 0, 600);
+                    if ($image === '' || wf_image_url_allowed($image)) $ov[$ok]['image'] = mb_substr($image, 0, 600);
+                    else { $fail_reason = 'رابط الصورة غير مقبول: ' . mb_substr($image, 0, 80); return false; }
                 } elseif ($action === 'full_details') {
                     $name = trim((string)($_POST['full_name'] ?? ''));
                     $category = trim((string)($_POST['full_category'] ?? ''));
                     $price_raw = trim((string)($_POST['full_price'] ?? ''));
-                    if ($name === '' || mb_strlen($name) > 200 || !is_numeric($price_raw) || (float)$price_raw < 0
-                        || ($category !== '' && !in_array($category, wf_category_canonical(), true))) return false;
-                    $split_lines = function ($value, $max_items = 40) {
-                        $parts = preg_split('/[\r\n,]+/u', (string)$value) ?: [];
+                    if ($name === '' || mb_strlen($name) > 200) { $fail_reason = 'الاسم فاضي أو أطول من 200 حرف'; return false; }
+                    if (!is_numeric($price_raw) || (float)$price_raw < 0) { $fail_reason = 'السعر لازم يكون رقمًا صحيحًا أو عشريًا 0 أو أكبر'; return false; }
+                    if ($category !== '' && !in_array($category, wf_category_canonical(), true) && $category !== $cur_cat) { $fail_reason = 'القسم غير معروف: ' . mb_substr($category, 0, 60); return false; }
+                    $split_lines = function ($value, $max_items = 40, $pattern = '/[\r\n,]+/u') {
+                        $parts = preg_split($pattern, (string)$value) ?: [];
                         $parts = array_slice(array_values(array_unique(array_filter(array_map('trim', $parts)))), 0, $max_items);
                         return $parts;
                     };
-                    $images = $split_lines($_POST['full_images'] ?? '', 30);
-                    foreach ($images as $image) if (!preg_match('~^(https?://|/)~i', $image)) return false;
+                    // الصور: رابط في كل سطر — والفواصل ماتبقتش فاصل تقسيم عشان فيه روابط CDN بتحتوي فاصلة في اسم الملف
+                    $images = $split_lines($_POST['full_images'] ?? '', 30, '/[\r\n]+/u');
+                    foreach ($images as $image) if (!wf_image_url_allowed($image)) { $fail_reason = 'رابط صورة غير مقبول: ' . mb_substr($image, 0, 80); return false; }
                     $variants_raw = trim((string)($_POST['full_variants'] ?? ''));
                     $variants = $variants_raw === '' ? [] : json_decode($variants_raw, true);
-                    if (!is_array($variants) || count($variants) > 120) return false;
+                    if (!is_array($variants) || count($variants) > 120) { $fail_reason = 'JSON الخيارات المركبة غير صالح (أو أكثر من 120 خيارًا)'; return false; }
                     foreach ($variants as $variant) {
-                        if (!is_array($variant)) return false;
+                        if (!is_array($variant)) { $fail_reason = 'كل خيار مركّب لازم يكون JSON object'; return false; }
                         $variant_image = trim((string)($variant['image'] ?? ''));
-                        if ($variant_image !== '' && !preg_match('~^(https?://|/)~i', $variant_image)) return false;
+                        if ($variant_image !== '' && !wf_image_url_allowed($variant_image)) { $fail_reason = 'رابط صورة الخيار غير مقبول: ' . mb_substr($variant_image, 0, 80); return false; }
                     }
                     $ov[$ok]['name'] = mb_substr($name, 0, 200);
                     $ov[$ok]['category'] = $category;
@@ -322,7 +333,7 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
                     log_audit('product_override_' . $action, $ok, $action === 'full_details' ? ['fields' => 'name,category,price,images,description,options,specifications'] : []);
                     $msg = 'تم حفظ التعديلات ✅';
                 }
-            } else $msg = 'تعذر الحفظ. راجع الاسم والسعر والقسم وروابط الصور.';
+            } else $msg = 'تعذر الحفظ' . ($fail_reason !== '' ? ': ' . $fail_reason : '. راجع الاسم والسعر والقسم وروابط الصور.');
         }
     }
 }
