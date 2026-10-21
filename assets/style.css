@@ -291,18 +291,18 @@ img,video,iframe,canvas{max-inline-size:100%}
 
 /* ===== ديالوج التفاصيل العام (wfDetails) — تفاصيل كاملة بدل نصوص محشورة في خلايا صغيرة ===== */
 .wf-det-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:1300;display:flex;align-items:flex-start;justify-content:center;padding:24px 14px;overflow:auto}
-.wf-det-card{background:var(--surface,#fff);color:var(--slate-900);border-radius:18px;max-inline-size:640px;inline-size:100%;padding:18px;box-shadow:0 24px 60px rgba(15,23,42,.35)}
+.wf-det-card{background:var(--surface,#fff);color:var(--slate-900);border-radius:18px;max-inline-size:min(980px,100%);inline-size:100%;padding:22px;box-shadow:0 24px 60px rgba(15,23,42,.35)}
 .wf-det-head{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-block-end:12px}
 .wf-det-head h3{margin:0;font-size:var(--fs-16,16px);font-weight:900}
 .wf-det-close{border:none;background:var(--slate-100,#f1f5f9);border-radius:10px;min-block-size:40px;min-inline-size:40px;cursor:pointer;font-size:18px;line-height:1}
-.wf-det-rows{display:flex;flex-direction:column;gap:8px;max-block-size:min(62dvh,540px);overflow-y:auto}
-.wf-det-row{display:grid;grid-template-columns:140px 1fr;gap:8px;background:var(--slate-50,#f8fafc);border:1px solid var(--slate-200,#e2e8f0);border-radius:12px;padding:10px 12px;font-size:var(--fs-13,13px)}
+.wf-det-rows{display:flex;flex-direction:column;gap:8px;max-block-size:min(84dvh,920px);overflow-y:auto}
+.wf-det-row{display:grid;grid-template-columns:150px 1fr;gap:8px;background:var(--slate-50,#f8fafc);border:1px solid var(--slate-200,#e2e8f0);border-radius:12px;padding:12px 14px;font-size:var(--fs-13,13px)}
 .wf-det-l{font-weight:800;color:var(--slate-600,#475569)}
 .wf-det-v{word-break:break-word;white-space:pre-wrap;line-height:1.8}
 .wf-det-btn{white-space:nowrap}
 .btn.wf-det-danger{color:var(--red-700,#b91c1c);border-color:#fecaca;background:#fef2f2}
 .wf-det-preview{display:inline-block;max-inline-size:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
-@media(max-width:520px){.wf-det-row{grid-template-columns:1fr}.wf-det-backdrop{padding:12px 8px}}
+@media(max-width:520px){.wf-det-row{grid-template-columns:1fr}.wf-det-backdrop{padding:10px 6px}.wf-det-card{padding:14px;border-radius:14px}.wf-det-rows{max-block-size:min(88dvh,960px)}}
 
 /* المفضلة ❤ في هيدر المتجر الموحّد — أيقونة قلب بعدّاد منتجات (نفس نمط عدّاد السلة) */
 .header-icons .icon-btn.wish-wrap{position:relative}

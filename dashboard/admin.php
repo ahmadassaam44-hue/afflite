@@ -182,17 +182,30 @@ if (isset($_POST['order_note_idx'])) {
         $msg = 'اكتب نص الملاحظة الأول.';
     } else {
         $saved_note = false;
-        jupdate('orders.json', function (&$os) use ($ni, $ntext, &$saved_note) {
+        $saved_ref = '';
+        $saved_ono = '';
+        jupdate('orders.json', function (&$os) use ($ni, $ntext, &$saved_note, &$saved_ref, &$saved_ono) {
             if (!is_array($os) || !isset($os[$ni])) return false;
             if (!isset($os[$ni]['admin_notes']) || !is_array($os[$ni]['admin_notes'])) $os[$ni]['admin_notes'] = [];
             $os[$ni]['admin_notes'][] = ['note' => $ntext, 'by' => admin_actor(), 'at' => date('c')];
             $os[$ni]['admin_note'] = $ntext;
             $saved_note = true;
+            $saved_ref  = (string)($os[$ni]['ref'] ?? '');
+            $saved_ono  = (string)($os[$ni]['order_no'] ?? '');
             return true;
         }, []);
         if ($saved_note) {
             $msg = 'تم حفظ ملاحظة الإدارة ✅';
             log_audit('order_note', '#' . $ni, ['len' => mb_strlen($ntext)]);
+            // الملاحظة توصل للمسوق صاحب الطلب في شات الدعم بتاعه + إشعار — مش بس تتخزن على الطلب
+            if ($saved_ref !== '' && ($mk_note = find_marketer_by_code($saved_ref))) {
+                $mk_note_email = strtolower(trim((string)($mk_note['email'] ?? '')));
+                if ($mk_note_email !== '') {
+                    $mk_note_text = '📝 ملاحظة إدارة على الطلب ' . $saved_ono . ': ' . $ntext;
+                    if (function_exists('wf_support_admin_message')) wf_support_admin_message($mk_note_email, $mk_note_text);
+                    notify_user($mk_note_email, $mk_note_text, 'dashboard/support.php?ctx=marketer');
+                }
+            }
         } else {
             $msg = '⚠️ تعذر حفظ الملاحظة (الطلب غير موجود).';
         }
