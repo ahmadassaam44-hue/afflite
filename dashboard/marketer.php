@@ -631,19 +631,13 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
            . '<div style="grid-column:1/-1"><label class="field-label">ملاحظات</label><input name="notes" maxlength="500" value="' . esc((string)($mk_edit_o['notes'] ?? '')) . '"></div>'
            . '<div style="grid-column:1/-1"><button class="btn pri" type="submit">حفظ التعديلات</button> <a class="btn outline" href="?mtab=orders">رجوع</a></div></form></div>';
     }
-    echo '<div class="card" data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف</th><th>المحافظة والعنوان</th><th>كمية</th><th>سعر البيع</th><th>الشحن</th><th>الإجمالي</th><th>عمولتي</th><th>الحالة</th><th>إجراءات</th></tr>';
+    echo '<div class="card" data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتج</th><th>الإجمالي</th><th>عمولتي</th><th>الحالة</th><th>إجراءات</th></tr>';
     foreach (array_reverse($forders) as $o) {
         echo '<tr>';
         echo '<td dir="ltr" data-ui="u-75c8ccd8 d8e dc">' . esc($o['order_no'] ?? '—') . '</td>';
         echo '<td>' . esc(substr($o['at'] ?? '', 0, 10)) . '</td>';
-        echo '<td><b>' . esc(mb_substr($o['pname'] ?? '', 0, 35)) . '</b></td>';
-        echo '<td>' . esc(order_variant_label($o) ?: '—') . '</td>';
-        echo '<td>' . esc($o['cname'] ?? '') . '</td>';
-        echo '<td dir="ltr">' . esc($o['cphone'] ?? '') . (!empty($o['cphone2']) ? '<br><small class="mut">' . esc($o['cphone2']) . '</small>' : '') . '</td>';
-        echo '<td><b>' . esc($o['city'] ?? '') . '</b> — ' . esc(mb_substr($o['address'] ?? '', 0, 35)) . '<br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td>';
-        echo '<td>' . esc($o['qty'] ?? 1) . '</td>';
-        echo '<td>' . number_format($o['unit'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</td>';
-        echo '<td>' . number_format($o['ship'] ?? 0) . ' ج.م</td>';
+        // كل تفاصيل الطلب (العميل والهاتف والعنوان والكمية والسعر والشحن) في الديالوج الكبير — الجدول بسيط
+        echo '<td><b>' . esc(mb_substr($o['pname'] ?? '', 0, 35)) . '</b><br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td>';
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format($o['m_earn'] ?? 0, 2) . ' ج.م</td>';
         echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';
