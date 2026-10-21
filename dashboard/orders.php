@@ -2,7 +2,8 @@
 // طلب الأوردر من الديالوج (ajax_order): الرد لازم يفضل JSON نضيف حتى لو حصل تحذير PHP
 // أو مخرجات غير متوقعة من الاستضافة — أي حاجة تانية بتترمي وبيخرج JSON بس.
 // بدونه كان أي تحذير بيكسر الرد وتظهر رسالة «تعذر تأكيد استجابة الخادم» رغم نجاح الطلب.
-$__wf_ajax_order = ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['ajax_order']));
+$__wf_ajax_order = ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['ajax_order'])
+    && strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest');
 if ($__wf_ajax_order) {
     ob_start();
     register_shutdown_function(function () {
@@ -11,7 +12,27 @@ if ($__wf_ajax_order) {
         if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
         $GLOBALS['_WF_ORDER_JSON_SENT'] = true;
         echo json_encode(['ok' => false, 'error' => 'حصل خطأ غير متوقع أثناء تسجيل الطلب — راجع «طلباتي»، ولو الطلب مش موجود جرّب تاني'], JSON_UNESCAPED_UNICODE);
+        if (function_exists('wf_order_notify_flush')) wf_order_notify_flush();
     });
+}
+// «هل طلبي اتسجل؟» — نقطة تأكيد بتوكن الإرسال: JSON فقط، المتصفح بيستخدمها لما
+// يعجز عن قراءة رد تسجيل الطلب فيحوّل «ممكن يكون اتسجل أو لأ» لإجابة قاطعة.
+if (isset($_GET['ajax_order_check'])) {
+    while (ob_get_level() > 0) @ob_end_clean();
+    $GLOBALS['_WF_ORDER_JSON_SENT'] = true;
+    if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+    $chk_row = function_exists('wf_find_order_by_token') ? wf_find_order_by_token((string)($_GET['client_token'] ?? '')) : null;
+    echo json_encode($chk_row ? [
+        'ok'           => true,
+        'found'        => true,
+        'order_no'     => (string)($chk_row['order_no'] ?? ''),
+        'product_name' => (string)($chk_row['pname'] ?? ''),
+        'variant'      => function_exists('order_variant_label') ? order_variant_label($chk_row) : '',
+        'qty'          => (int)($chk_row['qty'] ?? 1),
+        'city'         => (string)($chk_row['city'] ?? ''),
+        'grand_total'  => number_format((float)($chk_row['total'] ?? 0), 2, '.', ''),
+    ] : ['ok' => true, 'found' => false], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 // طلب بدون تسجيل: يُقبل برقم الموبايل كهوية
 $guest_mode = !current_user();
@@ -19,6 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guest_mode && !empty($_POST['id'])
     $_GUEST_OK = true;
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
+    // توكن الإرسال: إعادة نفس المحاولة (بعد رد غير مقروء) ماتكررش الطلب — بترجع الأصل
+    $wf_client_token = mb_substr(preg_replace('/[^A-Za-z0-9_\-]/', '', (string)($_POST['client_token'] ?? '')), 0, 64);
+    $wf_dup_order = ($wf_client_token !== '' && function_exists('wf_find_order_by_token')) ? wf_find_order_by_token($wf_client_token) : null;
     $pid    = trim((string)$_POST['id']);
     $plat   = resolve_plat($pid, $_POST['plat'] ?? '');
     $qty    = max(1, min(999, (int)($_POST['qty'] ?? 1)));
@@ -34,7 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
     $bundle_disc = 0.0;
     $line   = server_order_line($pid, $plat, $qty, $req, $ref, $extra_comm, $honor_agreed);
 
-    if (!$line) {
+    if (is_array($wf_dup_order)) {
+        $GLOBALS['_WF_ORDER_NO'] = (string)($wf_dup_order['order_no'] ?? '');
+    } elseif (!$line) {
         $order_err = '⚠️ المنتج غير متاح حالياً — جرّب منتج تاني';
     } else {
         $prod = $line['product'];
@@ -108,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
                 'at'         => date('c'),
                 'src'        => function_exists('wf_traffic_src') ? wf_traffic_src() : '',  // مصدر الزيارة: store / landing
                 'discount'    => (float)$bundle_disc,                     // خصم الكمية (كل قطعة إضافية)
+                'client_token' => $wf_client_token,                       // توكن عدم التكرار عند إعادة الإرسال
                 'status'     => 'pending',     // حالة إنجليزية ثابتة
             ];
 
@@ -143,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
             }
             // إشعار فوري لصاحب اللينك: طلب جديد دخل على رفّه
             if ($ref !== '' && ($ref_mk = find_marketer_by_code($ref))) {
-                notify_user((string)$ref_mk['email'], '🛍️ طلب جديد على لينكك: ' . $ord_no . ' — ' . $ord_name . ' (إجمالي ' . number_format($ord_total, 2) . ')', 'dashboard/marketer.php?mtab=orders');
+                wf_order_notify_queue((string)$ref_mk['email'], '🛍️ طلب جديد على لينكك: ' . $ord_no . ' — ' . $ord_name . ' (إجمالي ' . number_format($ord_total, 2) . ')', 'dashboard/marketer.php?mtab=orders');
             }
             // كل بيانات الديالوج تُرسل للأدمن (إشعار داخلي + تليجرام)
             $admin_report = [
@@ -164,23 +191,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
                     . ($m_earn > 0 ? ' — عمولة معلقة: ' . number_format($m_earn, 2) . ' ج.م' : '');
             }
             $admin_report[] = '🌐 مصدر الزيارة: ' . ($new_order['src'] !== '' ? $new_order['src'] : 'غير محدد');
-            notify('admin', implode("\n", $admin_report), 'dashboard/admin.php?tab=orders');
+            wf_order_notify_queue('admin', implode("\n", $admin_report), 'dashboard/admin.php?tab=orders');
             if ($ref && ($mk2 = find_marketer_by_code($ref))) {
-                notify($mk2['email'], '💰 عملية بيع برابطك: ' . $ord_name . ' — عمولة معلقة +' . number_format($m_earn, 2) . ' ج.م', 'dashboard/marketer.php');
+                wf_order_notify_queue($mk2['email'], '💰 عملية بيع برابطك: ' . $ord_name . ' — عمولة معلقة +' . number_format($m_earn, 2) . ' ج.م', 'dashboard/marketer.php');
             }
-            if ($user) notify($user['email'], '✅ طلبك ' . $ord_no . ' قيد التأكيد: ' . $ord_name, 'dashboard/orders.php');
+            if ($user) wf_order_notify_queue($user['email'], '✅ طلبك ' . $ord_no . ' قيد التأكيد: ' . $ord_name, 'dashboard/orders.php');
 
             $GLOBALS['_WF_ORDER_NO'] = $ord_no;
         }
     }
-    if (!empty($_POST['ajax_order'])) {
+    if ($__wf_ajax_order) {
         while (ob_get_level() > 0) @ob_end_clean();   // نظّف أي مخرجات/تحذيرات اتجمعت قبل الرد
         $GLOBALS['_WF_ORDER_JSON_SENT'] = true;
-        header('Content-Type: application/json; charset=utf-8');
+        if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
         if (!empty($order_err)) {
-            echo json_encode(['ok' => false, 'error' => $order_err], JSON_UNESCAPED_UNICODE);
+            $wf_json_body = json_encode(['ok' => false, 'error' => $order_err], JSON_UNESCAPED_UNICODE);
+        } elseif (is_array($wf_dup_order)) {
+            // إعادة نفس المحاولة (نفس client_token) — بنرجّع الطلب الأصلي من غير ما نسجله تاني
+            $wf_json_body = json_encode([
+                'ok'           => true,
+                'duplicate'    => true,
+                'order_no'     => (string)($wf_dup_order['order_no'] ?? ''),
+                'product_name' => (string)($wf_dup_order['pname'] ?? ''),
+                'variant'      => function_exists('order_variant_label') ? order_variant_label($wf_dup_order) : '',
+                'color'        => (string)($wf_dup_order['color'] ?? ''),
+                'size'         => (string)($wf_dup_order['size'] ?? ''),
+                'qty'          => (int)($wf_dup_order['qty'] ?? 1),
+                'unit_price'   => (float)($wf_dup_order['unit'] ?? 0),
+                'ship_fee'     => (float)($wf_dup_order['ship'] ?? 0),
+                'grand_total'  => number_format((float)($wf_dup_order['total'] ?? 0), 2, '.', ''),
+                'city'         => (string)($wf_dup_order['city'] ?? ''),
+                'ref'          => (string)($wf_dup_order['ref'] ?? ''),
+                'm_earn'       => 0,
+                'discount'     => (float)($wf_dup_order['discount'] ?? 0),
+            ], JSON_UNESCAPED_UNICODE);
         } else {
-            echo json_encode([
+            $wf_json_body = json_encode([
                 'ok'           => true,
                 'order_no'     => $GLOBALS['_WF_ORDER_NO'] ?? '',
                 'product_name' => $new_order['pname'] ?? '',
@@ -197,6 +243,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
                 'discount'     => (float)($bundle_disc ?? 0),           // خصم الكمية (كل قطعة إضافية)
             ], JSON_UNESCAPED_UNICODE);
         }
+        // نوصل الرد للمتصفح الأول وبعدين إشعارات التليجرام/الواتساب — cURL البطيء مابيقطعش الرد تاني
+        if (!headers_sent()) {
+            header('Content-Length: ' . strlen($wf_json_body));
+            header('Connection: close');
+        }
+        ignore_user_abort(true);
+        echo $wf_json_body;
+        while (ob_get_level() > 0) @ob_end_flush();
+        @flush();
+        if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+        elseif (function_exists('litespeed_finish_request')) @litespeed_finish_request();
+        if (function_exists('wf_order_notify_flush')) wf_order_notify_flush();
         exit;
     }
 }
@@ -209,6 +267,8 @@ if ($__wf_ajax_order && empty($GLOBALS['_WF_ORDER_JSON_SENT'])) {
     echo json_encode(['ok' => false, 'error' => (isset($order_err) && $order_err !== '') ? $order_err : 'بيانات الطلب ناقصة — حدّث الصفحة وجرّب تاني'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+// إرسال غير ajax (فورم من غير JS): الإشعارات تتنفذ دلوقتي — صفحة HTML مش مستعجلة زي رد JSON
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id']) && !$__wf_ajax_order && function_exists('wf_order_notify_flush')) wf_order_notify_flush();
 if ($guest_mode && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
     layout_top('تم استلام طلبك ', 'orders');
     if (!empty($order_err)) {
