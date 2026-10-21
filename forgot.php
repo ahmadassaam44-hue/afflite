@@ -11,7 +11,7 @@ else { $_SESSION['pw_reset'] = ['email' => $email, 'at' => time()]; header('Loca
 
 
 <link rel="preload" href="assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/style.css?v=20261010-eo-fields"></head>
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>"></head>
 <body data-ui="u-803bfb02 uj7 ue1 ue7 uf9 ufv">
 <?php require_once __DIR__ . '/ui-components.php'; wf_ui_sprite(); ?>
 <a class="skip-link" href="#authContent">تخطي إلى نموذج الحساب</a>
@@ -32,4 +32,4 @@ else { $_SESSION['pw_reset'] = ['email' => $email, 'at' => time()]; header('Loca
     <p class="mut">تذكرت كلمة المرور؟ <a href="login.php" data-ui="u-0c7828ab ue6 ued">العودة لتسجيل الدخول</a></p>
   </div>
 </main>
-<script src="assets/ui.js?v=20261018-visfeat" defer></script></body></html>
+<script src="assets/ui.js?v=<?= wf_asset_v('ui.js') ?>" defer></script></body></html>

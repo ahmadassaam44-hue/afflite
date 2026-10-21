@@ -25,7 +25,7 @@ $cta = $pr['cta_href'] . ($ref_param !== '' ? (strpos($pr['cta_href'], '?') !== 
 <meta property="og:description" content="<?php echo esc($pr['intro']); ?>">
 <meta property="og:url" content="https://wafirinhalk.com/affiliate-program.php?p=<?php echo rawurlencode($key); ?>">
 <meta property="og:image" content="https://wafirinhalk.com/assets/aff-<?php echo esc($key); ?>.png">
-<link rel="stylesheet" href="assets/style.css?v=20261012-aff-under-strip">
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>">
 </head>
 <body>
 <?php require_once __DIR__ . '/ui-components.php'; wf_ui_sprite(); ?>
@@ -75,6 +75,6 @@ $cta = $pr['cta_href'] . ($ref_param !== '' ? (strpos($pr['cta_href'], '?') !== 
     <a href="<?php echo esc($cta); ?>" class="btn"><?php echo esc($pr['cta']); ?></a>
   </section>
 </main>
-<script src="assets/ui.js?v=20261018-visfeat" defer></script>
+<script src="assets/ui.js?v=<?= wf_asset_v('ui.js') ?>" defer></script>
 </body>
 </html>

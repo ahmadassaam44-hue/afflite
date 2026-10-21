@@ -41,7 +41,7 @@ if (!$p && $ref !== '') {
 if (!$p) {
     http_response_code(404);
     echo '<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>صفحة الهبوط</title><link rel="preload" href="assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/style.css?v=20261010-eo-fields"><body data-ui="u-96cfb774 uj6 udd ue1 ue7 uf9 uj7 ufu"><div data-ui="u-24080e41 ueg uj8 uj9 uja udn ujb"><div data-ui="u-74f76427 ujc"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-store></use></svg></div><h2 data-ui="u-f097fe05 ujd">هذا العرض غير متاح حالياً</h2><p data-ui="u-58f762da udy uda">تأكد من رابط صفحة الهبوط أو تواصل مع المسوق.</p></div></body></html>';
+<link rel="stylesheet" href="assets/style.css?v=' . wf_asset_v('style.css') . '"><body data-ui="u-96cfb774 uj6 udd ue1 ue7 uf9 uj7 ufu"><div data-ui="u-24080e41 ueg uj8 uj9 uja udn ujb"><div data-ui="u-74f76427 ujc"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-store></use></svg></div><h2 data-ui="u-f097fe05 ujd">هذا العرض غير متاح حالياً</h2><p data-ui="u-58f762da udy uda">تأكد من رابط صفحة الهبوط أو تواصل مع المسوق.</p></div></body></html>';
     exit;
 }
 $plat = $p['_plat'] ?? resolve_plat($id, $plat_hint);
@@ -141,7 +141,7 @@ $eo_payload = json_encode([
 
 
 
-<link rel="stylesheet" href="assets/style.css?v=20261010-eo-fields">
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>">
 
 </head>
 <body class="is-landing">
@@ -364,7 +364,7 @@ if (function_exists('wf_event')) {
 <?php if (function_exists('render_marketer_pixels_html')) render_marketer_pixels_html($store_cfg); ?>
 
 <div hidden data-track-meta="<?php echo esc(json_encode(['ref_code'=>$ref, 'product_id'=>(string)$p['id']], JSON_UNESCAPED_UNICODE)); ?>"></div>
-<script src="assets/ui.js?v=20261018-visfeat" defer></script>
-<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
+<script src="assets/ui.js?v=<?= wf_asset_v('ui.js') ?>" defer></script>
+<script src="assets/tracker.js?v=<?= wf_asset_v('tracker.js') ?>" defer></script>
 </body>
 </html>

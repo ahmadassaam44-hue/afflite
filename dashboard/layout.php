@@ -74,7 +74,7 @@ function layout_top($title, $active = 'home') {
     if (!empty($og['price'])) echo '<meta property="product:price:amount" content="' . esc($og['price']) . '"><meta property="product:price:currency" content="EGP">';
     echo '<link rel="manifest" href="' . $pre . 'manifest.json">';
     echo '<link rel="preload" href="' . $pre . 'assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="' . $pre . 'assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>';
-    echo '<link rel="stylesheet" href="' . $pre . 'assets/style.css?v=20261013-row-fix"></head><body class="' . ($public_chrome ? 'has-mob-nav' : 'is-dash') . (!empty($GLOBALS['WF_PRODUCT_DETAIL']) ? ' is-product' : '') . '">';
+    echo '<link rel="stylesheet" href="' . $pre . 'assets/style.css?v=' . wf_asset_v('style.css') . '"></head><body class="' . ($public_chrome ? 'has-mob-nav' : 'is-dash') . (!empty($GLOBALS['WF_PRODUCT_DETAIL']) ? ' is-product' : '') . '">';
 
     echo '<a href="#dashMainContent" class="skip-link">تخطي إلى المحتوى الرئيسي</a>';
     wf_ui_sprite();
@@ -327,8 +327,8 @@ function layout_end() {
     }
 
     echo '<div hidden id="wfSessionBootstrap" data-csrf="' . esc(csrf_token()) . '"></div>';
-    echo '<script src="' . $pre . 'assets/ui.js?v=20261018-visfeat" defer></script>';
-    echo '<script src="' . $pre . 'assets/tracker.js?v=20261018-visfeat" defer></script>';
+    echo '<script src="' . $pre . 'assets/ui.js?v=' . wf_asset_v('ui.js') . '" defer></script>';
+    echo '<script src="' . $pre . 'assets/tracker.js?v=' . wf_asset_v('tracker.js') . '" defer></script>';
     echo '</main></div></div></body></html>';
 }
 

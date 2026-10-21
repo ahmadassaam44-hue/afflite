@@ -25,7 +25,7 @@ $reg_url = 'register.php?role=marketer' . ($ref_param !== '' ? '&ref=' . urlenco
 <meta name="twitter:card" content="summary_large_image">
 <script type="application/ld+json"><?php echo json_encode(['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => [['@type' => 'Question', 'name' => 'هل أحتاج لدفع أي رسوم للاشتراك أو فتح متجري؟', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'لا، التسجيل وفتح متجرك المستقل واستخدام صفحات الهبوط مجاني بالكامل.']], ['@type' => 'Question', 'name' => 'متى يمكنني سحب أرباحي؟', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'بمجرد تسليم الطلب للعميل وتحصيل المبلغ تنتقل العمولة إلى رصيدك المتاح للسحب فوراً.']], ['@type' => 'Question', 'name' => 'ماذا يحدث لو ألغى العميل الطلب أو رفض الاستلام؟', 'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'لا يتحمل المسوق أي رسوم شحن على الطلبات الملغاة، وتُلغى فقط العمولة المعلقة الخاصة بالطلب غير المستلم.']]]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
 <link rel="preload" href="assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/style.css?v=20261010-eo-fields">
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>">
 </head>
 <body>
 <?php require_once __DIR__ . '/ui-components.php'; wf_ui_sprite(); ?>
@@ -166,6 +166,6 @@ $reg_url = 'register.php?role=marketer' . ($ref_param !== '' ? '&ref=' . urlenco
     </div>
   </section>
 </main>
-<script src="assets/ui.js?v=20261018-visfeat" defer></script>
+<script src="assets/ui.js?v=<?= wf_asset_v('ui.js') ?>" defer></script>
 </body>
 </html>
