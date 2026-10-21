@@ -411,9 +411,25 @@ chk($out,$fail,'no override still uplift+discount',store_price($t1r,'timehand'),
 $gl14=platform_products_lite('g2g');
 $g1r=null; foreach($gl14 as $r14) if(($r14['id']??'')==='g1')$g1r=$r14;
 chk($out,$fail,'digital override final too',store_price($g1r,'g2g'),600.0);
+// ---- 15) إصدار تلقائي للأصول: الجلسات القديمة تسحب CSS/JS الجديد من أول تحميل ----
+$v15=wf_asset_v('style.css');
+chk($out,$fail,'asset version = filemtime',$v15,(string)(int)filemtime('/app/assets/style.css'));
+chk($out,$fail,'asset version memoized',wf_asset_v('style.css'),$v15);
+chk($out,$fail,'missing asset falls back numeric',ctype_digit(wf_asset_v('ui.js')),true);
+chk($out,$fail,'traversal stays numeric',ctype_digit(wf_asset_v('../../etc/passwd')),true);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
+// Task-14 wiring: إصدار الأصول تلقائي (filemtime) — مفيش نسخ CSS/JS قديمة للجلسات السابقة
+{
+  const assetPages=['affiliate-program.php','affiliate-register.php','config.php','dashboard/layout.php','error.php','forgot.php','google_callback.php','index.php','landing.php','login.php','marketer_complete.php','register.php','reset.php','store.php','style-guide.php'];
+  for(const f of assetPages){
+    const srcx=fs.readFileSync(path.join(repo,f),'utf8');
+    assert.ok(!/(style\.css|ui\.js|tracker\.js)\?v=2026[0-9a-z-]+/.test(srcx),f+' must not hardcode a stale asset version');
+    assert.ok(/wf_asset_v\(|filemtime/.test(srcx),f+' must version assets automatically');
+  }
+  assert.ok(/function wf_asset_v\(/.test(fs.readFileSync(path.join(repo,'config.php'),'utf8')),'wf_asset_v helper must exist in config.php');
+}
 // Task-13 wiring: «تعذر الحفظ» في تعديل المنتجات + سعر الأدمن override = السعر النهائي
 {
   const adm13=fs.readFileSync(path.join(repo,'dashboard/admin.php'),'utf8');
@@ -671,6 +687,7 @@ if(fs.existsSync(path.join(NM,'php-parser'))){
   for(const file of FILES)php.writeFile('/app/'+file,fs.readFileSync(path.join(repo,file)));
   for(const file of DATA_FILES)php.writeFile('/app/'+file,fs.readFileSync(path.join(repo,file)));
   for(const [name,data] of Object.entries(FIXTURES))php.writeFile('/app/data/'+name,JSON.stringify(data));
+  php.mkdirTree('/app/assets');php.writeFile('/app/assets/style.css','/*t*/');
   php.writeFile('/app/__test.php',PHP_TESTS);
   const res=await php.run({code:"<?php require '/app/__test.php';"});
   const raw=Buffer.from(Object.values(res.bytes)).toString('utf8');

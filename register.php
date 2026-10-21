@@ -103,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 <link rel="preload" href="assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/style.css?v=20261010-eo-fields"></head>
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>"></head>
 <body data-ui="u-803bfb02 uj7 ue1 ue7 uf9 ufv">
 <?php require_once __DIR__ . '/ui-components.php'; wf_ui_sprite(); ?>
 <a class="skip-link" href="#authContent">تخطي إلى نموذج الحساب</a>
@@ -179,6 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p data-ui="u-40fcd368 uko">لديك حساب بالفعل؟ <a href="login.php" data-ui="u-0c7828ab ue6 ued">تسجيل الدخول</a> • <a href="index.php" class="mut">العودة للمتجر</a></p>
   </div>
 </main>
-<script src="assets/ui.js?v=20261018-visfeat" defer></script>
-<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
+<script src="assets/ui.js?v=<?= wf_asset_v('ui.js') ?>" defer></script>
+<script src="assets/tracker.js?v=<?= wf_asset_v('tracker.js') ?>" defer></script>
 </body></html>

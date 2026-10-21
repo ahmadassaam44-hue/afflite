@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>إكمال بيانات المسوق | <?php echo BRAND; ?></title>
-<link rel="stylesheet" href="assets/style.css?v=20261010-eo-fields"></head>
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>"></head>
 <body>
 <?php require_once __DIR__ . '/ui-components.php'; wf_ui_sprite(); ?>
 <main class="auth" id="authContent">

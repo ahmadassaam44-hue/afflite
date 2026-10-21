@@ -2,7 +2,7 @@
 // صفحة الاستقبال بعد جوجل: التوكن بييجي في الـ fragment، فالـ JS بياخده ويبعته لصفحة الإنهاء بـ POST
 ?><!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>تسجيل الدخول | <?php echo BRAND; ?></title>
-<link rel="stylesheet" href="assets/style.css?v=20261010-eo-fields"></head>
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>"></head>
 <body>
 <main class="auth" id="authContent">
   <p class="mut" id="gMsg">جاري تسجيل دخولك بجوجل…</p>

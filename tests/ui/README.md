@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 359 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 363 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -199,3 +199,12 @@ Money-safety fix alongside: an admin price override is now the **final** price
 cut included) was prefilled and re-saved as the raw stored price, so every save re-applied uplift
 and discount (~12% drop per save since the price-cut PR). Documented in
 `docs/product-edit-save-fix-and-admin-price-2026-10-21.md`.
+
+Automatic asset versioning (2026-10-21): returning visitors were at risk of keeping **stale cached
+CSS/JS** because every page hardcoded `?v=2026…` strings and recent asset edits (ui.js in the
+dialog-notice removal, style.css in the sidebar-badges PR) shipped without bumps. All 33 references
+(style.css / ui.js / tracker.js across 15 files) now print `wf_asset_v()` — the file's own mtime —
+so any deployed asset change rewrites the URL and old sessions refetch on their very first page
+load; error.php (standalone, no config) inlines `@filemtime`. HTML itself is `no-store` and prices
+are server-rendered per request, so content/price updates never depended on these versions.
+Documented in `docs/auto-asset-versioning-2026-10-21.md`.

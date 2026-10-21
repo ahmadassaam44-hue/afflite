@@ -11,7 +11,7 @@ $ui_esc = function ($value) { return htmlspecialchars((string)$value, ENT_QUOTES
 ?><!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $code ?> — <?= $ui_esc($m[1]) ?></title>
 
 
-<link rel="stylesheet" href="<?= $ui_esc($ui_base) ?>/assets/style.css?v=20261010-eo-fields"></head>
+<link rel="stylesheet" href="<?= $ui_esc($ui_base) ?>/assets/style.css?v=<?= (int)@filemtime(__DIR__ . '/assets/style.css') ?: 20261021 ?>"></head>
 <body data-ui="u-803bfb02 uj7 ue1 ue7 uf9 ufv">
 <main class="auth" id="errorContent" data-ui="u-4a7737d1 udn ukx uem">
   <div data-ui="u-d0cfe77b ujc ue6 uky"><?= $ui_esc($m[0]) ?></div>

@@ -295,7 +295,7 @@ $vis_mk = ($vis_ref !== '' && function_exists('find_marketer_by_code')) ? find_m
 <script type="application/ld+json"><?php echo json_encode(['@context' => 'https://schema.org', '@graph' => [['@type' => 'Organization', '@id' => 'https://wafirinhalk.com/#organization', 'name' => BRAND, 'url' => 'https://wafirinhalk.com/', 'logo' => ['@type' => 'ImageObject', 'url' => 'https://wafirinhalk.com/assets/icon-512.png'], 'email' => $top_email, 'telephone' => $top_phone, 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'EG']], ['@type' => 'WebSite', '@id' => 'https://wafirinhalk.com/#website', 'url' => 'https://wafirinhalk.com/', 'name' => BRAND, 'inLanguage' => 'ar-EG', 'publisher' => ['@id' => 'https://wafirinhalk.com/#organization'], 'potentialAction' => ['@type' => 'SearchAction', 'target' => 'https://wafirinhalk.com/?q={search_term_string}', 'query-input' => 'required name=search_term_string']]]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
 
 <link rel="preload" href="assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/style.css?v=20261014-redeploy"></head><body class="has-mob-nav">
+<link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>"></head><body class="has-mob-nav">
 <?php wf_ui_sprite(); ?>
 <a href="#products" class="skip-link">تخطي إلى المحتوى</a>
 
@@ -718,6 +718,6 @@ echo wf_catalog_toolbar([
 
 <?php if (function_exists('render_easyorder_dialog_html')) render_easyorder_dialog_html(); ?>
 <div hidden data-track-meta="<?php echo esc(json_encode(['ref_code'=>function_exists('active_ref') ? active_ref() : ''], JSON_UNESCAPED_UNICODE)); ?>"></div>
-<script src="assets/ui.js?v=20261018-visfeat" defer></script>
-<script src="assets/tracker.js?v=20261018-visfeat" defer></script>
+<script src="assets/ui.js?v=<?= wf_asset_v('ui.js') ?>" defer></script>
+<script src="assets/tracker.js?v=<?= wf_asset_v('tracker.js') ?>" defer></script>
 </body></html>
