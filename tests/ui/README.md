@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 345 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 359 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -185,3 +185,17 @@ prices. «أحدث المنتجات» no longer trusts file order: the catalogue
 `stamp_new_products()`: it snapshots ids (including cezma shards) before the run, stamps `added_at`
 on anything new, and feeds new cezma rows into the marketer notification broadcast. Documented in
 `docs/physical-price-cut-and-true-latest-2026-10-21.md`.
+
+Product-edit save failures & admin price semantics (2026-10-21): «تعذر الحفظ. راجع الاسم والسعر
+والقسم وروابط الصور.» in the admin catalogue's "edit all details" form was rejecting the form's own
+prefill — local detail images (`assets/detail/…`, merged from `data/detail_index.json` and embedded
+in `vendoor.json`) fail the old `^(https?://|/)` regex, CDN image URLs containing commas were split
+into invalid fragments by the line splitter, and a product's own non-canonical category (offered by
+the dropdown) was rejected server-side. Fixes: `wf_image_url_allowed()` (http(s), `/…`, `assets/…`)
+used by all three image validations; image lines split on newlines only; the current category from
+`find_product_by_id()` stays acceptable; and the message now carries the specific rejection reason.
+Money-safety fix alongside: an admin price override is now the **final** price
+(`_price_override` + early return in `store_price()`) — previously the display price (margin + 12%
+cut included) was prefilled and re-saved as the raw stored price, so every save re-applied uplift
+and discount (~12% drop per save since the price-cut PR). Documented in
+`docs/product-edit-save-fix-and-admin-price-2026-10-21.md`.

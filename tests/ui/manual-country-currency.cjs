@@ -29,6 +29,8 @@ const FIXTURES={
  'product_requests.json':[{status:'pending',name:'ر1'},{status:'available',name:'ر2'},{status:'pending',name:'ر3'}],
  'support_chats.json':{t1:{messages:[{sender:'user'},{sender:'admin'}]},t2:{messages:[{sender:'admin'},{sender:'user'}]}},
  'notifications.json':[],
+ 'product_overrides.json':{'timehand#t2':{price:900},'g2g#g1':{price:600}},
+ 'g2g.json':[{id:'g1',name:'كرت رقمي',price:560,currency:'ج.م',category:'منتجات رقمية',stock:9,images:[]}],
  'timehand.json':[
   {id:'t1',name:'منتج قديم من غير ختم',price:1000,price_text:'1000 جنيه',currency:'جنيه',category:'إلكترونيات',stock:5,images:[]},
   {id:'t2',name:'منتج نزل امبارح',price:500,price_text:'500 جنيه',currency:'جنيه',category:'إلكترونيات',stock:5,images:[],added_at:'2026-10-19'},
@@ -389,9 +391,43 @@ $w3=wf_home_platform_window('timehand',3);
 chk($out,$fail,'window sorted by added_at',array_column($w3,'id'),['t1','t2','t3']);
 $w2=wf_home_platform_window('timehand',2);
 chk($out,$fail,'window tail is newest stamped',array_column($w2,'id'),['t2','t3']);
+// ---- 14) إصلاح «تعذر الحفظ» في تعديل المنتجات: صور محلية/بفاصلة + سعر الأدمن = السعر النهائي ----
+chk($out,$fail,'img ok https with comma',wf_image_url_allowed('https://cdn.example.com/a,b%20c.jpg'),true);
+chk($out,$fail,'img ok root path',wf_image_url_allowed('/assets/a.jpg'),true);
+chk($out,$fail,'img ok local detail',wf_image_url_allowed('assets/detail/vendoor_1252_00071.jpg'),true);
+chk($out,$fail,'img reject data uri',wf_image_url_allowed('data:image/svg+xml;utf8,svg'),false);
+chk($out,$fail,'img reject javascript',wf_image_url_allowed('javascript:alert(1)'),false);
+chk($out,$fail,'img reject bare domain',wf_image_url_allowed('example.com/a.jpg'),false);
+chk($out,$fail,'img reject empty',wf_image_url_allowed('   '),false);
+$lt14=platform_products_lite('timehand');
+$t1r=null;$t2r=null;
+foreach($lt14 as $r14){if(($r14['id']??'')==='t1')$t1r=$r14; if(($r14['id']??'')==='t2')$t2r=$r14;}
+chk($out,$fail,'override flag on row',!empty($t2r['_price_override']),true);
+chk($out,$fail,'override row price',(float)$t2r['price'],900.0);
+chk($out,$fail,'override is final store price',store_price($t2r,'timehand'),900.0);
+chk($out,$fail,'override is final display price',display_price($t2r,'timehand'),900.0);
+chk($out,$fail,'resaving display price is stable',store_price(apply_product_override_record(['id'=>'t2','price'=>display_price($t2r,'timehand'),'currency'=>'جنيه'],'timehand'),'timehand'),900.0);
+chk($out,$fail,'no override still uplift+discount',store_price($t1r,'timehand'),900.0);
+$gl14=platform_products_lite('g2g');
+$g1r=null; foreach($gl14 as $r14) if(($r14['id']??'')==='g1')$g1r=$r14;
+chk($out,$fail,'digital override final too',store_price($g1r,'g2g'),600.0);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
+// Task-13 wiring: «تعذر الحفظ» في تعديل المنتجات + سعر الأدمن override = السعر النهائي
+{
+  const adm13=fs.readFileSync(path.join(repo,'dashboard/admin.php'),'utf8');
+  assert.ok((adm13.match(/wf_image_url_allowed\(/g)||[]).length>=3,'the three image validations (full images, variant images, quick image) must use wf_image_url_allowed');
+  assert.ok(/fail_reason/.test(adm13)&&/تعذر الحفظ' \. \(\$fail_reason/.test(adm13),'the failure message must carry the specific reason');
+  assert.ok(/\/\[\\r\\n\]\+\/u/.test(adm13),'image lines must split on newlines only (CDN filenames may contain commas)');
+  assert.ok(/\$category !== \$cur_cat/.test(adm13)&&/find_product_by_id\(\$raw_id, \$plat\)/.test(adm13),"the product's own current category must stay acceptable");
+  const cfg13=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  assert.ok(/function wf_image_url_allowed\(/.test(cfg13)&&/strpos\(\$u, 'assets\/'\) === 0/.test(cfg13),'local assets/detail images must be accepted');
+  const ovr=cfg13.match(/function apply_product_override_record\([\s\S]*?\n\}/);
+  assert.ok(ovr&&/_price_override/.test(ovr[0]),'price overrides must flag the row');
+  const sp=cfg13.match(/function store_price\([\s\S]*?\n\}/);
+  assert.ok(sp&&/_price_override/.test(sp[0])&&/return round\(max\(0, \(float\)\$p\['price'\]\), 2\);/.test(sp[0]),'store_price must return the admin-set price as-is (no re-uplift/re-discount)');
+}
 // Task-12 wiring: تخفيض 12% مركزي + «أحدث المنتجات» = ختم added_at فعلًا
 {
   const cfg12=fs.readFileSync(path.join(repo,'config.php'),'utf8');

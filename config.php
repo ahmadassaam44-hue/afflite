@@ -1459,6 +1459,8 @@ function apply_product_override_record($row, $key, $show_hidden = false) {
     if (array_key_exists('price', $override)) {
         $row['price'] = $override['price'];
         $row['price_text'] = $override['price'] . ' ' . ($row['currency'] ?? 'جنيه');
+        // سعر الأدمن = السعر النهائي بالظبط (من غير هامش/خصم فوقه) — عشان الحفظ المتكرر مايزحزحش السعر
+        $row['_price_override'] = true;
     }
     if (array_key_exists('images', $override) && is_array($override['images'])) $row['images'] = $override['images'];
     elseif (!empty($override['image'])) $row['images'] = array_values(array_unique(array_merge([$override['image']], (array)($row['images'] ?? []))));
@@ -3668,6 +3670,9 @@ function store_price_from_gross($p, $plat, $gross, $variant_fixed = null) {
     return wf_price_uplift($plat, wf_round_price($net));
 }
 function store_price($p, $plat) {
+    // سعر محدّد من الأدمن (override) = السعر النهائي للعميل بالظبط —
+    // مايتطبقش عليه هامش الربح ولا تخفيض الـ12% تاني (وإلا كل حفظ كان بيزحزح السعر ~12%).
+    if (!empty($p['_price_override']) && is_numeric($p['price'] ?? null)) return round(max(0, (float)$p['price']), 2);
     // في منصات الأفلييت الفيزيكال، حقل price المخزن هو السعر الصافي بدون عمولة (التكلفة بدون عمولة المنصة).
     if (in_array((string)$plat, ['vendoor', 'timehand', 'safqa', 'angazny', 'm5zoon', 'shopmart'], true)) {
         $stored = base_price($p, $plat);
@@ -3817,6 +3822,14 @@ function with_detail_imgs($p, $plat = '') {
     if (!isset($p['extra']) || !is_array($p['extra'])) $p['extra'] = [];
     if (empty($p['extra']['detail_images'])) $p['extra']['detail_images'] = $d;
     return $p;
+}
+// روابط الصور المقبولة في فورمات الأدمن: خارجي http(s)، مسار يبدأ بـ /، أو صور التفاصيل المحلية (assets/detail/...)
+// اللي بتتحط في الملفات نفسها — رفضها كان بيفشّل حفظ أي تعديل حتى لو الأدمن مالمسش الصور.
+function wf_image_url_allowed($u) {
+    $u = trim((string)$u);
+    if ($u === '' || strlen($u) > 600) return false;
+    if (preg_match('~^(https?://|/)~i', $u)) return true;
+    return strpos($u, 'assets/') === 0;
 }
 // مسار أصول محلي (assets/...) يتحوّل صح سواء الصفحة في الجذر أو داخل dashboard
 function asset_url($u) {
