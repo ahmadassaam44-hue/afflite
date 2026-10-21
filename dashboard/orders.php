@@ -127,6 +127,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
                 wf_event('order', ['product_id' => $pid, 'plat' => $plat, 'order_no' => $ord_no,
                                    'value' => $ord_total, 'qty' => $qty]);
             }
+            // إشعار فوري لصاحب اللينك: طلب جديد دخل على رفّه
+            if ($ref !== '' && ($ref_mk = find_marketer_by_code($ref))) {
+                notify_user((string)$ref_mk['email'], '🛍️ طلب جديد على لينكك: ' . $ord_no . ' — ' . $ord_name . ' (إجمالي ' . number_format($ord_total, 2) . ')', 'dashboard/marketer.php?mtab=orders');
+            }
             // كل بيانات الديالوج تُرسل للأدمن (إشعار داخلي + تليجرام)
             $admin_report = [
                 '🧾 طلب جديد: ' . $ord_no,

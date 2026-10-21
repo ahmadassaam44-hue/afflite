@@ -79,7 +79,7 @@ function layout_top($title, $active = 'home') {
     echo '<a href="#dashMainContent" class="skip-link">تخطي إلى المحتوى الرئيسي</a>';
     wf_ui_sprite();
 
-    $notifs = $user ? array_reverse(my_notifications($user['email'])) : [];
+    $notifs = $user ? array_reverse(my_notifications($user['email'], wf_user_role($user))) : [];
     $unread = 0;
     foreach ($notifs as $nn) if (empty($nn['read'])) $unread++;
     $cart_cnt = isset($_SESSION['cart']) && is_array($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
@@ -127,9 +127,12 @@ function layout_top($title, $active = 'home') {
         echo '<nav aria-label="وجهات لوحة التحكم">';
         if ($role === 'admin') {
             echo '<p class="side-sec-title">الإدارة والمتابعة</p>';
+            $pend_counts = wf_admin_pending_counts();
+            $pend_map = ['orders' => 'orders', 'marketers' => 'marketers', 'commissions' => 'commissions', 'requests' => 'requests', 'chats' => 'chats'];
             foreach (['overview'=>['chart','نظرة عامة'], 'orders'=>['orders','الطلبات'], 'products'=>['box','المنتجات'], 'users'=>['users','المستخدمون'], 'marketers'=>['megaphone','المسوّقون'], 'commissions'=>['wallet','العمولات والسحب'], 'payments'=>['bank','مراجعة المدفوعات'], 'requests'=>['camera','طلبات توفير المنتجات'], 'amazon'=>['cart','أفلييت أمازون'], 'jumia'=>['store','أفلييت جوميا'], 'noon'=>['megaphone','أفلييت نون'], 'chats'=>['chat','المحادثات'], 'notifications'=>['bell','الإشعارات'], 'fraud'=>['shield','تنبيهات المراجعة'], 'audit'=>['file','سجل الإجراءات'], 'settings'=>['settings','الإعدادات']] as $k => $pair) {
                 $is_on = $active === 'admin' && $cur_admin_tab === $k;
-                echo '<a href="' . $dash_pre . 'admin.php?tab=' . esc($k) . '" title="' . esc($pair[1]) . '"' . ($is_on ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon($pair[0]) . '<span class="t">' . esc($pair[1]) . '</span></a>';
+                $pend_n = (int)($pend_counts[$pend_map[$k] ?? ''] ?? 0);
+                echo '<a href="' . $dash_pre . 'admin.php?tab=' . esc($k) . '" title="' . esc($pair[1]) . '"' . ($is_on ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon($pair[0]) . '<span class="t">' . esc($pair[1]) . '</span>' . ($pend_n > 0 ? '<span class="notification-count side-count" aria-label="' . $pend_n . ' جديد">' . $pend_n . '</span>' : '') . '</a>';
             }
         } elseif ($role === 'marketer') {
             // Store tools follow the marketing/store section, before account tools.

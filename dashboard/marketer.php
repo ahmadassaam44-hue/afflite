@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 : '✅ اتشالت العمولة المضافة من الرابط ده — السعر بقى سعر المنتج الأساسي.';
             $msg_type = 'ok';
             notify('admin', '💰 المسوق ' . $code . ' حدّد عمولته على منتج (' . $lc_key . ') — +' . wf_ui_money($lc_val) . ' ج.م');
+            notify_user($user['email'], '💰 عمولتك على الرابط (' . $lc_key . ') اتحدّت: +' . wf_ui_money($lc_val) . ' ج.م', 'dashboard/marketer.php?mtab=store');
         }
         unset($_POST['extra_comm']); // عشان باقي صفوف الجدول ماتاخدش القيمة دي
     }
@@ -53,6 +54,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             . ' — واتساب: ' . trim((string)($_POST['store_whatsapp'] ?? ''))
             . ' — الرابط: ' . ($st_res['slug'] ?? ''),
             'dashboard/admin.php?tab=marketers');
+    }
+    // تعديل/إلغاء المسوق لطلباته: الإلغاء ناعم — الطلب يفضل عند الإدارة بحالة «ملغي»
+    $mk_ord_msg = '';
+    if (isset($_POST['mk_order_action'], $_POST['mk_order_no']) && $code !== '') {
+        $mk_ono = mb_substr(trim((string)$_POST['mk_order_no']), 0, 40);
+        if ($_POST['mk_order_action'] === 'cancel') {
+            $mk_res = wf_marketer_cancel_order($mk_ono, $user, mb_substr(trim((string)($_POST['reason'] ?? '')), 0, 300));
+            if ($mk_res['ok']) {
+                $mo = $mk_res['o'];
+                if ((float)($mo['m_earn'] ?? 0) > 0) {
+                    commission_reverse($user['email'], (float)$mo['m_earn'], $mk_res['idx'], 'إلغاء المسوق للطلب');
+                    team_commission_reverse_for_order($mk_res['idx'], 'إلغاء المسوق للطلب');
+                }
+                notify('admin', '❌ المسوق ' . ($user['name'] ?? $user['email']) . ' (' . $code . ') ألغى الطلب ' . $mk_ono, 'dashboard/admin.php?tab=orders');
+                notify_user($user['email'], '❌ تم إلغاء طلبك ' . $mk_ono . ' — فضل مسجّل عند الإدارة بحالة «ملغي».', 'dashboard/marketer.php?mtab=orders');
+                log_audit('marketer_cancel', $code, ['order_no' => $mk_ono]);
+            }
+            $mk_ord_msg = $mk_res['msg'];
+        } else {
+            $mk_res = wf_marketer_apply_order_edit($mk_ono, $user, $_POST);
+            if ($mk_res['ok']) {
+                notify('admin', '✏️ المسوق ' . ($user['name'] ?? $user['email']) . ' (' . $code . ') عدّل بيانات الطلب ' . $mk_ono, 'dashboard/admin.php?tab=orders');
+                notify_user($user['email'], '✏️ تم حفظ تعديلاتك على الطلب ' . $mk_ono . ' ✅', 'dashboard/marketer.php?mtab=orders');
+                log_audit('marketer_edit', $code, ['order_no' => $mk_ono]);
+            }
+            $mk_ord_msg = $mk_res['msg'];
+        }
+        unset($_POST['mk_order_action']);
     }
     if (isset($_POST['store_prod_action']) && $code !== '') {
         $st_cur = marketer_store_get($code);
@@ -95,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 . ($me['name'] ?? $user['email']) . ' (' . $code . '): ' . (($prod_row['name'] ?? $ppid)) . ' [' . $pkey . ']'
                 . (($_POST['store_prod_action'] ?? '') === 'remove' || $is_digital_save ? '' : ' — عمولة مضافة ' . wf_ui_money($ex_c) . ' ج.م'),
                 'dashboard/admin.php?tab=marketers');
+            notify_user($user['email'], ((($_POST['store_prod_action'] ?? '') === 'remove') ? '🗑️ منتج اتشال من متجرك: ' : '➕ منتج اتضاف لمتجرك: ') . (string)($prod_row['name'] ?? $ppid), 'dashboard/marketer.php?mtab=store');
             if (!empty($_POST['ajax'])) {
                 header('Content-Type: application/json; charset=utf-8');
                 echo json_encode(['ok' => true, 'in_store' => isset($prods[$pkey]), 'extra_comm' => $ex_c, 'msg' => $msg], JSON_UNESCAPED_UNICODE);
@@ -568,7 +598,25 @@ elseif ($mtab === 'store') { wfp('MTAB store');
 // ===== ORDERS =====
 elseif ($mtab === 'orders') { wfp('MTAB orders');
     echo '<div data-ui="u-b27a4db8 dh d1o d1p dj d1q d54"><h2 data-ui="u-c35cd038 d26 d1 d19"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> طلباتي ومبيعاتي (' . count($forders) . ')</h2><div data-ui="u-3ecc8ff6 dh d1s"><a href="?mtab=orders&export=csv" class="btn sm outline"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-download></use></svg> تصدير Excel / CSV</a><a href="?mtab=browse" class="btn sm" data-ui="u-8254dc57 d4e d3v"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-plus></use></svg> تسجيل طلب جديد لعميل</a></div></div>';
-    echo '<div class="card" data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف</th><th>المحافظة والعنوان</th><th>كمية</th><th>سعر البيع</th><th>الشحن</th><th>الإجمالي</th><th>عمولتي</th><th>الحالة</th></tr>';
+    $mk_edit_o = null;
+    $mk_edit_no = trim((string)($_GET['edit'] ?? ''));
+    if ($mk_edit_no !== '') { foreach ($forders as $oo) if (($oo['order_no'] ?? '') === $mk_edit_no && wf_marketer_can_edit_order($oo, $user)) { $mk_edit_o = $oo; break; } }
+    if ($mk_ord_msg !== '') echo '<div class="alert info" role="status" data-ui="u-1ae67359 d13">' . esc($mk_ord_msg) . '</div>';
+    if ($mk_edit_o) {
+        echo '<div class="card" data-ui="u-1ae67359 d13"><h3 data-ui="u-c35cd038 d26 d1 d19">تعديل الطلب <span dir="ltr">' . esc((string)$mk_edit_o['order_no']) . '</span></h3>'
+           . '<p class="mut">الإجمالي بيتحسب على السيرفر بعد الحفظ (سعر القطعة + الشحن − خصم الكمية).</p>'
+           . '<form method="post" class="form-grid">' . csrf_field() . '<input type="hidden" name="mk_order_action" value="edit"><input type="hidden" name="mk_order_no" value="' . esc((string)$mk_edit_o['order_no']) . '">'
+           . '<div><label class="field-label">اسم العميل</label><input name="cname" required maxlength="100" value="' . esc((string)($mk_edit_o['cname'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">رقم الموبايل</label><input name="cphone" required inputmode="tel" value="' . esc((string)($mk_edit_o['cphone'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">رقم بديل / واتساب (اختياري)</label><input name="cphone2" inputmode="tel" value="' . esc((string)($mk_edit_o['cphone2'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">الكمية</label><input name="qty" type="number" min="1" max="99" value="' . (int)($mk_edit_o['qty'] ?? 1) . '"></div>'
+           . '<div><label class="field-label">المحافظة / المنطقة</label><input name="city" maxlength="60" value="' . esc((string)($mk_edit_o['city'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">المدينة / المركز</label><input name="district" maxlength="60" value="' . esc((string)($mk_edit_o['district'] ?? '')) . '"></div>'
+           . '<div style="grid-column:1/-1"><label class="field-label">العنوان بالتفصيل</label><input name="address" maxlength="300" value="' . esc((string)($mk_edit_o['address'] ?? '')) . '"></div>'
+           . '<div style="grid-column:1/-1"><label class="field-label">ملاحظات</label><input name="notes" maxlength="500" value="' . esc((string)($mk_edit_o['notes'] ?? '')) . '"></div>'
+           . '<div style="grid-column:1/-1"><button class="btn pri" type="submit">حفظ التعديلات</button> <a class="btn outline" href="?mtab=orders">رجوع</a></div></form></div>';
+    }
+    echo '<div class="card" data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف</th><th>المحافظة والعنوان</th><th>كمية</th><th>سعر البيع</th><th>الشحن</th><th>الإجمالي</th><th>عمولتي</th><th>الحالة</th><th>إجراءات</th></tr>';
     foreach (array_reverse($forders) as $o) {
         echo '<tr>';
         echo '<td dir="ltr" data-ui="u-75c8ccd8 d8e dc">' . esc($o['order_no'] ?? '—') . '</td>';
@@ -584,6 +632,12 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format($o['m_earn'] ?? 0, 2) . ' ج.م</td>';
         echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';
+        if (wf_marketer_can_edit_order($o, $user)) {
+            echo '<td><div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn sm outline" href="?mtab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '">تعديل</a>'
+               . '<form method="post" data-confirm="هتلغي الطلب؟ هيفضل مسجّل عند الإدارة بحالة «ملغي» وهتتعكس عمولته." style="display:inline">' . csrf_field() . '<input type="hidden" name="mk_order_action" value="cancel"><input type="hidden" name="mk_order_no" value="' . esc((string)($o['order_no'] ?? '')) . '"><button class="btn sm" type="submit">إلغاء</button></form></div></td>';
+        } else {
+            echo '<td><span class="mut">—</span></td>';
+        }
         echo '</tr>';
     }
     echo '</table></div>';

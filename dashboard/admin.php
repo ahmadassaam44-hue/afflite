@@ -1269,7 +1269,7 @@ elseif ($tab === 'orders') {
     }
     echo '</div>';
 
-    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف / واتساب</th><th>العنوان</th><th>كمية</th><th>السعر</th><th>الشحن</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
+    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف / واتساب</th><th>العنوان</th><th>كمية</th><th>السعر</th><th>العمولة</th><th>الشحن</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
     foreach ($rev_orders as $idx => $o) {
         $ph_digits = preg_replace('/\D+/', '', (string)($o['cphone'] ?? ''));
         if (strpos($ph_digits, '01') === 0) $ph_wa = '2' . $ph_digits;
@@ -1283,10 +1283,12 @@ elseif ($tab === 'orders') {
         echo '<td dir="ltr"><a href="https://wa.me/' . esc($ph_wa) . '" target="_blank" data-ui="u-46a42a97 d1x dc d2l"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chat></use></svg> ' . esc($o['cphone'] ?? '') . '</a></td>';
         echo '<td>' . esc(($o['city'] ?? '') . ' - ' . mb_substr($o['address'] ?? '', 0, 45)) . '</td>';
         echo '<td><b>' . (int)($o['qty'] ?? 1) . '</b></td>';
-        echo '<td>' . number_format((float)($o['unit'] ?? 0)) . '</td>';
-        echo '<td>' . number_format((float)($o['ship'] ?? 0)) . '</td>';
+        echo '<td>' . number_format((float)($o['unit'] ?? 0)) . ' ' . esc(wf_ui_currency($o)) . '</td>';
+        echo '<td class="comm">+' . number_format((float)($o['m_earn'] ?? 0), 2) . ' ج.م' . ((float)($o['extra_comm'] ?? 0) > 0 ? '<br><span class="mut">إضافية: ' . number_format((float)$o['extra_comm'], 2) . '</span>' : '') . '</td>';
+        echo '<td>' . number_format((float)($o['ship'] ?? 0)) . ' ' . esc(function_exists('wf_ship_currency') ? wf_ship_currency((string)($o['plat'] ?? ''), (string)($o['ship_country'] ?? '')) : 'ج.م') . '</td>';
         echo '<td><b data-ui="u-8bf4bd79 d2k">' . number_format((float)($o['total'] ?? 0),2) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
-        echo '<td dir="ltr">' . esc($o['ref'] ?: '—') . '</td>';
+        $mk_row = ((string)($o['ref'] ?? '') !== '') ? find_marketer_by_code((string)$o['ref']) : null;
+        echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
         echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
         echo '</select></form></td>';

@@ -13,8 +13,27 @@ const {loadNodeRuntime}=require(path.join(NM,'@php-wasm/node'));
 const FILES=['config.php','manual_products_lib.php','customer_req_lib.php','supabase.php','supabase_users.php','supabase_docs.php','hevo_api.php','ui-components.php','manual_products_import.csv'];
 // جداول الشحن بتتحمل من DATA_DIR (/app/data) — بننسخها عشان الاختبار يشتغل على البيانات الحقيقية
 const DATA_FILES=['data/shipping.json','data/shipping_cities_shopmart.json','data/shipping_cities_gulf.json'];
+// بيانات وهمية لاختبارات Task-11 (إشعارات المسوقين + تعديل/إلغاء الطلبات + عدّادات الأدمن) — جوه WASM بس
+const FIXTURES={
+ 'orders.json':[
+  {order_no:'ORD-TEST-1',plat:'manual',id:'m1',pname:'منتج اختبار',ref:'MK123',m_earn:50,comm_state:'confirmed',base_price:100,markup:0,extra_comm:0,qty:1,unit:100,ship:10,total:110,cname:'عميل',cphone:'01000000001',city:'القاهرة',district:'مصر الجديدة',address:'شارع 1',notes:'',at:'2026-10-20 10:00',status:'pending'},
+  {order_no:'ORD-TEST-2',plat:'manual',id:'m1',pname:'منتج اختبار 2',ref:'MK123',m_earn:30,comm_state:'confirmed',qty:1,unit:200,ship:10,total:210,cname:'عميل 2',cphone:'01000000002',city:'الجيزة',address:'شارع 2',at:'2026-10-20 11:00',status:'pending'},
+  {order_no:'ORD-TEST-3',plat:'manual',id:'m1',pname:'مشحون',ref:'MK999',m_earn:10,qty:1,unit:100,ship:0,total:100,cname:'عميل 3',cphone:'01000000003',city:'القاهرة',address:'ش 3',at:'2026-10-20 12:00',status:'shipped'},
+  {order_no:'ORD-TEST-4',plat:'manual',id:'m1',pname:'قيد التأكيد',ref:'MK777',qty:1,unit:50,ship:5,total:55,cname:'عميل 4',cphone:'01000000004',city:'أسوان',address:'ش 4',at:'2026-10-20 13:00',status:'قيد التأكيد'}
+ ],
+ 'payouts.json':[
+  {user:'a@x.com',amount:100,status:'قيد المراجعة'},
+  {user:'b@x.com',amount:50,status:'قيد المراجعة'},
+  {user:'c@x.com',amount:70,status:'موافق عليه'}
+ ],
+ 'product_requests.json':[{status:'pending',name:'ر1'},{status:'available',name:'ر2'},{status:'pending',name:'ر3'}],
+ 'support_chats.json':{t1:{messages:[{sender:'user'},{sender:'admin'}]},t2:{messages:[{sender:'admin'},{sender:'user'}]}},
+ 'notifications.json':[]
+};
 const PHP_TESTS=String.raw`
 <?php
+// في الاختبار كل الملفات محلية (Supabase مطفي): نعرّف DOCS_REMOTE فاضية قبل تضمين config.php
+define('DOCS_REMOTE', []);
 require '/app/config.php';
 $fail=0;$out=[];
 function chk(&$out,&$fail,$name,$got,$want){$ok=($got===$want);if(!$ok)$fail++;$out[$name]=$ok?'OK':['FAIL','got'=>$got,'want'=>$want];}
@@ -311,9 +330,73 @@ file_put_contents('/app/__bad_header.csv',"bad,header\n");
 chk($out,$fail,'csv bad header lists ship_fee',mb_strpos(manual_parse_csv('/app/__bad_header.csv')[1][0] ?? '','ship_fee')!==false,true);
 chk($out,$fail,'csv bad header still needs name+price',mb_strpos(manual_parse_csv('/app/__bad_header.csv')[1][0] ?? '','name,price')!==false,true);
 chk($out,$fail,'csv template file has ship_fee column',in_array('ship_fee',array_map('trim',explode(',',(string)@file_get_contents('/app/manual_products_import.csv'))),true)||mb_strpos((string)@file_get_contents('/app/manual_products_import.csv'),'ship_fee')!==false,true);
+// ---- 12) Task-11: إشعارات المسوقين + تعديل/إلغاء الطلب + عدّادات سايدبار الأدمن ----
+$MK=['email'=>'mk1@x.com','name'=>'مسوق ١','role'=>'marketer','ref_code'=>'MK123'];
+$c11=wf_admin_pending_counts();
+chk($out,$fail,'pending orders count',$c11['orders'],3);
+chk($out,$fail,'pending payouts count',$c11['commissions'],2);
+chk($out,$fail,'pending requests count',$c11['requests'],2);
+chk($out,$fail,'unread chats count',$c11['chats'],1);
+chk($out,$fail,'new marketers count is int',is_int($c11['marketers']),true);
+wf_notify_marketers('🆕 منتج اختبار للمسوقين','dashboard/marketer.php?mtab=browse');
+$ns=jload('notifications.json',[]);
+chk($out,$fail,'marketers notification stored',$ns[count($ns)-1]['for'],'marketers');
+chk($out,$fail,'marketers notification link',$ns[count($ns)-1]['link'],'dashboard/marketer.php?mtab=browse');
+$mkN=my_notifications('mk1@x.com','marketer');
+chk($out,$fail,'marketer sees group notification',count(array_filter($mkN,function($n){return $n['for']==='marketers';}))>=1,true);
+chk($out,$fail,'admin does not see marketers group',count(array_filter(my_notifications('ad@x.com','admin'),function($n){return $n['for']==='marketers';})),0);
+chk($out,$fail,'customer does not see marketers group',count(array_filter(my_notifications('c@x.com','customer'),function($n){return $n['for']==='marketers';})),0);
+$ords=jload('orders.json',[]);
+chk($out,$fail,'own pending order editable',wf_marketer_can_edit_order($ords[0],$MK),true);
+chk($out,$fail,'other ref not editable',wf_marketer_can_edit_order($ords[2],$MK),false);
+$o3s=$ords[2];$o3s['ref']='MK123';
+chk($out,$fail,'shipped not editable',wf_marketer_can_edit_order($o3s,$MK),false);
+$ed=wf_marketer_apply_order_edit('ORD-TEST-1',$MK,['qty'=>'2','cname'=>'عميل معدّل','cphone'=>'01000000009','city'=>'الإسكندرية','address'=>'ش 9','notes'=>'']);
+chk($out,$fail,'edit ok',$ed['ok'],true);
+$ords=jload('orders.json',[]);
+chk($out,$fail,'edit recomputes total 100x2+10-70 qty discount',$ords[0]['total'],140.0);
+chk($out,$fail,'edit qty saved',$ords[0]['qty'],2);
+chk($out,$fail,'edit city saved',$ords[0]['city'],'الإسكندرية');
+chk($out,$fail,'edit marks mk_edited_by',$ords[0]['mk_edited_by'],'marketer:MK123');
+chk($out,$fail,'edit by stranger rejected',wf_marketer_apply_order_edit('ORD-TEST-1',['email'=>'x@x.com','ref_code'=>'MK000'],['qty'=>'1','cname'=>'لص','cphone'=>'01000000000'])['ok'],false);
+chk($out,$fail,'edit bad phone rejected',wf_marketer_apply_order_edit('ORD-TEST-2',$MK,['qty'=>'1','cname'=>'عميل','cphone'=>'12'])['ok'],false);
+$cn=wf_marketer_cancel_order('ORD-TEST-2',$MK,'العميل اعتذر');
+chk($out,$fail,'cancel ok',$cn['ok'],true);
+$ords=jload('orders.json',[]);
+chk($out,$fail,'cancelled row kept for admin',count($ords),4);
+chk($out,$fail,'cancelled status',$ords[1]['status'],'cancelled');
+chk($out,$fail,'cancelled label is ملغي',status_label(status_key($ords[1]['status'])),'ملغي');
+chk($out,$fail,'cancelled reverses comm',$ords[1]['comm_state'],'reversed');
+chk($out,$fail,'cancelled reason from marketer',mb_strpos($ords[1]['cancel_reason'],'إلغاء المسوق')===0,true);
+chk($out,$fail,'cancelled no longer editable',wf_marketer_can_edit_order($ords[1],$MK),false);
+chk($out,$fail,'cancel shipped rejected',wf_marketer_cancel_order('ORD-TEST-3',['email'=>'y@x.com','ref_code'=>'MK999'])['ok'],false);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
+// Task-11 wiring: إشعارات لكل المسوقين + تعديل/إلغاء المسوق لطلباته + عدّادات سايدبار الأدمن
+{
+  const cfg11=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  assert.ok(/function wf_notify_marketers\(/.test(cfg11)&&/notify\('marketers'/.test(cfg11),'config must broadcast to the marketers group');
+  assert.ok(/\$for === 'marketers' && \$is_mk/.test(cfg11),'my_notifications must include the marketers group for marketer role');
+  assert.ok(/function wf_admin_pending_counts\(/.test(cfg11)&&/function wf_marketer_can_edit_order\(/.test(cfg11)&&/function wf_marketer_apply_order_edit\(/.test(cfg11)&&/function wf_marketer_cancel_order\(/.test(cfg11),'config must expose admin counters + marketer order edit/cancel helpers');
+  const lay11=fs.readFileSync(path.join(repo,'dashboard/layout.php'),'utf8');
+  assert.ok(/wf_admin_pending_counts\(\)/.test(lay11)&&/notification-count side-count/.test(lay11),'admin sidebar must render pending-count badges');
+  assert.ok(/my_notifications\(\$user\['email'\], wf_user_role\(\$user\)\)/.test(lay11),'bell must pass the role so marketers get group notifications');
+  const mkp=fs.readFileSync(path.join(repo,'dashboard/marketer.php'),'utf8');
+  assert.ok(/mk_order_action/.test(mkp)&&/wf_marketer_apply_order_edit/.test(mkp)&&/wf_marketer_cancel_order/.test(mkp),'marketer dashboard must wire order edit/cancel');
+  assert.ok(/<th>إجراءات<\/th>/.test(mkp)&&/name="cname"/.test(mkp)&&/mtab=orders&edit=/.test(mkp),'orders table must offer actions column + edit form');
+  assert.ok((mkp.match(/notify_user\(\$user\['email'\]/g)||[]).length>=4,'marketer must be notified about his own account events');
+  const ord11=fs.readFileSync(path.join(repo,'dashboard/orders.php'),'utf8');
+  assert.ok(/find_marketer_by_code\(\$ref\)/.test(ord11)&&/طلب جديد على لينكك/.test(ord11),'new orders must notify the owning marketer');
+  const adm11=fs.readFileSync(path.join(repo,'dashboard/admin.php'),'utf8');
+  assert.ok(/<th>العمولة<\/th>/.test(adm11)&&/find_marketer_by_code\(\(string\)\$o\['ref'\]\)/.test(adm11),'admin orders table must show commission + marketer name');
+  const mpl=fs.readFileSync(path.join(repo,'manual_products_lib.php'),'utf8');
+  assert.ok(/wf_notify_marketers\(/.test(mpl),'manual product insert must broadcast to marketers');
+  const upd=fs.readFileSync(path.join(repo,'updater/update_catalog.py'),'utf8');
+  assert.ok(/def push_new_product_notifications/.test(upd)&&/'for': 'marketers'/.test(upd)&&/snapshot_platform_ids\(\)/.test(upd),'catalog updater must notify marketers about new products');
+  const notp=fs.readFileSync(path.join(repo,'dashboard/notifications.php'),'utf8');
+  assert.ok(/wf_user_role\(\$user\)/.test(notp),'notifications page must pass the role');
+}
 // ربط الواجهة: منتجات يدوية تظهر في تبويب دول الخليج + تبويبات الدول من نفس المصدر
 const cfg=fs.readFileSync(path.join(repo,'config.php'),'utf8');
 function fn(name){const m=cfg.match(new RegExp('function '+name+'\\([\\s\\S]*?\\n\\}'));assert.ok(m,'missing function '+name);return m[0];}
@@ -517,6 +600,7 @@ if(fs.existsSync(path.join(NM,'php-parser'))){
   php.mkdirTree('/app/data/logs');
   for(const file of FILES)php.writeFile('/app/'+file,fs.readFileSync(path.join(repo,file)));
   for(const file of DATA_FILES)php.writeFile('/app/'+file,fs.readFileSync(path.join(repo,file)));
+  for(const [name,data] of Object.entries(FIXTURES))php.writeFile('/app/data/'+name,JSON.stringify(data));
   php.writeFile('/app/__test.php',PHP_TESTS);
   const res=await php.run({code:"<?php require '/app/__test.php';"});
   const raw=Buffer.from(Object.values(res.bytes)).toString('utf8');
