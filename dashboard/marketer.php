@@ -59,17 +59,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $mk_ord_msg = '';
     if (isset($_POST['mk_order_action'], $_POST['mk_order_no']) && $code !== '') {
         $mk_ono = mb_substr(trim((string)$_POST['mk_order_no']), 0, 40);
-        if ($_POST['mk_order_action'] === 'cancel') {
-            $mk_res = wf_marketer_cancel_order($mk_ono, $user, mb_substr(trim((string)($_POST['reason'] ?? '')), 0, 300));
+        if (in_array((string)$_POST['mk_order_action'], ['cancel', 'return'], true)) {
+            // المسوق يقدر يلغي أو يرجع طلبه حتى بعد الشحن/التسليم — العمولة بتتعكس تلقائيًا
+            $mk_to  = ((string)$_POST['mk_order_action'] === 'return') ? 'returned' : 'cancelled';
+            $mk_lbl = $mk_to === 'returned' ? 'إرجاع' : 'إلغاء';
+            $mk_res = wf_marketer_cancel_order($mk_ono, $user, mb_substr(trim((string)($_POST['reason'] ?? '')), 0, 300), $mk_to);
             if ($mk_res['ok']) {
                 $mo = $mk_res['o'];
                 if ((float)($mo['m_earn'] ?? 0) > 0) {
-                    commission_reverse($user['email'], (float)$mo['m_earn'], $mk_res['idx'], 'إلغاء المسوق للطلب');
-                    team_commission_reverse_for_order($mk_res['idx'], 'إلغاء المسوق للطلب');
+                    commission_reverse($user['email'], (float)$mo['m_earn'], $mk_res['idx'], $mk_lbl . ' المسوق للطلب');
+                    team_commission_reverse_for_order($mk_res['idx'], $mk_lbl . ' المسوق للطلب');
                 }
-                notify('admin', '❌ المسوق ' . ($user['name'] ?? $user['email']) . ' (' . $code . ') ألغى الطلب ' . $mk_ono, 'dashboard/admin.php?tab=orders');
-                notify_user($user['email'], '❌ تم إلغاء طلبك ' . $mk_ono . ' — فضل مسجّل عند الإدارة بحالة «ملغي».', 'dashboard/marketer.php?mtab=orders');
-                log_audit('marketer_cancel', $code, ['order_no' => $mk_ono]);
+                notify('admin', '❌ المسوق ' . ($user['name'] ?? $user['email']) . ' (' . $code . ') ' . ($mk_to === 'returned' ? 'أرجع' : 'ألغى') . ' الطلب ' . $mk_ono, 'dashboard/admin.php?tab=orders');
+                notify_user($user['email'], ($mk_to === 'returned' ? '↩️ تم إرجاع طلبك ' : '❌ تم إلغاء طلبك ') . $mk_ono . ' — فضل مسجّل عند الإدارة بحالة «' . ($mk_to === 'returned' ? 'مرتجع' : 'ملغي') . '».', 'dashboard/marketer.php?mtab=orders');
+                log_audit($mk_to === 'returned' ? 'marketer_return' : 'marketer_cancel', $code, ['order_no' => $mk_ono]);
             }
             $mk_ord_msg = $mk_res['msg'];
         } else {
@@ -637,16 +640,27 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
         echo '<td>' . esc(order_variant_label($o) ?: '—') . '</td>';
         echo '<td>' . esc($o['cname'] ?? '') . '</td>';
         echo '<td dir="ltr">' . esc($o['cphone'] ?? '') . (!empty($o['cphone2']) ? '<br><small class="mut">' . esc($o['cphone2']) . '</small>' : '') . '</td>';
-        echo '<td><b>' . esc($o['city'] ?? '') . '</b> — ' . esc(mb_substr($o['address'] ?? '', 0, 35)) . '<br>' . wf_details_btn('تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o), 'كل التفاصيل') . '</td>';
+        echo '<td><b>' . esc($o['city'] ?? '') . '</b> — ' . esc(mb_substr($o['address'] ?? '', 0, 35)) . '<br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td>';
         echo '<td>' . esc($o['qty'] ?? 1) . '</td>';
         echo '<td>' . number_format($o['unit'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</td>';
         echo '<td>' . number_format($o['ship'] ?? 0) . ' ج.م</td>';
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format($o['m_earn'] ?? 0, 2) . ' ج.م</td>';
-        echo '<td>' . wf_order_badge($o['status'] ?? '') . wf_order_reasons_btns($o) . '</td>';
-        if (wf_marketer_can_edit_order($o, $user)) {
-            echo '<td><div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn sm outline" href="?mtab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '">تعديل</a>'
-               . '<form method="post" data-confirm="هتلغي الطلب؟ هيفضل مسجّل عند الإدارة بحالة «ملغي» وهتتعكس عمولته." style="display:inline">' . csrf_field() . '<input type="hidden" name="mk_order_action" value="cancel"><input type="hidden" name="mk_order_no" value="' . esc((string)($o['order_no'] ?? '')) . '"><button class="btn sm" type="submit">إلغاء</button></form></div></td>';
+        echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';
+        // التعديل متاح قبل الشحن (قيد التأكيد/مؤكد) — الإلغاء والإرجاع متاحين على أي حالة لسه منتهية
+        $mk_can_ed = wf_marketer_can_edit_order($o, $user);
+        $mk_can_cn = wf_marketer_can_cancel_order($o, $user);
+        $mk_st_k   = status_key($o['status'] ?? '');
+        if ($mk_can_ed || $mk_can_cn) {
+            echo '<td><div style="display:flex;gap:6px;flex-wrap:wrap">';
+            if ($mk_can_ed) echo '<a class="btn sm outline" href="?mtab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '">تعديل</a>';
+            if ($mk_can_cn) {
+                echo '<form method="post" style="display:inline">' . csrf_field() . '<input type="hidden" name="mk_order_action" value="cancel"><input type="hidden" name="mk_order_no" value="' . esc((string)($o['order_no'] ?? '')) . '"><button class="btn sm" type="submit">إلغاء</button></form>';
+                if (in_array($mk_st_k, ['shipped', 'delivered'], true)) {
+                    echo '<form method="post" style="display:inline">' . csrf_field() . '<input type="hidden" name="mk_order_action" value="return"><input type="hidden" name="mk_order_no" value="' . esc((string)($o['order_no'] ?? '')) . '"><button class="btn sm outline" type="submit">إرجاع</button></form>';
+                }
+            }
+            echo '</div></td>';
         } else {
             echo '<td><span class="mut">—</span></td>';
         }

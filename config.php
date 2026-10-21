@@ -376,6 +376,7 @@ function order_status_list() {
         'confirmed'  => 'مؤكد',
         'shipped'    => 'مشحون',
         'delivered'  => 'تم التوصيل',
+        'no_answer'  => 'لم يتم الرد',
         'cancelled'  => 'ملغي',
         'returned'   => 'مرتجع',
     ];
@@ -404,7 +405,7 @@ function status_key($v) {
 // الحالات التي تُعتبر "نهائية إيجابية" (تُحرَّر فيها العمولة)
 function status_releases_commission($k) { return in_array(status_key($k), ['delivered'], true); }
 // الحالات التي تُلغي العمولة
-function status_reverses_commission($k) { return in_array(status_key($k), ['cancelled', 'returned'], true); }
+function status_reverses_commission($k) { return in_array(status_key($k), ['cancelled', 'returned', 'no_answer'], true); }
 // الحالات التي يسمح فيها العميل بالإلغاء
 function status_customer_cancellable($k) { return in_array(status_key($k), ['pending', 'confirmed'], true); }
 
@@ -2851,6 +2852,14 @@ function wf_admin_pending_counts() {
     return $c;
 }
 // هل من حق المسوق ده يعدّل/يلغي الطلب ده؟ (طلبه بالرف بتاعه + لسه قبل الشحن)
+// إلغاء/إرجاع المسوق: مسموح على أي حالة لسه مش منتهية — حتى بعد الشحن والتسليم
+function wf_marketer_can_cancel_order($o, $u) {
+    if (!is_array($o) || !is_array($u)) return false;
+    $ref = trim((string)($u['ref_code'] ?? ''));
+    if ($ref === '' || strcasecmp(trim((string)($o['ref'] ?? '')), $ref) !== 0) return false;
+    if (in_array(status_key($o['status'] ?? ''), ['cancelled', 'returned', 'no_answer'], true)) return false;
+    return trim((string)($o['order_no'] ?? '')) !== '';
+}
 function wf_marketer_can_edit_order($o, $u) {
     if (!is_array($o) || !is_array($u)) return false;
     $ref = trim((string)($u['ref_code'] ?? ''));
@@ -3116,8 +3125,10 @@ function wf_admin_apply_order_edit($order_no, $in) {
     }
 
     // ===== كتابة الصف =====
+    // سبب الإلغاء/الإرجاع/عدم الرد — يظهر للمسوق والعميل في تفاصيل الطلب
+    $st_reason = mb_substr(trim((string)($in['status_reason'] ?? '')), 0, 300);
     $res = ['ok' => false, 'msg' => 'تعذر حفظ التعديلات'];
-    jupdate('orders.json', function (&$os) use ($order_no, $v, $new_key, $new_ref, $ref_changed, $old_row, $old_idx, &$res) {
+    jupdate('orders.json', function (&$os) use ($order_no, $v, $new_key, $new_ref, $ref_changed, $old_row, $old_idx, $st_reason, &$res) {
         if (!is_array($os)) return false;
         foreach ($os as $i => $o) {
             if (($o['order_no'] ?? '') !== $order_no) continue;
@@ -3134,6 +3145,8 @@ function wf_admin_apply_order_edit($order_no, $in) {
             $eff18 = round((float)($os[$i]['m_earn'] ?? 0), 2);
             $os[$i]['comm_state'] = status_releases_commission($new_key) ? ($eff18 > 0 ? 'confirmed' : 'none')
                                   : (status_reverses_commission($new_key) ? 'reversed' : ($eff18 > 0 ? 'pending' : 'none'));
+            if ($st_reason !== '' && in_array($new_key, ['cancelled', 'no_answer'], true)) $os[$i]['cancel_reason'] = 'الإدارة: ' . $st_reason;
+            if ($st_reason !== '' && $new_key === 'returned') $os[$i]['return_reason'] = 'الإدارة: ' . $st_reason;
             $os[$i]['adm_edited_at'] = date('c');
             $os[$i]['adm_edited_by'] = function_exists('admin_actor') ? admin_actor() : 'admin';
             $res = ['ok' => true, 'idx' => $i, 'changed' => wf_order_edit_changed_fields($old_row, $os[$i]),
@@ -3171,20 +3184,22 @@ function wf_admin_apply_order_edit($order_no, $in) {
     return $res;
 }
 // «حذف» المسوق للطلب = إلغاء ناعم: الطلب بيفضل عند الإدارة بحالة «ملغي» ومش بيتمسح
-function wf_marketer_cancel_order($order_no, $u, $reason = '') {
+function wf_marketer_cancel_order($order_no, $u, $reason = '', $to = 'cancelled') {
     $order_no = mb_substr(trim((string)$order_no), 0, 40);
+    $to = ($to === 'returned') ? 'returned' : 'cancelled';
     $res = ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
-    jupdate('orders.json', function (&$os) use ($order_no, $u, $reason, &$res) {
+    jupdate('orders.json', function (&$os) use ($order_no, $u, $reason, $to, &$res) {
         if (!is_array($os)) return false;
         foreach ($os as $i => $o) {
             if (($o['order_no'] ?? '') !== $order_no) continue;
-            if (!wf_marketer_can_edit_order($o, $u)) { $res['msg'] = 'الطلب مش بتاعك أو حالته مابقتش تقبل إلغاء'; return false; }
-            $os[$i]['status'] = 'cancelled';
+            if (!wf_marketer_can_cancel_order($o, $u)) { $res['msg'] = 'الطلب مش بتاعك أو حالته منتهية ومش تقبل إلغاء أو إرجاع'; return false; }
+            $os[$i]['status'] = $to;
             $os[$i]['comm_state'] = 'reversed';
-            $os[$i]['cancel_reason'] = 'إلغاء المسوق' . ($reason !== '' ? ': ' . $reason : '');
+            if ($to === 'returned') $os[$i]['return_reason'] = 'إرجاع المسوق' . ($reason !== '' ? ': ' . $reason : '');
+            else $os[$i]['cancel_reason'] = 'إلغاء المسوق' . ($reason !== '' ? ': ' . $reason : '');
             $os[$i]['cancelled_by'] = 'marketer:' . (string)($u['ref_code'] ?? '');
             $os[$i]['status_at'] = date('c');
-            $res = ['ok' => true, 'msg' => 'تم إلغاء الطلب — فضل مسجّل عند الإدارة بحالة «ملغي» ✅', 'idx' => $i, 'o' => $o];
+            $res = ['ok' => true, 'msg' => ($to === 'returned' ? 'تم إرجاع الطلب — فضل مسجّل عند الإدارة بحالة «مرتجع» ✅' : 'تم إلغاء الطلب — فضل مسجّل عند الإدارة بحالة «ملغي» ✅'), 'idx' => $i, 'o' => $o, 'to' => $to];
             return true;
         }
         return false;

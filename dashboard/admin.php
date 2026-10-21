@@ -144,12 +144,16 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
             }
         }
 
-        jupdate('orders.json', function (&$os) use ($i, $new_key) {
+        // سبب الإلغاء/الإرجاع/عدم الرد من الإدارة — يظهر للمسوق والعميل في تفاصيل الطلب
+        $st_reason_q = mb_substr(trim((string)($_POST['status_reason'] ?? '')), 0, 300);
+        jupdate('orders.json', function (&$os) use ($i, $new_key, $st_reason_q) {
             if (!is_array($os) || !isset($os[$i])) return false;
             $os[$i]['status']     = $new_key;
             $os[$i]['status_at']  = date('c');
             $os[$i]['comm_state'] = status_releases_commission($new_key) ? 'confirmed'
                                   : (status_reverses_commission($new_key) ? 'reversed' : 'pending');
+            if ($st_reason_q !== '' && in_array($new_key, ['cancelled', 'no_answer'], true)) $os[$i]['cancel_reason'] = 'الإدارة: ' . $st_reason_q;
+            if ($st_reason_q !== '' && $new_key === 'returned') $os[$i]['return_reason'] = 'الإدارة: ' . $st_reason_q;
             return true;
         }, []);
 
@@ -1040,7 +1044,7 @@ if ($tab === 'overview') {
     if ($last10) {
         echo '<table class="data-table rtable" data-ui-table="pending" aria-busy="true"><tr><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الهاتف</th><th>المحافظة</th><th>الإجمالي</th><th>الحالة</th></tr>';
         foreach ($last10 as $o) {
-            echo '<tr><td>' . esc(substr($o['at'] ?? '', 0, 16)) . '</td><td><b>' . esc(mb_substr(aff_clean($o['pname'] ?? '', true), 0, 35)) . '</b></td><td>' . esc($o['cname'] ?? '') . '</td><td dir="ltr">' . esc($o['cphone'] ?? '') . '</td><td>' . esc($o['city'] ?? '') . '</td><td><b data-ui="u-9aa26154 d2p">' . number_format($o['total'] ?? 0) . ' ج.م</b></td><td><span class="badge green">' . esc(status_label($o['status'] ?? '')) . '</span>' . wf_order_reasons_btns($o) . ' ' . wf_details_btn('تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o)) . '</td></tr>';
+            echo '<tr><td>' . esc(substr($o['at'] ?? '', 0, 16)) . '</td><td><b>' . esc(mb_substr(aff_clean($o['pname'] ?? '', true), 0, 35)) . '</b></td><td>' . esc($o['cname'] ?? '') . '</td><td dir="ltr">' . esc($o['cphone'] ?? '') . '</td><td>' . esc($o['city'] ?? '') . '</td><td><b data-ui="u-9aa26154 d2p">' . number_format($o['total'] ?? 0) . ' ج.م</b></td><td><span class="badge green">' . esc(status_label($o['status'] ?? '')) . '</span> ' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td></tr>';
         }
         echo '</table>';
     } else {
@@ -1309,6 +1313,7 @@ elseif ($tab === 'orders') {
             echo '<option value="' . esc($ae_sk) . '"' . (status_key($adm_edit_o['status'] ?? '') === $ae_sk ? ' selected' : '') . '>' . esc(status_label($ae_sk)) . '</option>';
         }
         echo '</select></div>'
+           . '<div><label class="field-label">سبب الإلغاء / الإرجاع / عدم الرد (يظهر للمسوق)</label><input name="status_reason" maxlength="300" placeholder="يُسجل مع الحالة لو ملغي/مرتجع/لم يتم الرد" value="' . esc((string)($adm_edit_o['cancel_reason'] ?? $adm_edit_o['return_reason'] ?? '')) . '"></div>'
            . '<div><label class="field-label">كود المسوق (تحويل العمولة)</label><input name="ref" dir="ltr" maxlength="40" value="' . $ae_in('ref') . '">'
            . '<span class="mut" style="font-size:12px">المسوق الحالي: ' . esc($ae_mk ? (string)($ae_mk['name'] ?? '') : '—') . ' — تغيير الكود بينقل العمولة كاملة (بفريقها) من القديم للجديد.</span></div>'
            . '<div><label class="field-label">الحملة / المصدر (sub)</label><input name="sub" maxlength="60" value="' . $ae_in('sub') . '"></div>'
@@ -1343,7 +1348,7 @@ elseif ($tab === 'orders') {
         echo '<td>' . esc(order_variant_label($o) ?: '—') . '</td>';
         echo '<td><b>' . esc($o['cname'] ?? '') . '</b></td>';
         echo '<td dir="ltr"><a href="https://wa.me/' . esc($ph_wa) . '" target="_blank" data-ui="u-46a42a97 d1x dc d2l"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chat></use></svg> ' . esc($o['cphone'] ?? '') . '</a></td>';
-        echo '<td>' . esc(($o['city'] ?? '') . ' - ' . mb_substr($o['address'] ?? '', 0, 45)) . '<br>' . wf_details_btn('تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o), 'كل التفاصيل') . '</td>';
+        echo '<td>' . esc(($o['city'] ?? '') . ' - ' . mb_substr($o['address'] ?? '', 0, 45)) . '<br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td>';
         echo '<td><b>' . (int)($o['qty'] ?? 1) . '</b></td>';
         echo '<td>' . number_format((float)($o['unit'] ?? 0)) . ' ' . esc(wf_ui_currency($o)) . '</td>';
         echo '<td class="comm">+' . number_format((float)($o['m_earn'] ?? 0), 2) . ' ج.م' . ((float)($o['extra_comm'] ?? 0) > 0 ? '<br><span class="mut">إضافية: ' . number_format((float)$o['extra_comm'], 2) . '</span>' : '') . '</td>';
@@ -1351,9 +1356,9 @@ elseif ($tab === 'orders') {
         echo '<td><b data-ui="u-8bf4bd79 d2k">' . number_format((float)($o['total'] ?? 0),2) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         $mk_row = ((string)($o['ref'] ?? '') !== '') ? find_marketer_by_code((string)$o['ref']) : null;
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
-        echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
+        echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><input name="status_reason" maxlength="300" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-bottom:6px"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
-        echo '</select></form>' . wf_order_reasons_btns($o)
+        echo '</select></form>'
            . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a></td>';
         $an_list = (isset($o['admin_notes']) && is_array($o['admin_notes'])) ? $o['admin_notes'] : [];
         echo '<td data-ui="u-5d985ec3 do">';
