@@ -1,4 +1,18 @@
 <?php $PUBLIC_PAGE = true; require 'layout.php';
+// طلب الأوردر من الديالوج (ajax_order): الرد لازم يفضل JSON نضيف حتى لو حصل تحذير PHP
+// أو مخرجات غير متوقعة من الاستضافة — أي حاجة تانية بتترمي وبيخرج JSON بس.
+// بدونه كان أي تحذير بيكسر الرد وتظهر رسالة «تعذر تأكيد استجابة الخادم» رغم نجاح الطلب.
+$__wf_ajax_order = ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['ajax_order']));
+if ($__wf_ajax_order) {
+    ob_start();
+    register_shutdown_function(function () {
+        if (!empty($GLOBALS['_WF_ORDER_JSON_SENT'])) return;
+        while (ob_get_level() > 0) @ob_end_clean();
+        if (!headers_sent()) header('Content-Type: application/json; charset=utf-8');
+        $GLOBALS['_WF_ORDER_JSON_SENT'] = true;
+        echo json_encode(['ok' => false, 'error' => 'حصل خطأ غير متوقع أثناء تسجيل الطلب — راجع «طلباتي»، ولو الطلب مش موجود جرّب تاني'], JSON_UNESCAPED_UNICODE);
+    });
+}
 // طلب بدون تسجيل: يُقبل برقم الموبايل كهوية
 $guest_mode = !current_user();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $guest_mode && !empty($_POST['id'])) {
@@ -160,6 +174,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
         }
     }
     if (!empty($_POST['ajax_order'])) {
+        while (ob_get_level() > 0) @ob_end_clean();   // نظّف أي مخرجات/تحذيرات اتجمعت قبل الرد
+        $GLOBALS['_WF_ORDER_JSON_SENT'] = true;
         header('Content-Type: application/json; charset=utf-8');
         if (!empty($order_err)) {
             echo json_encode(['ok' => false, 'error' => $order_err], JSON_UNESCAPED_UNICODE);
@@ -183,6 +199,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
         }
         exit;
     }
+}
+// طلب AJAX وصل من غير id منتج (أو بلوك المعالجة مااشتغلش): رد JSON واضح بدل صفحة HTML كاملة
+// كانت بتكسر parse في المتصفح وتظهر رسالة «تعذر تأكيد استجابة الخادم» من غير سبب مفهوم.
+if ($__wf_ajax_order && empty($GLOBALS['_WF_ORDER_JSON_SENT'])) {
+    while (ob_get_level() > 0) @ob_end_clean();
+    $GLOBALS['_WF_ORDER_JSON_SENT'] = true;
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => false, 'error' => (isset($order_err) && $order_err !== '') ? $order_err : 'بيانات الطلب ناقصة — حدّث الصفحة وجرّب تاني'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 if ($guest_mode && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
     layout_top('تم استلام طلبك ', 'orders');
@@ -292,7 +317,7 @@ if (!$orders) {
                 $action = '<span class="badge yellow">طلب استرجاع قيد المراجعة</span>';
             }
         }
-        echo '<tr><td dir="ltr" data-ui="u-01f4ea64 do dc">' . esc($ono ?: '—') . '</td><td><a href="product.php?id=' . urlencode($o['id']) . (!empty($o['ref']) ? '&ref=' . urlencode($o['ref']) : '') . '" data-ui="u-00703584 dc">' . esc(mb_substr($nm, 0, 45)) . '</a>' . (order_variant_label($o) !== '' ? '<br><span class="mut" data-ui="u-5d985ec3 do">' . esc(order_variant_label($o)) . '</span>' : '') . '</td><td>' . (int)($o['qty'] ?? 1) . '</td><td><b>' . number_format($o['total'] ?? 0, 2) . ' ' . esc(wf_ui_currency($o)) . '</b>' . ((float)($o['discount'] ?? 0) > 0 ? '<br><span class="mut" data-ui="u-5d985ec3 do" style="color:var(--success)">خصم الكمية ' . number_format((float)$o['discount'], 2) . ' ج.م</span>' : '') . '</td><td>' . wf_order_badge($k) . '<details class="row-details"><summary>مراحل الطلب</summary>' . $bar . '</details>' . '</td><td dir="ltr" data-ui="u-5d985ec3 do">' . esc(substr($o['at'] ?? '', 0, 10)) . '</td><td>' . $action . '</td></tr>';
+        echo '<tr><td dir="ltr" data-ui="u-01f4ea64 do dc">' . esc($ono ?: '—') . '</td><td><a href="product.php?id=' . urlencode($o['id']) . (!empty($o['ref']) ? '&ref=' . urlencode($o['ref']) : '') . '" data-ui="u-00703584 dc">' . esc(mb_substr($nm, 0, 45)) . '</a>' . (order_variant_label($o) !== '' ? '<br><span class="mut" data-ui="u-5d985ec3 do">' . esc(order_variant_label($o)) . '</span>' : '') . '</td><td>' . (int)($o['qty'] ?? 1) . '</td><td><b>' . number_format($o['total'] ?? 0, 2) . ' ' . esc(wf_ui_currency($o)) . '</b>' . ((float)($o['discount'] ?? 0) > 0 ? '<br><span class="mut" data-ui="u-5d985ec3 do" style="color:var(--success)">خصم الكمية ' . number_format((float)$o['discount'], 2) . ' ج.م</span>' : '') . '</td><td>' . wf_order_badge($k) . wf_order_reasons_btns($o) . '<details class="row-details"><summary>مراحل الطلب</summary>' . $bar . '</details>' . wf_details_btn('تفاصيل الطلب ' . $ono, wf_order_details_rows($o), 'كل التفاصيل') . '</td><td dir="ltr" data-ui="u-5d985ec3 do">' . esc(substr($o['at'] ?? '', 0, 10)) . '</td><td>' . $action . '</td></tr>';
     }
     echo '</tbody></table></div>';
 }

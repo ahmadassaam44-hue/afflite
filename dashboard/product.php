@@ -552,8 +552,8 @@ $vlbl = $plat === 'ledger' ? (string)($vd['color'] ?? '') : ($sz2 !== '' ? $sz2 
 <label for="bqty" data-ui="u-ad0a9ff4 dc d12">الكمية:</label>
 <div data-ui="u-808be6c3 d3e d1p dar d24 d2n d4u">
   <button type="button" aria-label="تقليل الكمية" onclick="var q=document.getElementById('bqty');q.value=Math.max(1,(parseInt(q.value||1,10)||1)-1);" data-ui="u-033dc7b5 d5v d5w d3w ds dc de d3j">−</button>
-  <input id="bqty" type="number" value="1" min="1" aria-label="الكمية" data-ui="u-f5bdfaf9 das d5w d3w df dc d1v">
-  <button type="button" aria-label="زيادة الكمية" onclick="var q=document.getElementById('bqty');q.value=(parseInt(q.value||1,10)||1)+1;" data-ui="u-033dc7b5 d5v d5w d3w ds dc de d3j">+</button>
+  <input id="bqty" type="number" value="1" min="1" max="99" aria-label="الكمية" data-ui="u-f5bdfaf9 das d5w d3w df dc d1v">
+  <button type="button" aria-label="زيادة الكمية" onclick="var q=document.getElementById('bqty');q.value=Math.min(99,(parseInt(q.value||1,10)||1)+1);q.dispatchEvent(new Event('input'));" data-ui="u-033dc7b5 d5v d5w d3w ds dc de d3j">+</button>
 </div>
 <div data-ui="u-aaa3fbb4 d12 ds dt d24 d3d">قيمة المنتجات قبل الشحن: <b id="buytotal" data-ui="u-9dfa35fd d2k d9h"><?php echo wf_ui_money($unit0); ?></b> <?php echo esc($cur); ?></div>
 <?php if (function_exists('wf_bulk_discount_plat_ok') && wf_bulk_discount_plat_ok($plat, $cur) && (float)$unit0 > 0): ?>

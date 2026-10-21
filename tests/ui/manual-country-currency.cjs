@@ -170,6 +170,9 @@ chk($out,$fail,'dialog has no egyptian governorates',mb_strpos($__dlg,'>القا
 chk($out,$fail,'dialog region word is saudi',mb_strpos($__dlg,'المنطقة / المدينة')!==false,true);
 chk($out,$fail,'dialog select currency attr',mb_strpos($__dlg,'data-ship-currency="ر.س"')!==false,true);
 chk($out,$fail,'dialog ships country tables to js',mb_strpos($__dlg,'manual:السعودية')!==false&&mb_strpos($__dlg,'id="wfShippingCurrency"')!==false,true);
+// ديالوج الطلب للزائر: خانة عمولة المسوق لازم تكون مخفية (بتظهر للمسوق المسجّل بس)
+chk($out,$fail,'dialog hides marketer commission for guests',mb_strpos($__dlg,'eoMkExtraInput')===false,true);
+chk($out,$fail,'dialog has qty stepper',mb_strpos($__dlg,'id="eoQtyInput"')!==false,true);
 chk($out,$fail,'dialog currency state has sar',mb_strpos($__dlg,'"manual:\u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629":"\u0631.\u0633"')!==false||mb_strpos($__dlg,'"manual:السعودية":"ر.س"')!==false,true);
 chk($out,$fail,'dialog has no egp shipping label for saudi',mb_strpos($__dlg,'(الشحن: 0 ج.م)')===false,true);
 chk($out,$fail,'dialog city state has gulf cities',mb_strpos($__dlg,'id="wfCityState"')!==false&&mb_strpos($__dlg,'"الرياض":')!==false&&mb_strpos($__dlg,'"دبي":')!==false,true);
@@ -417,6 +420,67 @@ chk($out,$fail,'asset version = filemtime',$v15,(string)(int)filemtime('/app/ass
 chk($out,$fail,'asset version memoized',wf_asset_v('style.css'),$v15);
 chk($out,$fail,'missing asset falls back numeric',ctype_digit(wf_asset_v('ui.js')),true);
 chk($out,$fail,'traversal stays numeric',ctype_digit(wf_asset_v('../../etc/passwd')),true);
+// ---- 16) ديالوج التفاصيل العام: التفاصيل الطويلة في ديالوج + أسباب الرفض/الإلغاء ظاهرة ----
+if(!function_exists('wf_details_btn'))require_once '/app/ui-components.php';
+$b16=wf_details_btn('سبب الإلغاء',[['السبب','العميل اعتذر عن الاستلام'],['حقل فاضي','']],'التفاصيل');
+chk($out,$fail,'details button attr',strpos($b16,'data-wf-details="')!==false,true);
+preg_match('/data-wf-details="([^"]*)"/',$b16,$m16);
+$d16=json_decode(html_entity_decode($m16[1],ENT_QUOTES,'UTF-8'),true);
+chk($out,$fail,'details payload title',$d16['t'],'سبب الإلغاء');
+chk($out,$fail,'details payload rows',count($d16['r']),2);
+chk($out,$fail,'empty value becomes dash',$d16['r'][1][1],'—');
+chk($out,$fail,'no rows no button',wf_details_btn('t',[['','']]),'');
+$pt16=wf_det_text(str_repeat('كلمة ',40),30,'عنوان','التفاصيل');
+chk($out,$fail,'preview truncated with ellipsis',strpos($pt16,'wf-det-preview')!==false&&strpos($pt16,'…')!==false,true);
+chk($out,$fail,'preview has dialog button',strpos($pt16,'data-wf-details')!==false,true);
+chk($out,$fail,'empty text renders dash only',wf_det_text(''),'—');
+$o16=['order_no'=>'ORD-16','cancel_reason'=>'إلغاء المسوق: العميل غير متاح','address'=>'شارع طويل جدا في مدينة كبيرة','city'=>'القاهرة','qty'=>2];
+chk($out,$fail,'cancel reason button shown',strpos(wf_order_reasons_btns($o16),'سبب الإلغاء')!==false,true);
+chk($out,$fail,'reason button danger style',strpos(wf_order_reasons_btns($o16),'wf-det-danger')!==false,true);
+chk($out,$fail,'no reasons no buttons',wf_order_reasons_btns(['order_no'=>'X']),'');
+$rows16=wf_order_details_rows($o16);
+$has16=false; foreach($rows16 as $r16x) if($r16x[0]==='العنوان بالتفصيل'&&$r16x[1]===$o16['address'])$has16=true;
+chk($out,$fail,'full address in dialog rows',$has16,true);
+$x16=wf_details_btn('t',[['سبب','<script>"x"</script>']]);
+chk($out,$fail,'payload is XSS-safe',strpos($x16,'<script>')===false&&strpos($x16,'&quot;')!==false,true);
+// ---- 17) مهمة 16: «تذكرني» runtime + قلب المفضلة في الهيدر الموحّد ----
+// Supabase مطفي في الاختبار — update_user بيفشل بهدوء، لكن الكوكي والتحقق逻辑 محليين
+$rm17=remember_issue('Tester@Example.com ');
+chk($out,$fail,'remember_issue returns true',$rm17,true);
+$rmck17=(string)($_COOKIE['wf_remember'] ?? '');
+chk($out,$fail,'remember cookie format email|token64',(bool)preg_match('/^tester%40example\.com\|[0-9a-f]{64}$/',$rmck17),true);
+remember_clear('tester@example.com');
+chk($out,$fail,'remember_clear removes cookie',isset($_COOKIE['wf_remember']),false);
+// كوكي مزور/مستخدم مش موجود ⇒ مفيش جلسة اتوماتيكية + الكوكي يت مسح
+// الجلسة لازم تكون مفتوحة عشان نقيس سلوك remember_login الحقيقي (config بيفتحها عند التحميل)
+if (session_status() !== PHP_SESSION_ACTIVE) @session_start();
+chk($out,$fail,'session active before remember_login',session_status()===PHP_SESSION_ACTIVE,true);
+unset($_SESSION['user']);
+$_COOKIE['wf_remember']='ghost%40example.com|'.str_repeat('a',64);
+remember_login();
+chk($out,$fail,'remember_login rejects unknown user',empty($_SESSION['user']),true);
+chk($out,$fail,'remember_login clears bad cookie',isset($_COOKIE['wf_remember']),false);
+// جلسة قائمة ⇒ remember_login ما يلمسهاش
+$_SESSION['user']=['name'=>'X','email'=>'x@y.z','role'=>'customer'];
+$_COOKIE['wf_remember']='other%40example.com|'.str_repeat('b',64);
+remember_login();
+chk($out,$fail,'remember_login keeps existing session',(string)($_SESSION['user']['email'] ?? ''),'x@y.z');
+unset($_COOKIE['wf_remember']);
+// الهيدر الموحّد: أيقونة المفضلة بعدّاد
+$wh17a=wf_store_header(['brand'=>'B','home'=>'index.php','wish_href'=>'dashboard/wishlist.php','wish_count'=>3,'cart_count'=>0]);
+chk($out,$fail,'store header shows wish icon',strpos($wh17a,'wish-wrap')!==false&&strpos($wh17a,'المفضلة')!==false,true);
+chk($out,$fail,'store header wish badge count',strpos($wh17a,'<span class="wish-count">3</span>')!==false,true);
+$wh17b=wf_store_header(['brand'=>'B','home'=>'index.php','cart_count'=>0]);
+chk($out,$fail,'store header hides wish without href',strpos($wh17b,'wish-wrap')===false,true);
+$wh17c=wf_store_header(['brand'=>'B','home'=>'index.php','wish_href'=>'dashboard/wishlist.php','wish_count'=>0,'cart_count'=>0]);
+chk($out,$fail,'zero wish count shows icon without badge',strpos($wh17c,'wish-wrap')!==false&&strpos($wh17c,'wish-count')===false,true);
+// شريط الموبايل السفلي: المفضلة جنب السلة — يظهر بس لما الصفحة تمرر wish_href
+$bn17a=wf_bottom_nav('home',['cart_count'=>0,'wish_href'=>'dashboard/wishlist.php','wish_count'=>2]);
+chk($out,$fail,'mobile nav shows wish item with count',strpos($bn17a,'dashboard/wishlist.php')!==false&&strpos($bn17a,'المفضلة (2)')!==false,true);
+$bn17b=wf_bottom_nav('home',['cart_count'=>0]);
+chk($out,$fail,'mobile nav hides wish without href',strpos($bn17b,'wishlist.php')===false,true);
+$bn17c=wf_bottom_nav('home',['cart_count'=>0,'wish_href'=>'dashboard/wishlist.php','hide'=>['wish']]);
+chk($out,$fail,'mobile nav wish respects hide list',strpos($bn17c,'wishlist.php')===false,true);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -429,6 +493,36 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
     assert.ok(/wf_asset_v\(|filemtime/.test(srcx),f+' must version assets automatically');
   }
   assert.ok(/function wf_asset_v\(/.test(fs.readFileSync(path.join(repo,'config.php'),'utf8')),'wf_asset_v helper must exist in config.php');
+}
+// Task-15 wiring: ديالوج تفاصيل عام — التفاصيل الطويلة وأسباب الرفض/الإلغاء في ديالوج بدل الحشر في خلايا صغيرة
+{
+  const uic=fs.readFileSync(path.join(repo,'ui-components.php'),'utf8');
+  for(const fn of ['function wf_details_btn(','function wf_det_text(','function wf_order_reasons_btns(','function wf_order_details_rows('])
+    assert.ok(uic.includes(fn),'ui-components.php must define '+fn);
+  const js=fs.readFileSync(path.join(repo,'assets/ui.js'),'utf8');
+  assert.ok(/window\.wfDetails\s*=/.test(js),'ui.js must expose wfDetails()');
+  assert.ok(js.includes('[data-wf-details]'),'ui.js must wire data-wf-details buttons');
+  assert.ok(/val\.textContent/.test(js),'dialog values must be rendered as text (XSS-safe)');
+  const css=fs.readFileSync(path.join(repo,'assets/style.css'),'utf8');
+  for(const sel of ['.wf-det-backdrop{','.wf-det-card{','.wf-det-row{','.btn.wf-det-danger{','.wf-det-preview{'])
+    assert.ok(css.includes(sel),'style.css must include '+sel);
+  const adm=fs.readFileSync(path.join(repo,'dashboard/admin.php'),'utf8');
+  assert.ok((adm.match(/wf_details_btn\(|wf_det_text\(/g)||[]).length>=10,'admin must open details dialogs (orders, notes, payouts, payments, audit, noon, errors)');
+  assert.ok(adm.includes('wf_order_reasons_btns('),'admin orders must surface cancel/return/payment-reject reasons');
+  assert.ok(/payment_reject_reason/.test(adm),'payment reject reason must be visible to admin');
+  assert.ok(/payout_reject_reason/.test(adm)&&/'reject_reason'\]/.test(adm),'payout reject must record a reason');
+  const mk=fs.readFileSync(path.join(repo,'dashboard/marketer.php'),'utf8');
+  assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_reasons_btns('),'marketer orders must have details dialogs + reasons');
+  const ord=fs.readFileSync(path.join(repo,'dashboard/orders.php'),'utf8');
+  assert.ok(ord.includes('wf_details_btn(')&&ord.includes('wf_order_reasons_btns('),'customer orders must show reasons and full details');
+  const noon=fs.readFileSync(path.join(repo,'dashboard/noon.php'),'utf8');
+  assert.ok(noon.includes('wf_det_text('),'noon reject notes must open a dialog');
+  const po=fs.readFileSync(path.join(repo,'dashboard/_payout.php'),'utf8');
+  assert.ok(po.includes('wf_details_btn(')&&po.includes('reject_reason'),'marketer payout history must show reject reason + notes');
+  const mp=fs.readFileSync(path.join(repo,'dashboard/manual_products.php'),'utf8');
+  assert.ok(mp.includes('wf_details_btn('),'manual products list must open a full-details dialog');
+  const idx=fs.readFileSync(path.join(repo,'dashboard/index.php'),'utf8');
+  assert.ok(idx.includes('wf_det_text(')&&idx.includes('wf_details_btn('),'account page reviews/news must open dialogs for long text');
 }
 // Task-13 wiring: «تعذر الحفظ» في تعديل المنتجات + سعر الأدمن override = السعر النهائي
 {
@@ -675,11 +769,48 @@ assert.ok(/M5ZOON_COUNTRY_BY_CODE/.test(updater)&&/M5ZOON_COUNTRY_BY_CURRENCY/.t
 assert.ok(!/'country': 'مصر'/.test(mzUpdate.slice(0,mzUpdate.indexOf('jsave'))),'update_m5zoon must not hardcode مصر for new stock products');
 assert.ok(/'country': _m5zoon_country\(pid, currency\)\[0\]/.test(mzUpdate),'new stock items must be stored with their derived country');
 assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock rows stored as مصر');
+// ---- توصيلات مهمة 16: تذكرني / مرونة JSON / سقف الكمية / مفضلة+سلة في كل مكان ----
+{
+  const cfgSrc=src('config.php');
+  assert.ok(/HTTP_X_REQUESTED_WITH[\s\S]{0,260}display_errors/.test(cfgSrc),'XHR requests must suppress display_errors so order replies stay clean JSON');
+  assert.ok(cfgSrc.includes('function remember_issue')&&cfgSrc.includes('function remember_login')&&cfgSrc.includes('function remember_clear'),'config.php must define the remember-me trio');
+  assert.ok(/remember_login\(\);\s*$/.test(cfgSrc.trim()),'remember_login() must bootstrap at the end of config.php (every request)');
+  assert.ok(cfgSrc.includes('id="eoMkExtraInput"')&&cfgSrc.includes('name="mk_extra"'),'order dialog must render the marketer extra-commission field');
+  assert.ok(cfgSrc.includes('$eo_mk_code')&&cfgSrc.includes('wf_is_marketer_account($eo_u)'),'commission field must be gated to logged-in marketer accounts');
+  const ordSrc=src('dashboard/orders.php');
+  assert.ok(ordSrc.includes('_WF_ORDER_JSON_SENT')&&ordSrc.includes('register_shutdown_function'),'orders.php must guarantee a JSON reply for ajax orders even on fatal errors');
+  assert.ok(ordSrc.includes('$__wf_ajax_order'),'orders.php must answer ajax POSTs without id as JSON, not the HTML page');
+  const uiSrc=src('assets/ui.js');
+  assert.ok(uiSrc.includes('window.wfParseJsonLoose'),'ui.js must ship the lenient JSON parser (hosting injects text around JSON)');
+  assert.ok((uiSrc.match(/return e\.text\(\)/g)||[]).length>=2,'both order submits must read responses as text and parse leniently');
+  assert.ok(uiSrc.includes('"X-Requested-With":"XMLHttpRequest"'),'landing inline order must send the ajax header (CSRF/JSON branch)');
+  assert.ok(/qi\.value=String\(e\)/.test(uiSrc),'eoRecalc must write the clamped quantity back to the visible input');
+  assert.ok(/Math\.min\(99,parseInt\(t\.value/.test(uiSrc),'product page updateTotal must cap quantity at 99 and sync the input');
+  const prodSrc=src('dashboard/product.php');
+  assert.ok(prodSrc.includes('max="99"')&&prodSrc.includes('Math.min(99,(parseInt(q.value||1,10)||1)+1)'),'bqty stepper must be capped at 99');
+  const loginSrc=src('login.php'),regSrc=src('register.php'),logoutSrc=src('logout.php');
+  assert.ok(loginSrc.includes('name="remember"')&&loginSrc.includes('remember_issue('),'login must offer تذكرني and issue the remember cookie');
+  assert.ok(regSrc.includes('name="remember"')&&/name="remember" value="1" checked/.test(regSrc)&&(regSrc.match(/remember_issue\(/g)||[]).length>=2,'register must offer pre-checked تذكرني on both success paths');
+  assert.ok(logoutSrc.indexOf('remember_clear')>-1&&logoutSrc.indexOf('remember_clear')<logoutSrc.indexOf('$_SESSION = []'),'logout must clear the remember cookie before destroying the session');
+  const laySrc=src('dashboard/layout.php');
+  assert.ok((laySrc.match(/wishlist\.php/g)||[]).length>=7,'layout must wire wishlist into chrome: pages list, noindex, topbar, sidebars, bottom nav');
+  assert.ok(laySrc.includes("'wishlist'=>['heart','المفضلة','wishlist.php']"),'customer sidebar must list المفضلة');
+  assert.ok(laySrc.includes("'wishlist.php'=>['heart','المفضلة']"),'mobile bottom nav must include المفضلة');
+  assert.ok(laySrc.includes("'wish_href' => $dash_pre . 'wishlist.php'"),'storefront header call must pass the wishlist link');
+  assert.ok(laySrc.includes('title="المفضلة"')&&laySrc.includes('title="سلة التسوق"'),'panel topbar/sidebars must expose cart + wishlist to logged-in users');
+  const idxSrc=src('index.php');
+  assert.ok(idxSrc.includes("'wish_href' => 'dashboard/wishlist.php'"),'homepage header must show the wishlist heart');
+  const wishSrc=src('dashboard/wishlist.php');
+  assert.ok(wishSrc.includes("jload('wishlist.json'")&&wishSrc.includes('data-easy-order')&&wishSrc.includes('?rm=')&&wishSrc.includes("layout_top('المفضلة'"),'wishlist page must read the store, order via the dialog, and support link-based removal');
+  assert.ok(wishSrc.includes('guest_')&&wishSrc.includes('name="csrf"'),'wishlist page must key guests like the hearts and post csrf-protected cart adds');
+  const cssSrc=src('assets/style.css');
+  assert.ok(cssSrc.includes('.wish-count')&&cssSrc.includes('.wish-wrap'),'style.css must style the wishlist badge');
+}
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){
   const Engine=require(path.join(NM,'php-parser'));
   const parser=new Engine({parser:{suppressErrors:false,version:'8.3'},ast:{withPositions:false},lexer:{comment_tokens:false}});
-  for(const file of ['config.php','manual_products_lib.php','ui-components.php','supabase.php','index.php','store.php','landing.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php','dashboard/cart.php','dashboard/checkout_cart.php','dashboard/orders.php','dashboard/admin_shipping.php','dashboard/shipping.php'])parser.parseCode(src(file),file);
+  for(const file of ['config.php','manual_products_lib.php','ui-components.php','supabase.php','index.php','store.php','landing.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php','dashboard/cart.php','dashboard/wishlist.php','dashboard/layout.php','dashboard/checkout_cart.php','dashboard/orders.php','login.php','register.php','logout.php','dashboard/admin_shipping.php','dashboard/shipping.php','dashboard/admin.php','dashboard/noon.php','dashboard/_payout.php','dashboard/index.php'])parser.parseCode(src(file),file);
 }
 (async()=>{
   const php=new PHP(await loadNodeRuntime('8.3',{emscriptenOptions:{processId:1,locateFile:p=>path.isAbsolute(p)?p:path.join(wasmDir,p)}}));
@@ -688,7 +819,8 @@ if(fs.existsSync(path.join(NM,'php-parser'))){
   for(const file of DATA_FILES)php.writeFile('/app/'+file,fs.readFileSync(path.join(repo,file)));
   for(const [name,data] of Object.entries(FIXTURES))php.writeFile('/app/data/'+name,JSON.stringify(data));
   php.mkdirTree('/app/assets');php.writeFile('/app/assets/style.css','/*t*/');
-  php.writeFile('/app/__test.php',PHP_TESTS);
+  // أي مسافة/سطر فاضي قبل <?php كان بيتطبع قبل تحميل config ⇒ headers sent ⇒ session_start بيفشل
+  php.writeFile('/app/__test.php',PHP_TESTS.replace(/^\s+/,''));
   const res=await php.run({code:"<?php require '/app/__test.php';"});
   const raw=Buffer.from(Object.values(res.bytes)).toString('utf8');
   assert.equal(res.exitCode,0,'PHP exited with '+res.exitCode+(res.errors?': '+res.errors:''));
@@ -697,6 +829,6 @@ if(fs.existsSync(path.join(NM,'php-parser'))){
   fs.mkdirSync(path.join(repo,'.cache'),{recursive:true});
   fs.writeFileSync(path.join(repo,'.cache/manual-country-currency.json'),JSON.stringify({assertions:Object.keys(results).length-1,failures:results.failures,detail:results},null,2));
   assert.equal(results.failures,0,'PHP assertions failed:\n'+failed.join('\n'));
-  console.log({phpAssertions:Object.keys(results).length-1,failures:0,wiringChecks:'physical_collection/categories_by_mode/tabs/form/csv/syntax OK'});
+  console.log({phpAssertions:Object.keys(results).length-1,failures:0,wiringChecks:'physical_collection/categories_by_mode/tabs/form/csv/remember_me/wishlist/robust_json/qty_caps/syntax OK'});
   process.exit(0);
 })().catch(error=>{console.error(error.message||error);process.exit(1);});

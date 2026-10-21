@@ -185,7 +185,10 @@ function payout_render_section($user) {
             echo '<td><b>' . number_format((float)($p['amount'] ?? 0), 2) . ' ج.م</b></td>';
             echo '<td>' . wf_svg_icon('wallet', 16) . esc(wf_ui_plain($p['method_label'] ?? payout_method_label($p['method'] ?? ''))) . '</td>';
             echo '<td dir="ltr">' . esc($p['account_number'] ?? '') . '</td>';
-            echo '<td><span class="badge ' . ($st === 'موافق عليه' ? 'green' : ($st === 'مرفوض' ? 'red' : 'yellow')) . '">' . wf_svg_icon($st === 'موافق عليه' ? 'check' : ($st === 'مرفوض' ? 'close' : 'clock'), 16) . esc($st) . '</span><details class="row-details"><summary>مراحل الطلب</summary><ol class="payout-timeline"><li>إرسال الطلب: ' . esc(substr($p['at'] ?? '', 0, 16)) . '</li><li>الحالة الحالية: ' . esc($st) . '</li><li>آخر معالجة: ' . esc(substr($p['processed_at'] ?? '', 0, 16) ?: 'لم تُسجل بعد') . '</li></ol></details></td>';
+            echo '<td><span class="badge ' . ($st === 'موافق عليه' ? 'green' : ($st === 'مرفوض' ? 'red' : 'yellow')) . '">' . wf_svg_icon($st === 'موافق عليه' ? 'check' : ($st === 'مرفوض' ? 'close' : 'clock'), 16) . esc($st) . '</span><details class="row-details"><summary>مراحل الطلب</summary><ol class="payout-timeline"><li>إرسال الطلب: ' . esc(substr($p['at'] ?? '', 0, 16)) . '</li><li>الحالة الحالية: ' . esc($st) . '</li><li>آخر معالجة: ' . esc(substr($p['processed_at'] ?? '', 0, 16) ?: 'لم تُسجل بعد') . '</li></ol></details>'
+               . ($st === 'مرفوض' && trim((string)($p['reject_reason'] ?? '')) !== '' ? '<br>' . wf_details_btn('سبب رفض طلب السحب', [['المبلغ', number_format((float)($p['amount'] ?? 0), 2) . ' ج.م'], ['السبب', (string)($p['reject_reason'] ?? '')], ['وقت القرار', substr((string)($p['processed_at'] ?? ''), 0, 16)]], 'سبب الرفض', 'wf-det-danger') : '')
+               . (trim((string)($p['notes'] ?? '')) !== '' ? ' ' . wf_details_btn('ملاحظات طلب السحب', [['ملاحظاتك للإدارة', (string)($p['notes'] ?? '')]], 'ملاحظاتي') : '')
+               . '</td>';
             echo '<td dir="ltr">' . esc($p['transfer_ref'] ?? '—') . '</td>';
             echo '</tr>';
         }

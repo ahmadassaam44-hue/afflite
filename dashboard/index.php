@@ -93,7 +93,7 @@ if (!$acct_reviews) {
             echo esc(mb_substr($r['name'], 0, 60));
         }
         echo '</td><td>' . str_repeat('★', (int)$r['rating']) . '<span class="mut">' . str_repeat('☆', max(0, 5 - (int)$r['rating'])) . '</span></td>';
-        echo '<td>' . esc(mb_substr($r['comment'], 0, 160)) . '</td>';
+        echo '<td>' . wf_det_text($r['comment'], 80, 'تعليقي على: ' . mb_substr((string)$r['name'], 0, 60), 'التعليق كامل') . '</td>';
         echo '<td>' . esc(mb_substr((string)$r['at'], 0, 10)) . '</td></tr>';
     }
     echo '</tbody></table>';
@@ -110,7 +110,10 @@ if (!$acct_news) {
     echo '<ul style="margin:0;padding-inline-start:18px;line-height:1.9">';
     foreach ($acct_news as $n) {
         $t = $n['text'] !== '' ? $n['text'] : (string)$n['title'];
+        $news_rows = [['العنوان', (string)$n['title']], ['التفاصيل', $t]];
+        if ($n['link'] !== '') $news_rows[] = ['الرابط', (string)$n['link']];
         echo '<li>' . ($n['link'] !== '' ? '<a href="' . esc($n['link']) . '">' . esc(mb_substr($t, 0, 160)) . '</a>' : esc(mb_substr($t, 0, 160)))
+           . (mb_strlen($t) > 160 ? ' ' . wf_details_btn('تفاصيل: ' . mb_substr((string)$n['title'] !== '' ? (string)$n['title'] : $t, 0, 60), $news_rows, 'التفاصيل الكاملة') : '')
            . ($n['at'] !== '' ? ' <span class="mut">(' . esc(mb_substr((string)$n['at'], 0, 10)) . ')</span>' : '') . '</li>';
     }
     echo '</ul>';

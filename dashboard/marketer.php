@@ -625,13 +625,13 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
         echo '<td>' . esc(order_variant_label($o) ?: '—') . '</td>';
         echo '<td>' . esc($o['cname'] ?? '') . '</td>';
         echo '<td dir="ltr">' . esc($o['cphone'] ?? '') . (!empty($o['cphone2']) ? '<br><small class="mut">' . esc($o['cphone2']) . '</small>' : '') . '</td>';
-        echo '<td><b>' . esc($o['city'] ?? '') . '</b> — ' . esc(mb_substr($o['address'] ?? '', 0, 35)) . '</td>';
+        echo '<td><b>' . esc($o['city'] ?? '') . '</b> — ' . esc(mb_substr($o['address'] ?? '', 0, 35)) . '<br>' . wf_details_btn('تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o), 'كل التفاصيل') . '</td>';
         echo '<td>' . esc($o['qty'] ?? 1) . '</td>';
         echo '<td>' . number_format($o['unit'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</td>';
         echo '<td>' . number_format($o['ship'] ?? 0) . ' ج.م</td>';
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format($o['m_earn'] ?? 0, 2) . ' ج.م</td>';
-        echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';
+        echo '<td>' . wf_order_badge($o['status'] ?? '') . wf_order_reasons_btns($o) . '</td>';
         if (wf_marketer_can_edit_order($o, $user)) {
             echo '<td><div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn sm outline" href="?mtab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '">تعديل</a>'
                . '<form method="post" data-confirm="هتلغي الطلب؟ هيفضل مسجّل عند الإدارة بحالة «ملغي» وهتتعكس عمولته." style="display:inline">' . csrf_field() . '<input type="hidden" name="mk_order_action" value="cancel"><input type="hidden" name="mk_order_no" value="' . esc((string)($o['order_no'] ?? '')) . '"><button class="btn sm" type="submit">إلغاء</button></form></div></td>';

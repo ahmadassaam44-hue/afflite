@@ -63,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_harden();
             $_SESSION['user'] = ['name' => $existing['name'], 'email' => $existing['email'], 'role' => 'marketer', 'ref_code' => $rcode];
             session_bind();
+            if (!empty($_POST['remember'])) remember_issue((string)$existing['email']);   // «تذكرني»
             header('Location: dashboard/marketer.php'); exit;
         } elseif ($existing && (string)($existing['role'] ?? '') === 'buyer' && $err === '') {
             $err = 'الإيميل ده مسجل قبل كده. اكتب كلمة السر بتاعة حسابك عشان نرقّيه لحساب مسوق';
@@ -91,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_harden();
             $_SESSION['user'] = ['name' => mb_substr($name, 0, 60), 'email' => $email, 'role' => $role, 'ref_code' => $rcode];
             session_bind();
+            if (!empty($_POST['remember'])) remember_issue($email);   // «تذكرني»
             header('Location: dashboard/marketer.php');
             exit;
             }
@@ -173,6 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div data-ui="u-2f7da2f9 ukp ukq uds uiz ukj"><div id="pwStr" data-ui="u-000f3f03 uhv ukr uks"></div></div>
     <label for="regRef" data-ui="u-8328352a ugv ui2 ue6 uew">كود الدعوة (اختياري)</label>
     <input id="regRef" name="referred_by" value="<?php echo esc($old['referred_by']); ?>" placeholder="مثال: MKT-XXXXX" data-ui="u-4f836fe8 ukd ufh">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin:2px 0 10px"><input type="checkbox" name="remember" value="1" checked> تذكرني — بعد التسجيل ادخل تلقائيًا من غير ما تكتب الإيميل والباسورد تاني</label>
     <button type="submit" class="btn pri" data-ui="u-75b48f49 uf9 uem ukk ueu">إنشاء حساب المسوق الآن</button>
   </form>
   <div data-ui="u-01001f4f ukl udb ukn udn">

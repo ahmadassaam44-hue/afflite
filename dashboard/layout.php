@@ -30,7 +30,7 @@ function layout_top($title, $active = 'home') {
     // نوع الزائر: زائر / مشتري / مسوق / مدير — يحدد شكل الشريط العلوي والسفلي
     $layout_role = !$user ? 'guest' : (($user['role'] ?? '') === 'admin' ? 'admin' : (($user['role'] ?? '') === 'marketer' ? 'marketer' : 'customer'));
     // صفحات واجهة المتجر: نفس التول بار (topbar + header + navbar + شريط سفلي) المستخدم في الرئيسية — ظهر في كل صفحات الموقع مش الرئيسية بس
-    $storefront_pages = ['products.php', 'product.php', 'quick_order.php', 'cart.php', 'checkout_cart.php', 'orders.php', 'support.php', 'notifications.php', 'pay.php', 'calculator.php', 'pages.php', 'product_requests.php', 'shipping.php', 'index.php', 'balance.php'];
+    $storefront_pages = ['products.php', 'product.php', 'quick_order.php', 'cart.php', 'wishlist.php', 'checkout_cart.php', 'orders.php', 'support.php', 'notifications.php', 'pay.php', 'calculator.php', 'pages.php', 'product_requests.php', 'shipping.php', 'index.php', 'balance.php'];
     // صفحات حساب المسوق/الإدارة تفضل بشكل اللوحة (لوحة المسوق، الرصيد والسحب، الكتالوج الداخلي، الحاسبة)
     $panel_pages = ['index.php', 'balance.php', 'products.php', 'calculator.php'];
     $storefront_view = in_array($script_base, $storefront_pages, true)
@@ -60,7 +60,7 @@ function layout_top($title, $active = 'home') {
         echo '<link rel="canonical" href="' . esc($canonical) . '">';
     }
     // Keep account, checkout, and utility screens out of search results.
-    $noindex_pages = ['cart.php', 'checkout_cart.php', 'quick_order.php', 'orders.php', 'pay.php', 'notifications.php', 'balance.php', 'support.php', 'login.php', 'register.php'];
+    $noindex_pages = ['cart.php', 'wishlist.php', 'checkout_cart.php', 'quick_order.php', 'orders.php', 'pay.php', 'notifications.php', 'balance.php', 'support.php', 'login.php', 'register.php'];
     if (empty($GLOBALS['WF_PRODUCT_DETAIL']) && in_array($script_base, $noindex_pages, true)) {
         echo '<meta name="robots" content="noindex,follow">';
     }
@@ -83,6 +83,11 @@ function layout_top($title, $active = 'home') {
     $unread = 0;
     foreach ($notifs as $nn) if (empty($nn['read'])) $unread++;
     $cart_cnt = isset($_SESSION['cart']) && is_array($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
+    // عدد المفضلة ❤ — نفس مفتاح القلوب في كل الصفحات (إيميل للمسجّل، guest_visitor_id للزائر)
+    $wish_cnt = 0;
+    $wk_layout = !empty($user['email']) ? (string)$user['email'] : ('guest_' . (function_exists('visitor_id') ? visitor_id() : session_id()));
+    $w_all_layout = jload('wishlist.json', []);
+    if (isset($w_all_layout[$wk_layout]) && is_array($w_all_layout[$wk_layout])) $wish_cnt = count($w_all_layout[$wk_layout]);
 
     $GLOBALS['_LAYOUT_HIDE_SIDE'] = $hide_side;
     $GLOBALS['_LAYOUT_PUBLIC_CHROME'] = $public_chrome;
@@ -150,6 +155,9 @@ function layout_top($title, $active = 'home') {
                 $is_on = $active === 'marketer' && $cur_mtab === $k;
                 echo '<a href="' . $dash_pre . 'marketer.php?mtab=' . esc($k) . '" title="' . esc($pair[1]) . '"' . ($is_on ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon($pair[0]) . '<span class="t">' . esc($pair[1]) . '</span></a>';
             }
+            // السلة والمفضلة أدوات تسوّق للمسوق نفسه — ظاهرة في السايدبار
+            echo '<a href="' . $dash_pre . 'cart.php" title="سلة التسوق"' . ($active === 'cart' ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon('cart') . '<span class="t">سلة التسوق</span></a>';
+            echo '<a href="' . $dash_pre . 'wishlist.php" title="المفضلة"' . ($active === 'wishlist' ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon('heart') . '<span class="t">المفضلة</span></a>';
             if (function_exists('amz_stats')) {
                 echo '<a href="' . $dash_pre . 'amazon.php" title="أفلييت أمازون"' . ($active === 'amazon' ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon('cart') . '<span class="t">أفلييت أمازون</span></a>';
             }
@@ -162,7 +170,7 @@ function layout_top($title, $active = 'home') {
             echo '<a href="' . $dash_pre . 'product_requests.php?ctx=marketer" title="طلب توفير منتج"' . ($active === 'product_requests' ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon('camera') . '<span class="t">طلب توفير منتج</span></a>';
         } else {
             echo '<p class="side-sec-title">حسابي ومشترياتي</p>';
-            foreach (['home'=>['home','نظرة عامة','./'], 'orders'=>['orders','طلباتي','orders.php'], 'cart'=>['cart','سلة التسوق','cart.php'], 'notifications'=>['bell','العروض والأخبار','notifications.php'], 'shipping'=>['truck','الشحن','shipping.php']] as $k => $pair) {
+            foreach (['home'=>['home','نظرة عامة','./'], 'orders'=>['orders','طلباتي','orders.php'], 'cart'=>['cart','سلة التسوق','cart.php'], 'wishlist'=>['heart','المفضلة','wishlist.php'], 'notifications'=>['bell','العروض والأخبار','notifications.php'], 'shipping'=>['truck','الشحن','shipping.php']] as $k => $pair) {
                 $is_on = ($active === $k);
                 echo '<a href="' . $dash_pre . $pair[2] . '" title="' . esc($pair[1]) . '"' . ($is_on ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon($pair[0]) . '<span class="t">' . esc($pair[1]) . '</span></a>';
             }
@@ -216,6 +224,8 @@ function layout_top($title, $active = 'home') {
             'cart_href' => $dash_pre . 'cart.php',
             'cart_count' => $pcart['count'],
             'cart_total' => $pcart['total'],
+            'wish_href' => $dash_pre . 'wishlist.php',
+            'wish_count' => $wish_cnt,
             'catalog_href' => $pc_catalog,
             'account' => $user ? [
                 'href' => $dash_pre . ($role === 'admin' ? 'admin.php' : ($role === 'marketer' ? 'marketer.php' : 'index.php')),
@@ -246,6 +256,9 @@ function layout_top($title, $active = 'home') {
     echo '<form method="get" action="' . $dash_pre . 'products.php" class="dash-quick-search"><label class="sr-only" for="dashQuickSearch">بحث سريع في الكتالوج</label><input type="search" id="dashQuickSearch" name="q" placeholder="بحث في الكتالوج"><button type="submit" class="icon-button" aria-label="بحث">' . wf_svg_icon('search') . '</button></form>';
     echo '<button type="button" data-visual-search data-visual-endpoint="' . esc($pre . 'api_image_search.php') . '" onclick="window.wfOpenVisualSearch && window.wfOpenVisualSearch()" class="icon-button" aria-label="بحث بالصورة" title="ابحث بالصورة">' . wf_svg_icon('camera') . '</button>';
     if ($user) {
+        // المفضلة والسلة بقوا ظاهرين للمسجّل كمان (كانوا للزائر بس) — مع عدّاد على كل أيقونة
+        echo '<a class="icon-button" aria-label="المفضلة، ' . (int)$wish_cnt . ' منتجات" title="المفضلة" href="' . $dash_pre . 'wishlist.php" style="position:relative">' . wf_svg_icon('heart') . ($wish_cnt ? '<span class="notification-count">' . (int)$wish_cnt . '</span>' : '') . '</a>';
+        echo '<a class="icon-button" aria-label="سلة التسوق، ' . (int)$cart_cnt . ' منتجات" title="سلة التسوق" href="' . $dash_pre . 'cart.php" style="position:relative">' . wf_svg_icon('cart') . ($cart_cnt ? '<span class="notification-count">' . (int)$cart_cnt . '</span>' : '') . '</a>';
         echo '<div class="notif-wrap"><button type="button" id="notifToggleBtn" class="icon-button" aria-label="الإشعارات: ' . (int)$unread . ' غير مقروء" aria-controls="notifDropdown" aria-expanded="false">' . wf_svg_icon('bell');
         if ($unread) echo '<span class="notification-count">' . (int)$unread . '</span>';
         echo '</button><section id="notifDropdown" class="notif-drop" aria-label="قائمة الإشعارات"><div class="dropdown-head"><b>الإشعارات</b><a href="' . $dash_pre . 'notifications.php?read=1">تعليم الكل كمقروء</a></div><div class="dropdown-items">';
@@ -257,6 +270,7 @@ function layout_top($title, $active = 'home') {
         echo '</div><a class="dropdown-foot" href="' . $dash_pre . 'notifications.php">كل الإشعارات</a></section></div>';
         echo '<details class="user-dropdown"><summary aria-label="قائمة حساب ' . esc($user['name'] ?? '') . '"><span class="user-avatar">' . esc(mb_substr($user['name'] ?? 'م', 0, 1)) . '</span><span class="user-label">' . esc($user['name'] ?? 'حسابي') . '</span></summary><div class="user-menu"><b>' . esc($user['name'] ?? '') . '</b><span dir="ltr" class="mut">' . esc($user['email'] ?? '') . '</span><a href="' . $dash_pre . ($role === 'admin' ? 'admin.php?tab=settings' : 'marketer.php?mtab=settings') . '">' . wf_svg_icon('user') . 'بيانات الحساب</a><a href="' . $pre . 'logout.php">' . wf_svg_icon('logout') . 'تسجيل الخروج</a></div></details>';
     } else {
+        echo '<a class="icon-button" aria-label="المفضلة، ' . (int)$wish_cnt . ' منتجات" title="المفضلة" href="' . $dash_pre . 'wishlist.php" style="position:relative">' . wf_svg_icon('heart') . ($wish_cnt ? '<span class="notification-count">' . (int)$wish_cnt . '</span>' : '') . '</a>';
         echo '<a class="icon-button" aria-label="سلة التسوق، ' . (int)$cart_cnt . ' منتجات" href="' . $dash_pre . 'cart.php">' . wf_svg_icon('cart') . '</a>';
     }
     echo '</div></header><main class="main" id="dashMainContent" tabindex="-1">';
@@ -281,11 +295,17 @@ function layout_end() {
     if (!empty($GLOBALS['_LAYOUT_PUBLIC_CHROME'])) {
         // نفس شريط التنقل السفلي المستخدم في صفحات المتجر
         $pcart_end = wf_cart_summary();
+        // عدّاد المفضلة لشريط الموبايل — jload محفوظة في الذاكرة فالقراءة تانية ببلاش
+        $wk_end = !empty($user['email']) ? (string)$user['email'] : ('guest_' . (function_exists('visitor_id') ? visitor_id() : session_id()));
+        $w_all_end = jload('wishlist.json', []);
+        $wish_end_n = (isset($w_all_end[$wk_end]) && is_array($w_all_end[$wk_end])) ? count($w_all_end[$wk_end]) : 0;
         echo wf_bottom_nav('shop', [
             'cart_count' => $pcart_end['count'],
             'logged_in' => (bool)$user,
             'prefix' => $pre,
             'account_href' => $dash_pre . (($GLOBALS['_LAYOUT_ROLE'] ?? '') === 'admin' ? 'admin.php' : ''),
+            'wish_href' => $dash_pre . 'wishlist.php',
+            'wish_count' => $wish_end_n,
         ]);
         // زر واتساب خدمة العملاء على صفحات الموقع الأساسي (من غير سياق رابط المسوق)
         // صفحات الدفع والشراء والدردشة مستثناة: الزر العائم ممكن يغطي زر «تأكيد الطلب» أو صندوق الرسالة
@@ -300,7 +320,7 @@ function layout_end() {
             echo wf_whatsapp_float_html(['text' => $wa_txt]);
         }
     } elseif (basename($script_name) !== 'product.php') {
-        $customer_flow = !$user || in_array(basename($script_name), ['orders.php', 'cart.php', 'checkout_cart.php', 'pay.php'], true);
+        $customer_flow = !$user || in_array(basename($script_name), ['orders.php', 'cart.php', 'wishlist.php', 'checkout_cart.php', 'pay.php'], true);
         $is_adm = !$customer_flow && ($GLOBALS['_LAYOUT_ROLE'] ?? '') === 'admin';
         echo '<nav class="dash-bottom-nav" aria-label="التنقل السفلي للوحة التحكم">';
         if ($is_adm) {
@@ -317,7 +337,7 @@ function layout_end() {
             echo '<a href="' . $dash_pre . 'marketer.php?mtab=earnings">' . wf_svg_icon('wallet', 18) . '<span>المحفظة</span></a>';
         }
         if ($customer_flow || (!$is_adm && ($GLOBALS['_LAYOUT_ROLE'] ?? '') !== 'marketer')) {
-            foreach (['orders.php'=>['orders','طلباتي'], 'cart.php'=>['cart','السلة'], 'support.php'=>['chat','الدعم']] as $url => $item) {
+            foreach (['orders.php'=>['orders','طلباتي'], 'cart.php'=>['cart','السلة'], 'wishlist.php'=>['heart','المفضلة'], 'support.php'=>['chat','الدعم']] as $url => $item) {
                 // دعم العملاء من شريط الجوال يفتح سياق العملاء صراحةً
                 $href = $dash_pre . $url . ($url === 'support.php' ? '?ctx=customer' : '');
                 echo '<a href="' . $href . '">' . wf_svg_icon($item[0]) . '<span>' . esc($item[1]) . '</span></a>';

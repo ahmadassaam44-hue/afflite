@@ -231,7 +231,7 @@ elseif ($tab === 'code') {
           <td data-label="الكود" dir="ltr"><b><?php echo esc((string)($o['code'] ?? '')); ?></b></td>
           <td data-label="الحالة"><span class="noon-tag <?php echo esc($lb[1]); ?>"><?php echo esc($lb[0]); ?></span></td>
           <td data-label="تاريخ الطلب"><?php echo esc(substr((string)($o['requested_at'] ?? ''), 0, 16)); ?></td>
-          <td data-label="ملاحظة"><?php echo esc((string)($o['reject_note'] ?? '')); ?></td>
+          <td data-label="ملاحظة"><?php echo wf_det_text($o['reject_note'] ?? '', 30, 'ملاحظة الإدارة على الكود ' . (string)($o['code'] ?? ''), 'الملاحظة كاملة', '—'); ?></td>
         </tr>
 <?php endforeach; ?>
       </tbody>
@@ -341,7 +341,7 @@ elseif ($tab === 'products') {
           <?php echo noon_product_panel_html($pmeta); ?>
           <div style="margin-top:8px;font-size:13px">🎟️ الكود اللي هتسوق بيه: <?php if ($kcode !== '') { ?><b dir="ltr"><?php echo esc($kcode); ?></b> <button type="button" class="btn sm outl" onclick="navigator.clipboard&&navigator.clipboard.writeText('<?php echo esc($kcode); ?>');this.textContent='✅ اتنسخ'">📋 نسخ</button><?php } else { ?><span class="mut">لسه ماعندكش كود معتمد</span><?php } ?></div>
         <?php } elseif ($ps === 'rejected') { ?>
-          <div class="noon-notice" style="margin-top:8px">اترفض: <?php echo esc((string)($pp['reject_note'] ?? '')) ?: 'من غير سبب'; ?></div>
+          <div class="alert danger" role="alert" style="margin-top:8px">⛔ <b>المنتج اترفض</b> — <?php echo wf_det_text($pp['reject_note'] ?? '', 60, 'سبب رفض المنتج', 'السبب كامل', 'من غير سبب'); ?></div>
         <?php } else { ?>
           <div class="mut" style="margin-top:6px;font-size:13px">الإدارة هتراجع بيانات المنتج، وهيوصلك إشعار لما يتعتمد.</div>
         <?php } ?>

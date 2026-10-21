@@ -314,7 +314,11 @@ echo wf_site_topbar(['phone' => $top_phone, 'user' => $idx_user, 'ref_code' => $
 
 
 <?php
-// ===== الهيدر الموحّد: شعار + بحث (حقل واحد) + كاميرا + كتالوج + حساب + سلة =====
+// ===== الهيدر الموحّد: شعار + بحث (حقل واحد) + كاميرا + كتالوج + حساب + مفضلة + سلة =====
+// عدد المفضلة للهيدر — نفس مفتاح القلوب في كروت المنتجات (إيميل أو guest_visitor_id)
+$wk_h    = !empty($idx_user['email']) ? (string)$idx_user['email'] : ('guest_' . (function_exists('visitor_id') ? visitor_id() : session_id()));
+$w_all_h = jload('wishlist.json', []);
+$wish_n  = (isset($w_all_h[$wk_h]) && is_array($w_all_h[$wk_h])) ? count($w_all_h[$wk_h]) : 0;
 echo wf_store_header([
     'brand' => BRAND,
     'home' => 'index.php',
@@ -324,6 +328,8 @@ echo wf_store_header([
     'cart_href' => 'dashboard/cart.php',
     'cart_count' => $cart_n,
     'cart_total' => $cart_t,
+    'wish_href' => 'dashboard/wishlist.php',
+    'wish_count' => $wish_n,
     'catalog_href' => '', // الرئيسية فيها كل المنتجات: شيلنا أيقونة الكتالوج اللي كانت بتفتح dashboard/products.php
     'account' => $idx_user ? [
         'href' => $idx_is_marketer ? 'dashboard/marketer.php' : 'dashboard/index.php',
@@ -713,7 +719,7 @@ echo wf_catalog_toolbar([
 </footer>
 
 <!-- MOBILE BOTTOM NAVIGATION الموحّد: نفس الشريط في كل الصفحات -->
-<?php echo wf_bottom_nav('home', ['cart_count' => $cart_n, 'logged_in' => (bool)$idx_user, 'prefix' => '', 'shop_href' => 'index.php#products']); ?>
+<?php echo wf_bottom_nav('home', ['cart_count' => $cart_n, 'logged_in' => (bool)$idx_user, 'prefix' => '', 'shop_href' => 'index.php#products', 'wish_href' => 'dashboard/wishlist.php', 'wish_count' => $wish_n]); ?>
 <?php echo wf_whatsapp_float_html(); // زر واتساب خدمة العملاء — ثابت في كل صفحات الموقع الأساسي ?>
 
 <?php if (function_exists('render_easyorder_dialog_html')) render_easyorder_dialog_html(); ?>

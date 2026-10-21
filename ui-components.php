@@ -280,6 +280,9 @@ function wf_store_header($args = []) {
     $value   = (string)($args['search_value'] ?? '');
     $holder  = (string)($args['search_placeholder'] ?? 'ابحث عن منتج بالاسم أو القسم...');
     $hidden  = is_array($args['hidden'] ?? null) ? $args['hidden'] : [];
+    // المفضلة ❤ — تُعرض كأيكونة قلب بعدد المنتجات المحفوظة (رابط فاضي = تتخفى)
+    $wish    = array_key_exists('wish_href', $args) ? (string)$args['wish_href'] : '';
+    $wish_n  = (int)($args['wish_count'] ?? 0);
     $cart    = (string)($args['cart_href'] ?? 'dashboard/cart.php');
     $cnt     = (int)($args['cart_count'] ?? 0);
     $cart_t  = array_key_exists('cart_total', $args) && $args['cart_total'] !== null ? (float)$args['cart_total'] : null;
@@ -314,6 +317,10 @@ function wf_store_header($args = []) {
         $html .= '<a class="icon-btn" href="' . esc((string)($account['href'] ?? 'login.php')) . '" aria-label="' . esc((string)($account['label'] ?? 'حسابي')) . '">'
               .  '<span class="avatar">' . esc(mb_substr((string)($account['initial'] ?? 'ح'), 0, 1)) . '</span>'
               .  '<span class="text-right hidden md:block"><span class="acct-cap">' . esc((string)($account['caption'] ?? 'حسابي')) . '</span><span class="acct-name">' . esc((string)($account['label'] ?? 'حسابي')) . '</span></span></a>';
+    }
+    if ($wish !== '') {
+        $html .= '<a href="' . esc($wish) . '" class="icon-btn wish-wrap" aria-label="المفضلة (' . $wish_n . ' منتجات)" title="المفضلة">'
+              .  wf_icon('heart', 20) . ($wish_n > 0 ? '<span class="wish-count">' . $wish_n . '</span>' : '') . '</a>';
     }
     $html .= '<a href="' . esc($cart) . '" class="cart-wrap" aria-label="عربة التسوق (' . $cnt . ' منتجات)">'
           .  '<span class="cart-icon-wrap">' . wf_icon('cart', 22) . '<span class="cart-count">' . $cnt . '</span></span>'
@@ -361,6 +368,7 @@ function wf_site_section_tabs($pre = '') {
                 ['برامج جوميا', $pre . 'affiliate-program.php?p=jumia'],
                 ['تتبع طلبك', $pre . 'dashboard/orders.php'],
                 ['عربة التسوق', $pre . 'dashboard/cart.php'],
+                ['المفضلة', $pre . 'dashboard/wishlist.php'],
                 ['الدعم والمساعدة', $pre . 'dashboard/support.php?ctx=customer'],
                 ['سياسة الاسترجاع والاستبدال', $pre . 'pages.php?p=returns'],
                 ['الشروط والأحكام', $pre . 'pages.php?p=terms'],
@@ -386,6 +394,14 @@ function wf_bottom_nav($active = 'home', $args = []) {
         'cart'    => ['dashboard/cart.php', 'cart', 'السلة' . ($cnt ? ' (' . $cnt . ')' : '')],
         'support' => ['dashboard/support.php', 'chat', 'الدعم'],
     ];
+    // المفضلة ❤ جنب السلة في شريط الموبايل — تظهر بس لما الصفحة تمرر wish_href
+    $wish_href = (string)($args['wish_href'] ?? '');
+    $wish_n    = (int)($args['wish_count'] ?? 0);
+    if ($wish_href !== '') {
+        $items = array_slice($items, 0, 3, true)
+               + ['wish' => [$wish_href, 'heart', 'المفضلة' . ($wish_n ? ' (' . $wish_n . ')' : '')]]
+               + array_slice($items, 3, null, true);
+    }
     foreach ($hide as $hide_key) unset($items[$hide_key]);
     $account_href = (string)($args['account_href'] ?? 'dashboard/');
     if ($user) $items['account'] = [$account_href, 'user', 'حسابي'];
@@ -649,4 +665,77 @@ function wf_product_media_html($product, $in_root = false, $plat = '') {
     }
     $html .= $files ? '<details class="product-media-files"><summary>عرض ملفات الصور والفيديوهات</summary><ul>' . $files . '</ul></details>' : '<p class="field-hint">لا توجد صور أو فيديوهات مباشرة إضافية من المصدر.</p>';
     return $html . '</section>';
+}
+
+// ===== ديالوج التفاصيل العام =====
+// أي محتوى طويل (عنوان، ملاحظات، سبب رفض/إلغاء، تفاصيل عملية) بقى يظهر في ديالوج
+// بزر صغير بدل ما يتحشر نص كبير في خلية جدول صغيرة. assets/ui.js بيفتح الديالوج
+// من data-wf-details (JSON) — والقيم بتترسم textContent في JS فهي آمنة ضد XSS.
+if (!function_exists('wf_details_btn')) {
+    /**
+     * زر «التفاصيل» الذي يفتح ديالوج عام.
+     * $rows: قائمة [العنوان, القيمة] — الصفوف الفاضية بتتشال، والقيمة الفاضية تظهر «—».
+     */
+    function wf_details_btn($title, array $rows, $label = 'التفاصيل', $cls = '') {
+        $out = [];
+        foreach ($rows as $r) {
+            if (!is_array($r)) $r = ['', (string)$r];
+            $l = trim((string)($r[0] ?? ''));
+            $v = trim((string)($r[1] ?? ''));
+            if ($l === '' && $v === '') continue;
+            $out[] = [$l, $v !== '' ? $v : '—'];
+        }
+        if (!$out) return '';
+        $json = json_encode(['t' => (string)$title, 'r' => $out], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        return '<button type="button" class="btn sm outline wf-det-btn' . ($cls !== '' ? ' ' . esc($cls) : '') . '" data-wf-details="' . esc($json) . '">' . esc($label) . '</button>';
+    }
+}
+if (!function_exists('wf_det_text')) {
+    /** معاينة قصيرة من النص + زر يفتح الديالوج بالنص الكامل. نص فاضي ⇒ «—» من غير زر. */
+    function wf_det_text($text, $len = 40, $title = 'التفاصيل', $label = 'التفاصيل', $empty = '—') {
+        $t = trim((string)$text);
+        if ($t === '') return $empty;
+        $short = mb_strlen($t) > $len ? mb_substr($t, 0, $len) . '…' : $t;
+        return '<span class="wf-det-preview">' . esc($short) . '</span> ' . wf_details_btn($title, [[$label, $t]], $label);
+    }
+}
+if (!function_exists('wf_order_reasons_btns')) {
+    /** أزرار أسباب الإلغاء/الاسترجاع/رفض الدفع للطلب — بتظهر فقط لو فيه سبب مسجل. */
+    function wf_order_reasons_btns($o) {
+        $o = is_array($o) ? $o : [];
+        $no = (string)($o['order_no'] ?? '');
+        $html = '';
+        $cr = trim((string)($o['cancel_reason'] ?? ''));
+        if ($cr !== '') $html .= wf_details_btn('سبب إلغاء الطلب ' . $no, [['الحالة', 'ملغي'], ['السبب', $cr]], 'سبب الإلغاء', 'wf-det-danger');
+        $rr = trim((string)($o['return_reason'] ?? ''));
+        if ($rr !== '') $html .= wf_details_btn('سبب الاسترجاع للطلب ' . $no, [['الحالة', 'مرتجع / طلب استرجاع'], ['السبب', $rr]], 'سبب الاسترجاع', 'wf-det-danger');
+        $pr = trim((string)($o['payment_reject_reason'] ?? ''));
+        if ($pr !== '') $html .= wf_details_btn('سبب رفض إيصال الدفع للطلب ' . $no, [['الحالة', 'إيصال مرفوض'], ['السبب', $pr]], 'سبب رفض الإيصال', 'wf-det-danger');
+        return $html;
+    }
+}
+if (!function_exists('wf_order_details_rows')) {
+    /** صفوف التفاصيل الكاملة للطلب (تُستخدم في ديالوج «تفاصيل الطلب» بالأدمن ولوحة المسوق وصفحة العميل). */
+    function wf_order_details_rows($o) {
+        $o = is_array($o) ? $o : [];
+        $rows = [];
+        $push = function ($l, $v) use (&$rows) { $v = trim((string)$v); if ($v !== '') $rows[] = [$l, $v]; };
+        $push('رقم الطلب', (string)($o['order_no'] ?? ''));
+        $push('التاريخ', substr((string)($o['at'] ?? ''), 0, 16));
+        $push('المنتج', (string)($o['pname'] ?? ''));
+        if (function_exists('order_variant_label')) $push('اللون والمقاس', order_variant_label($o));
+        $push('الكمية', (string)(int)($o['qty'] ?? 1));
+        $push('العميل', (string)($o['cname'] ?? ''));
+        $push('الهاتف', (string)($o['cphone'] ?? ''));
+        $push('هاتف بديل / واتساب', (string)($o['cphone2'] ?? ''));
+        $push('المحافظة / المنطقة', (string)($o['city'] ?? ''));
+        $push('المدينة / المركز', (string)($o['district'] ?? ''));
+        $push('العنوان بالتفصيل', (string)($o['address'] ?? ''));
+        $push('ملاحظات العميل', (string)($o['notes'] ?? ''));
+        $push('رابط/بيانات الخدمة', (string)($o['link'] ?? ''));
+        $push('سبب الإلغاء', (string)($o['cancel_reason'] ?? ''));
+        $push('سبب الاسترجاع', (string)($o['return_reason'] ?? ''));
+        $push('سبب رفض الإيصال', (string)($o['payment_reject_reason'] ?? ''));
+        return $rows;
+    }
 }

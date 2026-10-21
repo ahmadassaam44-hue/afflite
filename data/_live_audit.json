@@ -1,5 +1,5 @@
 {
- "at": "2026-10-21T07:57:59+00:00",
+ "at": "2026-10-21T13:55:22+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -103,10 +103,10 @@
    "same_as_git": true
   },
   "assets/style.css": {
-   "remote_size": 157124,
-   "remote_md5": "b5432c105937effe46f40de875ee6085",
-   "local_size": 157124,
-   "local_md5": "b5432c105937effe46f40de875ee6085",
+   "remote_size": 158779,
+   "remote_md5": "37840220c1cc01f0347ee733691805a8",
+   "local_size": 158779,
+   "local_md5": "37840220c1cc01f0347ee733691805a8",
    "same_as_git": true
   },
   "assets/icon-512.png": {
@@ -118,9 +118,9 @@
   },
   "data/catalog_counts.json": {
    "remote_size": 1034,
-   "remote_md5": "9006e17d5eb90d648e20f7d065520730",
+   "remote_md5": "338f20b546024020af09623056b077a3",
    "local_size": 1034,
-   "local_md5": "9006e17d5eb90d648e20f7d065520730",
+   "local_md5": "338f20b546024020af09623056b077a3",
    "same_as_git": true
   }
  },
