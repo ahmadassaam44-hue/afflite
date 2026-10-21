@@ -189,7 +189,6 @@ $currencies = array_fill_keys(wf_ui_currencies($cart), true);
 <div data-ui="u-530c6095 dh d1o d5s"><span class="mut">خصم الكمية (<?php echo (int)LP_BUNDLE_DISCOUNT; ?> ج.م لكل قطعة إضافية)</span><b style="color:var(--success)">-<?php echo number_format($cdisc, 2); ?> <?php echo esc(array_key_first($currencies) ?: 'ج.م'); ?></b></div>
 <?php endif; ?>
 <div data-ui="u-deea4ad5 d29 d61 dh d1o d5l"><b>الإجمالي المبدئي</b><b data-ui="u-8bf4bd79 d2k"><?php echo count($currencies) > 1 ? 'عملات متعددة' : number_format(max(0, $sum - $cdisc), 2) . ' ' . esc(array_key_first($currencies) ?: 'ج.م'); ?></b></div></div>
-<?php if ($cdisc <= 0 && count($cart) >= 1): ?><p class="mut" data-ui="u-46c5a79e d5t d4x">🎁 اطلب أكثر من قطعة من نفس المنتج وخصم <?php echo (int)LP_BUNDLE_DISCOUNT; ?> ج.م لكل قطعة إضافية يتحسب أوتوماتيك (ما بيطبّقش على المنتجات الرقمية وخدمات السوشيال ميديا).</p><?php endif; ?>
 <a class="btn" href="checkout_cart.php" data-ui="u-40b1c549 dx dw dl dy d4e d3v">متابعة لبيانات الشحن</a>
 <a href="../index.php" class="btn outline" data-ui="u-ce6969ff dx dw d62">متابعة التسوق</a></div></div></div>
 <?php layout_end(); ?>
