@@ -195,6 +195,12 @@ if (isset($_POST['order_note_idx'])) {
     }
     $orders = jload('orders.json', []);
 }
+// تعديل الإدارة الكامل لأي طلب: كل التفاصيل (العميل/المنتج/الكمية/السعر/الشحن/العمولات/الحالة/كود المسوق)
+if (isset($_POST['adm_order_action'], $_POST['adm_order_no']) && (string)$_POST['adm_order_action'] === 'edit') {
+    $adm_edit_res = wf_admin_apply_order_edit((string)$_POST['adm_order_no'], $_POST);
+    $msg = !empty($adm_edit_res['ok']) ? (string)$adm_edit_res['msg'] : ('⚠️ ' . (string)($adm_edit_res['msg'] ?? 'تعذر حفظ التعديلات'));
+    $orders = jload('orders.json', []);
+}
 // إعادة محاولة حقيقية للطلب الاجتماعي المؤكد الذي فشل إرساله إلى Hevo.
 if (isset($_POST['retry_order'])) {
     $ri = (int)$_POST['retry_order'];
@@ -1283,6 +1289,48 @@ elseif ($tab === 'orders') {
     }
     echo '</div>';
 
+    // ===== تعديل كامل لطلب محدد (?tab=orders&edit=ORD-...) — كل التفاصيل بما فيها العمولة =====
+    $adm_edit_no = trim((string)($_GET['edit'] ?? ''));
+    $adm_edit_o = null;
+    if ($adm_edit_no !== '') { foreach ($orders as $oe) if (($oe['order_no'] ?? '') === $adm_edit_no) { $adm_edit_o = $oe; break; } }
+    if ($adm_edit_o) {
+        $ae_plat = (string)($adm_edit_o['plat'] ?? '');
+        $ae_cur  = wf_ui_currency($adm_edit_o);
+        $ae_dig  = wf_is_digital_plat($ae_plat);
+        $ae_ship_cur = function_exists('wf_ship_currency') ? wf_ship_currency($ae_plat, (string)($adm_edit_o['ship_country'] ?? '')) : 'ج.م';
+        $ae_mk = ((string)($adm_edit_o['ref'] ?? '') !== '') ? find_marketer_by_code((string)$adm_edit_o['ref']) : null;
+        $ae_in = function ($k, $d = '') use ($adm_edit_o) { return esc((string)($adm_edit_o[$k] ?? $d)); };
+        echo '<div class="card" style="margin-bottom:14px"><h2>✏️ تعديل كامل للطلب <span dir="ltr">' . $ae_in('order_no') . '</span></h2>'
+           . '<p class="mut">كل حاجة قابلة للتعديل: بيانات العميل والمنتج والكمية وسعر القطعة والشحن والعمولة الإضافية وعمولة المسوق والحالة وكود المسوق. الإجمالي بيتحسب من السيرفر (سعر القطعة × الكمية + الشحن − خصم الكمية)، وفرق العمولة بيتسوّى تلقائيًا في محفظة المسوق (وعمولة فريقه). العمولات دائمًا بالجنيه المصري.</p>'
+           . '<form method="post" class="form-grid">' . csrf_field()
+           . '<input type="hidden" name="adm_order_action" value="edit"><input type="hidden" name="adm_order_no" value="' . $ae_in('order_no') . '">'
+           . '<div><label class="field-label">حالة الطلب</label><select name="status">';
+        foreach (array_keys(order_status_list()) as $ae_sk) {
+            echo '<option value="' . esc($ae_sk) . '"' . (status_key($adm_edit_o['status'] ?? '') === $ae_sk ? ' selected' : '') . '>' . esc(status_label($ae_sk)) . '</option>';
+        }
+        echo '</select></div>'
+           . '<div><label class="field-label">كود المسوق (تحويل العمولة)</label><input name="ref" dir="ltr" maxlength="40" value="' . $ae_in('ref') . '">'
+           . '<span class="mut" style="font-size:12px">المسوق الحالي: ' . esc($ae_mk ? (string)($ae_mk['name'] ?? '') : '—') . ' — تغيير الكود بينقل العمولة كاملة (بفريقها) من القديم للجديد.</span></div>'
+           . '<div><label class="field-label">الحملة / المصدر (sub)</label><input name="sub" maxlength="60" value="' . $ae_in('sub') . '"></div>'
+           . '<div><label class="field-label">اسم العميل</label><input name="cname" required maxlength="100" value="' . $ae_in('cname') . '"></div>'
+           . '<div><label class="field-label">رقم الموبايل</label><input name="cphone" required inputmode="tel" value="' . $ae_in('cphone') . '"></div>'
+           . '<div><label class="field-label">رقم بديل / واتساب</label><input name="cphone2" inputmode="tel" value="' . $ae_in('cphone2') . '"></div>'
+           . '<div style="grid-column:1/-1"><label class="field-label">اسم المنتج</label><input name="pname" maxlength="120" value="' . $ae_in('pname') . '"></div>'
+           . '<div><label class="field-label">الكمية (1–99)</label><input name="qty" type="number" min="1" max="99" value="' . (int)($adm_edit_o['qty'] ?? 1) . '"></div>'
+           . '<div><label class="field-label">سعر القطعة (' . esc($ae_cur) . ')</label><input name="unit" type="number" min="0" max="200000" step="0.01" value="' . esc((string)(float)($adm_edit_o['unit'] ?? 0)) . '"></div>'
+           . '<div><label class="field-label">مصاريف الشحن (' . esc($ae_ship_cur) . ')</label><input name="ship" type="number" min="0" max="20000" step="0.01" value="' . esc((string)(float)($adm_edit_o['ship'] ?? 0)) . '"></div>'
+           . '<div><label class="field-label">عمولة المسوق على الطلب كله (ج.م)</label><input name="m_earn" type="number" min="0" max="50000" step="0.01" value="' . esc((string)(float)($adm_edit_o['m_earn'] ?? 0)) . '"></div>'
+           . '<div><label class="field-label">العمولة الإضافية على القطعة (ج.م)' . ($ae_dig ? ' — الرقمي/السوشيال: مفيش' : '') . '</label><input name="extra_comm" type="number" min="0" max="' . esc((string)(float)MAX_MARKUP_AMOUNT) . '" step="0.01" value="' . esc((string)(float)($adm_edit_o['extra_comm'] ?? 0)) . '"' . ($ae_dig ? ' disabled' : '') . '>' . ($ae_dig ? '<input type="hidden" name="extra_comm" value="0">' : '') . '</div>'
+           . '<div><label class="field-label">المحافظة / المنطقة</label><input name="city" maxlength="60" value="' . $ae_in('city') . '"></div>'
+           . '<div><label class="field-label">المدينة / المركز</label><input name="district" maxlength="60" value="' . $ae_in('district') . '"></div>'
+           . '<div><label class="field-label">المواصفات / العرض</label><input name="variant" maxlength="60" value="' . $ae_in('variant') . '"></div>'
+           . '<div><label class="field-label">اللون</label><input name="color" maxlength="60" value="' . $ae_in('color') . '"></div>'
+           . '<div><label class="field-label">المقاس</label><input name="size" maxlength="60" value="' . $ae_in('size') . '"></div>'
+           . '<div style="grid-column:1/-1"><label class="field-label">العنوان بالتفصيل</label><input name="address" maxlength="300" value="' . $ae_in('address') . '"></div>'
+           . '<div style="grid-column:1/-1"><label class="field-label">ملاحظات الطلب</label><input name="notes" maxlength="500" value="' . $ae_in('notes') . '"></div>'
+           . '<div style="grid-column:1/-1"><button class="btn pri" type="submit">حفظ كل التعديلات</button> <a class="btn outline" href="?tab=orders">رجوع للطلبات</a></div>'
+           . '</form></div>';
+    }
     echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>اللون والمقاس</th><th>العميل</th><th>الهاتف / واتساب</th><th>العنوان</th><th>كمية</th><th>السعر</th><th>العمولة</th><th>الشحن</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
     foreach ($rev_orders as $idx => $o) {
         $ph_digits = preg_replace('/\D+/', '', (string)($o['cphone'] ?? ''));
@@ -1305,7 +1353,8 @@ elseif ($tab === 'orders') {
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
         echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
-        echo '</select></form>' . wf_order_reasons_btns($o) . '</td>';
+        echo '</select></form>' . wf_order_reasons_btns($o)
+           . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a></td>';
         $an_list = (isset($o['admin_notes']) && is_array($o['admin_notes'])) ? $o['admin_notes'] : [];
         echo '<td data-ui="u-5d985ec3 do">';
         if ($an_list) {

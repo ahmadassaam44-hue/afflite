@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($mk_res['ok']) {
                 notify('admin', '✏️ المسوق ' . ($user['name'] ?? $user['email']) . ' (' . $code . ') عدّل بيانات الطلب ' . $mk_ono, 'dashboard/admin.php?tab=orders');
                 notify_user($user['email'], '✏️ تم حفظ تعديلاتك على الطلب ' . $mk_ono . ' ✅', 'dashboard/marketer.php?mtab=orders');
-                log_audit('marketer_edit', $code, ['order_no' => $mk_ono]);
+                log_audit('marketer_edit', $code, ['order_no' => $mk_ono, 'changed' => $mk_res['changed'] ?? []]);
             }
             $mk_ord_msg = $mk_res['msg'];
         }
@@ -603,15 +603,27 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
     if ($mk_edit_no !== '') { foreach ($forders as $oo) if (($oo['order_no'] ?? '') === $mk_edit_no && wf_marketer_can_edit_order($oo, $user)) { $mk_edit_o = $oo; break; } }
     if ($mk_ord_msg !== '') echo '<div class="alert info" role="status" data-ui="u-1ae67359 d13">' . esc($mk_ord_msg) . '</div>';
     if ($mk_edit_o) {
-        echo '<div class="card" data-ui="u-1ae67359 d13"><h3 data-ui="u-c35cd038 d26 d1 d19">تعديل الطلب <span dir="ltr">' . esc((string)$mk_edit_o['order_no']) . '</span></h3>'
-           . '<p class="mut">الإجمالي بيتحسب على السيرفر بعد الحفظ (سعر القطعة + الشحن − خصم الكمية).</p>'
+        // تعديل كامل: كل تفاصيل الطلب بما فيها السعر والعمولات — السيرفر بيحسب الإجمالي وبيسوّي فرق العمولة
+        $mk_cur  = wf_ui_currency($mk_edit_o);
+        $mk_dig  = wf_is_digital_plat((string)($mk_edit_o['plat'] ?? ''));
+        $mk_ship_cur = function_exists('wf_ship_currency') ? wf_ship_currency((string)($mk_edit_o['plat'] ?? ''), (string)($mk_edit_o['ship_country'] ?? '')) : 'ج.م';
+        echo '<div class="card" data-ui="u-1ae67359 d13"><h3 data-ui="u-c35cd038 d26 d1 d19">تعديل الطلب <span dir="ltr">' . esc((string)$mk_edit_o['order_no']) . '</span> — كل التفاصيل</h3>'
+           . '<p class="mut">الإجمالي بيتحسب على السيرفر بعد الحفظ (سعر القطعة × الكمية + الشحن − خصم الكمية)، وأي فرق في عمولتك بيتسوّى تلقائيًا في محفظتك. العمولات دائمًا بالجنيه المصري.</p>'
            . '<form method="post" class="form-grid">' . csrf_field() . '<input type="hidden" name="mk_order_action" value="edit"><input type="hidden" name="mk_order_no" value="' . esc((string)$mk_edit_o['order_no']) . '">'
            . '<div><label class="field-label">اسم العميل</label><input name="cname" required maxlength="100" value="' . esc((string)($mk_edit_o['cname'] ?? '')) . '"></div>'
            . '<div><label class="field-label">رقم الموبايل</label><input name="cphone" required inputmode="tel" value="' . esc((string)($mk_edit_o['cphone'] ?? '')) . '"></div>'
            . '<div><label class="field-label">رقم بديل / واتساب (اختياري)</label><input name="cphone2" inputmode="tel" value="' . esc((string)($mk_edit_o['cphone2'] ?? '')) . '"></div>'
-           . '<div><label class="field-label">الكمية</label><input name="qty" type="number" min="1" max="99" value="' . (int)($mk_edit_o['qty'] ?? 1) . '"></div>'
+           . '<div style="grid-column:1/-1"><label class="field-label">اسم المنتج</label><input name="pname" maxlength="120" value="' . esc((string)($mk_edit_o['pname'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">الكمية (1–99)</label><input name="qty" type="number" min="1" max="99" value="' . (int)($mk_edit_o['qty'] ?? 1) . '"></div>'
+           . '<div><label class="field-label">سعر القطعة (' . esc($mk_cur) . ')</label><input name="unit" type="number" min="0" max="200000" step="0.01" value="' . esc((string)(float)($mk_edit_o['unit'] ?? 0)) . '"></div>'
+           . '<div><label class="field-label">مصاريف الشحن (' . esc($mk_ship_cur) . ')</label><input name="ship" type="number" min="0" max="20000" step="0.01" value="' . esc((string)(float)($mk_edit_o['ship'] ?? 0)) . '"></div>'
+           . '<div><label class="field-label">عمولتك على الطلب كله (ج.م)</label><input name="m_earn" type="number" min="0" max="50000" step="0.01" value="' . esc((string)(float)($mk_edit_o['m_earn'] ?? 0)) . '"></div>'
+           . '<div><label class="field-label">العمولة الإضافية على القطعة (ج.م)' . ($mk_dig ? ' — الرقمي/السوشيال: مفيش' : '') . '</label><input name="extra_comm" type="number" min="0" max="' . esc((string)(float)MAX_MARKUP_AMOUNT) . '" step="0.01" value="' . esc((string)(float)($mk_edit_o['extra_comm'] ?? 0)) . '"' . ($mk_dig ? ' disabled' : '') . '>' . ($mk_dig ? '<input type="hidden" name="extra_comm" value="0">' : '') . '</div>'
            . '<div><label class="field-label">المحافظة / المنطقة</label><input name="city" maxlength="60" value="' . esc((string)($mk_edit_o['city'] ?? '')) . '"></div>'
            . '<div><label class="field-label">المدينة / المركز</label><input name="district" maxlength="60" value="' . esc((string)($mk_edit_o['district'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">المواصفات / العرض</label><input name="variant" maxlength="60" value="' . esc((string)($mk_edit_o['variant'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">اللون</label><input name="color" maxlength="60" value="' . esc((string)($mk_edit_o['color'] ?? '')) . '"></div>'
+           . '<div><label class="field-label">المقاس</label><input name="size" maxlength="60" value="' . esc((string)($mk_edit_o['size'] ?? '')) . '"></div>'
            . '<div style="grid-column:1/-1"><label class="field-label">العنوان بالتفصيل</label><input name="address" maxlength="300" value="' . esc((string)($mk_edit_o['address'] ?? '')) . '"></div>'
            . '<div style="grid-column:1/-1"><label class="field-label">ملاحظات</label><input name="notes" maxlength="500" value="' . esc((string)($mk_edit_o['notes'] ?? '')) . '"></div>'
            . '<div style="grid-column:1/-1"><button class="btn pri" type="submit">حفظ التعديلات</button> <a class="btn outline" href="?mtab=orders">رجوع</a></div></form></div>';
