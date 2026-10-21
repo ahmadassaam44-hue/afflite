@@ -2868,6 +2868,14 @@ function wf_support_admin_message($email, $text, $sender_name = null) {
         return true;
     }, []);
 }
+// كل طلبات مسوق معيّن بكود الإحالة (غير حساس لحالة الأحرف) — صفحة المسوق بالإدارة بتعرضهم كلهم بتفاصيلهم
+function wf_orders_by_ref($orders, $ref) {
+    $ref = trim((string)$ref);
+    if (!is_array($orders) || $ref === '') return [];
+    return array_values(array_filter($orders, function ($o) use ($ref) {
+        return is_array($o) && strcasecmp(trim((string)($o['ref'] ?? '')), $ref) === 0;
+    }));
+}
 function notify($for, $text, $link = '') { if ($for === 'admin') { tg_notify('🔔 ' . BRAND . "\n" . $text); if (function_exists('wa_notify') && site_setting('wa_admin_to')) wa_notify(site_setting('wa_admin_to'), '🔔 ' . BRAND . "\n" . $text); } $n = jload('notifications.json', []); $n[] = ['for' => $for, 'text' => mb_substr($text, 0, 300), 'link' => $link, 'at' => date('c'), 'read' => false]; jsave('notifications.json', array_slice($n, -500)); }
 // إرسال إشعار لمستخدم محدد بالإيميل (يُستخدم في الشات وطلبات المنتجات)
 function notify_user($email, $text, $link = '') {

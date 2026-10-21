@@ -668,6 +668,15 @@ chk($out,$fail,'support thread got both admin messages',is_array($th21)?count($t
 chk($out,$fail,'support messages marked unread for user',is_array($th21)?(int)($th21['unread_user']??0):0,2);
 chk($out,$fail,'support message sender is admin',is_array($th21)&&isset($th21['messages'][0])?($th21['messages'][0]['sender']??''):'','admin');
 chk($out,$fail,'empty support message ignored',wf_support_admin_message('mknote@test.local','   '),false);
+// ---- 22) الضغط على المسوق يفتح كل أوردراته بكل تفاصيلها: wf_orders_by_ref ----
+$ords22=jload('orders.json',[],false);
+$by999=wf_orders_by_ref($ords22,'MK999');
+chk($out,$fail,'orders by ref MK999 count',count($by999),1);
+chk($out,$fail,'orders by ref MK999 row',(string)($by999[0]['order_no']??''),'ORD-TEST-3');
+$by123=wf_orders_by_ref($ords22,'mk123');
+chk($out,$fail,'orders by ref case-insensitive',count($by123),2);
+chk($out,$fail,'orders by unknown ref empty',wf_orders_by_ref($ords22,'MKXYZ'),[]);
+chk($out,$fail,'orders by empty ref empty',wf_orders_by_ref($ords22,''),[]);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -701,6 +710,10 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(adm.includes('status_reason'),'admin must capture a cancel/return/no-answer reason that reaches the marketer');
   assert.ok(!adm.includes('wf_order_reasons_btns('),'reasons must live inside the details dialog, not as nested buttons');
   assert.ok(adm.includes('wf_support_admin_message')&&adm.includes('order_note_idx'),'admin order notes must reach the marketer support chat + notification');
+  assert.ok(adm.includes('كل طلبات المسوق بكل تفاصيلها')&&adm.includes('wf_order_details_rows($oo, true)'),'marketer page must list ALL his orders with full details + dialog');
+  assert.ok(adm.includes('wf_orders_by_ref'),'marketer page must filter orders through the shared helper');
+  assert.ok(!/array_slice\(\$mo_rev, 0, 15/.test(adm),'the marketer orders list must not be capped at 15 rows');
+  assert.ok((adm.match(/tab=marketers&mk=/g)||[]).length>=3,'marketer name/email in the table must be clickable to his orders page');
   const cfg21=fs.readFileSync(path.join(repo,'config.php'),'utf8');
   assert.ok(cfg21.includes('function wf_support_admin_message'),'config.php must define the support push helper');
   assert.ok(/'no_answer'\s*=>\s*'لا يرد'/.test(cfg21),'the no-answer status must carry the label لا يرد');

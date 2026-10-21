@@ -1514,7 +1514,7 @@ elseif ($tab === 'marketers') {
         foreach ($marketers as $x) { if (($x['email'] ?? '') === $mk_view) { $mu = $x; break; } }
         if ($mu) {
             $mref = $mu['ref_code'] ?? '';
-            $mo = array_filter($orders, function ($o) use ($mref) { return ($o['ref'] ?? '') === $mref; });
+            $mo = function_exists('wf_orders_by_ref') ? wf_orders_by_ref($orders, $mref) : array_values(array_filter($orders, function ($o) use ($mref) { return ($o['ref'] ?? '') === $mref; }));
             $mo_rev = array_reverse($mo, true);
             $mrev = array_sum(array_map(function ($o) { return (float)($o['total'] ?? 0); }, $mo));
             $mcomm = array_sum(array_map(function ($o) { return (float)($o['m_earn'] ?? 0); }, $mo));
@@ -1572,11 +1572,23 @@ elseif ($tab === 'marketers') {
             echo '</div>';
             echo '</div>';
 
-            echo '<div data-ui="u-aec60660 dl du d1 d2d"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> آخر طلبات المسوق</div>';
+            echo '<div data-ui="u-aec60660 dl du d1 d2d"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> كل طلبات المسوق بكل تفاصيلها (' . count($mo_rev) . ')</div>';
             if ($mo_rev) {
-                echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>عمولته</th><th>الحالة</th></tr>';
-                foreach (array_slice($mo_rev, 0, 15, true) as $oo) {
-                    echo '<tr><td dir="ltr">' . esc(substr($oo['at'] ?? '', 0, 16)) . '</td><td><b>' . esc(mb_substr(aff_clean($oo['pname'] ?? '', true), 0, 40)) . '</b></td><td>' . esc($oo['cname'] ?? '') . '</td><td><b>' . number_format((float)($oo['total'] ?? 0)) . ' ج.م</b></td><td data-ui="u-8b877a44 d1x dc">+' . number_format((float)($oo['m_earn'] ?? 0), 2) . '</td><td>' . esc($oo['status'] ?? '') . '</td></tr>';
+                echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب/التاريخ</th><th>المنتج</th><th>العميل</th><th>المنطقة والعنوان</th><th>الإجمالي</th><th>عمولته</th><th>الحالة</th><th>التفاصيل</th></tr>';
+                foreach ($mo_rev as $oo) {
+                    $oo_no = (string)($oo['order_no'] ?? '');
+                    $cs19 = (string)($oo['comm_state'] ?? '');
+                    $cs_lbl19 = ['pending' => 'معلقة', 'confirmed' => 'مؤكدة', 'reversed' => 'مسحوبة', 'suspended' => 'موقوفة', 'none' => 'لا توجد'][$cs19] ?? $cs19;
+                    echo '<tr>';
+                    echo '<td dir="ltr"><b>' . esc($oo_no) . '</b><br><span class="mut">' . esc(substr((string)($oo['at'] ?? ''), 0, 16)) . '</span></td>';
+                    echo '<td><b>' . esc(mb_substr(aff_clean($oo['pname'] ?? '', true), 0, 40)) . '</b>' . (function_exists('order_variant_label') && order_variant_label($oo) !== '' ? '<br><span class="mut">' . esc(order_variant_label($oo)) . '</span>' : '') . '<br><span class="mut">' . (int)($oo['qty'] ?? 1) . ' قطعة</span></td>';
+                    echo '<td>' . esc($oo['cname'] ?? '') . '<br><span dir="ltr">' . esc($oo['cphone'] ?? '') . '</span>' . (trim((string)($oo['cphone2'] ?? '')) !== '' ? '<br><span dir="ltr" class="mut">' . esc($oo['cphone2']) . '</span>' : '') . '</td>';
+                    echo '<td>' . esc($oo['city'] ?? '') . ' — ' . esc($oo['district'] ?? '') . '<br><span class="mut">' . esc(mb_substr((string)($oo['address'] ?? ''), 0, 40)) . '</span></td>';
+                    echo '<td><b>' . number_format((float)($oo['total'] ?? 0), 2) . ' ' . esc(function_exists('wf_ui_currency') ? wf_ui_currency($oo) : 'ج.م') . '</b>' . ((float)($oo['discount'] ?? 0) > 0 ? '<br><span class="mut" style="color:var(--success)">خصم ' . number_format((float)($oo['discount'] ?? 0), 2) . ' ج.م</span>' : '') . '</td>';
+                    echo '<td data-ui="u-8b877a44 d1x dc">+' . number_format((float)($oo['m_earn'] ?? 0), 2) . ' ج.م<br><span class="mut">' . esc($cs_lbl19) . '</span></td>';
+                    echo '<td>' . wf_order_badge($oo['status'] ?? '') . '</td>';
+                    echo '<td>' . wf_details_btn('كل تفاصيل الطلب ' . $oo_no, wf_order_details_rows($oo, true), 'تفاصيل إضافية') . ' <a class="btn sm outline" href="?tab=orders&edit=' . urlencode($oo_no) . '">تعديل كامل</a></td>';
+                    echo '</tr>';
                 }
                 echo '</table></div>';
             }
@@ -1618,8 +1630,8 @@ elseif ($tab === 'marketers') {
         $mkst = $u['status'] ?? 'approved';
         $st_badge = $mkst === 'approved' ? '<span class="badge green"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-check></use></svg> مفعل</span>' : ($mkst === 'suspended' ? '<span class="badge neutral"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-close></use></svg> موقوف</span>' : '<span class="badge amber"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-clock></use></svg> قيد المراجعة</span>');
         echo '<tr>';
-        echo '<td><b>' . esc($u['name'] ?? '') . '</b></td>';
-        echo '<td dir="ltr" class="mut">' . esc($u['email'] ?? '') . '</td>';
+        echo '<td><a href="?tab=marketers&mk=' . urlencode((string)($u['email'] ?? '')) . '" title="كل طلباته بكل تفاصيلها"><b>' . esc($u['name'] ?? '') . '</b></a></td>';
+        echo '<td dir="ltr" class="mut"><a href="?tab=marketers&mk=' . urlencode((string)($u['email'] ?? '')) . '">' . esc($u['email'] ?? '') . '</a></td>';
         $mk_wa = trim((string)($u['whatsapp'] ?? $u['phone'] ?? ''));
         echo '<td dir="ltr">' . ($mk_wa !== '' ? '<a href="' . esc(wa_link($mk_wa)) . '" target="_blank" rel="noopener" data-ui="u-8b877a44 d1x dc">' . esc($mk_wa) . ' </a>' : '—') . '</td>';
         echo '<td dir="ltr"><span class="badge blue">' . esc($u['ref_code'] ?? '') . '</span></td>';
