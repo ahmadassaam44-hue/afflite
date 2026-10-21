@@ -592,7 +592,7 @@ $t3=$rd18('ORD-TEST-3');
 chk($out,$fail,'admin delivered edit ok',!empty($r18d['ok']),true);
 chk($out,$fail,'admin delivered status',$t3['status'],'delivered');
 chk($out,$fail,'admin delivered comm_state confirmed',$t3['comm_state'],'confirmed');
-// ---- 19) تعديلات ما بعد PR#12: حالة «لا يرد» + إلغاء/إرجاع المسوق بعد الشحن + سبب الإدارة يظهر للمسوق + ديالوج واحد لكل التفاصيل ----
+// ---- 19) تعديلات ما بعد PR#12: «لم يتم الرد» + إلغاء/إرجاع المسوق بعد الشحن + سبب الإدارة يظهر للمسوق + ديالوج واحد لكل التفاصيل ----
 $sl19=order_status_list();$ks19=array_keys($sl19);
 chk($out,$fail,'no_answer label لا يرد',$sl19['no_answer']??'','لا يرد');
 chk($out,$fail,'no_answer sits above cancelled',array_search('no_answer',$ks19,true)===array_search('cancelled',$ks19,true)-1,true);
@@ -639,6 +639,24 @@ $rows19c=wf_order_details_rows($o19);
 chk($out,$fail,'customer rows hide commission',$lbl19($rows19c,'عمولة المسوق على الطلب'),null);
 chk($out,$fail,'customer rows hide unit price',$lbl19($rows19c,'سعر القطعة'),null);
 chk($out,$fail,'customer rows still show reason',$lbl19($rows19c,'سبب الإلغاء'),'الإدارة: س');
+// ---- 20) رد الطلب المضمون: توكن عدم التكرار + نقطة التأكيد + إشعارات مؤجلة بعد الرد ----
+jupdate('orders.json',function(&$os20){if(!is_array($os20))return false;foreach($os20 as $i20=>$o20x){if(($o20x['order_no']??'')==='ORD-TEST-3'){$os20[$i20]['client_token']='tok20-abc';return true;}}return false;},[]);
+$f20=wf_find_order_by_token('tok20-abc');
+chk($out,$fail,'find order by client token',is_array($f20)&&($f20['order_no']??'')==='ORD-TEST-3',true);
+chk($out,$fail,'unknown client token returns null',wf_find_order_by_token('tok20-missing'),null);
+chk($out,$fail,'empty client token returns null',wf_find_order_by_token('   '),null);
+$n20=jload('notifications.json',[]);$c20=is_array($n20)?count($n20):0;
+wf_order_notify_queue('admin','إشعار مؤجل للتجربة','dashboard/admin.php?tab=orders');
+wf_order_notify_queue('buyer20@test.local','إشعار مستخدم مؤجل','dashboard/orders.php');
+wf_order_notify_flush();
+$n20b=jload('notifications.json',[],false);$c20b=is_array($n20b)?count($n20b):0;
+chk($out,$fail,'deferred notifications flushed to store',$c20b,$c20+2);
+$has20=false;foreach((array)$n20b as $nn20) if(($nn20['for']??'')==='admin'&&strpos((string)($nn20['text']??''),'إشعار مؤجل للتجربة')!==false)$has20=true;
+chk($out,$fail,'queued admin notification stored',$has20,true);
+wf_order_notify_queue('admin','ماتتنفذش','');
+wf_order_notify_flush();
+$n20c=jload('notifications.json',[],false);
+chk($out,$fail,'flush runs once per request',is_array($n20c)?count($n20c):-1,$c20b);
 // ---- 21) ملاحظات الإدارة توصل للمسوق في شات الدعم + حالة «لا يرد» ----
 chk($out,$fail,'status_label no_answer is لا يرد',status_label('no_answer'),'لا يرد');
 wf_support_admin_message('mknote@test.local','📝 ملاحظة تجربة ١');
@@ -797,7 +815,8 @@ const bulkCallers=[
   ['landing.php',/wf_bulk_discount\(2, \$plat, \$lp_cur\)/],
   ['landing.php',/wf_bundle_total\(\$final_price, 3, \$plat, \$lp_cur\)/],
   ['config.php',/wf_bulk_discount_state\(\$default_plat, \$default_currency\)/],
-  ['config.php',/wf_bulk_discount_plat_ok\(\$default_plat, \$default_currency\)/],
+  // إشعار الخصم 🎁 اتحذف من الديالوج (كان بينادي plat_ok) — الخصم نفسه لسه بيتمرر بالعملة في كل المواقع التانية
+  ['dashboard/product.php',/wf_bulk_discount_plat_ok\(\$plat, \$cur\)/],
 ];
 for(const [file,re] of bulkCallers)assert.ok(re.test(src(file)),file+' must pass the product currency to the quantity-discount helpers');
 // معاينة الخصم في الواجهة لازم تطابق السيرفر (متوريشتش خصم على منتج مش بالجنيه)
@@ -964,8 +983,22 @@ assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock r
   assert.ok(ordSrc.includes('$__wf_ajax_order'),'orders.php must answer ajax POSTs without id as JSON, not the HTML page');
   const uiSrc=src('assets/ui.js');
   assert.ok(uiSrc.includes('window.wfParseJsonLoose'),'ui.js must ship the lenient JSON parser (hosting injects text around JSON)');
-  assert.ok((uiSrc.match(/return e\.text\(\)/g)||[]).length>=2,'both order submits must read responses as text and parse leniently');
-  assert.ok(uiSrc.includes('"X-Requested-With":"XMLHttpRequest"'),'landing inline order must send the ajax header (CSRF/JSON branch)');
+  assert.ok((uiSrc.match(/return (?:e|res)\.text\(\)/g)||[]).length>=2,'order submits and the check endpoint must read responses as text and parse leniently');
+  assert.ok(/['"]X-Requested-With['"]\s*:\s*['"]XMLHttpRequest['"]/.test(uiSrc),'order submits must send the ajax header (CSRF/JSON branch)');
+  // رد الطلب المضمون: توكن + تأكيد + إشعارات بعد الرد — مفيش رسالة «ممكن يكون اتسجل أو لأ» تاني
+  assert.ok(ordSrc.includes('ajax_order_check')&&ordSrc.includes('client_token')&&ordSrc.includes('wf_find_order_by_token'),'orders.php must expose the token check endpoint and idempotent submits');
+  assert.ok(ordSrc.includes('wf_order_notify_flush')&&ordSrc.includes('fastcgi_finish_request')&&ordSrc.includes('Content-Length'),'orders.php must deliver the JSON reply BEFORE telegram/whatsapp notifications');
+  assert.ok(cfgSrc.includes('function wf_order_notify_flush')&&cfgSrc.includes('function wf_find_order_by_token'),'config.php must define the deferred-notify and token lookup helpers');
+  assert.ok(uiSrc.includes('wfOrderSubmitWithCheck')&&uiSrc.includes('wfOrderCheck')&&uiSrc.includes('client_token'),'ui.js must verify via the check endpoint instead of showing an ambiguous failure');
+  assert.ok(!uiSrc.includes('تعذر قراءة رد الخادم'),'the ambiguous unreadable-reply message must be gone from ui.js');
+  assert.ok(!uiSrc.includes('ممكن يكون اتسجل أو لأ'),'the may-or-may-not-registered wording must be gone from ui.js');
+  // إشعار خصم الكمية 🎁 اتحذف — الخصم نفسه يفضل شغال
+  assert.ok(!cfgSrc.includes('بيتحسب أوتوماتيك في الإجمالي'),'the bulk-discount notice must be removed from the order dialog');
+  assert.ok(!cfgSrc.includes('id="eoBulkHint"'),'the eoBulkHint notice element must be removed');
+  assert.ok(cfgSrc.includes('function wf_bulk_discount')&&ordSrc.includes('wf_bulk_discount'),'the bulk discount itself must stay active server-side');
+  const cartSrc=src('dashboard/cart.php');
+  assert.ok(!cartSrc.includes('اطلب أكثر من قطعة'),'the cart bulk-discount notice must be removed too');
+  assert.ok(cartSrc.includes('خصم الكمية'),'the cart discount math row must stay');
   assert.ok(/qi\.value=String\(e\)/.test(uiSrc),'eoRecalc must write the clamped quantity back to the visible input');
   assert.ok(/Math\.min\(99,parseInt\(t\.value/.test(uiSrc),'product page updateTotal must cap quantity at 99 and sync the input');
   const prodSrc=src('dashboard/product.php');
