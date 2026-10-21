@@ -8,7 +8,7 @@ if (isset($_GET['read'])) {
     header('Location: notifications.php'); exit;
 }
 $me = current_user()['email'] ?? '';
-$mine = array_reverse(my_notifications($me));
+$mine = array_reverse(my_notifications($me, wf_user_role($user)));
 layout_top(' الإشعارات', 'home');
 echo '<a class="btn" href="?read=1">تعليم الكل كمقروء</a><br><br><div class="card">';
 if (!$mine) echo '<p class="mut">لا توجد إشعارات</p>';

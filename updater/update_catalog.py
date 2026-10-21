@@ -23,6 +23,33 @@ TODAY = NOW[:10]
 summary = {}
 changed_files = set()
 
+# إشعارات «منتج جديد» لكل المسوقين: لقطه ids قبل التحديث، ومقارنة بعد التشغيل
+_NOTIFY_PLATFORMS = ('hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'sources', 'cezma')
+
+def snapshot_platform_ids():
+    return {p: {str(x.get('id')) for x in jload(p + '.json', [])} for p in _NOTIFY_PLATFORMS}
+
+def push_new_product_notifications(pre_ids, cap_details=10):
+    new_rows = []
+    for p in _NOTIFY_PLATFORMS:
+        old = pre_ids.get(p) or set()
+        for r in jload(p + '.json', []):
+            if str(r.get('id')) not in old and str(r.get('name') or '').strip():
+                new_rows.append((p, r))
+    if not new_rows:
+        return 0
+    notes = jload('notifications.json', [])
+    if not isinstance(notes, list):
+        notes = []
+    for p, r in new_rows[:cap_details]:
+        notes.append({'for': 'marketers', 'text': '🆕 منتج جديد في الكتالوج (' + p + '): ' + str(r.get('name'))[:60],
+                      'link': 'dashboard/marketer.php?mtab=browse', 'at': NOW, 'read': False})
+    if len(new_rows) > cap_details:
+        notes.append({'for': 'marketers', 'text': '🆕 نزل ' + str(len(new_rows) - cap_details) + ' منتج جديد كمان في الكتالوج — شوفهم في «المنتجات المعروضة»',
+                      'link': 'dashboard/marketer.php?mtab=browse', 'at': NOW, 'read': False})
+    jsave('notifications.json', notes[-500:])
+    return len(new_rows)
+
 LOG_LINES = []  # بنحفظ سطور اللوج عشان تتكتب في data/_deploy_log.json وتُقرأ من الريبو (لوج الـActions نفسه بيضيع)
 
 def log(*a):
@@ -3622,6 +3649,7 @@ def _audit_requested_in_push():
 
 if __name__ == '__main__':
     only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'cezma']
+    _pre_platform_ids = snapshot_platform_ids()  # قبل أي تحديث: عشان نعرف المنتجات الجديدة في الآخر
     if only == ['deploy'] and _audit_requested_in_push():
         only = ['cezma-audit']
     if only == ['cezma-audit']:
@@ -3733,6 +3761,15 @@ if __name__ == '__main__':
         log('❌ cezma buckets failed:', str(_be)[:200])
         summary['cezma_buckets'] = {'error': str(_be)[:200]}
     jsave('price_history.json', history)
+    # إشعار كل المسوقين بالمنتجات اللي نزلت في التشغيل ده (فشل الإشعارات ما يوقفش النشر)
+    try:
+        _new_cnt = push_new_product_notifications(_pre_platform_ids)
+        if _new_cnt:
+            summary['new_product_notifications'] = _new_cnt
+            changed_files.add('data/notifications.json')
+            log('📣 إشعار منتجات جديدة للمسوقين:', _new_cnt)
+    except Exception as _npe:
+        log('❌ إشعار المنتجات الجديدة فشل:', str(_npe)[:200])
     jsave('catalog_update.json', {'at': NOW, 'summary': summary, 'changed': sorted(changed_files)})
     # الأمان: التشغيل المجدول (cron) يحدّث البيانات والأسعار بس — من غير ملفات الكود.
     # لولا كده أي تشغيل مجدول من فرع تاني (main) بيرفع نسخة الكود القديمة بتاعته عالاستضافة

@@ -213,6 +213,8 @@ function manual_product_insert($c) {
     manual_ensure_vf($c, '', null);
     $st = $pdo->prepare('INSERT INTO manual_products (name, price, category, stock, image_url, description, details) VALUES (?, ?, ?, ?, ?, ?, ?)');
     $st->execute([$c['name'], $c['price'], $c['category'], $c['stock'], $c['images'][0] ?? '', $c['description'], manual_details_json($c)]);
+    // إشعار لكل المسوقين: منتج يدوي جديد نزل في الكتالوج
+    if (function_exists('wf_notify_marketers')) wf_notify_marketers('🆕 منتج يدوي جديد: ' . mb_substr((string)$c['name'], 0, 60), 'dashboard/marketer.php?mtab=browse');
     return (int)$pdo->lastInsertId();
 }
 

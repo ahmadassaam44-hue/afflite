@@ -2792,8 +2792,109 @@ function notify_user($email, $text, $link = '') {
     notify($email, $text, $link);
     return true;
 }
-function my_notifications($email) { return array_values(array_filter(jload('notifications.json', []), function ($n) use ($email) { return $n['for'] === 'all' || $n['for'] === $email; })); }
+function my_notifications($email, $role = null) {
+    $email = strtolower(trim((string)$email));
+    if ($role === null && $email !== '') { $uu = find_user($email); $role = $uu ? wf_user_role($uu) : null; }
+    $is_mk = ($role === 'marketer');
+    return array_values(array_filter(jload('notifications.json', []), function ($n) use ($email, $is_mk) {
+        $for = (string)($n['for'] ?? '');
+        return $for === 'all' || $for === $email || ($for === 'marketers' && $is_mk);
+    }));
+}
 function admin_notifications() { return array_values(array_filter(jload('notifications.json', []), function ($n) { return $n['for'] === 'admin' || $n['for'] === 'all'; })); }
+// إشعار واحد يوصل لكل حسابات المسوقين (منتج جديد مثلاً) — من غير تفنص لكل إيميل
+function wf_notify_marketers($text, $link = '') { notify('marketers', $text, $link); return true; }
+// عدّادات القايمه الجانبية للأدمن: كل اللي مستني فعل من الإدارة
+function wf_admin_pending_counts() {
+    $c = ['orders' => 0, 'marketers' => 0, 'commissions' => 0, 'requests' => 0, 'chats' => 0];
+    foreach ((array)jload('orders.json', []) as $o) if (status_key($o['status'] ?? '') === 'pending') $c['orders']++;
+    $week = time() - 7 * 86400;
+    foreach ((array)users() as $u) {
+        if (wf_user_role($u) !== 'marketer') continue;
+        $ts = strtotime((string)($u['at'] ?? ''));
+        if ($ts && $ts >= $week) $c['marketers']++;
+    }
+    foreach ((array)jload('payouts.json', []) as $pr) if (trim((string)($pr['status'] ?? 'قيد المراجعة')) === 'قيد المراجعة') $c['commissions']++;
+    foreach ((array)jload('product_requests.json', []) as $rq) if (trim((string)($rq['status'] ?? '')) === 'pending') $c['requests']++;
+    foreach ((array)jload('support_chats.json', []) as $th) {
+        $msgs = (array)($th['messages'] ?? []);
+        $last = end($msgs);
+        if ($last && (string)($last['sender'] ?? '') !== 'admin') $c['chats']++;
+    }
+    return $c;
+}
+// هل من حق المسوق ده يعدّل/يلغي الطلب ده؟ (طلبه بالرف بتاعه + لسه قبل الشحن)
+function wf_marketer_can_edit_order($o, $u) {
+    if (!is_array($o) || !is_array($u)) return false;
+    $ref = trim((string)($u['ref_code'] ?? ''));
+    if ($ref === '' || strcasecmp(trim((string)($o['ref'] ?? '')), $ref) !== 0) return false;
+    if (!status_customer_cancellable($o['status'] ?? '')) return false;
+    return trim((string)($o['order_no'] ?? '')) !== '';
+}
+// تعديل المسوق على طلبه: السيرفر بيعيد حساب الإجمالي وخصم الكمية — مفيش ثقة في أرقام المتصفح
+function wf_marketer_apply_order_edit($order_no, $u, $in) {
+    $order_no = mb_substr(trim((string)$order_no), 0, 40);
+    if ($order_no === '' || !is_array($u) || trim((string)($u['ref_code'] ?? '')) === '') return ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
+    $qty = max(1, min(99, (int)($in['qty'] ?? 1)));
+    $cname = mb_substr(trim((string)($in['cname'] ?? '')), 0, 100);
+    $cphone = preg_replace('/\D+/', '', (string)($in['cphone'] ?? ''));
+    $cphone2 = preg_replace('/\D+/', '', (string)($in['cphone2'] ?? ''));
+    if ($cname === '' || mb_strlen($cphone) < 10) return ['ok' => false, 'msg' => 'اسم العميل ورقم موبايل صحيح (10 أرقام على الأقل) مطلوبين'];
+    $city = mb_substr(trim((string)($in['city'] ?? '')), 0, 60);
+    $district = mb_substr(trim((string)($in['district'] ?? '')), 0, 60);
+    $address = mb_substr(trim((string)($in['address'] ?? '')), 0, 300);
+    $notes = mb_substr(trim((string)($in['notes'] ?? '')), 0, 500);
+    $res = ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
+    jupdate('orders.json', function (&$os) use ($order_no, $u, $qty, $cname, $cphone, $cphone2, $city, $district, $address, $notes, &$res) {
+        if (!is_array($os)) return false;
+        foreach ($os as $i => $o) {
+            if (($o['order_no'] ?? '') !== $order_no) continue;
+            if (!wf_marketer_can_edit_order($o, $u)) { $res['msg'] = 'الطلب مش بتاعك أو حالته مابقتش تقبل تعديل'; return false; }
+            $prod = function_exists('find_product_by_id') ? find_product_by_id((string)($o['id'] ?? ''), (string)($o['plat'] ?? '')) : null;
+            $cur = $prod ? wf_ui_currency($prod) : wf_ui_currency($o);
+            $disc = function_exists('wf_bulk_discount') ? wf_bulk_discount($qty, (string)($o['plat'] ?? ''), $cur) : 0.0;
+            $unit = (float)($o['unit'] ?? 0);
+            $ship = (float)($o['ship'] ?? 0);
+            $os[$i]['qty'] = $qty;
+            $os[$i]['discount'] = (float)$disc;
+            $os[$i]['total'] = round(max(0, $unit * $qty + $ship - $disc), 2);
+            $os[$i]['cname'] = $cname;
+            $os[$i]['cphone'] = $cphone;
+            if ($cphone2 !== '') $os[$i]['cphone2'] = $cphone2;
+            if ($city !== '') $os[$i]['city'] = $city;
+            if ($district !== '') $os[$i]['district'] = $district;
+            if ($address !== '') $os[$i]['address'] = $address;
+            $os[$i]['notes'] = $notes;
+            $os[$i]['mk_edited_at'] = date('c');
+            $os[$i]['mk_edited_by'] = 'marketer:' . (string)($u['ref_code'] ?? '');
+            $res = ['ok' => true, 'msg' => 'تم حفظ تعديلاتك على الطلب ✅', 'idx' => $i];
+            return true;
+        }
+        return false;
+    }, []);
+    return $res;
+}
+// «حذف» المسوق للطلب = إلغاء ناعم: الطلب بيفضل عند الإدارة بحالة «ملغي» ومش بيتمسح
+function wf_marketer_cancel_order($order_no, $u, $reason = '') {
+    $order_no = mb_substr(trim((string)$order_no), 0, 40);
+    $res = ['ok' => false, 'msg' => 'الطلب غير موجود أو مش من حقك'];
+    jupdate('orders.json', function (&$os) use ($order_no, $u, $reason, &$res) {
+        if (!is_array($os)) return false;
+        foreach ($os as $i => $o) {
+            if (($o['order_no'] ?? '') !== $order_no) continue;
+            if (!wf_marketer_can_edit_order($o, $u)) { $res['msg'] = 'الطلب مش بتاعك أو حالته مابقتش تقبل إلغاء'; return false; }
+            $os[$i]['status'] = 'cancelled';
+            $os[$i]['comm_state'] = 'reversed';
+            $os[$i]['cancel_reason'] = 'إلغاء المسوق' . ($reason !== '' ? ': ' . $reason : '');
+            $os[$i]['cancelled_by'] = 'marketer:' . (string)($u['ref_code'] ?? '');
+            $os[$i]['status_at'] = date('c');
+            $res = ['ok' => true, 'msg' => 'تم إلغاء الطلب — فضل مسجّل عند الإدارة بحالة «ملغي» ✅', 'idx' => $i, 'o' => $o];
+            return true;
+        }
+        return false;
+    }, []);
+    return $res;
+}
 function find_user($email) { return find_user_row($email); }
 function find_marketer_by_code($code) {
     static $by_code = [];

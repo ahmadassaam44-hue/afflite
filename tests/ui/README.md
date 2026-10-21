@@ -96,7 +96,7 @@ No production data is touched; the summary is written to `.cache/manual-country-
 
 ```bash
 npm install --prefix .cache/ui-tools @php-wasm/node php-parser
-node tests/ui/manual-country-currency.cjs   # 308 PHP assertions + wiring checks
+node tests/ui/manual-country-currency.cjs   # 336 PHP assertions + wiring checks
 ```
 
 Behaviour documented in `docs/manual-products-country-currency-2026-10-20.md`: the country is stored
@@ -162,3 +162,14 @@ from every page by an owner decision on 2026-10-21 (after the dialog warning wen
 asserts they stay gone from `ui-components.php` and all former call sites, while the arithmetic that
 refuses to sum different currencies (`wf_ui_currencies` / `data-checkout-mixed`) remains. Documented in
 `docs/remove-currency-mix-notices-2026-10-21.md`.
+
+Marketer notifications & order control (2026-10-21): `my_notifications($email, $role)` now also
+returns entries addressed to the `marketers` group (`wf_notify_marketers()` broadcasts one entry for
+every marketer — used by manual-product inserts and the catalogue updater's end-of-run new-product
+diff). `wf_marketer_can_edit_order` / `wf_marketer_apply_order_edit` / `wf_marketer_cancel_order`
+(let a marketer fix customer data/qty on his own pre-shipment orders, with the server recomputing
+qty discount and total) and a soft cancel that keeps the order for the admin with status «ملغي» and
+reverses its commission. `wf_admin_pending_counts()` feeds red sidebar badges (pending orders,
+marketers registered in the last 7 days, payouts قيد المراجعة, pending product requests, support
+threads whose last message is from the user). Documented in
+`docs/marketer-notifications-order-edit-admin-counters-2026-10-21.md`.
