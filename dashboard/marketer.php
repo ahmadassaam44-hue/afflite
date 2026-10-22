@@ -639,8 +639,18 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
         // كل تفاصيل الطلب (العميل والهاتف والعنوان والكمية والسعر والشحن) في الديالوج الكبير — الجدول بسيط
         // شارة واضحة لو الإدارة سايبلة ملاحظة على الطلب — ضغطة واحدة تفتح الديالوج على كل الملاحظات
         $mk_has_note = (trim((string)($o['admin_note'] ?? '')) !== '') || (!empty($o['admin_notes']) && is_array($o['admin_notes']));
+        // زرار «سبب الإلغاء» (أو الاسترجاع) — يظهر للطلب الملغي/المرتجع بس، وضغطة واحدة تعرض السبب كامل
+        $mk_cancel_reason = trim((string)($o['cancel_reason'] ?? ''));
+        $mk_return_reason = trim((string)($o['return_reason'] ?? ''));
+        $mk_reason_btn = '';
+        if ($mk_cancel_reason !== '') {
+            $mk_reason_btn = ' ' . wf_details_btn('سبب إلغاء الطلب ' . ($o['order_no'] ?? ''), [['سبب الإلغاء', $mk_cancel_reason]], '🚫 سبب الإلغاء');
+        } elseif ($mk_return_reason !== '') {
+            $mk_reason_btn = ' ' . wf_details_btn('سبب استرجاع الطلب ' . ($o['order_no'] ?? ''), [['سبب الاسترجاع', $mk_return_reason]], '↩️ سبب الاسترجاع');
+        }
         echo '<td><b>' . esc(mb_substr($o['pname'] ?? '', 0, 35)) . '</b><br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية')
-           . ($mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), '📝 ملاحظة إدارة') : '') . '</td>';
+           . ($mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), '📝 ملاحظة إدارة') : '')
+           . $mk_reason_btn . '</td>';
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format($o['m_earn'] ?? 0, 2) . ' ج.م</td>';
         echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';
