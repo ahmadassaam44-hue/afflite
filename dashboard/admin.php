@@ -2442,6 +2442,18 @@ elseif ($tab === 'amazon' && function_exists('amz_stats')) {
             $amz_msg = '✅ تم حفظ إعدادات أمازون';
         }
 
+        // ---- تصفير بيانات أمازون: الإحصائيات تبدأ جديدة من الآن ----
+        if ($act === 'reset_stats') {
+            if (function_exists('amz_reset_stats')) {
+                amz_reset_stats();
+                log_audit('amazon_reset_stats', '-', []);
+                $amz_msg = '✅ تم تصفير بيانات أمازون — الإحصائيات تبدأ جديدة من الآن';
+            } else {
+                $amz_err = true;
+                $amz_msg = 'تعذر تنفيذ التصفير حالياً.';
+            }
+        }
+
         // ---- حذف رابط ----
         if ($act === 'link_status' && $lid !== '') {
             $l = amz_link($lid);
@@ -3096,6 +3108,10 @@ elseif ($tab === 'amazon' && function_exists('amz_stats')) {
 
     // ------------------ الإعدادات ------------------
     elseif ($asec === 'settings') {
+        // تصفير الإحصائيات: زر واضح بتأكيد — البيانات ترجع جديدة من صفر
+        echo '<div class="adm-box" style="margin-bottom:12px"><h3>🧹 تصفير بيانات أمازون</h3>'
+           . '<p class="mut" style="font-size:12.5px">بيمسح سجل النقرات وسجل التحويلات ويصفّر عدّادات كل رابط (نقرات/فريد/طلبات/أرباح) — الإحصائيات تبدأ جديدة من لحظة التصفير. الروابط المعتمدة والإعدادات وطلبات المسوقين لا تُلمس.</p>'
+           . '<form method="post" data-confirm="سيتم تصفير كل إحصائيات أمازون (سجل النقرات والتحويلات وعدّادات الروابط) ولن يمكن التراجع. هل تريد المتابعة؟" style="display:inline"><input type="hidden" name="amz_act" value="reset_stats"><button class="btn" style="background:#b91c1c;border-color:#b91c1c;color:#fff">تصفير الإحصائيات والبدء من جديد</button></form></div>';
         echo '<form method="post"><input type="hidden" name="amz_act" value="settings">';
         echo '<div class="adm-box"><h3>⚙️ ضبط النظام</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">';
         $on = amz_enabled();

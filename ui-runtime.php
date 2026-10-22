@@ -15,6 +15,7 @@ function wf_ui_log_fatal($msg, $file, $line) {
         'msg'  => substr(preg_replace('/\s+/', ' ', (string)$msg), 0, 300),
         'file' => basename((string)$file) . ':' . (int)$line,
         'uri'  => substr((string)($_SERVER['REQUEST_URI'] ?? ''), 0, 180),
+        'mem'  => round(memory_get_peak_usage(true) / 1048576) . 'M',
     ];
     $fp = @fopen($path, 'c+b');
     if (!$fp) { $busy = false; return; }

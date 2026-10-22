@@ -170,7 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
             }
             // إشعار فوري لصاحب اللينك: طلب جديد دخل على رفّه
             if ($ref !== '' && ($ref_mk = find_marketer_by_code($ref))) {
-                wf_order_notify_queue((string)$ref_mk['email'], '🛍️ طلب جديد على لينكك: ' . $ord_no . ' — ' . $ord_name . ' (إجمالي ' . number_format($ord_total, 2) . ')', 'dashboard/marketer.php?mtab=orders');
+                if (function_exists('wf_order_notify_queue')) wf_order_notify_queue((string)$ref_mk['email'], '🛍️ طلب جديد على لينكك: ' . $ord_no . ' — ' . $ord_name . ' (إجمالي ' . number_format($ord_total, 2) . ')', 'dashboard/marketer.php?mtab=orders');
             }
             // كل بيانات الديالوج تُرسل للأدمن (إشعار داخلي + تليجرام)
             $admin_report = [
@@ -191,11 +191,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
                     . ($m_earn > 0 ? ' — عمولة معلقة: ' . number_format($m_earn, 2) . ' ج.م' : '');
             }
             $admin_report[] = '🌐 مصدر الزيارة: ' . ($new_order['src'] !== '' ? $new_order['src'] : 'غير محدد');
-            wf_order_notify_queue('admin', implode("\n", $admin_report), 'dashboard/admin.php?tab=orders');
+            if (function_exists('wf_order_notify_queue')) wf_order_notify_queue('admin', implode("\n", $admin_report), 'dashboard/admin.php?tab=orders');
             if ($ref && ($mk2 = find_marketer_by_code($ref))) {
-                wf_order_notify_queue($mk2['email'], '💰 عملية بيع برابطك: ' . $ord_name . ' — عمولة معلقة +' . number_format($m_earn, 2) . ' ج.م', 'dashboard/marketer.php');
+                if (function_exists('wf_order_notify_queue')) wf_order_notify_queue($mk2['email'], '💰 عملية بيع برابطك: ' . $ord_name . ' — عمولة معلقة +' . number_format($m_earn, 2) . ' ج.م', 'dashboard/marketer.php');
             }
-            if ($user) wf_order_notify_queue($user['email'], '✅ طلبك ' . $ord_no . ' قيد التأكيد: ' . $ord_name, 'dashboard/orders.php');
+            if ($user && function_exists('wf_order_notify_queue')) wf_order_notify_queue($user['email'], '✅ طلبك ' . $ord_no . ' قيد التأكيد: ' . $ord_name, 'dashboard/orders.php');
 
             $GLOBALS['_WF_ORDER_NO'] = $ord_no;
         }

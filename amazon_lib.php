@@ -1011,6 +1011,30 @@ function amz_money_by_link() {
 // ============================================================================
 //  13) إحصائيات
 // ============================================================================
+// تصفير بيانات أمازون: سجل النقرات + سجل التحويلات + عدّادات كل رابط — الإحصائيات تبدأ جديدة من لحظة التصفير.
+// الروابط المعتمدة والإعدادات وطلبات المسوقين لا تُلمس (عمليات تشغيلية مش إحصائيات).
+function amz_reset_stats() {
+    $now = date('c');
+    jupdate(AMZ_CLICKS_F, function (&$c) { $c = []; return true; }, []);
+    jupdate(AMZ_ORDERS_F, function (&$o) { $o = []; return true; }, []);
+    jupdate(AMZ_LINKS_F, function (&$l) use ($now) {
+        if (!is_array($l)) return false;
+        foreach ($l as $k => $v) {
+            if (!is_array($v)) continue;
+            $l[$k]['clicks'] = 0;
+            $l[$k]['uniq'] = 0;
+            $l[$k]['orders'] = 0;
+            $l[$k]['qty'] = 0;
+            $l[$k]['gross'] = 0;
+            $l[$k]['site_earn'] = 0;
+            $l[$k]['mk_earn'] = 0;
+            $l[$k]['last_click'] = '';
+            $l[$k]['updated'] = $now;
+        }
+        return true;
+    }, []);
+    return true;
+}
 function amz_stats() {
     $links  = amz_links_all();
     $orders = amz_orders_all();
