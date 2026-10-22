@@ -198,7 +198,9 @@ if (isset($_POST['order_note_idx'])) {
             $msg = 'تم حفظ ملاحظة الإدارة ✅';
             log_audit('order_note', '#' . $ni, ['len' => mb_strlen($ntext)]);
             // الملاحظة توصل للمسوق صاحب الطلب في شات الدعم بتاعه + إشعار — مش بس تتخزن على الطلب
-            if ($saved_ref !== '' && ($mk_note = find_marketer_by_code($saved_ref))) {
+            $mk_note = ($saved_ref !== '') ? find_marketer_by_code($saved_ref) : null;
+            if (!$mk_note && $saved_ref !== '' && strpos($saved_ref, '@') !== false && function_exists('find_user')) $mk_note = find_user($saved_ref); // طلبات قديمة ref بتاعها إيميل مش كود
+            if ($mk_note) {
                 $mk_note_email = strtolower(trim((string)($mk_note['email'] ?? '')));
                 if ($mk_note_email !== '') {
                     $mk_note_text = '📝 ملاحظة إدارة على الطلب ' . $saved_ono . ': ' . $ntext;

@@ -637,7 +637,10 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
         echo '<td dir="ltr" data-ui="u-75c8ccd8 d8e dc">' . esc($o['order_no'] ?? '—') . '</td>';
         echo '<td>' . esc(substr($o['at'] ?? '', 0, 10)) . '</td>';
         // كل تفاصيل الطلب (العميل والهاتف والعنوان والكمية والسعر والشحن) في الديالوج الكبير — الجدول بسيط
-        echo '<td><b>' . esc(mb_substr($o['pname'] ?? '', 0, 35)) . '</b><br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية') . '</td>';
+        // شارة واضحة لو الإدارة سايبلة ملاحظة على الطلب — ضغطة واحدة تفتح الديالوج على كل الملاحظات
+        $mk_has_note = (trim((string)($o['admin_note'] ?? '')) !== '') || (!empty($o['admin_notes']) && is_array($o['admin_notes']));
+        echo '<td><b>' . esc(mb_substr($o['pname'] ?? '', 0, 35)) . '</b><br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية')
+           . ($mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), '📝 ملاحظة إدارة') : '') . '</td>';
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format($o['m_earn'] ?? 0, 2) . ' ج.م</td>';
         echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';

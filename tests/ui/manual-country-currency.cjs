@@ -688,6 +688,14 @@ $l23b=jload(AMZ_LINKS_F,[],false);
 chk($out,$fail,'amz link counters zeroed',(int)($l23b['t23']['clicks']??-1),0);
 chk($out,$fail,'amz link earnings zeroed',(float)($l23b['t23']['mk_earn']??-1),0.0);
 chk($out,$fail,'amz link itself kept',(string)($l23b['t23']['status']??''),'approved');
+// ---- 24) ملاحظات الإدارة تظهر في تفاصيل الطلب (ديالوج المسوق والأدمن) ----
+$o24=['order_no'=>'ORD-N24','pname'=>'منتج','admin_note'=>'اتصل بالعميل','admin_notes'=>[['note'=>'اتصل بالعميل','by'=>'أحمد','at'=>'2026-10-22T10:00:00+00:00'],['note'=>'تم الاتصال','by'=>'أحمد','at'=>'2026-10-22T11:00:00+00:00']]];
+$r24=wf_order_details_rows($o24,true);
+$has24=0;$txt24='';
+foreach($r24 as $rr24){if(strpos((string)$rr24[0],'ملاحظة إدارة')===0){$has24++;$txt24.=(string)$rr24[1];}}
+chk($out,$fail,'admin notes rows in details dialog',$has24,2);
+chk($out,$fail,'admin note text shown in dialog',strpos($txt24,'اتصل بالعميل')!==false,true);
+chk($out,$fail,'second admin note shown too',strpos($txt24,'تم الاتصال')!==false,true);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -747,6 +755,11 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(/payment_reject_reason/.test(adm),'payment reject reason must be visible to admin');
   assert.ok(/payout_reject_reason/.test(adm)&&/'reject_reason'\]/.test(adm),'payout reject must record a reason');
   const mk=fs.readFileSync(path.join(repo,'dashboard/marketer.php'),'utf8');
+  // شارة ملاحظة الإدارة على صف طلب المسوق — بتفتح نفس الديالوج الكبير
+  assert.ok(mk.includes('$mk_has_note'),'marketer orders rows must detect admin notes');
+  assert.ok(mk.includes('📝 ملاحظة إدارة'),'marketer orders rows must show the admin-note badge');
+  assert.ok(mk.includes("$mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب "),'the badge must open the details dialog only when a note exists');
+  assert.ok(adm.includes("find_user($saved_ref)"),'admin note handler must fall back to email lookup so the note always reaches the marketer chat');
   assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_details_rows($o, true)'),'marketer orders must have one full details dialog incl. commission');
   assert.ok(mk.includes('value="return"')&&mk.includes('wf_marketer_can_cancel_order'),'marketer must be able to cancel/return orders even after shipping');
   assert.ok(!mk.includes('هتلغي الطلب؟'),'the old cancel confirmation sentence must be gone');
