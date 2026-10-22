@@ -10,7 +10,7 @@ if(!fs.existsSync(path.join(NM,'@php-wasm/node')))throw new Error('Missing @php-
 const {PHP}=require(path.join(NM,'@php-wasm/universal'));
 const {loadNodeRuntime}=require(path.join(NM,'@php-wasm/node'));
 // config.php requires these siblings at include time (amazon/jumia/noon are file_exists-guarded and skipped).
-const FILES=['config.php','manual_products_lib.php','customer_req_lib.php','supabase.php','supabase_users.php','supabase_docs.php','hevo_api.php','ui-components.php','manual_products_import.csv'];
+const FILES=['config.php','manual_products_lib.php','customer_req_lib.php','supabase.php','supabase_users.php','supabase_docs.php','hevo_api.php','ui-components.php','amazon_lib.php','manual_products_import.csv'];
 // جداول الشحن بتتحمل من DATA_DIR (/app/data) — بننسخها عشان الاختبار يشتغل على البيانات الحقيقية
 const DATA_FILES=['data/shipping.json','data/shipping_cities_shopmart.json','data/shipping_cities_gulf.json'];
 // بيانات وهمية لاختبارات Task-11 (إشعارات المسوقين + تعديل/إلغاء الطلبات + عدّادات الأدمن) — جوه WASM بس
@@ -677,6 +677,17 @@ $by123=wf_orders_by_ref($ords22,'mk123');
 chk($out,$fail,'orders by ref case-insensitive',count($by123),2);
 chk($out,$fail,'orders by unknown ref empty',wf_orders_by_ref($ords22,'MKXYZ'),[]);
 chk($out,$fail,'orders by empty ref empty',wf_orders_by_ref($ords22,''),[]);
+// ---- 23) تصفير بيانات أمازون: الإحصائيات ترجع جديدة من صفر ----
+jupdate(AMZ_LINKS_F,function(&$l23){$l23=['t23'=>['clicks'=>7,'uniq'=>3,'orders'=>2,'qty'=>4,'gross'=>100.5,'site_earn'=>50.25,'mk_earn'=>50.25,'last_click'=>'2026-10-20T10:00:00+00:00','status'=>'approved']];return true;},[]);
+jupdate(AMZ_CLICKS_F,function(&$c23){$c23=[['id'=>'t23','at'=>'2026-10-20T10:00:00+00:00']];return true;},[]);
+jupdate(AMZ_ORDERS_F,function(&$o23){$o23=[['id'=>'c23','link_id'=>'t23']];return true;},[]);
+chk($out,$fail,'amz reset returns true',amz_reset_stats(),true);
+chk($out,$fail,'amz clicks log cleared',jload(AMZ_CLICKS_F,[],false),[]);
+chk($out,$fail,'amz orders log cleared',jload(AMZ_ORDERS_F,[],false),[]);
+$l23b=jload(AMZ_LINKS_F,[],false);
+chk($out,$fail,'amz link counters zeroed',(int)($l23b['t23']['clicks']??-1),0);
+chk($out,$fail,'amz link earnings zeroed',(float)($l23b['t23']['mk_earn']??-1),0.0);
+chk($out,$fail,'amz link itself kept',(string)($l23b['t23']['status']??''),'approved');
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -718,6 +729,18 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(adm.includes("</a><br>' . wf_details_btn('كل تفاصيل الطلب "),'admin product cell must open the full details dialog directly');
   assert.ok(!/array_slice\(\$mo_rev, 0, 15/.test(adm),'the marketer orders list must not be capped at 15 rows');
   assert.ok((adm.match(/tab=marketers&mk=/g)||[]).length>=3,'marketer name/email in the table must be clickable to his orders page');
+  // تصفير بيانات أمازون + تحصينات الأخطاء الفادحة
+  const amzSrc=fs.readFileSync(path.join(repo,'amazon_lib.php'),'utf8');
+  assert.ok(amzSrc.includes('function amz_reset_stats'),'amazon_lib must define the stats reset function');
+  assert.ok(adm.includes("'reset_stats'")&&adm.includes('تصفير الإحصائيات والبدء من جديد'),'admin amazon tab must expose a confirmed reset button');
+  const ordSrc23=fs.readFileSync(path.join(repo,'dashboard/orders.php'),'utf8');
+  const qCalls=(ordSrc23.match(/wf_order_notify_queue\(/g)||[]).length;
+  const qGuarded=(ordSrc23.match(/function_exists\('wf_order_notify_queue'\)\)? wf_order_notify_queue\(/g)||[]).length;
+  assert.ok(qCalls>0&&qCalls===qGuarded,'every deferred-notify queue call must be function_exists-guarded (rolling-upload fatal safety)');
+  const cfg23=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  assert.ok(cfg23.includes(String.fromCharCode(64)+"ini_set('memory_limit', '256M')"),'config.php must raise the memory limit to cut OOM fatals');
+  const rt23=fs.readFileSync(path.join(repo,'ui-runtime.php'),'utf8');
+  assert.ok(rt23.includes('memory_get_peak_usage'),'fatal log must record peak memory for triage');
   const cfg21=fs.readFileSync(path.join(repo,'config.php'),'utf8');
   assert.ok(cfg21.includes('function wf_support_admin_message'),'config.php must define the support push helper');
   assert.ok(/'no_answer'\s*=>\s*'لا يرد'/.test(cfg21),'the no-answer status must carry the label لا يرد');

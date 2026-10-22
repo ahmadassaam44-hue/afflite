@@ -3,9 +3,9 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 387559,
+   "remote_size": 387774,
    "on_server": true,
-   "local_size": 387559,
+   "local_size": 387774,
    "match": true
   },
   "index.php": {
@@ -27,9 +27,9 @@
    "match": true
   },
   "amazon_lib.php": {
-   "remote_size": 91050,
+   "remote_size": 92144,
    "on_server": true,
-   "local_size": 91050,
+   "local_size": 92144,
    "match": true
   },
   "amz.php": {
@@ -75,9 +75,9 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 328459,
+   "remote_size": 330157,
    "on_server": true,
-   "local_size": 328459,
+   "local_size": 330157,
    "match": true
   },
   "dashboard/layout.php": {
