@@ -760,6 +760,12 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(mk.includes('📝 ملاحظة إدارة'),'marketer orders rows must show the admin-note badge');
   assert.ok(mk.includes("$mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب "),'the badge must open the details dialog only when a note exists');
   assert.ok(adm.includes("find_user($saved_ref)"),'admin note handler must fall back to email lookup so the note always reaches the marketer chat');
+  // زرار سبب الإلغاء/الاسترجاع على صف طلب المسوق — يظهر بس لو فيه سبب مسجل
+  assert.ok(mk.includes("$mk_cancel_reason !== ''"),'the cancel-reason button must be conditional on a stored reason');
+  assert.ok(mk.includes("wf_details_btn('سبب إلغاء الطلب "),'cancelled orders must get a dedicated cancel-reason dialog button');
+  assert.ok(mk.includes("🚫 سبب الإلغاء"),'the button label must read cancel reason');
+  assert.ok(mk.includes("↩️ سبب الاسترجاع"),'returned orders must get a return-reason button too');
+  assert.ok(mk.includes("[['سبب الإلغاء', $mk_cancel_reason]]"),'the dialog must show the stored cancel reason text');
   assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_details_rows($o, true)'),'marketer orders must have one full details dialog incl. commission');
   assert.ok(mk.includes('value="return"')&&mk.includes('wf_marketer_can_cancel_order'),'marketer must be able to cancel/return orders even after shipping');
   assert.ok(!mk.includes('هتلغي الطلب؟'),'the old cancel confirmation sentence must be gone');
