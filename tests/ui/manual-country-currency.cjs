@@ -766,6 +766,11 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(mk.includes("🚫 سبب الإلغاء"),'the button label must read cancel reason');
   assert.ok(mk.includes("↩️ سبب الاسترجاع"),'returned orders must get a return-reason button too');
   assert.ok(mk.includes("[['سبب الإلغاء', $mk_cancel_reason]]"),'the dialog must show the stored cancel reason text');
+  // خانة الإلغاء في الإدارة: زرار إرسال يحفظ السبب + السبب يوصل في الإشعارات
+  assert.ok(adm.includes('💾 حفظ السبب'),'the admin status form must have a submit button so the reason saves without changing status');
+  assert.ok(adm.includes("' — السبب: ' . $st_reason_q"),'the reason suffix must be built from the posted status_reason');
+  assert.ok((adm.match(/\$st_reason_sfx/g)||[]).length>=3,'both customer and marketer status notifications must carry the reason suffix');
+  assert.ok(adm.includes('وحُفظ السبب وهيظهر للمسوق والعميل'),'the admin must get confirmation that the reason was saved');
   assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_details_rows($o, true)'),'marketer orders must have one full details dialog incl. commission');
   assert.ok(mk.includes('value="return"')&&mk.includes('wf_marketer_can_cancel_order'),'marketer must be able to cancel/return orders even after shipping');
   assert.ok(!mk.includes('هتلغي الطلب؟'),'the old cancel confirmation sentence must be gone');
