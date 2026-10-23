@@ -161,17 +161,19 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
         $oo = jload('orders.json', [])[$i] ?? null;
         if ($oo) {
             $st_lbl = status_label($new_key);
+            // لو الإدارة كتبت سبب إلغاء/إرجاع/عدم رد — السبب يوصل نصًا في الإشعار نفسه
+            $st_reason_sfx = ($st_reason_q !== '' && in_array($new_key, ['cancelled', 'no_answer', 'returned'], true)) ? ' — السبب: ' . $st_reason_q : '';
             if (!empty($oo['user']) && strpos($oo['user'], 'guest:') !== 0) {
-                notify_user($oo['user'], '📦 حالة طلبك أصبحت: ' . $st_lbl, 'dashboard/orders.php');
+                notify_user($oo['user'], '📦 حالة طلبك أصبحت: ' . $st_lbl . $st_reason_sfx, 'dashboard/orders.php');
             }
             if ($o_ref !== '' && ($mk3 = find_marketer_by_code($o_ref))) {
-                notify_user($mk3['email'], '📦 حالة أوردر من لينكك: ' . $st_lbl, 'dashboard/marketer.php');
+                notify_user($mk3['email'], '📦 حالة أوردر من لينكك: ' . $st_lbl . $st_reason_sfx, 'dashboard/marketer.php');
             }
         }
         log_audit('order_status_change', $o_ref ?: '-', [
             'order_idx' => $i, 'from' => $old_key, 'to' => $new_key, 'commission' => $o_ern
         ]);
-        $msg = 'تم تحديث حالة الطلب بنجاح ✅' . (isset($msg_extra) ? '<br>' . $msg_extra : '');
+        $msg = 'تم تحديث حالة الطلب بنجاح ✅' . (($st_reason_q !== '' && in_array($new_key, ['cancelled', 'no_answer', 'returned'], true)) ? ' — وحُفظ السبب وهيظهر للمسوق والعميل' : '') . (isset($msg_extra) ? '<br>' . $msg_extra : '');
     }
 }
 // ملاحظة الإدارة على الطلب (سجل ملاحظات بتتراكم على الطلب نفسه)
@@ -1364,7 +1366,7 @@ elseif ($tab === 'orders') {
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
         echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><input name="status_reason" maxlength="300" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-bottom:6px"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
-        echo '</select></form>'
+        echo '</select><button class="btn sm outline" style="margin-top:6px" title="يحفظ السبب المكتوب مع الحالة الحالية — حتى من غير ما تغيّر الحالة">💾 حفظ السبب</button></form>'
            . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a></td>';
         // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
         echo '<td data-ui="u-5d985ec3 do">';
