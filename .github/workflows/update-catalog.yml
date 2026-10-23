@@ -2,12 +2,10 @@ name: تحديث الكتالوج والأسعار
 
 on:
   push:
+    # main بس — دفعات فروع العمل كانت بتحتل طابور الرفع الوحيد (concurrency group واحد)
+    # وبتأخر/بتلغي عمليات نشر الدمجات، فالموقع كان بيفضل على كود قديم
     branches:
       - main
-      - 'arena/**'
-      - arena/01a0fb2f-afflite
-      - arena/01a0f7e4-afflite
-      - arena/6be51696-afflite
     paths:
       - '*.php'
       - 'dashboard/**'
@@ -72,6 +70,7 @@ jobs:
             visual-cezma-
 
       - name: تشغيل المحدّث + رفع FTP
+        if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
