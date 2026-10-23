@@ -31,16 +31,26 @@ function sb_shipping() {
     $c = sb_cache_get('shipping');
     if (is_array($c)) return $c;
     if (!defined('USE_SUPABASE') || !USE_SUPABASE) return null;
-    $r = sb_req('GET', 'shipping', 'select=platform,region,fee,currency,notes&order=platform.asc,region.asc&limit=1000');
+    $r = sb_req('GET', 'shipping', 'select=platform,country,region,fee,currency,notes&order=platform.asc,country.asc,region.asc&limit=1000');
     if (!is_array($r) || !is_array($r['data'])) return null;
-    $out = [];
+    // تجميع بمنصة+دولة: جداول الدول (يدوي الخليج/مخزون) لازم تفضل منفصلة — خلطها كان بيبوّد رسوم دولة لدولة تانية
+    $groups = [];
     foreach ($r['data'] as $row) {
-        $out[$row['platform']][] = [
-            'region' => $row['region'],
-            'fee' => $row['fee'],
-            'currency' => $row['currency'],
-            'notes' => $row['notes']
+        $pl = (string)($row['platform'] ?? '');
+        $co = (string)($row['country'] ?? '');
+        $groups[$pl . '@' . $co][] = [
+            'region' => (string)($row['region'] ?? ''),
+            'fee' => $row['fee'] ?? 0,
+            'currency' => (string)($row['currency'] ?? ''),
+            'notes' => (string)($row['notes'] ?? '')
         ];
+    }
+    $out = [];
+    foreach ($groups as $ck => $regs) {
+        [$pl, $co] = explode('@', $ck, 2);
+        $e = ['platform' => $pl, 'regions' => $regs];
+        if ($co !== '') $e['country'] = $co;
+        $out[] = $e;
     }
     sb_cache_set('shipping', $out);
     return $out;
@@ -51,8 +61,11 @@ function site_shipping() {
     if (is_array($r) && $r) {
         $names = ['m5zoon' => 'M5zoon', 'vendoor' => 'Vendoor', 'safqa' => 'Safqa', 'timehand' => 'Time Hand', 'angazny' => 'Angazny', 'shopmart' => 'Shopmart', 'g2g' => 'G2G'];
         $out = [];
-        foreach ($r as $plat => $regs) {
-            $out[] = ['platform' => $plat, 'name' => $names[$plat] ?? $plat, 'source' => 'Supabase', 'regions' => $regs];
+        foreach ($r as $e) {
+            $pl = (string)($e['platform'] ?? '');
+            $o = ['platform' => $pl, 'name' => $names[$pl] ?? $pl, 'source' => 'Supabase', 'regions' => (array)($e['regions'] ?? [])];
+            if (!empty($e['country'])) $o['country'] = (string)$e['country'];
+            $out[] = $o;
         }
         return $out;
     }

@@ -696,6 +696,10 @@ foreach($r24 as $rr24){if(strpos((string)$rr24[0],'ملاحظة إدارة')===0
 chk($out,$fail,'admin notes rows in details dialog',$has24,2);
 chk($out,$fail,'admin note text shown in dialog',strpos($txt24,'اتصل بالعميل')!==false,true);
 chk($out,$fail,'second admin note shown too',strpos($txt24,'تم الاتصال')!==false,true);
+// ---- 25) الشحن: القراءة المحلية افتراضيًا وقراءة Supabase مقفولة لحد ما تتفعّل ----
+chk($out,$fail,'supabase read off by default',USE_SUPABASE,false);
+chk($out,$fail,'sb_shipping null when supabase off',sb_shipping(),null);
+chk($out,$fail,'site_shipping falls back to local file',site_shipping(),jload('shipping.json',[]));
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -777,6 +781,15 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   const wfYml=fs.readFileSync(path.join(repo,'.github/workflows/update-catalog.yml'),'utf8');
   assert.ok(!wfYml.includes("- 'arena/**'"),'arena branch pushes must not trigger the deploy workflow (they clog the single deploy queue)');
   assert.ok(wfYml.includes("github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'"),'the FTP deploy step must run only from main or manual dispatch');
+  // الشحن/Supabase: قراءة بلد-واعية + علم قابل للتفعيل من secrets.php + صفحة إدارة صادقة
+  const sbSrc=fs.readFileSync(path.join(repo,'supabase.php'),'utf8');
+  assert.ok(sbSrc.includes('select=platform,country,region,fee,currency,notes'),'supabase shipping read must fetch the country column');
+  assert.ok(sbSrc.includes("$groups[$pl . '@' . $co][]"),'supabase rows must be grouped by platform+country so per-country tables never mix');
+  const cfgSb=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  assert.ok(cfgSb.includes("if (!defined('USE_SUPABASE')) define('USE_SUPABASE', false);"),'USE_SUPABASE must be overridable from secrets.php');
+  const shipAdm=fs.readFileSync(path.join(repo,'dashboard/admin_shipping.php'),'utf8');
+  assert.ok(shipAdm.includes('$ship_live_mode'),'admin shipping page must state the actual live-update mode');
+  assert.ok(shipAdm.includes('USE_SUPABASE'),'admin shipping page must tell the owner how to enable direct supabase reads');
   assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_details_rows($o, true)'),'marketer orders must have one full details dialog incl. commission');
   assert.ok(mk.includes('value="return"')&&mk.includes('wf_marketer_can_cancel_order'),'marketer must be able to cancel/return orders even after shipping');
   assert.ok(!mk.includes('هتلغي الطلب؟'),'the old cancel confirmation sentence must be gone');

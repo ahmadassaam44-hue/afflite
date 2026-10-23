@@ -41,11 +41,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['fee'])) {
     unset($p);
     jsave('shipping.json', $sh);
     @unlink(DATA_DIR . '/cache_shipping.json');
-    $msg = $ok ? 'تم الحفظ على Supabase ✅ يسمع فوراً على الموقع' : (SB_SERVICE ? 'تعذر الكتابة على Supabase — حُفظ محلياً' : 'حُفظ محلياً (ضع SB_SERVICE للتحديث المباشر)');
+    $msg = $ok ? 'تم الحفظ محليًا وعلى Supabase ✅ الموقع محدّث فورًا' : (SB_SERVICE ? 'تعذر الكتابة على Supabase — حُفظ محليًا والموقع محدّث فورًا' : 'حُفظ محليًا والموقع محدّث فورًا — مفيش نسخة Supabase لأن SB_SERVICE مش مضبوط');
 }
 layout_top('إدارة الشحن ', 'shipping');
 if ($msg) echo '<div role="status" data-save-feedback class="card" data-ui="u-9e82dcff d54">' . esc($msg) . '</div>';
-echo '<div class="card"><p class="mut">الرسوم بتتحفظ في <b>data/shipping.json</b>' . (SB_SERVICE ? ' و Supabase' : '') . '. لإعداد التحديث المباشر تأكد من ضبط <b>SB_SERVICE</b> في إعدادات الخادم.</p>'
+// الوضع الفعلي للتحديث المباشر: محلي / مرآة Supabase / قراءة مباشرة من Supabase
+$ship_live_mode = (SB_SERVICE !== '') ? ((defined('USE_SUPABASE') && USE_SUPABASE) ? 'supabase' : 'mirror') : 'local';
+$ship_mode_txt = [
+    'supabase' => 'الرسوم بتتحفظ في <b>data/shipping.json</b> و Supabase، والموقع بيقرأ من Supabase مباشرة — التحديث المباشر فعّال.',
+    'mirror'   => 'الرسوم بتتحفظ في <b>data/shipping.json</b> و Supabase (نسخة بتتزامن مع كل حفظ)، والموقع بيقرأ من الملف المحلي فورًا — الأسرع (أقل من 30ms).',
+    'local'    => 'الرسوم بتتحفظ في <b>data/shipping.json</b> بس، والموقع بيقرأها فورًا.',
+][$ship_live_mode];
+$ship_setup_txt = [
+    'supabase' => 'التحديث المباشر شغّال — مفيش خطوة إضافية مطلوبة.',
+    'mirror'   => 'لو عايز الموقع يقرأ من Supabase مباشرة: ضيف <b>USE_SUPABASE</b> = true جنب <b>SB_SERVICE</b> في ملف secrets.php بإعدادات الخادم.',
+    'local'    => 'لإعداد نسخة Supabase اللي بتتزامن مع كل حفظ: ضيف <b>SB_SERVICE</b> (مفتاح service_role من Supabase → Project Settings → API) في ملف secrets.php بإعدادات الخادم.',
+][$ship_live_mode];
+echo '<div class="card"><p class="mut">' . $ship_mode_txt . '</p><p class="mut">' . $ship_setup_txt . '</p>'
    . '<p class="mut">المنتجات اليدوية: <b>مصر</b> بتستخدم جدول <b>تايم هاند</b> بالجنيه (مفيش جدول منفصل)، وكل دولة خليجية ليها جدول مناطقها بعملة الدولة — الرسوم بتاعتها إنت اللي بتحددها هنا. منتجات <b>مخزون</b> ليها جدول لكل دولة بنفس المناطق، والرسوم مزروعة بسعر الدولة الموحّد (25 ر.س · 25 د.إ · 3 د.أ · 2.5 ر.ع) وتقدر تعدّل أي منطقة — ومفيش أي تحويل عملات في أي مكان.</p><br><form method="post">';
 foreach (site_shipping() as $p) {
     $key = ship_table_key($p);
