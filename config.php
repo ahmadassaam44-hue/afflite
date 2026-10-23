@@ -1356,7 +1356,8 @@ function payout_method_icon($m) {
 }
 
 // تعطيل انتظار Supabase البطيء والاعتماد على الفهرس المحلي السريع (أقل من 30ms)
-define('USE_SUPABASE', false);
+// الافتراضي محلي — وتقدر تفعّل القراءة المباشرة من Supabase بتعريف USE_SUPABASE = true في secrets.php
+if (!defined('USE_SUPABASE')) define('USE_SUPABASE', false);
 
 // استنتاج المنصة من رقم المنتج بدون إظهار اسم الأفلييت في الرابط
 function resolve_plat($id, $plat_hint = '') {
