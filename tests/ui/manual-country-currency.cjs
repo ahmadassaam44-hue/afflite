@@ -773,6 +773,10 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(adm.includes("' — السبب: ' . $st_reason_q"),'the reason suffix must be built from the posted status_reason');
   assert.ok((adm.match(/\$st_reason_sfx/g)||[]).length>=3,'both customer and marketer status notifications must carry the reason suffix');
   assert.ok(adm.includes('وحُفظ السبب وهيظهر للمسوق والعميل'),'the admin must get confirmation that the reason was saved');
+  // طابور النشر: فروع العمل لازم ماتشغلش workflow الرفع (كانت بتبلوك دمجات main)
+  const wfYml=fs.readFileSync(path.join(repo,'.github/workflows/update-catalog.yml'),'utf8');
+  assert.ok(!wfYml.includes("- 'arena/**'"),'arena branch pushes must not trigger the deploy workflow (they clog the single deploy queue)');
+  assert.ok(wfYml.includes("github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'"),'the FTP deploy step must run only from main or manual dispatch');
   assert.ok(mk.includes('wf_details_btn(')&&mk.includes('wf_order_details_rows($o, true)'),'marketer orders must have one full details dialog incl. commission');
   assert.ok(mk.includes('value="return"')&&mk.includes('wf_marketer_can_cancel_order'),'marketer must be able to cancel/return orders even after shipping');
   assert.ok(!mk.includes('هتلغي الطلب؟'),'the old cancel confirmation sentence must be gone');
