@@ -761,11 +761,13 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(mk.includes("$mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب "),'the badge must open the details dialog only when a note exists');
   assert.ok(adm.includes("find_user($saved_ref)"),'admin note handler must fall back to email lookup so the note always reaches the marketer chat');
   // زرار سبب الإلغاء/الاسترجاع على صف طلب المسوق — يظهر بس لو فيه سبب مسجل
-  assert.ok(mk.includes("$mk_cancel_reason !== ''"),'the cancel-reason button must be conditional on a stored reason');
+  assert.ok(mk.includes("in_array($mk_st_k, ['cancelled', 'no_answer'], true)"),'the cancel-reason button must appear by status in the actions column');
   assert.ok(mk.includes("wf_details_btn('سبب إلغاء الطلب "),'cancelled orders must get a dedicated cancel-reason dialog button');
   assert.ok(mk.includes("🚫 سبب الإلغاء"),'the button label must read cancel reason');
   assert.ok(mk.includes("↩️ سبب الاسترجاع"),'returned orders must get a return-reason button too');
-  assert.ok(mk.includes("[['سبب الإلغاء', $mk_cancel_reason]]"),'the dialog must show the stored cancel reason text');
+  assert.ok(mk.includes("$mk_rsn_txt !== '' ? $mk_rsn_txt : 'غير محدد'"),'old cancellations without a stored reason must still show the button with a placeholder');
+  assert.ok(mk.includes("$mk_can_ed || $mk_can_cn || $mk_rsn_btn !== ''"),'the actions cell must render even when only the reason button applies');
+  assert.ok(mk.includes("if ($mk_rsn_btn !== '') echo $mk_rsn_btn;"),'the reason button must sit inside the actions buttons row next to edit/cancel');
   // خانة الإلغاء في الإدارة: زرار إرسال يحفظ السبب + السبب يوصل في الإشعارات
   assert.ok(adm.includes('💾 حفظ السبب'),'the admin status form must have a submit button so the reason saves without changing status');
   assert.ok(adm.includes("' — السبب: ' . $st_reason_q"),'the reason suffix must be built from the posted status_reason');
