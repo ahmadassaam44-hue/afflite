@@ -401,6 +401,14 @@ echo wf_store_navbar($nav_items, ['lead' => $nav_lead]);
 <!-- HERORIGHT -->
 <div class="hero-right">
 <?php $hero_prods = hero_product_slides(); $slides = $hero_prods ?: jload('slides.json', []); $is_prod_hero = (bool)$hero_prods; ?>
+<?php $hero_vid = wf_youtube_id(site_setting('hero_video', 'LZwlyu3_efo')); ?>
+<?php if ($hero_vid !== ''): ?>
+<div class="hero-video" role="region" aria-label="فيديو شرح المنصة">
+  <div class="hero-video-wrap">
+    <iframe src="https://www.youtube-nocookie.com/embed/<?php echo esc($hero_vid); ?>?rel=0" title="فيديو شرح المنصة — <?php echo esc(BRAND); ?>" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+  </div>
+</div>
+<?php else: ?>
 <div class="hero-carousel" data-wf-carousel="1" data-wf-interval="<?php echo $is_prod_hero ? 15000 : 5000; ?>" role="region" aria-label="العروض الرئيسية">
 <?php if ($slides): ?>
 <div class="hero-track">
@@ -427,6 +435,7 @@ echo wf_store_navbar($nav_items, ['lead' => $nav_lead]);
 </div>
 <?php endif; ?>
 </div>
+<?php endif; ?>
 <section class="section" aria-labelledby="affiliate-intro-title">
   <h2 id="affiliate-intro-title">وفرنهالك أفلييت — منصة تسويق بالعمولة في مصر</h2>
   <a class="btn sm outline" href="affiliate-register.php">اعرف تفاصيل برنامج وفرنهالك أفلييت</a>
