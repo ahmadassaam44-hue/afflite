@@ -595,6 +595,14 @@ function site_settings() {
     return $st;
 }
 function site_setting($k, $def = '') { $st = site_settings(); return isset($st[$k]) && $st[$k] !== '' ? $st[$k] : $def; }
+// استخراج معرف فيديو يوتيوب (11 خانة) من أي صيغة: youtu.be / watch?v= / embed / shorts / معرف خام — وأي حاجة تانية ترجع فاضي
+function wf_youtube_id($url) {
+    $u = trim((string)$url);
+    if ($u === '') return '';
+    if (preg_match('~^[A-Za-z0-9_-]{11}$~', $u)) return $u;
+    if (preg_match('~^(?:https?://)?(?:www\.)?(?:youtu\.be/|youtube\.com/(?:watch\?(?:[^\s]*?&)?v=|embed/|shorts/))([A-Za-z0-9_-]{11})~', $u, $m)) return $m[1];
+    return '';
+}
 // منتجات الكاروسيل الرئيسي: الأدمن بيختارها من إعداد hero_products (لحد 5 منتجات).
 // بترجع نفس شكل الشرائح (image / link / title) + السعر، فالعرض بيشتغل بنفس الكود.
 function hero_product_slides() {
@@ -654,6 +662,7 @@ function site_settings_schema() {
         ],
         'الصفحة الرئيسية' => [
             'hero_products' => ['منتجات الكاروسيل الرئيسي (من 1 لـ 5): أرقام المنتجات مفصولة بفاصلة — انسخها من رابط صفحة المنتج بعد id=', 'text'],
+            'hero_video' => ['فيديو شرح المنصة (رابط يوتيوب): بيظهر مضمّن بدل منتجات الكاروسيل الرئيسي — امسحه وسيبه فاضي ترجع المنتجات', 'text'],
         ],
         'التحليلات والبكسل' => [
             'ga4_id'        => ['Google Analytics 4 — Measurement ID (G-XXXXXXX)', 'text'],

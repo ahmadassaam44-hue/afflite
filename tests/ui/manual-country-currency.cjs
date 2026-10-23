@@ -701,6 +701,13 @@ chk($out,$fail,'no author/timestamp signature in note rows',strpos($txt24,'أح�
 chk($out,$fail,'supabase read off by default',USE_SUPABASE,false);
 chk($out,$fail,'sb_shipping null when supabase off',sb_shipping(),null);
 chk($out,$fail,'site_shipping falls back to local file',site_shipping(),jload('shipping.json',[]));
+// ---- 26) استخراج معرف يوتيوب من كل صيغ الروابط ----
+chk($out,$fail,'youtu.be link id',wf_youtube_id('https://youtu.be/LZwlyu3_efo'),'LZwlyu3_efo');
+chk($out,$fail,'watch?v link id',wf_youtube_id('https://www.youtube.com/watch?v=abc12345678'),'abc12345678');
+chk($out,$fail,'embed link id',wf_youtube_id('https://www.youtube.com/embed/abc12345678'),'abc12345678');
+chk($out,$fail,'raw youtube id',wf_youtube_id('LZwlyu3_efo'),'LZwlyu3_efo');
+chk($out,$fail,'empty video url',wf_youtube_id(''),'');
+chk($out,$fail,'non-youtube url rejected',wf_youtube_id('https://example.com/abcdefghijk'),'');
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -784,6 +791,15 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(wfYml.includes("github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'"),'the FTP deploy step must run only from main or manual dispatch');
   // الشحن/Supabase: قراءة بلد-واعية + علم قابل للتفعيل من secrets.php + صفحة إدارة صادقة
   const uiSrc=fs.readFileSync(path.join(repo,'ui-components.php'),'utf8');
+  // فيديو شرح المنصة بدل الكاروسيل الرئيسي
+  const heroIdx=fs.readFileSync(path.join(repo,'index.php'),'utf8');
+  assert.ok(heroIdx.includes('youtube-nocookie.com/embed'),'home hero must embed the platform explainer video via the privacy-friendly youtube player');
+  assert.ok(heroIdx.includes("$hero_vid = wf_youtube_id(site_setting('hero_video'"),'the hero video id must come from the hero_video setting (sanitized)');
+  const cfgV=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  assert.ok(cfgV.includes("'hero_video' =>"),'admin home-page settings must expose the hero video field next to hero_products');
+  assert.ok(cfgV.includes('function wf_youtube_id'),'config must sanitize any youtube url down to a bare 11-char id');
+  const cssV=fs.readFileSync(path.join(repo,'assets/style.css'),'utf8');
+  assert.ok(cssV.includes('.hero-video-wrap'),'style.css must style the responsive 16:9 video frame');
   assert.ok(!uiSrc.includes(". ' — ' . trim((string)($an_row['by']"),'admin note rows must show the note text only — no author/timestamp signature');
   const sbSrc=fs.readFileSync(path.join(repo,'supabase.php'),'utf8');
   assert.ok(sbSrc.includes('select=platform,country,region,fee,currency,notes'),'supabase shipping read must fetch the country column');
