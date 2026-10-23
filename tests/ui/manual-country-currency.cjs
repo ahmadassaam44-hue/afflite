@@ -696,6 +696,7 @@ foreach($r24 as $rr24){if(strpos((string)$rr24[0],'ملاحظة إدارة')===0
 chk($out,$fail,'admin notes rows in details dialog',$has24,2);
 chk($out,$fail,'admin note text shown in dialog',strpos($txt24,'اتصل بالعميل')!==false,true);
 chk($out,$fail,'second admin note shown too',strpos($txt24,'تم الاتصال')!==false,true);
+chk($out,$fail,'no author/timestamp signature in note rows',strpos($txt24,'أحمد')===false&&strpos($txt24,'2026-10-22')===false,true);
 // ---- 25) الشحن: القراءة المحلية افتراضيًا وقراءة Supabase مقفولة لحد ما تتفعّل ----
 chk($out,$fail,'supabase read off by default',USE_SUPABASE,false);
 chk($out,$fail,'sb_shipping null when supabase off',sb_shipping(),null);
@@ -782,6 +783,8 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(!wfYml.includes("- 'arena/**'"),'arena branch pushes must not trigger the deploy workflow (they clog the single deploy queue)');
   assert.ok(wfYml.includes("github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'"),'the FTP deploy step must run only from main or manual dispatch');
   // الشحن/Supabase: قراءة بلد-واعية + علم قابل للتفعيل من secrets.php + صفحة إدارة صادقة
+  const uiSrc=fs.readFileSync(path.join(repo,'ui-components.php'),'utf8');
+  assert.ok(!uiSrc.includes(". ' — ' . trim((string)($an_row['by']"),'admin note rows must show the note text only — no author/timestamp signature');
   const sbSrc=fs.readFileSync(path.join(repo,'supabase.php'),'utf8');
   assert.ok(sbSrc.includes('select=platform,country,region,fee,currency,notes'),'supabase shipping read must fetch the country column');
   assert.ok(sbSrc.includes("$groups[$pl . '@' . $co][]"),'supabase rows must be grouped by platform+country so per-country tables never mix');

@@ -760,7 +760,8 @@ if (!function_exists('wf_order_details_rows')) {
         if (isset($o['admin_notes']) && is_array($o['admin_notes'])) {
             foreach (array_values($o['admin_notes']) as $an_i => $an_row) {
                 if (!is_array($an_row)) continue;
-                $push('ملاحظة إدارة ' . ($an_i + 1), trim((string)($an_row['note'] ?? '') . ' — ' . trim((string)($an_row['by'] ?? '') . ' ' . substr((string)($an_row['at'] ?? ''), 0, 16))));
+                // نص الملاحظة بس — من غير توقيع الكاتب والتوقيت (بيفضلوا متخزنين على الطلب للمراجعة)
+                $push('ملاحظة إدارة ' . ($an_i + 1), trim((string)($an_row['note'] ?? '')));
             }
         }
         $push('سبب الإلغاء', (string)($o['cancel_reason'] ?? ''));
