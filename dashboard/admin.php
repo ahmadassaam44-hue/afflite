@@ -1272,12 +1272,46 @@ elseif ($tab === 'views') {
 // =========================================================================
 elseif ($tab === 'orders') {
     if (isset($_GET['export'])) {
+        // «رقم الطلب» و«ملاحظات» اتضافوا: التصدير بيُستخدم لتسجيل الطلبات عند المورد/الشحن
+        while (ob_get_level() > 0) @ob_end_clean();
         header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=orders_' . date('Y-m-d') . '.csv');
-        echo "\xEF\xBB\xBFالتاريخ,المنتج,اللون والمقاس,العميل,الهاتف,المحافظة,العنوان,كمية,السعر,عمولة المسوق,شحن,الإجمالي,المسوق,الحالة\n";
+        header('Content-Disposition: attachment; filename="orders_' . date('Y-m-d_His') . '.csv"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, [
+            'رقم الطلب', 'التاريخ', 'المنتج', 'اللون والمقاس', 'العميل', 'الهاتف',
+            'المحافظة', 'العنوان', 'الكمية', 'سعر القطعة', 'الشحن', 'الخصم', 'الإجمالي',
+            'العملة', 'عمولة المسوق', 'المسوق', 'الحالة', 'ملاحظات',
+        ]);
         foreach ($orders as $o) {
-            echo '"' . str_replace('"', '', substr($o['at'] ?? '', 0, 10)) . '","' . str_replace('"', '', mb_substr($o['pname'] ?? '', 0, 60)) . '","' . str_replace('"', '', order_variant_label($o)) . '","' . str_replace('"', '', $o['cname'] ?? '') . '","' . str_replace('"', '', $o['cphone'] ?? '') . '","' . str_replace('"', '', $o['city'] ?? '') . '","' . str_replace('"', '', $o['address'] ?? '') . '",' . ($o['qty'] ?? 1) . ',' . ($o['unit'] ?? 0) . ',' . ($o['m_earn'] ?? 0) . ',' . ($o['ship'] ?? 0) . ',' . ($o['total'] ?? 0) . ',"' . str_replace('"', '', $o['ref'] ?? '') . '","' . str_replace('"', '', $o['status'] ?? '') . "\"\n";
+            $notes = [];
+            if (!empty($o['cancel_reason']))    $notes[] = 'سبب الإلغاء: ' . $o['cancel_reason'];
+            if (!empty($o['return_reason']))    $notes[] = 'سبب الاسترجاع: ' . $o['return_reason'];
+            if (!empty($o['return_requested'])) $notes[] = 'استرجاع قيد المراجعة';
+            if (!empty($o['tracking']))         $notes[] = 'تتبع الشحن: ' . $o['tracking'];
+            fputcsv($out, [
+                (string)($o['order_no'] ?? ''),
+                substr((string)($o['at'] ?? ''), 0, 16),
+                (string)($o['pname'] ?? ''),
+                function_exists('order_variant_label') ? order_variant_label($o) : '',
+                (string)($o['cname'] ?? ''),
+                (string)($o['cphone'] ?? ''),
+                (string)($o['city'] ?? ''),
+                (string)($o['address'] ?? ''),
+                (int)($o['qty'] ?? 1),
+                number_format((float)($o['unit'] ?? 0), 2, '.', ''),
+                number_format((float)($o['ship'] ?? 0), 2, '.', ''),
+                number_format((float)($o['discount'] ?? 0), 2, '.', ''),
+                number_format((float)($o['total'] ?? 0), 2, '.', ''),
+                function_exists('wf_ui_currency') ? (string)wf_ui_currency($o) : 'ج.م',
+                number_format((float)($o['m_earn'] ?? 0), 2, '.', ''),
+                (string)($o['ref'] ?? ''),
+                (string)status_label($o['status'] ?? ''),
+                implode(' | ', $notes),
+            ]);
         }
+        fclose($out);
         exit;
     }
     $statuses = array_keys(order_status_list());
