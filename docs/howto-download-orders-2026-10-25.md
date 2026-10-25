@@ -17,12 +17,38 @@
 | Port | 21 (سيبه فاضي في FileZilla) |
 | المسار | `/htdocs/data/` |
 
-## 2) الطريقة الأسهل: File Manager من لوحة التحكم (من غير تثبيت أي حاجة)
-1. ادخل على لوحة تحكم InfinityFree (نفس المكان اللي بتدخل منه على File Manager).
-2. **File Manager** → افتح `htdocs` → `data`.
-3. اختار `orders.json` → **Download** (أو View لمعاينته).
-4. احفظ الملف في مجلد على جهازك، وسمّيه `orders.json`.
-5. لو عايز كل حاجة: حمّل كمان `users.json` و`customer_requests.json` (اختياري).
+## 2) أهم قاعدة قبل أي محاولة: فيه **كلمتا سر مختلفتان**
+| النوع | يُستخدم لـ | فين تلاقيه |
+|---|---|---|
+| **كلمة سر الـ Client Area** | الدخول على dash.infinityfree.com | الإيميل + الباسورد بتاع الحساب |
+| **كلمة سر حساب الاستضافة** (Hosting Account Password) | **File Manager + FTP + قواعد البيانات** | من جوه Client Area: الحساب → **FTP Details** |
+
+> ⚠️ File Manager **بيستخدم بيانات الـ FTP مش بتاعة اللوحة** [10](https://forum.infinityfree.com/t/i-cannot-log-in-my-file-manager-and-control-panel/49078).
+> ⚠️ **عمرك** ما تستعمل «Reset Password» اللي جوه الـ Control Panel — بيبوّظ المزامنة مع الـ Client Area.
+> غيّرها بس من Client Area → الحساب → **Edit/Account Settings** → **Hosting Account Password**، واستنى 5–15 دقيقة [3](https://forum.infinityfree.com/t/cannot-change-ftp-password/16576)، [12](https://forum.infinityfree.com/t/lost-password-contact-support/82086).
+
+## 2-bis) لو مش قادر تدخل File Manager — السبب والعلاج
+**السبب الأرجح دلوقتي:** كان فيه عطل رسمي في سيرفر الـ FTP عندهم (إمبارح 2026-10-24) استمر ~9 ساعات،
+والـ **File Manager بيعتمد على الـ FTP** فبيفشل معاه — حالة الخدمات دلوقتي كلها **Operational** على
+[status.infinityfree.com](https://status.infinityfree.com/) → **جرّب تاني دلوقتي** [21](https://status.infinityfree.com/).
+
+اختار حالتك:
+1. **مش داخل على dash.infinityfree.com أصلًا** → اعمل reset لكلمة سر الـ Client Area من صفحة الدخول،
+   أو جرّب الدخول بحساب جوجل/جيت هاب لو كنت رابطه.
+2. **داخل اللوحة، بس زر Control Panel أو File Manager بيرفض** → الحساب → Edit Account →
+   Hosting Account Password → كلمة جديدة → استنى 5–15 دقيقة → جرّب تاني.
+3. **اللوحة بطيحة أو الزر بيعلّق** → ادخل على الـ Control Panel مباشرةً بأحد الروابط دي
+   ببيانات **حساب الاستضافة** (`if0_42981380` + باسورد الاستضافة):
+   `https://cpanel.epizy.com` أو `https://cpanel.rf.gd` أو `https://panel.myownfreehost.net:2083/`
+   [2](https://forum.infinityfree.com/t/resolved-control-panel-down-november-13/116523/15)، [4](https://forum.infinityfree.com/t/cpanel/116519).
+4. **مش لاقي باسورد الـ FTP** → Client Area → الحساب → **FTP Details** (مكتوب هناك).
+   لو ضاع خالص: Edit Account → Hosting Account Password → جديد، وحدّثه كمان في GitHub
+   (Settings → Secrets → `FTP_PASS`) عشان الـ workflow يفضل شغال.
+
+## 2-ب) الطريقة الأسهل (من غير تثبيت ولا لوحة تحكم): File Manager على الويب
+1. افتح **https://filestash.infinityfree.com** — مدير ملفات في المتصفح زي File Manager بالظبط [23](https://forum.infinityfree.com/t/file-manager/117003).
+2. اتصال: Protocol = **FTP** · Host = `ftpupload.net` · Port = 21 · Username = `if0_42981380` · Password = باسورد الاستضافة.
+3. ادخل `htdocs/data` → نزّل `orders.json` على جهازك.
 
 ## 3) الطريقة الأضمن (لو الملف كبير أو File Manager بيعلّق): FileZilla
 1. نزّل **FileZilla Client** من filezilla-project.org وثبّته.
