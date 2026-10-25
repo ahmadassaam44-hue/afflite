@@ -1,87 +1,98 @@
-# إزاي تطلّع الطلبات من الموقع وهو متعلّق (InfinityFree)
+# إزاي تطلّع الطلبات (أكتوبر 2026)
 
-## 0) الموقف دلوقتي
-- الدومين `wafirinhalk.com` عليه صفحة **Domain Suspended — reaching server limits**.
-  يعني الاستضافة شغالة والحساب موجود، بس الوصول للويب (HTTP/PHP) مقطوع.
-- **الـ FTP والـ File Manager شغالين عادي** أثناء التعليق → ده طريقنا لإخراج الطلبات.
-- ملف الطلبات: **`/htdocs/data/orders.json`** (مش موجود في الريبو — مستثنى من Git).
+## ⚡ الخلاصة: الطلبات **مش على الاستضافة** — دي على Supabase
+`config.php` فيه قائمة `DOCS_REMOTE` وأول ملف فيها **`orders.json`** — يعني كل قراءة/كتابة للطلبات
+بتتم على **جدول `public.app_docs` في Supabase** (صف `name='orders.json'`، والبيانات في عمود `data` jsonb)،
+**مش** على ملف `data/orders.json` على السيرفر.
 
-> ⚠️ الريبو Public على GitHub: ماترفعش `orders.json` ولا أي ملف فيه بيانات عملاء عليه.
+يومها:
+- تعليق الدومين أو وقوف الـ FTP **مش مهدد للطلبات** — هي في قاعدة بيانات تانية خالص [supabase/migrations/20261010_app_docs.sql](supabase/migrations/20261010_app_docs.sql).
+- الملف اللي على الاستضافة (لو موجود) نسخة قديمة/فاضية — استخدمهاش كمصدر.
+- الجدول عليه RLS ومفيش سياسات → بيُقرأ بـ service_role من السيرفر، أو **من لوحة Supabase** (SQL Editor/Table Editor) لأنها بتشتغل بصلاحيات أعلى.
 
-## 1) بيانات الـ FTP (من updater/README.md)
-| الحقل | القيمة |
-|---|---|
-| Host | `ftpupload.net` |
-| Username | `if0_42981380` |
-| Password | كلمة سر الـ FTP بتاعتك (من لوحة تحكم InfinityFree — لو نسيتها: Control Panel → FTP Settings → تغيير كلمة السر) |
-| Port | 21 (سيبه فاضي في FileZilla) |
-| المسار | `/htdocs/data/` |
+> 🔒 `data` فيها أسماء وعناوين وتليفونات عملاء: الريبو Public على GitHub → ماترفعش الملف ولا تلزقه في الشات.
 
-## 2) أهم قاعدة قبل أي محاولة: فيه **كلمتا سر مختلفتان**
-| النوع | يُستخدم لـ | فين تلاقيه |
-|---|---|---|
-| **كلمة سر الـ Client Area** | الدخول على dash.infinityfree.com | الإيميل + الباسورد بتاع الحساب |
-| **كلمة سر حساب الاستضافة** (Hosting Account Password) | **File Manager + FTP + قواعد البيانات** | من جوه Client Area: الحساب → **FTP Details** |
+---
 
-> ⚠️ File Manager **بيستخدم بيانات الـ FTP مش بتاعة اللوحة** [10](https://forum.infinityfree.com/t/i-cannot-log-in-my-file-manager-and-control-panel/49078).
-> ⚠️ **عمرك** ما تستعمل «Reset Password» اللي جوه الـ Control Panel — بيبوّظ المزامنة مع الـ Client Area.
-> غيّرها بس من Client Area → الحساب → **Edit/Account Settings** → **Hosting Account Password**، واستنى 5–15 دقيقة [3](https://forum.infinityfree.com/t/cannot-change-ftp-password/16576)، [12](https://forum.infinityfree.com/t/lost-password-contact-support/82086).
+## الطريقة 1 (الأسهل — من غير FTP ولا باسورد): SQL Editor في Supabase
+1. ادخل على https://supabase.com/dashboard → المشروع (**`hbhuxhphlpgwqynstytw`**).
+   - لو ظهرلك إن المشروع **Paused** (بيحصل بعد 7 أيام بدون نشاط) → اضغط **Restore/Unpause** واستنى دقيقة.
+2. من القايمة: **SQL Editor** → **New query**.
+3. الأول شوف عندك كام طلب (استعلام آمن):
+   ```sql
+   select name,
+          updated_at,
+          jsonb_typeof(data)           as type,
+          jsonb_array_length(data)     as orders_count
+   from public.app_docs
+   where name = 'orders.json';
+   ```
+4. بعدين نفّذ استعلام التصدير (كل الأعمدة كنص — ما بيقعش لو فيه قيمة فاضية):
+   ```sql
+   select
+     o->>'order_no'         as "رقم الطلب",
+     left(o->>'at', 16)     as "التاريخ",
+     o->>'pname'            as "المنتج",
+     coalesce(o->>'color','') as "اللون",
+     coalesce(o->>'size','')  as "المقاس",
+     o->>'qty'              as "الكمية",
+     o->>'unit'             as "سعر القطعة",
+     o->>'ship'             as "الشحن",
+     o->>'discount'         as "الخصم",
+     o->>'total'            as "الإجمالي",
+     o->>'cname'            as "العميل",
+     o->>'cphone'           as "الهاتف",
+     o->>'cphone2'          as "هاتف 2",
+     o->>'city'             as "المحافظة",
+     o->>'district'         as "المنطقة",
+     o->>'address'          as "العنوان",
+     o->>'notes'            as "ملاحظات العميل",
+     o->>'ref'              as "المسوق",
+     o->>'m_earn'           as "عمولة المسوق",
+     o->>'status'           as "الحالة",
+     o->>'cancel_reason'    as "سبب الإلغاء",
+     o->>'return_reason'    as "سبب الاسترجاع"
+   from public.app_docs d
+   cross join lateral jsonb_array_elements(
+     case when jsonb_typeof(d.data) = 'array' then d.data else '[]'::jsonb end
+   ) as o
+   where d.name = 'orders.json'
+   order by (o->>'at') desc;
+   ```
+5. من نتيجة الاستعلام اضغط **Export / Download as CSV** (أو Copy) → الملف عندك، يفتح في Excel.
 
-## 2-bis) لو مش قادر تدخل File Manager — السبب والعلاج
-**السبب الأرجح دلوقتي:** كان فيه عطل رسمي في سيرفر الـ FTP عندهم (إمبارح 2026-10-24) استمر ~9 ساعات،
-والـ **File Manager بيعتمد على الـ FTP** فبيفشل معاه — حالة الخدمات دلوقتي كلها **Operational** على
-[status.infinityfree.com](https://status.infinityfree.com/) → **جرّب تاني دلوقتي** [21](https://status.infinityfree.com/).
-
-اختار حالتك:
-1. **مش داخل على dash.infinityfree.com أصلًا** → اعمل reset لكلمة سر الـ Client Area من صفحة الدخول،
-   أو جرّب الدخول بحساب جوجل/جيت هاب لو كنت رابطه.
-2. **داخل اللوحة، بس زر Control Panel أو File Manager بيرفض** → الحساب → Edit Account →
-   Hosting Account Password → كلمة جديدة → استنى 5–15 دقيقة → جرّب تاني.
-3. **اللوحة بطيحة أو الزر بيعلّق** → ادخل على الـ Control Panel مباشرةً بأحد الروابط دي
-   ببيانات **حساب الاستضافة** (`if0_42981380` + باسورد الاستضافة):
-   `https://cpanel.epizy.com` أو `https://cpanel.rf.gd` أو `https://panel.myownfreehost.net:2083/`
-   [2](https://forum.infinityfree.com/t/resolved-control-panel-down-november-13/116523/15)، [4](https://forum.infinityfree.com/t/cpanel/116519).
-4. **مش لاقي باسورد الـ FTP** → Client Area → الحساب → **FTP Details** (مكتوب هناك).
-   لو ضاع خالص: Edit Account → Hosting Account Password → جديد، وحدّثه كمان في GitHub
-   (Settings → Secrets → `FTP_PASS`) عشان الـ workflow يفضل شغال.
-
-## 2-ب) الطريقة الأسهل (من غير تثبيت ولا لوحة تحكم): File Manager على الويب
-1. افتح **https://filestash.infinityfree.com** — مدير ملفات في المتصفح زي File Manager بالظبط [23](https://forum.infinityfree.com/t/file-manager/117003).
-2. اتصال: Protocol = **FTP** · Host = `ftpupload.net` · Port = 21 · Username = `if0_42981380` · Password = باسورد الاستضافة.
-3. ادخل `htdocs/data` → نزّل `orders.json` على جهازك.
-
-## 3) الطريقة الأضمن (لو الملف كبير أو File Manager بيعلّق): FileZilla
-1. نزّل **FileZilla Client** من filezilla-project.org وثبّته.
-2. فوق في الشريط: Host = `ftpupload.net`، Username = `if0_42981380`، Password = بتاعك، Port = فاضي → **Quickconnect**.
-3. على اليمين (السيرفر) ادخل: `htdocs` → `data`.
-4. على الشمال اختار مجلد على جهازك (مثل Desktop\afflite-backup).
-5. جرّر `orders.json` من اليمين للشمال → يتنزّل.
-6. (اختياري) جرّر كمان `users.json` و`customer_requests.json`.
-
-لو الاتصال فشل: تأكد إنك داخل على لوحة التحكم بنفس بيانات الحساب، وإن كلمة سر الـ FTP مش باسورد اللوحة (InfinityFree بيفصل بينهم: Control Panel → FTP Accounts).
-
-## 4) تحويل orders.json لـ Excel/CSV على جهازك
-### لو عندك Python (أسهل حاجة):
-```bash
-cd afflite
-python3 tools/rescue_orders.py --local path/to/orders.json
+**نسخة بأرقام حقيقية** (للجمع والفرز في Excel) — بدّل السطور دي في الاستعلام:
+```sql
+   nullif(o->>'qty','')::numeric        as "الكمية",
+   nullif(o->>'unit','')::numeric       as "سعر القطعة",
+   nullif(o->>'ship','')::numeric       as "الشحن",
+   nullif(o->>'discount','')::numeric   as "الخصم",
+   nullif(o->>'total','')::numeric      as "الإجمالي",
+   nullif(o->>'m_earn','')::numeric     as "عمولة المسوق",
 ```
-هيطلّع `rescue-.../orders.csv` و`orders.xlsx` + ملخص (عدد الطلبات، الإجمالي، توزيع الحالات).
 
-### من غير Python (Excel Power Query):
-1. Excel → **Data** → **Get Data** → **From File** → **From JSON**.
-2. اختار `orders.json` → **To Table** → **OK**.
-3. اضغط أيقونة السهمين ⬌ في عنوان العمود → **Expand** → اختار كل الأعمدة → OK.
-4. **Close & Load** → هتلاقي الطلبات في شيت.
+## الطريقة 2: من Table Editor (من غير SQL)
+1. Supabase → **Table Editor** → جدول **`app_docs`**.
+2. افتح الصف اللي `name = orders.json` → اضغط على خانة **`data`** → **Copy** (النسخة JSON كاملة).
+3. اللزقها في ملف عندك اسمه `orders.json` (محرر نصوص عادي، UTF-8).
+4. حوّلها:
+   ```bash
+   python3 tools/rescue_orders.py --local orders.json
+   ```
+   → يطلّع `orders.csv` و`orders.xlsx` + ملخص عدد الطلبات والإجمالي وتوزيع الحالات.
+5. من غير Python: Excel → Data → Get Data → From File → From JSON → To Table → ⬌ Expand → Close & Load.
 
-## 5) بعد ما تطّلع الطلبات
-- **إعادة تشغيل الموقع:** من لوحة تحكم InfinityFree فيه زر **Reactivate** للحساب المتعلّق —
-  وحدود الزيارات بتصفّر كل يوم (السقف ~50 ألف زيارة/يوم). لو بيتكرر كل شوية،
-  شوف `docs/free-hosting-alternatives-2026-10-25.md` (Serv00 مثلًا فيه cron وSSH بدون سقف زيارات).
-- **انقل `orders.json` على الاستضافة الجديدة** في نفس المسار `htdocs/data/`، والكود هيقراه زي ما هو.
-- **خلّيك دايمًا واخد نسخة:** زر التصدير اللي ضفناه في `dashboard/orders.php`
-  (و`dashboard/admin.php?tab=orders`) بينزّل الطلبات CSV في أي وقت — بس محتاج الموقع يكون مفتوح.
+## الطريقة 3: FTP (للنسخة القديمة على السيرفر أو ملفات تانية — مش مصدر الطلبات)
+- Host: `ftpupload.net` · User: `if0_42981380` · Password: **Hosting Account Password**
+  (من Client Area → الحساب → **FTP Details** — **مش** باسورد اللوحة) [10](https://forum.infinityfree.com/t/i-cannot-log-in-my-file-manager-and-control-panel/49078).
+- ويب file manager بديل: https://filestash.infinityfree.com [23](https://forum.infinityfree.com/t/file-manager/117003).
+- لو «Invalid account» أو الـ FTP رافض: Client Area → الحساب → **Edit Account** → **Hosting Account Password**
+  → كلمة جديدة → **استنى 5–15 دقيقة** [15](https://forum.infinityfree.com/t/help-i-cannot-connect-to-ftp/49307).
+  ⚠️ عمرك ما تستعمل Reset Password اللي جوه الـ Control Panel [24](https://forum.infinityfree.com/t/vistapanel-login-not-working/76947).
+- لو «Domain Suspended»: افتح تكت من Client Area → Support [18](https://forum.infinityfree.com/t/error-on-control-panel-connection/59601).
 
-## 6) لو الـ FTP نفسه مش راضي يتصل
-يبقى الحساب اتقفل من الاستضافة مش الدومين بس → كلمة سر غلط / الحساب اتلغى لعدم النشاط.
-افتح تكت من Control Panel → Support واطلب فتح الـ FTP مؤقتًا لتنزيل ملفاتك (بيانات عملاء).
+## بعد ما تطلّع الطلبات
+- الملفات دي تقدر تفتحها في Excel وتفلتر/تفرز/تطبع.
+- الاحتفاظ بنسخة دورية: بعد ما الموقع يرجع، زر التصدير في `dashboard/orders.php`
+  و`dashboard/admin.php?tab=orders` بينزّل CSV في أي وقت.
+- عشان التعليق مايرجعش: شوف `docs/free-hosting-alternatives-2026-10-25.md`.
