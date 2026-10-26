@@ -6672,7 +6672,7 @@ function remember_login() {
     }
     // دخول تلقائي: نفس خطوات login.php (تجديد معرّف الجلسة + تثبيتها + منع صلاحيات قديمة)
     session_harden();
-    unset($_SESSION['is_admin'], $_SESSION['admin_role'], $_SESSION['admin_gate'], $_SESSION['admin_seen_at']);
+    unset($_SESSION['is_admin'], $_SESSION['admin_role'], $_SESSION['admin_gate'], $_SESSION['admin_seen_at'], $_SESSION['admin_impersonator']);
     $_SESSION['user'] = [
         'name'  => (string)($u['name'] ?? $email),
         'email' => $email,
@@ -6681,7 +6681,6 @@ function remember_login() {
     if (!empty($u['ref_code'])) $_SESSION['user']['ref_code'] = (string)$u['ref_code'];
     session_bind();
 }
-remember_login();
 
 // ============================================================================
 //  دخول الإدارة بحساب مستخدم مسجل (Impersonation) + الرجوع الآمن لحساب الأدمن
@@ -6825,4 +6824,6 @@ function wf_impersonation_banner_state($dash_pre = null) {
         'csrf'       => csrf_token(),
     ];
 }
+remember_login();
+
 
