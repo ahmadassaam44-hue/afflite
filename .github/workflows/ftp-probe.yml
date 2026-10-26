@@ -1,0 +1,99 @@
+name: فحص الـ FTP (تشخيص فقط)
+
+# بيختبر إن الـ FTP شغال ولا لأ، ويقول فيه كام طلب وحجمه كام — من غير ما ينزّل أي بيانات عملاء.
+# (الريبو Public: أي Artifact أو Log فيه بيانات عملاء أي حد يقدر يقراه — عشان كده مفيش رفع خالص).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: فحص الاتصال وعدد الطلبات
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, io, json, ftplib
+
+          host = os.environ.get('FTP_HOST', '').strip()
+          user = os.environ.get('FTP_USER', '').strip()
+          pw   = os.environ.get('FTP_PASS', '')
+          root = os.environ.get('FTP_ROOT', '/htdocs').strip() or '/htdocs'
+
+          if not (host and user and pw):
+              print('❌ أسرار الـ FTP مش مضافة في الريبو (FTP_HOST / FTP_USER / FTP_PASS)')
+              raise SystemExit(2)
+
+          print('🔌 جرّب الاتصال: %s كـ %s ...' % (host, user))
+          try:
+              ftp = ftplib.FTP(host, timeout=45)
+              ftp.login(user, pw)
+          except Exception as e:
+              print('❌ فشل الاتصال بالـ FTP: %s' % e)
+              print('   السبب المحتمل: باسورد حساب الاستضافة اتغيّر/مش متزامن، أو الحساب متعلّق.')
+              raise SystemExit(3)
+
+          print('✅ الاتصال نجح')
+          try:
+              ftp.cwd(root)
+              print('📂 المجلد %s مفتوح' % root)
+          except Exception as e:
+              print('⚠️  ماقدرتش أفتح %s: %s' % (root, e))
+
+          # محتويات مجلد البيانات (أسماء وأحجام فقط — مفيش بيانات عملاء)
+          try:
+              lines = []
+              ftp.retrlines('LIST data', lines.append)
+              print('\n📄 ملفات data/ (الاسم والحجم):')
+              for l in lines[:40]:
+                  print('   ' + l)
+          except Exception as e:
+              print('⚠️  ماقدرتش أقرا مجلد data: %s' % e)
+
+          # عدد الطلبات بس (إحصاءات مجمّعة — بدون أي بيانات شخصية)
+          buf = bytearray()
+          try:
+              ftp.retrbinary('RETR data/orders.json', buf.extend)
+          except Exception as e:
+              print('\n⚠️  ماقدرتش أنزّل data/orders.json: %s' % e)
+              buf = bytearray()
+
+          if buf:
+              print('\n📦 حجم orders.json: %.1f KB' % (len(buf) / 1024.0))
+              try:
+                  data = json.loads(bytes(buf).decode('utf-8'))
+                  rows = data if isinstance(data, list) else next(
+                      (data[k] for k in ('orders', 'data', 'items') if isinstance(data.get(k), list)), [])
+                  by_status = {}
+                  total = 0.0
+                  for o in rows:
+                      if not isinstance(o, dict):
+                          continue
+                      k = str(o.get('status') or 'غير محدد')
+                      by_status[k] = by_status.get(k, 0) + 1
+                      try:
+                          total += float(o.get('total') or 0)
+                      except Exception:
+                          pass
+                  print('✅ عدد الطلبات: %d' % len(rows))
+                  print('✅ إجمالي القيمة: %.2f' % total)
+                  print('✅ توزيع الحالات: %s' % json.dumps(by_status, ensure_ascii=False))
+              except Exception as e:
+                  print('⚠️  الملف مش JSON صالح: %s' % e)
+          else:
+              print('\n⚠️  orders.json مش موجود أو فاضي على السيرفر')
+
+          try:
+              ftp.quit()
+          except Exception:
+              pass
+          PY
