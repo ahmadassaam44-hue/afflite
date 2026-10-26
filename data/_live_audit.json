@@ -1,5 +1,5 @@
 {
- "at": "2026-10-26T20:16:49+00:00",
+ "at": "2026-10-26T22:19:18+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -89,10 +89,10 @@
    "same_as_git": true
   },
   "landing.php": {
-   "remote_size": 24538,
-   "remote_md5": "db3881dde436a120ba3755c6ced6267c",
-   "local_size": 24538,
-   "local_md5": "db3881dde436a120ba3755c6ced6267c",
+   "remote_size": 24732,
+   "remote_md5": "6b7d3ed8922b228bead9e7f730d21676",
+   "local_size": 24732,
+   "local_md5": "6b7d3ed8922b228bead9e7f730d21676",
    "same_as_git": true
   },
   ".htaccess": {
@@ -103,10 +103,10 @@
    "same_as_git": true
   },
   "assets/style.css": {
-   "remote_size": 159833,
-   "remote_md5": "a499c61e476bc4d8aed0e9ed5eeb0539",
-   "local_size": 159833,
-   "local_md5": "a499c61e476bc4d8aed0e9ed5eeb0539",
+   "remote_size": 160662,
+   "remote_md5": "231cfa935b723ae232790f8399750715",
+   "local_size": 160662,
+   "local_md5": "231cfa935b723ae232790f8399750715",
    "same_as_git": true
   },
   "assets/icon-512.png": {
@@ -118,9 +118,9 @@
   },
   "data/catalog_counts.json": {
    "remote_size": 1034,
-   "remote_md5": "a59a9a457168a51c0e670064a57f60e7",
+   "remote_md5": "8c36f8eeab35ffbaddb570884877bdb5",
    "local_size": 1034,
-   "local_md5": "a59a9a457168a51c0e670064a57f60e7",
+   "local_md5": "8c36f8eeab35ffbaddb570884877bdb5",
    "same_as_git": true
   }
  },
