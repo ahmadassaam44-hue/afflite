@@ -222,6 +222,28 @@ if (isset($_POST['adm_order_action'], $_POST['adm_order_no']) && (string)$_POST[
     $msg = !empty($adm_edit_res['ok']) ? (string)$adm_edit_res['msg'] : ('⚠️ ' . (string)($adm_edit_res['msg'] ?? 'تعذر حفظ التعديلات'));
     $orders = jload('orders.json', []);
 }
+// حذف الإدارة النهائي للطلبات: طلب واحد (زرار الصف / شاشة التعديل الكامل) أو مجموعة محددة بمربعات التحديد
+if (isset($_POST['adm_order_action'], $_POST['adm_order_no']) && (string)$_POST['adm_order_action'] === 'delete') {
+    if (!csrf_ok()) {
+        $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    } else {
+        $adm_del_res = wf_admin_delete_orders([(string)$_POST['adm_order_no']], (string)($_POST['delete_reason'] ?? ''));
+        $msg = !empty($adm_del_res['ok']) ? (string)$adm_del_res['msg'] : ('⚠️ ' . (string)($adm_del_res['msg'] ?? 'تعذر حذف الطلب'));
+    }
+    $orders = jload('orders.json', []);
+}
+if (isset($_POST['bulk_delete_orders'])) {
+    $bulk_order_nos = is_array($_POST['bulk_order_nos'] ?? null) ? $_POST['bulk_order_nos'] : [];
+    if (!csrf_ok()) {
+        $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    } elseif (!$bulk_order_nos) {
+        $msg = '⚠️ حدّد طلب واحد على الأقل من مربعات التحديد قبل الحذف الجماعي.';
+    } else {
+        $adm_bulk_del_res = wf_admin_delete_orders($bulk_order_nos, (string)($_POST['delete_reason'] ?? ''));
+        $msg = !empty($adm_bulk_del_res['ok']) ? (string)$adm_bulk_del_res['msg'] : ('⚠️ ' . (string)($adm_bulk_del_res['msg'] ?? 'تعذر حذف الطلبات'));
+    }
+    $orders = jload('orders.json', []);
+}
 // إعادة محاولة حقيقية للطلب الاجتماعي المؤكد الذي فشل إرساله إلى Hevo.
 if (isset($_POST['retry_order'])) {
     $ri = (int)$_POST['retry_order'];
@@ -1351,11 +1373,26 @@ elseif ($tab === 'orders') {
            . '<div style="grid-column:1/-1"><label class="field-label">العنوان بالتفصيل</label><input name="address" maxlength="300" value="' . $ae_in('address') . '"></div>'
            . '<div style="grid-column:1/-1"><label class="field-label">ملاحظات الطلب</label><input name="notes" maxlength="500" value="' . $ae_in('notes') . '"></div>'
            . '<div style="grid-column:1/-1"><button class="btn pri" type="submit">حفظ كل التعديلات</button> <a class="btn outline" href="?tab=orders">رجوع للطلبات</a></div>'
+           . '</form>'
+           . '<form method="post" data-confirm="حذف الطلب ' . $ae_in('order_no') . ' نهائيًا من النظام؟ هيتمسح من قوائم الإدارة والمسوق والعميل ومش هيرجع، وأي عمولة لسه مفعّلة هتتسحب من المسوق (زي الإلغاء). للإلغاء العادي غيّر الحالة بدل الحذف." style="margin-top:14px;padding-top:12px;border-top:1px dashed #fecaca;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">' . csrf_field()
+           . '<input type="hidden" name="adm_order_action" value="delete"><input type="hidden" name="adm_order_no" value="' . $ae_in('order_no') . '">'
+           . '<label style="font-size:12px;font-weight:800;color:#b91c1c">منطقة خطر: حذف الطلب نهائيًا<br><input name="delete_reason" maxlength="300" placeholder="سبب الحذف (اختياري — يوصل للمسوق والعميل)" style="width:280px;padding:8px;border:1px solid #fecaca;border-radius:8px;margin-top:4px;font-weight:400"></label>'
+           . '<button class="btn sm" style="background:#b91c1c;border-color:#b91c1c;color:#fff">🗑 حذف الطلب نهائيًا</button>'
            . '</form></div>';
     }
-    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>#</th><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
+    echo '<form id="ordBulkForm" method="post" data-confirm="حذف كل الطلبات المحددة نهائيًا من النظام؟ الحذف النهائي مابيرجعش، وأي عمولة لسه مفعّلة هتتسحب من مسوقها (زي الإلغاء). للإلغاء العادي استخدم تغيير الحالة بدل الحذف." style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">' . csrf_field()
+        . '<input type="hidden" name="bulk_delete_orders" value="1">'
+        . '<label style="display:inline-flex;gap:6px;align-items:center;margin:0"><input type="checkbox" onchange="document.querySelectorAll(\'.ord-pick\').forEach(function(c){c.checked=this.checked;},this)"> تحديد كل المعروض</label>'
+        . '<button type="submit" class="btn sm" style="color:#b91c1c">🗑 حذف المحدد نهائيًا</button>'
+        . '<span class="mut" style="font-size:12px">الحذف النهائي للطلبات التست/المكررة/الغلط بس — الطلب بيتمسح من الإدارة والمسوق والعميل وعمولته المفعّلة بتتسحب، ونسخة أمان بتتأرشف عند الإدارة.</span>'
+        . '</form>';
+    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>تحديد</th><th>#</th><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
     foreach ($rev_orders as $idx => $o) {
+        // قيمة الحذف: رقم الطلب، وللصفوف القديمة اللي من غير رقم طلب بنستخدم الفهرس + تاريخ الطلب كهوية آمنة
+        $del_val = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('idx|' . (int)$idx . '|' . (string)($o['at'] ?? ''));
+        $del_lbl = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('#' . ((int)$idx + 1));
         echo '<tr>';
+        echo '<td><input type="checkbox" class="ord-pick" form="ordBulkForm" name="bulk_order_nos[]" value="' . esc($del_val) . '" aria-label="تحديد الطلب للحذف الجماعي"></td>';
         echo '<td><b>#' . ($idx + 1) . '</b><br><span class="mut" dir="ltr">' . esc($o['order_no'] ?? '') . '</span></td>';
         echo '<td dir="ltr">' . esc(substr($o['at'] ?? '', 0, 16)) . '</td>';
         // كل التفاصيل (العميل والهاتف والعنوان والكمية والسعر والشحن والعمولة والملاحظات) في الديالوج الكبير — الجدول فضل بسيط
@@ -1367,7 +1404,10 @@ elseif ($tab === 'orders') {
         echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><input name="status_reason" maxlength="300" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-bottom:6px"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
         echo '</select><button class="btn sm outline" style="margin-top:6px" title="يحفظ السبب المكتوب مع الحالة الحالية — حتى من غير ما تغيّر الحالة">💾 حفظ السبب</button></form>'
-           . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a></td>';
+           . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a>'
+           . '<form method="post" data-confirm="حذف الطلب ' . esc($del_lbl) . ' نهائيًا من النظام؟ هيتمسح من قوائم الإدارة والمسوق والعميل ومش هيرجع، وأي عمولة لسه مفعّلة هتتسحب من المسوق (زي الإلغاء). للإلغاء العادي غيّر الحالة بدل الحذف." style="margin-top:6px">' . csrf_field()
+           . '<input type="hidden" name="adm_order_action" value="delete"><input type="hidden" name="adm_order_no" value="' . esc($del_val) . '">'
+           . '<button class="btn sm" style="color:#b91c1c;border-color:#fecaca" title="حذف الطلب نهائيًا من النظام">🗑 حذف نهائي</button></form></td>';
         // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
         echo '<td data-ui="u-5d985ec3 do">';
         echo '<form method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></td>';

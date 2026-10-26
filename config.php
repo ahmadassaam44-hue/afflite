@@ -3282,6 +3282,194 @@ function wf_marketer_cancel_order($order_no, $u, $reason = '', $to = 'cancelled'
     }, []);
     return $res;
 }
+// فحص عدم تكرار سحب العمولة عند إعادة محاولة حذف فشل بعد السحب: هل اتسجل قيد سحب «حذف الإدارة» للطلب ده قبل كده؟
+function wf_order_delete_reversal_done($idx, $mk_email, $order_no) {
+    $mk_email = strtolower(trim((string)$mk_email));
+    if ($mk_email === '') return false;
+    $mark = 'حذف الإدارة للطلب ' . (string)$order_no;
+    foreach ((array)jload('balance_ledger.json', [], false) as $r) {
+        if (!is_array($r) || ($r['type'] ?? '') !== 'reversal') continue;
+        if (!isset($r['order_idx']) || (int)$r['order_idx'] !== (int)$idx) continue;
+        if (strcasecmp((string)($r['email'] ?? ''), $mk_email) !== 0) continue;
+        if (strpos((string)($r['reason'] ?? ''), $mark) !== false) return true;
+    }
+    return false;
+}
+// ============================================================================
+//  حذف الإدارة النهائي للطلبات (واحد أو مجموعة) — للطلبات التست/المكررة/الغلط
+//  الحذف «نهائي»: الصف بيتمسح من orders.json والمصفوفة بتتعاد فهرستها، فبنرحّل
+//  order_idx في دفتر العمولات (balance_ledger.json) عشان عمولات باقي الطلبات
+//  (خصوصاً عمولة الفريق اللي بتتجمّع بالفهرس) تفضل مربوطة بطلباتها الصح.
+//  عمولة الطلب المحذوف بتتسحب بنفس قواعد إلغاء الإدارة بالظبط (مباشرة + فريق)
+//  لو لسه مفعّلة (pending/confirmed) — الملغي/المرتجع أصلاً عمولته مسحوبة.
+//  نسخة من كل طلب محذوف بتتأرشف في deleted_orders.json + سجل audit.
+//  $targets: أرقام طلبات، أو توكن «idx|فهرس|تاريخ» للصفوف القديمة اللي من غير رقم طلب.
+// ============================================================================
+function wf_admin_delete_orders($targets, $reason = '') {
+    $reason = mb_substr(trim((string)$reason), 0, 300);
+    // ===== تطبيع الأهداف: أرقام طلبات فريدة + توكنز صفوف قديمة =====
+    $want_no = [];    // order_no => true
+    $want_idx = [];   // idx => at (للصفوف اللي من غير order_no)
+    foreach ((array)$targets as $t) {
+        if (!is_string($t) && !is_numeric($t)) continue;
+        $t = mb_substr(trim((string)$t), 0, 80);
+        if ($t === '') continue;
+        if (preg_match('/^idx\|(\d+)\|(.+)$/', $t, $m)) $want_idx[(int)$m[1]] = $m[2];
+        else $want_no[mb_substr($t, 0, 40)] = true;
+    }
+    if (!$want_no && !$want_idx) return ['ok' => false, 'count' => 0, 'msg' => 'مفيش طلبات محددة للحذف'];
+    if (count($want_no) + count($want_idx) > 200) {
+        return ['ok' => false, 'count' => 0, 'msg' => 'أقصى حد للحذف في المرة الواحدة 200 طلب — قلّل التحديد وكرّر العملية'];
+    }
+
+    // ===== تحديد الصفوف الحالية (كل الصفوف اللي رقمها مطلوب — مش أول واحد بس) =====
+    $all = (array)jload('orders.json', []);
+    $found = [];      // idx => row
+    foreach ($all as $i => $o) {
+        if (!is_array($o)) continue;
+        $ono = trim((string)($o['order_no'] ?? ''));
+        if ($ono !== '' && isset($want_no[$ono])) { $found[$i] = $o; continue; }
+        if ($ono === '' && isset($want_idx[$i]) && (string)($o['at'] ?? '') === $want_idx[$i]) $found[$i] = $o;
+    }
+    if (!$found) return ['ok' => false, 'count' => 0, 'msg' => 'الطلبات المحددة مش موجودة (يمكن اتحذفت قبل كده)'];
+    $missing = [];
+    foreach (array_keys($want_no) as $no) {
+        $hit = false;
+        foreach ($found as $o) if ((string)($o['order_no'] ?? '') === $no) { $hit = true; break; }
+        if (!$hit) $missing[] = $no;
+    }
+
+    // ===== 1) سحب العمولات قبل المسح (نفس قواعد إلغاء الإدارة) بالفهرس الحالي =====
+    $rev_total = 0.0;
+    foreach ($found as $idx => $o) {
+        $ono = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('#' . ((int)$idx + 1));
+        $del_reason = 'حذف الإدارة للطلب ' . $ono . ' نهائيًا' . ($reason !== '' ? ' — ' . $reason : '');
+        $ref  = trim((string)($o['ref'] ?? ''));
+        $earn = round((float)($o['m_earn'] ?? 0), 2);
+        $key  = status_key($o['status'] ?? 'pending');
+        $comm = (string)($o['comm_state'] ?? '');
+        if ($comm === '') $comm = status_releases_commission($key) ? 'confirmed'
+                                : (status_reverses_commission($key) ? 'reversed' : ($earn > 0 ? 'pending' : 'none'));
+        if ($ref !== '' && $earn > 0 && in_array($comm, ['pending', 'confirmed'], true) && !status_reverses_commission($key)) {
+            $mk = find_marketer_by_code($ref);
+            $mk_email = $mk ? (string)($mk['email'] ?? '') : '';
+            if ($mk_email !== '' && !wf_order_delete_reversal_done($idx, $mk_email, $ono)) {
+                if (commission_reverse($mk_email, $earn, $idx, $del_reason)) $rev_total = round($rev_total + $earn, 2);
+            }
+        }
+        // عمولة الفريق: الدالة نفسها بتمنع التكرار (بتعكس المسجّل ناقص المعكوس بس)
+        $rev_total = round($rev_total + team_commission_reverse_for_order($idx, $del_reason), 2);
+    }
+
+    // ===== 2) مسح الصفوف ذرّياً بالمطابقة على رقم الطلب/التوكن على أحدث نسخة =====
+    $removed = [];    // [['idx'=>old,'order'=>row], ...]
+    jupdate('orders.json', function (&$os) use ($want_no, $want_idx, &$removed) {
+        if (!is_array($os)) return false;
+        $removed = [];   // إعادة المحاولة عند التضارب بتشغّل الكولباك تاني: نبدأ من صفر
+        $keep = [];
+        foreach ($os as $i => $o) {
+            $ono = is_array($o) ? trim((string)($o['order_no'] ?? '')) : '';
+            $hit = ($ono !== '' && isset($want_no[$ono]))
+                || ($ono === '' && isset($want_idx[$i]) && is_array($o) && (string)($o['at'] ?? '') === $want_idx[$i]);
+            if ($hit) { $removed[] = ['idx' => $i, 'order' => $o]; continue; }
+            $keep[] = $o;
+        }
+        if (!$removed) return false;
+        $os = $keep;     // إعادة فهرسة تسلسلية (مفيش فجوات)
+        return true;
+    }, []);
+    if (!$removed) {
+        return ['ok' => false, 'count' => 0, 'msg' => 'تعذر حذف الطلبات دلوقتي — حاول تاني (أي عمولات اتسحبت مش هتتسحب تاني عند إعادة المحاولة)'];
+    }
+
+    // ===== 3) ترحيل order_idx في دفتر العمولات بعد إعادة الفهرسة =====
+    $del_idxs = [];
+    $del_no_by_idx = [];
+    foreach ($removed as $r) {
+        $del_idxs[] = (int)$r['idx'];
+        $del_no_by_idx[(int)$r['idx']] = (string)($r['order']['order_no'] ?? '');
+    }
+    sort($del_idxs);
+    $ledger_changed = false;
+    $ledger_res = jupdate('balance_ledger.json', function (&$lg) use ($del_idxs, $del_no_by_idx, &$ledger_changed) {
+        if (!is_array($lg)) return false;
+        $ledger_changed = false;
+        foreach ($lg as $k => $r) {
+            if (!is_array($r) || !isset($r['order_idx']) || !is_numeric($r['order_idx'])) continue;
+            $old = (int)$r['order_idx'];
+            if (in_array($old, $del_idxs, true)) {
+                // قيد لطلب اتمسح: نفك ربطه بالفهرس (عشان مايتلخبطش مع طلب تاني خد مكانه) ونختمه برقم الطلب
+                $lg[$k]['order_idx'] = null;
+                if (empty($lg[$k]['order_no']) && ($del_no_by_idx[$old] ?? '') !== '') $lg[$k]['order_no'] = $del_no_by_idx[$old];
+                $ledger_changed = true;
+                continue;
+            }
+            $shift = 0;
+            foreach ($del_idxs as $d) { if ($d < $old) $shift++; else break; }
+            if ($shift > 0) { $lg[$k]['order_idx'] = $old - $shift; $ledger_changed = true; }
+        }
+        return $ledger_changed;
+    }, []);
+    $remap_failed = $ledger_changed && ($ledger_res === false);
+    if ($remap_failed) error_log('wf_admin_delete_orders: balance_ledger order_idx remap failed for deleted idxs ' . implode(',', $del_idxs));
+
+    // ===== 4) أرشيف المحذوفات (نسخة أمان قابلة للاسترجاع اليدوي) =====
+    $actor = function_exists('admin_actor') ? admin_actor() : 'admin';
+    jupdate('deleted_orders.json', function (&$arc) use ($removed, $reason, $actor) {
+        if (!is_array($arc)) $arc = [];
+        foreach ($removed as $r) {
+            $arc[] = ['order' => $r['order'], 'old_idx' => (int)$r['idx'], 'deleted_at' => date('c'), 'deleted_by' => $actor, 'reason' => $reason];
+        }
+        if (count($arc) > 2000) $arc = array_slice($arc, -2000);
+        return true;
+    }, []);
+
+    // ===== 5) إشعارات مجمّعة (للمسوق صاحب العمولة + العميل المسجل) =====
+    $by_ref = []; $by_user = [];
+    $order_nos = []; $totals = 0.0;
+    foreach ($removed as $r) {
+        $o = $r['order'];
+        $ono = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('#' . ((int)$r['idx'] + 1));
+        $order_nos[] = $ono;
+        $totals = round($totals + (float)($o['total'] ?? 0), 2);
+        $ref = trim((string)($o['ref'] ?? ''));
+        if ($ref !== '') $by_ref[$ref][] = $ono;
+        $usr = trim((string)($o['user'] ?? ''));
+        if ($usr !== '' && strpos($usr, 'guest:') !== 0 && strpos($usr, '@') !== false) $by_user[strtolower($usr)][] = $ono;
+    }
+    $rsfx = $reason !== '' ? ' — السبب: ' . $reason : '';
+    foreach ($by_ref as $ref => $nos) {
+        $mk = find_marketer_by_code($ref);
+        if (!$mk || empty($mk['email'])) continue;
+        $txt = count($nos) === 1
+            ? '🗑️ حذفت الإدارة الطلب ' . $nos[0] . ' نهائيًا' . $rsfx
+            : '🗑️ حذفت الإدارة ' . count($nos) . ' طلب نهائيًا من طلبات لينكك: ' . implode('، ', array_slice($nos, 0, 10)) . (count($nos) > 10 ? '…' : '') . $rsfx;
+        notify_user((string)$mk['email'], $txt, 'dashboard/marketer.php?mtab=orders');
+    }
+    foreach ($by_user as $email => $nos) {
+        $txt = count($nos) === 1
+            ? '🗑️ حذفت الإدارة طلبك ' . $nos[0] . ' نهائيًا' . $rsfx
+            : '🗑️ حذفت الإدارة ' . count($nos) . ' من طلباتك نهائيًا: ' . implode('، ', array_slice($nos, 0, 10)) . (count($nos) > 10 ? '…' : '') . $rsfx;
+        notify_user($email, $txt, 'dashboard/orders.php');
+    }
+
+    // ===== 6) أودت + رسالة =====
+    if (function_exists('log_audit')) {
+        log_audit('admin_order_delete', '-', [
+            'count' => count($removed), 'order_nos' => array_slice($order_nos, 0, 100),
+            'old_idxs' => $del_idxs, 'commission_reversed' => $rev_total,
+            'orders_total' => $totals, 'reason' => $reason, 'ledger_remapped' => !$remap_failed,
+        ]);
+    }
+    $msg = count($removed) === 1
+        ? 'تم حذف الطلب ' . esc($order_nos[0]) . ' نهائيًا 🗑'
+        : 'تم حذف ' . count($removed) . ' طلب نهائيًا 🗑';
+    if ($rev_total > 0) $msg .= ' — واتسحبت عمولات ' . number_format($rev_total, 2) . ' ج.م من المسوقين (زي الإلغاء)';
+    if ($missing) $msg .= ' — ملقيناش: ' . esc(implode('، ', array_slice($missing, 0, 10)));
+    if ($remap_failed) $msg .= ' — ⚠️ تنبيه: تعذر تحديث ربط دفتر العمولات، راجع سجل الأخطاء';
+    return ['ok' => true, 'count' => count($removed), 'order_nos' => $order_nos,
+            'commission_reversed' => $rev_total, 'missing' => $missing, 'msg' => $msg];
+}
 function find_user($email) { return find_user_row($email); }
 function find_marketer_by_code($code) {
     static $by_code = [];
