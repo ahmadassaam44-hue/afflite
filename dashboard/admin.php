@@ -1,6 +1,16 @@
 <?php
 $PUBLIC_PAGE = true;
 require 'layout.php';
+
+// الرجوع من حساب مستخدم مُتقمَّص إلى حساب الأدمن الأصلي
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['wf_stop_impersonate']) && csrf_ok() && function_exists('wf_impersonate_stop')) {
+    $imp_stop = wf_impersonate_stop();
+    if (!empty($imp_stop['ok'])) {
+        header('Location: ' . ($imp_stop['dest'] ?? 'admin.php?tab=users'));
+        exit;
+    }
+}
+
 require_admin_or_die();
 
 // لوحة الإدارة متاحة فقط لحساب مسجل بدور admin في users.
@@ -25,6 +35,19 @@ if (!is_string($tab) || !in_array($tab, ['overview', 'visitors', 'cart', 'loves'
 $msg = '';
 
 // ===== ACTIONS =====
+// الدخول بحساب أي مستخدم مسجل (للأدمن فقط، بدون تغيير كلمة سر المستخدم)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['impersonate_email'])) {
+    if (!csrf_ok()) {
+        $msg = '⛔ انتهت صلاحية الجلسة — حدّث الصفحة وحاول مرة أخرى';
+    } else {
+        $imp_res = wf_impersonate_start((string)$_POST['impersonate_email'], (string)($_POST['impersonate_from'] ?? $tab));
+        if (!empty($imp_res['ok'])) {
+            header('Location: ' . ($imp_res['dest'] ?? 'marketer.php'));
+            exit;
+        }
+        $msg = '⛔ ' . ($imp_res['error'] ?? 'تعذر الدخول بحساب المستخدم');
+    }
+}
 // 👤 طلبات العملاء (نون وأمازون): الإدارة بتعلّم «تم» أو «رفض» مع ملاحظة اختيارية للمسوق
 if (isset($_POST['cust_act'], $_POST['cust_id'])) {
     $cr_res = cust_req_decide((string)$_POST['cust_id'], (string)$_POST['cust_act'], (string)($_POST['note'] ?? ''), (string)($user['email'] ?? 'admin'));
@@ -1565,7 +1588,12 @@ elseif ($tab === 'marketers') {
             echo '<div class="adm-box" data-ui="u-fcea9ae7 d0 d3n">';
             echo '<div data-ui="u-4f57474c dh d1o d1p dj d1q d0">';
             echo '<h2 data-ui="u-67647882 d19"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-user></use></svg> صفحة المسوق: <b data-ui="u-f1ca7b59 d1d">' . esc($mu['name'] ?? '') . '</b> <span class="badge blue" dir="ltr">' . esc($mref) . '</span></h2>';
-            echo '<a href="?tab=marketers" class="btn sm outline">← الرجوع لكل المسوقين</a></div>';
+            echo '<div data-ui="u-4f57474c dh d1p dj d4g">'
+               . '<form method="post" class="impersonate-form">' . csrf_field()
+               . '<input type="hidden" name="impersonate_email" value="' . esc($mu['email'] ?? '') . '">'
+               . '<input type="hidden" name="impersonate_from" value="marketers">'
+               . '<button type="submit" class="btn sm pri" title="الدخول إلى لوحة تحكم هذا المسوق">' . wf_svg_icon('user', 16) . '<span>دخول لحسابه</span></button></form>'
+               . '<a href="?tab=marketers" class="btn sm outline">← الرجوع لكل المسوقين</a></div></div>';
 
             echo '<div class="kpis" data-ui="u-f2235598 d1r">';
             echo '<div class="kpi" data-ui="u-bc691366 d6"><b>' . number_format($mclicks) . '</b><span> نقرات على رابطه</span></div>';
@@ -1665,7 +1693,12 @@ elseif ($tab === 'marketers') {
         echo '<td data-ui="u-8b877a44 d1x dc">+' . number_format($mc, 2) . ' ج.م</td>';
         echo '<td><b>' . number_format((float)($u['balance'] ?? 0), 2) . ' ج.م</b></td>';
         echo '<td><form data-confirm="سيتم تغيير نسبة العمولة المخصصة لهذا المسوق. راجع النسبة وأثرها على العمليات القادمة ثم أكد الحفظ." method="post" data-ui="u-ee455706 d3e d4a d1p d19"><input type="hidden" name="mk_email_comm" value="' . esc($u['email'] ?? '') . '"><input type="number" step="0.5" min="0" max="100" name="mk_comm_pct" value="' . esc((float)($u['custom_comm_pct'] ?? 0)) . '" data-ui="u-e5b06130 d4b d4c dt d1u dc do"><button class="btn sm"></button></form></td>';
-        echo '<td data-ui="u-176669be d2m"><a class="btn sm outline" data-ui="u-a41a5b62 d4d do" href="?tab=marketers&mk=' . urlencode($u['email'] ?? '') . '"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-file></use></svg> صفحته</a> ';
+        echo '<td data-ui="u-176669be d2m">'
+           . '<form method="post" class="impersonate-form">' . csrf_field()
+           . '<input type="hidden" name="impersonate_email" value="' . esc($u['email'] ?? '') . '">'
+           . '<input type="hidden" name="impersonate_from" value="marketers">'
+           . '<button type="submit" class="btn sm pri" data-ui="u-a41a5b62 d4d do" title="الدخول لحساب هذا المسوق">' . wf_svg_icon('user', 15) . '<span>دخول لحسابه</span></button></form> '
+           . '<a class="btn sm outline" data-ui="u-a41a5b62 d4d do" href="?tab=marketers&mk=' . urlencode($u['email'] ?? '') . '"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-file></use></svg> صفحته</a> ';
         echo '<a data-confirm="سيتم تحديث حالة حساب المسوق؛ الإيقاف أو التعليق قد يمنع إجراءات الحساب. تأكيد التغيير؟" class="btn sm" data-ui="u-6e6bb2a3 d4e d3v d4d do" href="?tab=marketers&mk_status=approved&mk_email=' . urlencode($u['email'] ?? '') . '"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-check></use></svg> موافقة</a> ';
         echo '<a data-confirm="سيتم تحديث حالة حساب المسوق؛ الإيقاف أو التعليق قد يمنع إجراءات الحساب. تأكيد التغيير؟" class="btn sm" data-ui="u-deb28f62 d4f d3v d4d do" href="?tab=marketers&mk_status=suspended&mk_email=' . urlencode($u['email'] ?? '') . '"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-close></use></svg> إيقاف</a> ';
         echo '<a data-confirm="سيتم تحديث حالة حساب المسوق؛ الإيقاف أو التعليق قد يمنع إجراءات الحساب. تأكيد التغيير؟" class="btn sm outline" data-ui="u-a41a5b62 d4d do" href="?tab=marketers&mk_status=pending&mk_email=' . urlencode($u['email'] ?? '') . '"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-clock></use></svg> تعليق</a>';
@@ -1705,8 +1738,9 @@ elseif ($tab === 'users') {
     }
     echo '<div class="adm-box"><h2><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-users></use></svg> المستخدمين المسجلين (' . count($all_u) . ')</h2>';
     echo '<form method="get" data-ui="u-4be50be1 dh d1s d1r"><input type="hidden" name="tab" value="users"><input name="q" value="' . esc($q) . '" placeholder="بحث بالاسم أو البريد..." data-ui="u-36858c0d d2i d4j dt d1u d1v"><button class="btn">بحث</button></form>';
-    echo '<table class="data-table rtable" data-ui-table="pending" aria-busy="true"><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>واتساب</th><th>الدور</th><th>الرصيد</th><th>كود الإحالة</th><th>تاريخ التسجيل</th><th>حذف</th></tr>';
+    echo '<table class="data-table rtable" data-ui-table="pending" aria-busy="true"><tr><th>الاسم</th><th>البريد الإلكتروني</th><th>واتساب</th><th>الدور</th><th>الرصيد</th><th>كود الإحالة</th><th>تاريخ التسجيل</th><th>إجراءات</th></tr>';
     foreach ($all_u as $u) {
+        $is_me_row = !empty($user['email']) && strcasecmp((string)$user['email'], (string)($u['email'] ?? '')) === 0;
         echo '<tr>';
         echo '<td><b>' . esc($u['name'] ?? '') . '</b></td>';
         echo '<td dir="ltr" class="mut">' . esc($u['email'] ?? '') . '</td>';
@@ -1719,7 +1753,16 @@ elseif ($tab === 'users') {
         echo '<td><b>' . number_format((float)($u['balance'] ?? 0), 2) . ' ج.م</b></td>';
         echo '<td dir="ltr">' . esc($u['ref_code'] ?? '—') . '</td>';
         echo '<td dir="ltr">' . esc(substr($u['at'] ?? '', 0, 10)) . '</td>';
-        echo '<td><a href="?tab=users&del_user=' . urlencode($u['email'] ?? '') . '" aria-label="حذف المستخدم" data-confirm="حذف المستخدم؟" data-ui="u-9aa26154 d2p"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-trash></use></svg></a></td>';
+        echo '<td data-ui="u-176669be d2m">';
+        if (!$is_me_row) {
+            echo '<form method="post" class="impersonate-form">' . csrf_field()
+               . '<input type="hidden" name="impersonate_email" value="' . esc($u['email'] ?? '') . '">'
+               . '<input type="hidden" name="impersonate_from" value="users">'
+               . '<button type="submit" class="btn sm pri" data-ui="u-a41a5b62 d4d do" title="الدخول لحساب هذا المستخدم بدون كلمة مرور">' . wf_svg_icon('user', 15) . '<span>دخول لحسابه</span></button></form> ';
+        } else {
+            echo '<span class="badge neutral">حسابك</span> ';
+        }
+        echo '<a href="?tab=users&del_user=' . urlencode($u['email'] ?? '') . '" aria-label="حذف المستخدم" data-confirm="حذف المستخدم؟" data-ui="u-9aa26154 d2p"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-trash></use></svg></a></td>';
         echo '</tr>';
     }
     echo '</table></div>';

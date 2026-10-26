@@ -169,11 +169,38 @@ function wf_topbar_links_html($links) {
     return $out;
 }
 
+/** شريط تنبيه الإدارة عند تصفح الموقع بحساب مستخدم مسجل (يظهر مرة واحدة فقط في الصفحة). */
+function wf_impersonation_banner_html($state = null) {
+    static $rendered = false;
+    if ($rendered) return '';
+    if ($state === null && function_exists('wf_impersonation_banner_state')) {
+        $state = wf_impersonation_banner_state();
+    }
+    if (!is_array($state) || empty($state['user_email']) || empty($state['action'])) return '';
+    $rendered = true;
+    $uname  = trim((string)($state['user_name'] ?? ''));
+    $uemail = trim((string)($state['user_email'] ?? ''));
+    $action = (string)$state['action'];
+    $csrf   = (string)($state['csrf'] ?? '');
+    $html   = '<div class="aff-visit-strip impersonate-bar" role="region" aria-label="وضع الدخول بحساب مستخدم">';
+    $html  .= '<div class="aff-visit-strip-inner">';
+    $html  .= '<div class="impersonate-info">' . wf_icon('shield', 18) . '<span>وضع الإدارة — تتصفح الآن بحساب: <b>' . esc($uname !== '' ? $uname : $uemail) . '</b> <small dir="ltr">(' . esc($uemail) . ')</small></span></div>';
+    $html  .= '<form method="post" action="' . esc($action) . '" class="impersonate-form">';
+    if ($csrf !== '') {
+        $html .= '<input type="hidden" name="csrf_token" value="' . esc($csrf) . '">';
+    }
+    $html  .= '<input type="hidden" name="wf_stop_impersonate" value="1">';
+    $html  .= '<button type="submit" class="btn sm pri">' . wf_icon('arrow-right', 16) . '<span>الرجوع لحساب الأدمن</span></button>';
+    $html  .= '</form></div></div>';
+    return $html;
+}
+
 /** الشريط العلوي الصغير (تواصل + روابط سريعة) — موحّد في كل الصفحات العامة. */
 function wf_store_topbar($args = []) {
     $phone = trim((string)($args['phone'] ?? ''));
     $note  = trim((string)($args['note'] ?? 'الدفع عند الاستلام وتوصيل سريع لجميع المحافظات'));
-    $html  = '<div class="topbar">';
+    $html  = wf_impersonation_banner_html();
+    $html .= '<div class="topbar">';
     $html .= '<div class="topbar-right">';
     if ($phone !== '') {
         $html .= '<a href="tel:' . esc(preg_replace('/[^0-9+]/', '', $phone)) . '" aria-label="اتصل بنا">' . esc($phone) . '</a>';

@@ -147,6 +147,7 @@ $eo_payload = json_encode([
 <body class="is-landing">
 <?php wf_ui_sprite(); ?>
 <a class="skip-link" href="#landingContent">تخطي إلى تفاصيل المنتج</a>
+<?php if (function_exists('wf_impersonation_banner_html') && function_exists('wf_impersonation_banner_state')) echo wf_impersonation_banner_html(wf_impersonation_banner_state('dashboard/')); ?>
 
 <?php
 // ===== صفحة هبوط مستقلة: بدون شريط المتجر ولا البحث ولا السلة ولا أسماء المنصات =====

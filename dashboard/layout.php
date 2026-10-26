@@ -214,6 +214,9 @@ function layout_top($title, $active = 'home') {
             if (!$pc_mk) $pc_links[] = ['href' => $pre . 'affiliate-register.php', 'label' => 'برنامج المسوقين', 'class' => 'hidden sm:inline'];
         }
         echo '<div class="dash-stage">';
+        if (function_exists('wf_impersonation_banner_html') && function_exists('wf_impersonation_banner_state')) {
+            echo wf_impersonation_banner_html(wf_impersonation_banner_state($dash_pre));
+        }
         // الشريط العلوي (الهاتف / واتساب / روابط) مش بيظهر للعميل المسجّل في صفحات لوحة الحساب
         if ($layout_role !== 'customer') echo wf_store_topbar(['phone' => (function_exists('site_setting') ? (site_setting('phone', '01202954952') ?: '01202954952') : '01202954952'), 'wa' => !$pc_mk, 'links' => $pc_links]);
         echo wf_store_header([
@@ -245,7 +248,11 @@ function layout_top($title, $active = 'home') {
         }
         return;
     }
-    echo '<div class="dash-stage"><header class="topbar-dash">';
+    echo '<div class="dash-stage">';
+    if (function_exists('wf_impersonation_banner_html') && function_exists('wf_impersonation_banner_state')) {
+        echo wf_impersonation_banner_html(wf_impersonation_banner_state($dash_pre));
+    }
+    echo '<header class="topbar-dash">';
     echo '<div class="dash-top-start">';
     if (!$hide_side) {
         echo '<button type="button" id="dashDrawerBtn" class="icon-button side-toggle-btn" data-drawer-open aria-label="فتح القائمة الجانبية" aria-controls="dashSide" aria-expanded="false">' . wf_svg_icon('menu') . '</button>';
@@ -268,7 +275,10 @@ function layout_top($title, $active = 'home') {
             echo '<a href="' . esc($nhref) . '" class="notif-item ' . (empty($nf['read']) ? 'unread' : '') . '"><span class="badge ' . (empty($nf['read']) ? 'blue' : 'neutral') . '">' . (empty($nf['read']) ? 'غير مقروء' : 'مقروء') . '</span><p>' . esc(wf_ui_plain($nf['text'] ?? '')) . '</p><time dir="ltr">' . esc(substr($nf['at'] ?? '', 0, 16)) . '</time></a>';
         }
         echo '</div><a class="dropdown-foot" href="' . $dash_pre . 'notifications.php">كل الإشعارات</a></section></div>';
-        echo '<details class="user-dropdown"><summary aria-label="قائمة حساب ' . esc($user['name'] ?? '') . '"><span class="user-avatar">' . esc(mb_substr($user['name'] ?? 'م', 0, 1)) . '</span><span class="user-label">' . esc($user['name'] ?? 'حسابي') . '</span></summary><div class="user-menu"><b>' . esc($user['name'] ?? '') . '</b><span dir="ltr" class="mut">' . esc($user['email'] ?? '') . '</span><a href="' . $dash_pre . ($role === 'admin' ? 'admin.php?tab=settings' : 'marketer.php?mtab=settings') . '">' . wf_svg_icon('user') . 'بيانات الحساب</a><a href="' . $pre . 'logout.php">' . wf_svg_icon('logout') . 'تسجيل الخروج</a></div></details>';
+        $imp_menu = (function_exists('wf_is_impersonating') && wf_is_impersonating())
+            ? '<form method="post" action="' . esc($dash_pre . 'admin.php') . '" class="impersonate-form">' . csrf_field() . '<input type="hidden" name="wf_stop_impersonate" value="1"><button type="submit" class="btn sm pri">' . wf_svg_icon('shield') . '<span>الرجوع لحساب الأدمن</span></button></form>'
+            : '';
+        echo '<details class="user-dropdown"><summary aria-label="قائمة حساب ' . esc($user['name'] ?? '') . '"><span class="user-avatar">' . esc(mb_substr($user['name'] ?? 'م', 0, 1)) . '</span><span class="user-label">' . esc($user['name'] ?? 'حسابي') . '</span></summary><div class="user-menu"><b>' . esc($user['name'] ?? '') . '</b><span dir="ltr" class="mut">' . esc($user['email'] ?? '') . '</span>' . $imp_menu . '<a href="' . $dash_pre . ($role === 'admin' ? 'admin.php?tab=settings' : 'marketer.php?mtab=settings') . '">' . wf_svg_icon('user') . 'بيانات الحساب</a><a href="' . $pre . 'logout.php">' . wf_svg_icon('logout') . 'تسجيل الخروج</a></div></details>';
     } else {
         echo '<a class="icon-button" aria-label="المفضلة، ' . (int)$wish_cnt . ' منتجات" title="المفضلة" href="' . $dash_pre . 'wishlist.php" style="position:relative">' . wf_svg_icon('heart') . ($wish_cnt ? '<span class="notification-count">' . (int)$wish_cnt . '</span>' : '') . '</a>';
         echo '<a class="icon-button" aria-label="سلة التسوق، ' . (int)$cart_cnt . ' منتجات" href="' . $dash_pre . 'cart.php">' . wf_svg_icon('cart') . '</a>';
