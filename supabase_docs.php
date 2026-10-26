@@ -12,6 +12,7 @@
 
 if (!defined('DOCS_REMOTE')) define('DOCS_REMOTE', [
     'orders.json',
+    'deleted_orders.json',
     'payouts.json',
     'balance_ledger.json',
     'marketer_stores.json',

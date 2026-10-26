@@ -708,6 +708,98 @@ chk($out,$fail,'embed link id',wf_youtube_id('https://www.youtube.com/embed/abc1
 chk($out,$fail,'raw youtube id',wf_youtube_id('LZwlyu3_efo'),'LZwlyu3_efo');
 chk($out,$fail,'empty video url',wf_youtube_id(''),'');
 chk($out,$fail,'non-youtube url rejected',wf_youtube_id('https://example.com/abcdefghijk'),'');
+// ---- 27) حذف الإدارة النهائي للطلبات: سحب عمولة + مسح + إعادة فهرسة + ترحيل دفتر العمولات + أرشيف + إشعارات ----
+// زراعة مسوق + قائد فريق (find_marketer_by_code بيقرأ users()، وfind_user من كاش الصف الواحد) — أكواد جديدة عشان ميمو البحث
+$GLOBALS['_USR_ROWS']=[
+ ['id'=>'u-del','email'=>'mkdel@test.local','updated_at'=>'2026-10-26T00:00:00+00:00','data'=>['name'=>'مسوق الحذف','role'=>'marketer','ref_code'=>'MKDEL','balance'=>100.0,'pending_balance'=>80.0]],
+ ['id'=>'u-par','email'=>'parent27@test.local','updated_at'=>'2026-10-26T00:00:00+00:00','data'=>['name'=>'قائد الفريق','role'=>'marketer','ref_code'=>'MKPAR27','balance'=>50.0,'pending_balance'=>20.0]]
+];
+$GLOBALS['_USR_ONE']=[
+ 'mkdel@test.local'=>['id'=>'u-del','email'=>'mkdel@test.local','updated_at'=>'2026-10-26T00:00:00+00:00','data'=>['name'=>'مسوق الحذف','role'=>'marketer','ref_code'=>'MKDEL','balance'=>100.0,'pending_balance'=>80.0]],
+ 'parent27@test.local'=>['id'=>'u-par','email'=>'parent27@test.local','updated_at'=>'2026-10-26T00:00:00+00:00','data'=>['name'=>'قائد الفريق','role'=>'marketer','ref_code'=>'MKPAR27','balance'=>50.0,'pending_balance'=>20.0]]
+];
+jupdate('orders.json',function(&$os27){if(!is_array($os27))return false;
+ $os27[]=['order_no'=>'ORD-DEL-1','plat'=>'manual','id'=>'m1','pname'=>'هيتحذف بعمولة','ref'=>'MKDEL','m_earn'=>40,'comm_state'=>'pending','qty'=>1,'unit'=>100,'ship'=>0,'total'=>100,'cname'=>'عميل حذف','cphone'=>'01000000009','city'=>'القاهرة','address'=>'ش ٩','at'=>'2026-10-26 09:00','status'=>'pending','user'=>'buyer27@test.local'];
+ $os27[]=['order_no'=>'ORD-KEEP-1','plat'=>'manual','id'=>'m1','pname'=>'هيفضل','ref'=>'MKDEL','m_earn'=>25,'comm_state'=>'pending','qty'=>1,'unit'=>100,'ship'=>0,'total'=>100,'cname'=>'عميل باق','cphone'=>'01000000008','city'=>'القاهرة','address'=>'ش ٨','at'=>'2026-10-26 09:05','status'=>'pending'];
+ $os27[]=['order_no'=>'ORD-DEL-2','plat'=>'manual','id'=>'m1','pname'=>'ملغي هيتحذف','ref'=>'MKDEL','m_earn'=>15,'comm_state'=>'reversed','qty'=>1,'unit'=>100,'ship'=>0,'total'=>100,'cname'=>'عميل ملغي','cphone'=>'01000000007','city'=>'القاهرة','address'=>'ش ٧','at'=>'2026-10-26 09:10','status'=>'cancelled'];
+ $os27[]=['plat'=>'manual','id'=>'m1','pname'=>'قديم من غير رقم','ref'=>'','m_earn'=>0,'qty'=>1,'unit'=>10,'ship'=>0,'total'=>10,'cname'=>'قديم','cphone'=>'01000000006','city'=>'القاهرة','address'=>'ش ٦','at'=>'2025-01-01 00:00','status'=>'pending'];
+ return true;},[]);
+$all27=jload('orders.json',[],false);$n27=count($all27);
+$idx27=function($no27)use($all27){foreach($all27 as $i27=>$o27)if(($o27['order_no']??'')===$no27)return $i27;return -1;};
+$delIdx27=$idx27('ORD-DEL-1');$keepIdx27=$idx27('ORD-KEEP-1');$legacyIdx27=$n27-1;
+chk($out,$fail,'del fixtures appended',($delIdx27>=0&&$keepIdx27===$delIdx27+1&&$legacyIdx27>$keepIdx27),true);
+// دفتر عمولات مزروع: مباشرة + فريق للمحذوف والباقي
+jsave('balance_ledger.json',[
+ ['email'=>'mkdel@test.local','type'=>'commission','amount'=>40,'reason'=>'عمولة أوردر جديد','order_idx'=>$delIdx27,'state'=>'pending','at'=>'2026-10-26T09:00:00+00:00'],
+ ['email'=>'parent27@test.local','type'=>'commission','amount'=>1.6,'reason'=>'عمولة فريق (إحالة)','order_idx'=>$delIdx27,'state'=>'pending','at'=>'2026-10-26T09:00:00+00:00'],
+ ['email'=>'mkdel@test.local','type'=>'commission','amount'=>25,'reason'=>'عمولة أوردر جديد','order_idx'=>$keepIdx27,'state'=>'pending','at'=>'2026-10-26T09:05:00+00:00'],
+ ['email'=>'parent27@test.local','type'=>'commission','amount'=>1,'reason'=>'عمولة فريق (إحالة)','order_idx'=>$keepIdx27,'state'=>'pending','at'=>'2026-10-26T09:05:00+00:00']
+]);
+// توكن صف قديم بتاريخ غلط مايحذفش حاجة
+$bad27=wf_admin_delete_orders(['idx|'.$legacyIdx27.'|1999-01-01 00:00']);
+chk($out,$fail,'legacy token with wrong date deletes nothing',(empty($bad27['ok'])&&($bad27['count']??-1)===0),true);
+chk($out,$fail,'legacy row still there after bad token',count(jload('orders.json',[],false)),$n27);
+// حذف فاضي / مش موجود
+chk($out,$fail,'empty delete rejected',empty(wf_admin_delete_orders([])['ok']),true);
+chk($out,$fail,'unknown order delete rejected',empty(wf_admin_delete_orders(['ORD-NOPE-27'])['ok']),true);
+// الحذف الجماعي الحقيقي: بعمولة معلقة + ملغي + قديم بالتوكن + رقم مش موجود
+$notifBefore27=count((array)jload('notifications.json',[],false));
+$res27=wf_admin_delete_orders(['ORD-DEL-1','ORD-DEL-2','idx|'.$legacyIdx27.'|2025-01-01 00:00','ORD-NOPE-27'],'طلبات تست');
+chk($out,$fail,'bulk delete ok',!empty($res27['ok']),true);
+chk($out,$fail,'bulk delete count',$res27['count']??-1,3);
+chk($out,$fail,'bulk delete missing reported',$res27['missing']??null,['ORD-NOPE-27']);
+chk($out,$fail,'bulk delete reversed direct+team',(float)($res27['commission_reversed']??-1),41.6);
+$after27=jload('orders.json',[],false);
+chk($out,$fail,'orders shrunk by 3',count($after27),$n27-3);
+$keepNow27=-1;foreach($after27 as $i27=>$o27)if(($o27['order_no']??'')==='ORD-KEEP-1')$keepNow27=$i27;
+chk($out,$fail,'survivor shifted up by one',$keepNow27,$keepIdx27-1);
+$seq27=true;foreach(array_keys($after27) as $pos27=>$k27)if($k27!==$pos27)$seq27=false;
+chk($out,$fail,'orders reindexed sequentially',$seq27,true);
+$gone27=true;foreach($after27 as $o27)if(in_array(($o27['order_no']??''),['ORD-DEL-1','ORD-DEL-2'],true)||($o27['pname']??'')==='قديم من غير رقم')$gone27=false;
+chk($out,$fail,'deleted rows really gone',$gone27,true);
+// دفتر العمولات: قيود المحذوف اتفكّت عن الفهرس وقيود الباقي اترحّلت
+$lg27=jload('balance_ledger.json',[],false);
+$lgBy27=function($lg27x,$email27,$type27,$amt27,$reasonHit27){$nn=0;foreach($lg27x as $r27){if(($r27['email']??'')===$email27&&($r27['type']??'')===$type27&&abs((float)($r27['amount']??0)-$amt27)<0.001&&strpos((string)($r27['reason']??''),$reasonHit27)!==false)$nn++;}return $nn;};
+chk($out,$fail,'direct reversal written once',$lgBy27($lg27,'mkdel@test.local','reversal',-40.0,'حذف الإدارة للطلب ORD-DEL-1'),1);
+chk($out,$fail,'team reversal written once',$lgBy27($lg27,'parent27@test.local','reversal',-1.6,'حذف الإدارة للطلب ORD-DEL-1'),1);
+chk($out,$fail,'cancelled order not reversed again',$lgBy27($lg27,'mkdel@test.local','reversal',-15.0,'ORD-DEL-2'),0);
+$keepLed27=0;$delNulled27=0;$delStamped27=0;
+foreach($lg27 as $r27){
+ if(($r27['type']??'')==='commission'&&($r27['email']??'')==='mkdel@test.local'&&abs((float)($r27['amount']??0)-25.0)<0.001&&(int)($r27['order_idx']??-99)===$keepNow27)$keepLed27++;
+ if(array_key_exists('order_idx',$r27)&&$r27['order_idx']===null){$delNulled27++;if(($r27['order_no']??'')==='ORD-DEL-1')$delStamped27++;}
+}
+chk($out,$fail,'survivor ledger remapped to new idx',$keepLed27,1);
+chk($out,$fail,'deleted order ledger unlinked',($delNulled27>=3&&$delStamped27>=3),true);
+// الفريق على الفهرس الجديد للباقي = عمولته هو بس (١ مش ٢٫٦): مفيش لخبطة بعد الترحيل
+$team27=team_ledger_for_order($keepNow27);
+chk($out,$fail,'team ledger of survivor intact',(float)($team27['parent27@test.local']['credited']??-1),1.0);
+chk($out,$fail,'team ledger no bleed from deleted',(float)($team27['parent27@test.local']['undone']??-1),0.0);
+// الأرشيف والأودت والإشعارات
+$arc27=jload('deleted_orders.json',[],false);
+chk($out,$fail,'archive has 3 rows',is_array($arc27)?count($arc27):-1,3);
+$arcNos27=[];foreach((array)$arc27 as $a27)$arcNos27[]=(string)($a27['order']['order_no']??'');
+chk($out,$fail,'archive keeps order snapshots',(in_array('ORD-DEL-1',$arcNos27,true)&&in_array('ORD-DEL-2',$arcNos27,true)),true);
+chk($out,$fail,'archive stamps reason',(string)($arc27[0]['reason']??''),'طلبات تست');
+$aud27=jload('audit_logs.json',[],false);$audHit27=false;
+foreach((array)$aud27 as $a27)if(($a27['action']??'')==='admin_order_delete')$audHit27=true;
+chk($out,$fail,'delete audited',$audHit27,true);
+$nt27=jload('notifications.json',[],false);$mkN27=false;$byN27=false;
+foreach(array_slice((array)$nt27,$notifBefore27) as $nn27){
+ if(($nn27['for']??'')==='mkdel@test.local'&&strpos((string)($nn27['text']??''),'حذفت الإدارة 2 طلب')!==false)$mkN27=true;
+ if(($nn27['for']??'')==='buyer27@test.local'&&strpos((string)($nn27['text']??''),'حذفت الإدارة طلبك ORD-DEL-1')!==false)$byN27=true;
+}
+chk($out,$fail,'marketer notified of delete',$mkN27,true);
+chk($out,$fail,'customer notified of delete',$byN27,true);
+// إعادة حذف نفس الطلب: مش موجود ومفيش قيود دفتر جديدة
+$lgCount27=count($lg27);
+$re27=wf_admin_delete_orders(['ORD-DEL-1']);
+chk($out,$fail,'re-delete rejected',empty($re27['ok']),true);
+chk($out,$fail,'re-delete writes no ledger',count(jload('balance_ledger.json',[],false)),$lgCount27);
+// حذف فردي أخير (ORD-KEEP-1) من غير سبب: يشتغل ويسحب عمولته هو وفريقه
+$one27=wf_admin_delete_orders(['ORD-KEEP-1']);
+chk($out,$fail,'single delete ok',(!empty($one27['ok'])&&($one27['count']??0)===1),true);
+chk($out,$fail,'single delete reversed 25+team',(float)($one27['commission_reversed']??-1),26.0);
+unset($GLOBALS['_USR_ROWS'],$GLOBALS['_USR_ONE']);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -1142,11 +1234,30 @@ assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock r
   assert.ok(admSrc.includes('?tab=orders&edit=')&&admSrc.includes('تعديل كامل'),'admin orders table must link to the full-edit view');
   assert.ok((admSrc.match(/name="m_earn"/g)||[]).length>=1&&admSrc.includes('name="extra_comm"'),'admin full-edit form must expose both commission fields');
 }
+// ---- توصيلات حذف الإدارة النهائي للطلبات (فردي + جماعي + أرشيف) ----
+{
+  const cfgSrc=src('config.php');
+  assert.ok(cfgSrc.includes('function wf_admin_delete_orders'),'config.php must define wf_admin_delete_orders');
+  const delFn=cfgSrc.slice(cfgSrc.indexOf('function wf_admin_delete_orders'),cfgSrc.indexOf('function find_user'));
+  assert.ok(delFn.includes('commission_reverse')&&delFn.includes('team_commission_reverse_for_order'),'delete must reverse direct + team commissions like admin cancel');
+  assert.ok(delFn.includes("'pending', 'confirmed'")&&delFn.includes('status_reverses_commission'),'delete must only claw back still-active commissions (cancelled orders untouched)');
+  assert.ok(delFn.includes("jupdate('balance_ledger.json'")&&delFn.includes("'order_idx'] = null"),'delete must remap/unlink balance_ledger order_idx after reindexing');
+  assert.ok(delFn.includes("jupdate('deleted_orders.json'")&&delFn.includes("log_audit('admin_order_delete'"),'delete must archive the removed rows and audit the action');
+  assert.ok(cfgSrc.includes('function wf_order_delete_reversal_done'),'delete retries after a failed removal must not double-reverse commissions');
+  const admSrc=src('dashboard/admin.php');
+  assert.ok(admSrc.includes("(string)$_POST['adm_order_action'] === 'delete'")&&admSrc.includes("isset($_POST['bulk_delete_orders'])"),'admin.php must route single + bulk delete POSTs');
+  assert.ok((admSrc.match(/wf_admin_delete_orders\(/g)||[]).length>=2,'admin.php delete handlers must call wf_admin_delete_orders');
+  assert.ok(admSrc.includes('id="ordBulkForm"')&&admSrc.includes('name="bulk_order_nos[]"'),'admin orders tab needs bulk-delete checkboxes + form');
+  assert.ok(admSrc.includes('🗑 حذف نهائي')&&admSrc.includes('name="delete_reason"'),'admin orders rows need a delete button and the edit view a reason field');
+  assert.ok(admSrc.includes('حذف الطلب ')&&admSrc.includes('data-confirm="حذف كل الطلبات المحددة'),'delete forms must be guarded by the confirm dialog');
+  const docsSrc=src('supabase_docs.php');
+  assert.ok(docsSrc.includes("'deleted_orders.json'"),'deleted-orders archive must live on Supabase with the other remote docs');
+}
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){
   const Engine=require(path.join(NM,'php-parser'));
   const parser=new Engine({parser:{suppressErrors:false,version:'8.3'},ast:{withPositions:false},lexer:{comment_tokens:false}});
-  for(const file of ['config.php','manual_products_lib.php','ui-components.php','supabase.php','index.php','store.php','landing.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php','dashboard/cart.php','dashboard/wishlist.php','dashboard/layout.php','dashboard/checkout_cart.php','dashboard/orders.php','login.php','register.php','logout.php','dashboard/admin_shipping.php','dashboard/shipping.php','dashboard/admin.php','dashboard/noon.php','dashboard/_payout.php','dashboard/index.php'])parser.parseCode(src(file),file);
+  for(const file of ['config.php','manual_products_lib.php','ui-components.php','supabase.php','index.php','store.php','landing.php','dashboard/manual_products.php','dashboard/product.php','dashboard/products.php','dashboard/marketer.php','dashboard/cart.php','dashboard/wishlist.php','dashboard/layout.php','dashboard/checkout_cart.php','dashboard/orders.php','login.php','register.php','logout.php','dashboard/admin_shipping.php','dashboard/shipping.php','dashboard/admin.php','dashboard/noon.php','dashboard/_payout.php','dashboard/index.php','supabase_docs.php'])parser.parseCode(src(file),file);
 }
 (async()=>{
   const php=new PHP(await loadNodeRuntime('8.3',{emscriptenOptions:{processId:1,locateFile:p=>path.isAbsolute(p)?p:path.join(wasmDir,p)}}));
