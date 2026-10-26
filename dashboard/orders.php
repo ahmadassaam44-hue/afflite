@@ -340,11 +340,64 @@ $orders = array_values(array_filter(jload('orders.json', []), function ($o) use 
     return substr(preg_replace('/\D+/', '', (string)($o['cphone'] ?? '')), -9) === substr($guest_phone, -9) || ($o['user'] ?? '') === ('guest:' . $guest_phone);
 }));
 $grand = array_sum(array_map(function ($o) { return $o['total'] ?? 0; }, $orders));
+
+// ===== تصدير طلباتي CSV (نفس الفلاتر المعروضة: حسابي، أو رقم الموبايل للزائر) =====
+// الملف بيتولّد على السيرفر من data/orders.json في لحظة الطلب — مفيش نسخة محفوظة في الريبو.
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    while (ob_get_level() > 0) @ob_end_clean();
+    $cur_sym = function ($o) { return function_exists('wf_ui_currency') ? wf_ui_currency($o) : 'ج.م'; };
+    $fname = 'my_orders_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $fname . '"');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    $out = fopen('php://output', 'w');
+    fwrite($out, "\xEF\xBB\xBF");           // BOM — Excel يقرا العربي صح
+    fputcsv($out, [
+        'رقم الطلب', 'التاريخ', 'المنتج', 'اللون والمقاس', 'الكمية',
+        'سعر القطعة', 'الشحن', 'الخصم', 'الإجمالي', 'العملة',
+        'اسم العميل', 'الهاتف', 'المحافظة', 'العنوان', 'الحالة', 'ملاحظات',
+    ]);
+    foreach (array_reverse($orders) as $o) {
+        $notes = [];
+        if (!empty($o['cancel_reason']))  $notes[] = 'سبب الإلغاء: ' . $o['cancel_reason'];
+        if (!empty($o['return_reason']))  $notes[] = 'سبب الاسترجاع: ' . $o['return_reason'];
+        if (!empty($o['return_requested'])) $notes[] = 'استرجاع قيد المراجعة';
+        if (!empty($o['tracking']))       $notes[] = 'تتبع الشحن: ' . $o['tracking'];
+        fputcsv($out, [
+            (string)($o['order_no'] ?? ''),
+            substr((string)($o['at'] ?? ''), 0, 16),
+            (string)($o['pname'] ?? ($o['id'] ?? '')),
+            function_exists('order_variant_label') ? order_variant_label($o) : '',
+            (int)($o['qty'] ?? 1),
+            number_format((float)($o['unit'] ?? 0), 2, '.', ''),
+            number_format((float)($o['ship'] ?? 0), 2, '.', ''),
+            number_format((float)($o['discount'] ?? 0), 2, '.', ''),
+            number_format((float)($o['total'] ?? 0), 2, '.', ''),
+            (string)$cur_sym($o),
+            (string)($o['cname'] ?? ''),
+            (string)($o['cphone'] ?? ''),
+            (string)($o['city'] ?? ''),
+            (string)($o['address'] ?? ''),
+            (string)status_label($o['status'] ?? ''),
+            implode(' | ', $notes),
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
 layout_top('طلباتي ومتابعة الشحن', 'orders');
 if ($cust_msg) echo '<div class="ok" data-ui="u-f2235598 d1r">' . esc($cust_msg) . '</div>';
 echo '<div class="kpis"><div class="kpi"><b>' . count($orders) . '</b><span>إجمالي الطلبات</span></div><div class="kpi"><b>' . (count(wf_ui_currencies($orders)) > 1 ? 'عملات متعددة' : number_format($grand,2) . ' ' . esc(wf_ui_currencies($orders)[0] ?? 'ج.م')) . '</b><span>إجمالي القيمة</span></div></div>';
 $steps = ['pending' => 'جديد', 'confirmed' => 'مؤكد', 'shipped' => 'مشحون', 'delivered' => 'تم التوصيل'];
-echo '<div class="card"><h2 data-ui="u-e205cc36 d5l dc d1r">سجل الطلبات ومتابعة الحالة</h2>';
+echo '<div class="card">';
+echo '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">';
+echo '<h2 data-ui="u-e205cc36 d5l dc d1r">سجل الطلبات ومتابعة الحالة</h2>';
+if ($orders) {
+    $exp_href = 'orders.php?export=csv' . ($user ? '' : '&phone=' . urlencode($guest_phone));
+    echo '<a class="btn sm outline" href="' . esc($exp_href) . '"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-download></use></svg> تصدير الطلبات CSV / Excel</a>';
+}
+echo '</div>';
 if (!$orders) {
     echo '<div data-ui="u-d3dfef62 df d9v"><p class="mut" data-ui="u-9e82dcff d54">لا توجد طلبات مسجلة حتى الآن.</p><a href="../index.php" class="btn">تصفح المنتجات</a></div>';
 } else {

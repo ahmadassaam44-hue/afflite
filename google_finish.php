@@ -20,7 +20,7 @@ if (!$found) {
 }
 rate_limit_reset('login');
 session_harden();
-unset($_SESSION['is_admin'], $_SESSION['admin_role'], $_SESSION['admin_gate'], $_SESSION['admin_seen_at']);
+unset($_SESSION['is_admin'], $_SESSION['admin_role'], $_SESSION['admin_gate'], $_SESSION['admin_seen_at'], $_SESSION['admin_impersonator']);
 $role = wf_user_role($found);   // حساب العميل اتلغى: أي حساب مش أدمن = مسوق
 $_SESSION['user'] = ['name' => $found['name'], 'email' => $found['email'], 'role' => $role];
 session_bind();
