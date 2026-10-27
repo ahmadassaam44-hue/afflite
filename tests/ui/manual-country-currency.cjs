@@ -846,6 +846,27 @@ list($crows20,$cerrs20)=manual_parse_csv('/app/t_comm.csv');
 chk($out,$fail,'csv comm valid rows',count($crows20),1);
 chk($out,$fail,'csv comm rejected gulf',count($cerrs20),1);
 chk($out,$fail,'csv comm value',(float)$crows20[0]['commission'],25.0);
+// ---- 21) عمولة المنتج اليدوي من فورم «تعديل كل التفاصيل» في تبويب منتجات الأدمن (product_overrides) ----
+// 21a) الـ override بتندمج في extra.manual_commission
+$ov21=apply_product_override_record($prod20,'manual',false);
+chk($out,$fail,'override absent leaves mysql comm',(float)$ov21['extra']['manual_commission'],25.0);
+// محاكاة override كامل زي ما فورم الأدمن بيكتبه في product_overrides.json
+$GLOBALS['_WF_PRODUCT_OVERRIDES']=['manual#manual-201'=>['manual_commission'=>40]];
+$ov21c=apply_product_override_record($prod20,'manual',false);
+chk($out,$fail,'override merges fixed comm',(float)$ov21c['extra']['manual_commission'],40.0);
+// 21b) المحرك بياخد قيمة الـ override
+chk($out,$fail,'engine uses override comm',(float)product_commission_unit($ov21c,'manual',null,''),40.0);
+chk($out,$fail,'engine override plus markup',(float)product_commission_unit($ov21c,'manual',(float)$ov21c['price']+10,''),50.0);
+// 21c) override بصفر بيلغي عمولة جدول المنتج اليدوي (المسح الواضح من فورم الأدمن)
+$GLOBALS['_WF_PRODUCT_OVERRIDES']=['manual#manual-201'=>['manual_commission'=>0]];
+$ov21d=apply_product_override_record($prod20,'manual',false);
+chk($out,$fail,'override zero clears comm',(float)$ov21d['extra']['manual_commission'],0.0);
+chk($out,$fail,'engine zero override none',(float)product_commission_unit($ov21d,'manual',null,''),0.0);
+// 21d) قيمة سالبة في الـ override بتتصفّر (حارس عند القراءة)
+$GLOBALS['_WF_PRODUCT_OVERRIDES']=['manual#manual-201'=>['manual_commission'=>-15]];
+$ov21e=apply_product_override_record($prod20,'manual',false);
+chk($out,$fail,'override negative clamped',(float)$ov21e['extra']['manual_commission'],0.0);
+unset($GLOBALS['_WF_PRODUCT_OVERRIDES']);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -1318,6 +1339,12 @@ assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock r
   assert.ok(jsSrc.includes('dataset.baseComm'),'ui.js card recalc must add the fixed base commission to the live total');
   const landSrc=src('landing.php');
   assert.ok(landSrc.includes('manual_commission'),'landing page must compute the fixed commission');
+  // فورم «تعديل كل التفاصيل» في تبويب منتجات الأدمن: خانة العمولة للمنتجات اليدوية + تحقق وحفظ عبر overrides
+  const admFullSrc=src('dashboard/admin.php');
+  assert.ok(admFullSrc.includes('name="full_commission"'),'admin full-details form must expose the commission field');
+  assert.ok(admFullSrc.includes("'manual_commission'")&&admFullSrc.includes('full_commission'),'admin must persist the manual commission into product_overrides');
+  assert.ok(admFullSrc.includes('العمولة الثابتة متاحة للمنتجات المصرية فقط حالياً'),'admin must reject Gulf product commission');
+  assert.ok(cfgSrc.includes("array_key_exists('manual_commission', \$override)"),'apply_product_override_record must merge the commission into extra');
 }
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){

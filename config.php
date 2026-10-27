@@ -1500,6 +1500,12 @@ function apply_product_override_record($row, $key, $show_hidden = false) {
         if (!isset($row['extra']) || !is_array($row['extra'])) $row['extra'] = [];
         $row['extra']['variants_detailed'] = (array)$override['variants'];
     }
+    // عمولة ثابتة لكل قطعة للمنتج اليدوي (بتتكتب من فورم «تعديل كل التفاصيل» في تبويب منتجات الأدمن) —
+    // بتندمج في extra.manual_commission فيقراها product_commission_unit زي عمولة جدول المنتجات اليدوية بالظبط
+    if (array_key_exists('manual_commission', $override)) {
+        if (!isset($row['extra']) || !is_array($row['extra'])) $row['extra'] = [];
+        $row['extra']['manual_commission'] = round(max(0, (float)$override['manual_commission']), 2);
+    }
     if (!empty($override['pinned'])) $row['_pinned'] = true;
     return $row;
 }
