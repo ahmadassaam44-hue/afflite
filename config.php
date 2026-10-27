@@ -4251,15 +4251,23 @@ function store_price_from_saved($p, $plat, $saved_price) {
     }
     return store_price_from_gross($p, $plat, $saved);
 }
-// العمولة الأساسية صفر — المسوق يربح فقط العمولة التي يضيفها بنفسه فوق السعر الأساسي للمنتج.
+// العمولة الأساسية صفر لكل المنصات — المسوق يربح فقط العمولة التي يضيفها بنفسه فوق السعر الأساسي.
+// الاستثناء: المنتجات اليدوية ليها عمولة ثابتة لكل قطعة يحددها الأدمن (مصرية/بالجنيه، مخزنة في
+// extra.manual_commission) بتتدفع للمسوق على كل قطعة من غير ما سعر العميل يتغير، وفوقها العمولة الإضافية.
 function product_commission_unit($p, $plat, $unit_price = null, $ref = '') {
     if ($ref !== '' && ($mk = find_marketer_by_code($ref))) {
         if (($mk['status'] ?? 'approved') === 'suspended') return 0.0;
     }
     $list = store_price($p, $plat);
     $sale = ($unit_price !== null && (float)$unit_price > 0) ? (float)$unit_price : $list;
+    $markup = ($sale > $list) ? max(0.0, round($sale - $list, 2)) : 0.0;
+    if ((string)$plat === 'manual') {
+        $ex = isset($p['extra']) && is_array($p['extra']) ? $p['extra'] : [];
+        $fixed = round((float)($ex['manual_commission'] ?? 0), 2);
+        return round(max(0.0, $fixed) + $markup, 2);
+    }
     if ($sale > $list) {
-        return max(0.0, round($sale - $list, 2));
+        return $markup;
     }
     return 0.0;
 }

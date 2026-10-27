@@ -340,6 +340,7 @@ file_put_contents('/app/__bad_header.csv',"bad,header\n");
 chk($out,$fail,'csv bad header lists ship_fee',mb_strpos(manual_parse_csv('/app/__bad_header.csv')[1][0] ?? '','ship_fee')!==false,true);
 chk($out,$fail,'csv bad header still needs name+price',mb_strpos(manual_parse_csv('/app/__bad_header.csv')[1][0] ?? '','name,price')!==false,true);
 chk($out,$fail,'csv template file has ship_fee column',in_array('ship_fee',array_map('trim',explode(',',(string)@file_get_contents('/app/manual_products_import.csv'))),true)||mb_strpos((string)@file_get_contents('/app/manual_products_import.csv'),'ship_fee')!==false,true);
+chk($out,$fail,'csv template file has commission column',mb_strpos((string)@file_get_contents('/app/manual_products_import.csv'),'commission')!==false,true);
 // ---- 12) Task-11: إشعارات المسوقين + تعديل/إلغاء الطلب + عدّادات سايدبار الأدمن ----
 $MK=['email'=>'mk1@x.com','name'=>'مسوق ١','role'=>'marketer','ref_code'=>'MK123'];
 $c11=wf_admin_pending_counts();
@@ -800,6 +801,51 @@ $one27=wf_admin_delete_orders(['ORD-KEEP-1']);
 chk($out,$fail,'single delete ok',(!empty($one27['ok'])&&($one27['count']??0)===1),true);
 chk($out,$fail,'single delete reversed 25+team',(float)($one27['commission_reversed']??-1),26.0);
 unset($GLOBALS['_USR_ROWS'],$GLOBALS['_USR_ONE']);
+// ---- 20) العمولة الثابتة لكل قطعة للمنتجات اليدوية (مصرية بالجنيه فقط، من غير تغيير سعر العميل) ----
+// 20a) منتج مصري بعمولة صحية: بتتقبل وتتنضف
+list($mc1,$mce1)=manual_validate_row(['name'=>'منتج بعمولة','price'=>'200','country'=>'مصر','category'=>'ساعات','commission'=>'25','images'=>'https://example.com/a.jpg']);
+chk($out,$fail,'comm validate egypt ok',$mce1,'');
+chk($out,$fail,'comm cleaned value',(float)$mc1['commission'],25.0);
+// 20b) فاضي = صفر من غير أخطاء
+list($mc2,$mce2)=manual_validate_row(['name'=>'منتج بدون عمولة','price'=>'200','country'=>'مصر','category'=>'ساعات','commission'=>'','images'=>'https://example.com/a.jpg']);
+chk($out,$fail,'comm empty = 0',(float)$mc2['commission'],0.0);
+// 20c) قيمة نصية مرفوضة برسالة واضحة
+list($mc3,$mce3)=manual_validate_row(['name'=>'منتج عمولة نص','price'=>'200','country'=>'مصر','category'=>'ساعات','commission'=>'كثير','images'=>'https://example.com/a.jpg']);
+chk($out,$fail,'comm text rejected',($mc3===null && mb_strpos($mce3,'العمولة')!==false),true);
+// 20d) عمولة على منتج خليجي مرفوضة (الرصيد بالجنيه ومفيش تحويل عملات)
+list($mc4,$mce4)=manual_validate_row(['name'=>'منتج خليجي بعمولة','price'=>'200','country'=>'السعودية','category'=>'ساعات','commission'=>'25','images'=>'https://example.com/a.jpg']);
+chk($out,$fail,'comm gulf rejected',($mc4===null && mb_strpos($mce4,'العمولة الثابتة')!==false),true);
+// 20e) عمولة تساوي السعر أو أكبر منه مرفوضة
+list($mc5,$mce5)=manual_validate_row(['name'=>'عمولة كبيرة','price'=>'100','country'=>'مصر','category'=>'ساعات','commission'=>'100','images'=>'https://example.com/a.jpg']);
+chk($out,$fail,'comm == price rejected',$mc5===null,true);
+list($mc5b,$mce5b)=manual_validate_row(['name'=>'عمولة أكبر','price'=>'100','country'=>'مصر','category'=>'ساعات','commission'=>'150','images'=>'https://example.com/a.jpg']);
+chk($out,$fail,'comm > price rejected',$mc5b===null,true);
+// 20f) التخزين في details JSON والاسترجاع في صف المنتج
+$dj20=json_decode(manual_details_json($mc1),true);
+chk($out,$fail,'comm in details json',(float)$dj20['commission'],25.0);
+$stored20=['id'=>201,'name'=>$mc1['name'],'price'=>'200','category'=>'ساعات','stock'=>5,'description'=>'','image_url'=>'https://example.com/a.jpg','details'=>manual_details_json($mc1)];
+$prod20=manual_row_to_product($stored20);
+chk($out,$fail,'comm mapped to extra',(float)$prod20['extra']['manual_commission'],25.0);
+// 20g) دفاع في العمق: عمولة متخزنة على صف خليجي بتتصفّر برضوه
+$gulf20=manual_row_to_product(mrow(202,'منتج خليجي','200','ساعات',['country'=>'السعودية','commission'=>25,'images'=>[]]));
+chk($out,$fail,'gulf stored comm forced zero',(float)$gulf20['extra']['manual_commission'],0.0);
+// 20h) الصفوف القديمة من غير عمولة = صفر
+$legacy20=manual_row_to_product(mrow(203,'قديم','100','ساعات',['country'=>'مصر']));
+chk($out,$fail,'legacy comm zero',(float)$legacy20['extra']['manual_commission'],0.0);
+// 20i) محرك العمولة: ثابتة فقط / ثابتة + عمولة المسوق الإضافية / من غير ثابتة / من غير أي حاجة
+chk($out,$fail,'unit comm fixed only',(float)product_commission_unit($prod20,'manual',null,''),25.0);
+chk($out,$fail,'unit comm fixed plus markup',(float)product_commission_unit($prod20,'manual',(float)$prod20['price']+30,''),55.0);
+chk($out,$fail,'unit comm no fixed markup only',(float)product_commission_unit($legacy20,'manual',(float)$legacy20['price']+20,''),20.0);
+chk($out,$fail,'unit comm no fixed none',(float)product_commission_unit($legacy20,'manual',null,''),0.0);
+// 20j) سعر العميل ما اتغيرش — manual لسه منصة بلا خصم عمولة والسعر = السعر المخزن
+chk($out,$fail,'manual still no price commission',wf_plat_no_commission('manual'),true);
+chk($out,$fail,'customer price unchanged',(float)store_price($prod20,'manual'),200.0);
+// 20k) CSV: عمود commission بيتقرا بالاسم، والصف الخليجي بعمولة يترفض والقديم من غير العمود يشتغل
+file_put_contents('/app/t_comm.csv',"name,price,country,commission,category,images\nمصري بعمولة,200,مصر,25,ساعات,https://example.com/a.jpg\nخليجي بعمولة,200,السعودية,25,ساعات,https://example.com/b.jpg\n");
+list($crows20,$cerrs20)=manual_parse_csv('/app/t_comm.csv');
+chk($out,$fail,'csv comm valid rows',count($crows20),1);
+chk($out,$fail,'csv comm rejected gulf',count($cerrs20),1);
+chk($out,$fail,'csv comm value',(float)$crows20[0]['commission'],25.0);
 $out['failures']=$fail;
 echo json_encode($out,JSON_UNESCAPED_UNICODE);
 `;
@@ -998,7 +1044,7 @@ assert.ok(/سعر الشحن \(<span class="mp-cur">/.test(admin),'the shipping-
 assert.ok(/اختياري/.test(admin)&&/حسب منطقة العميل/.test(admin),'the shipping-price field must be documented as optional (falls back to the region table)');
 assert.ok(/شحن /.test(admin),'the products list must show the stored shipping fee');
 const csvTemplate=fs.readFileSync(path.join(repo,'manual_products_import.csv'),'utf8').replace(/^\uFEFF/,'');
-assert.deepStrictEqual(csvTemplate.split('\n')[0].split(','),['name','price','country','ship_fee','category','stock','sku','description','colors','sizes','material','weight','dimensions','images','faqs'],'CSV template header must include country and ship_fee after price');
+assert.deepStrictEqual(csvTemplate.split('\n')[0].split(','),['name','price','country','ship_fee','commission','category','stock','sku','description','colors','sizes','material','weight','dimensions','images','faqs'],'CSV template header must include country, ship_fee and commission after price');
 // خصم الكمية (70 ج.م) بقى للجنيه بس: كل مكان بيحسب الخصم لازم يمرّر العملة/المنتج
 const src=file=>fs.readFileSync(path.join(repo,file),'utf8');
 const bulkCallers=[
@@ -1252,6 +1298,26 @@ assert.ok(/country_fixed/.test(mzUpdate),'the updater must repair legacy stock r
   assert.ok(admSrc.includes('حذف الطلب ')&&admSrc.includes('data-confirm="حذف كل الطلبات المحددة'),'delete forms must be guarded by the confirm dialog');
   const docsSrc=src('supabase_docs.php');
   assert.ok(docsSrc.includes("'deleted_orders.json'"),'deleted-orders archive must live on Supabase with the other remote docs');
+}
+// ---- توصيلات العمولة الثابتة للمنتجات اليدوية (2026-10-28) ----
+{
+  const libSrc=src('manual_products_lib.php');
+  assert.ok(libSrc.includes("'commission'")&&libSrc.includes('manual_commission'),'manual lib must validate, store and map the per-product commission');
+  assert.ok(libSrc.includes('العمولة الثابتة متاحة للمنتجات المصرية فقط'),'manual lib must refuse commission on non-Egyptian products');
+  const cfgSrc=src('config.php');
+  assert.ok(/function product_commission_unit\([^)]*\)\s*\{[\s\S]*?\$plat === 'manual'/.test(cfgSrc),'product_commission_unit must have a manual branch adding the fixed commission');
+  assert.ok(cfgSrc.includes("'g2g', 'social', 'smm', 'hevo', 'manual'"),'manual must stay in the no-price-commission list (customer price untouched)');
+  const admSrc=src('dashboard/manual_products.php');
+  assert.ok(admSrc.includes('name="commission"')&&admSrc.includes('$FIELDS')&&admSrc.includes("'commission'"),'admin manual form must expose the commission field and keep it on validation errors');
+  assert.ok(admSrc.includes('عمولة المسوق لكل قطعة'),'admin form must label the commission field');
+  const prodSrc=src('dashboard/product.php');
+  assert.ok(prodSrc.includes('manual_commission')&&prodSrc.includes('window.mkPreviewBase')&&prodSrc.includes('function updateMkPreview'),'product page must show the fixed base commission and live-preview it');
+  const mkSrc=src('dashboard/marketer.php');
+  assert.ok(mkSrc.includes('data-base-comm')&&mkSrc.includes('manual_commission'),'marketer catalogue cards must carry and display the fixed commission');
+  const jsSrc=fs.readFileSync(path.join(repo,'assets/ui.js'),'utf8');
+  assert.ok(jsSrc.includes('dataset.baseComm'),'ui.js card recalc must add the fixed base commission to the live total');
+  const landSrc=src('landing.php');
+  assert.ok(landSrc.includes('manual_commission'),'landing page must compute the fixed commission');
 }
 // صيغة PHP سليمة (مفيش php CLI هنا)
 if(fs.existsSync(path.join(NM,'php-parser'))){

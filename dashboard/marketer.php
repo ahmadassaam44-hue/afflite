@@ -562,12 +562,15 @@ elseif ($mtab === 'store') { wfp('MTAB store');
             // الرقمي والسوشيال ميديا: القيمة المحفوظة قديمًا بتتجاهل — السعر سعر المصدر بالظبط
             $ex_c = $is_digital_row ? 0.0 : max(0, (float)($pm['extra_comm'] ?? 0));
             $cust_p = round($base_p + $ex_c, 2);
+            // العمولة الثابتة للمنتج اليدوي (لو الأدمن حددها) — بتتسجل تلقائيًا مع كل طلب
+            $row_base_comm = ($ppl === 'manual') ? round((float)($fp['extra']['manual_commission'] ?? 0), 2) : 0.0;
             $lp_href = wf_client_order_url($ppid, $ppl, $code, $ex_c, true);
             $lp_url = wf_client_order_url($ppid, $ppl, $code, $ex_c, false);
             $eo_p = json_encode(['id' => $ppid, 'plat' => $ppl, 'name' => $pname_c, 'price' => $cust_p, 'base_price' => $base_p, 'extra_comm' => $ex_c, 'img' => $pimg, 'ref' => $code, 'currency' => wf_ui_currency($fp), 'country' => wf_product_country($fp), 'ship_fee' => function_exists('wf_product_shipping') ? wf_product_shipping($fp) : null, 'colors' => clean_product_colors($fp, $ppl), 'sizes' => clean_product_sizes($fp, $ppl)], JSON_UNESCAPED_UNICODE);
             echo '<tr>';
             echo '<td><img alt="صورة المنتج" src="' . esc($pimg) . '" data-ui="u-aef7c762 d87 d88 d5q d1u d4u dt"></td>';
-            echo '<td><b>' . esc(mb_substr($pname_c, 0, 50)) . '</b><div class="mut" data-ui="u-5d985ec3 do">' . esc($fp['category'] ?? '') . ($is_digital_row ? ' • منتج رقمي/خدمة — يُطلب من صفحة الطلب' : '') . '</div></td>';
+            echo '<td><b>' . esc(mb_substr($pname_c, 0, 50)) . '</b><div class="mut" data-ui="u-5d985ec3 do">' . esc($fp['category'] ?? '') . ($is_digital_row ? ' • منتج رقمي/خدمة — يُطلب من صفحة الطلب' : '') . '</div>'
+                . ($row_base_comm > 0 ? '<div class="mut" style="color:#059669">⭐ عمولة أساسية +' . wf_ui_money($row_base_comm) . ' ' . esc(wf_ui_currency($fp)) . ' لكل قطعة</div>' : '') . '</td>';
             echo '<td><b>' . wf_ui_money($base_p) . ' ' . esc(wf_ui_currency($fp)) . '</b></td>';
             echo '<td><form method="post" data-ui="u-605a7de4 dh d4g d1p d19">' . csrf_field() . '<input type="hidden" name="store_prod_action" value="add"><input type="hidden" name="plat" value="' . esc($ppl) . '"><input type="hidden" name="id" value="' . esc($ppid) . '">'
                 . ($is_digital_row
@@ -780,7 +783,9 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
             $rank_extra = isset($st_saved_prods[$rank_key]) ? (float)($st_saved_prods[$rank_key]['extra_comm'] ?? 0) : marketer_store_product_comm($code, $rank_plat, (string)($rank_product['id'] ?? ''));
             $rank_base = list_price($rank_product, $rank_plat) ?: display_price($rank_product, $rank_plat);
             $rank_currency = wf_ui_currency_label(($rank_product['currency'] ?? '') ?: wf_country_currency($rank_product['country'] ?? 'مصر'));
-            $ranks[$rank_key] = ['price'=>round($rank_base + $rank_extra, 2), 'commission'=>round($rank_extra, 2), 'currency'=>$rank_currency];
+            // العمولة الثابتة للمنتج اليدوي (لو الأدمن حددها) بتتضاف للعمولة الإضافية في ترتيب «أعلى عمولة»
+            $rank_fixed = ($rank_plat === 'manual') ? round((float)(($rank_product['extra']['manual_commission'] ?? 0)), 2) : 0.0;
+            $ranks[$rank_key] = ['price'=>round($rank_base + $rank_extra, 2), 'commission'=>round($rank_fixed + $rank_extra, 2), 'currency'=>$rank_currency];
         }
         usort($mall, static function ($a, $b) use ($ranks, $msort) {
             $ra = $ranks[($a['_plat'] ?? '') . '#' . ($a['id'] ?? '')];
@@ -842,13 +847,15 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
             $cdesc_m = product_marketing_summary($full_mp, $pl);
             $base_p = list_price($full_mp, $pl) ?: display_price($full_mp, $pl);
             $sugg_p = raw_list_price($full_mp, $pl);
-            $base_c = 0.0;
+            // العمولة الأساسية الثابتة: للمنتجات اليدوية اللي الأدمن حدد لها عمولة (مصرية بالجنيه)
+            $base_c = ($pl === 'manual') ? round((float)($ex_m['manual_commission'] ?? 0), 2) : 0.0;
             $pkey_m = $pl . '#' . $pid_m;
             $in_st = isset($st_saved_prods[$pkey_m]);
             $is_digital_card = wf_is_digital_plat($pl);
             $saved_ex = $is_digital_card ? 0.0 : ($in_st ? (float)($st_saved_prods[$pkey_m]['extra_comm'] ?? 0) : marketer_store_product_comm($code, $pl, $pid_m));
             $sale_p = round($base_p + $saved_ex, 2);
-            $tot_c = round($saved_ex, 2);
+            // إجمالي الربح المعروض = العمولة الثابتة + العمولة الإضافية للمسوق
+            $tot_c = round($base_c + $saved_ex, 2);
 
             $cols_m = clean_product_colors($full_mp, $pl);
             $sizes_m = clean_product_sizes($full_mp, $pl);
@@ -865,8 +872,8 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
             $order_btn_label = $is_digital_card ? 'اطلب لعميل' : 'طلب لعميل';
             $card_uid = 'mkc_' . $idx_m . '_' . preg_replace('/[^a-zA-Z0-9]/', '', $pid_m);
 
-            $mk_ui_states[$card_uid] = ['id'=>$pid_m,'plat'=>$pl,'name'=>$cname_m,'base_price'=>(float)$base_p,'img'=>$img,'ref'=>$code,'currency'=>wf_ui_currency($full_mp),'country'=>wf_product_country($full_mp),'ship_fee'=>function_exists('wf_product_shipping') ? wf_product_shipping($full_mp) : null,'colors'=>$cols_m,'sizes'=>$sizes_m,'copy'=>$ad_copy_base];
-            echo '<article class="pcard marketer-product" id="' . esc($card_uid) . '" data-commission="' . esc($tot_c) . '" data-price="' . esc($sale_p) . '" data-name="' . esc($cname_m) . '" data-plat="' . esc($pl) . '" data-country="' . esc($full_mp['country'] ?? '') . '" data-card-state="1">';
+            $mk_ui_states[$card_uid] = ['id'=>$pid_m,'plat'=>$pl,'name'=>$cname_m,'base_price'=>(float)$base_p,'base_comm'=>(float)$base_c,'img'=>$img,'ref'=>$code,'currency'=>wf_ui_currency($full_mp),'country'=>wf_product_country($full_mp),'ship_fee'=>function_exists('wf_product_shipping') ? wf_product_shipping($full_mp) : null,'colors'=>$cols_m,'sizes'=>$sizes_m,'copy'=>$ad_copy_base];
+            echo '<article class="pcard marketer-product" id="' . esc($card_uid) . '" data-commission="' . esc($tot_c) . '" data-base-comm="' . esc($base_c) . '" data-price="' . esc($sale_p) . '" data-name="' . esc($cname_m) . '" data-plat="' . esc($pl) . '" data-country="' . esc($full_mp['country'] ?? '') . '" data-card-state="1">';
             echo '<div class="pcard-img"><a href="' . esc($clean_p_url) . '" aria-label="' . esc($cname_m) . '"><img src="' . esc($img) . '" alt="' . esc($cname_m) . '" width="260" height="260" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><span class="badge ' . ($in_st ? 'green' : 'neutral') . ' marketer-store-badge" id="badge_' . esc($card_uid) . '">' . ($in_st ? 'في متجرك' : esc(wf_normalize_category($full_mp['category'] ?? '', 'منتج'))) . '</span></div>';
             echo '<h3 class="pcard-title"><a href="' . esc($clean_p_url) . '">' . esc($cname_m) . '</a></h3>';
             if ($cdesc_m !== '') echo '<p class="marketer-description">' . esc(mb_substr($cdesc_m, 0, 120)) . '</p>';
@@ -875,6 +882,10 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
                 // الرقمي والسوشيال ميديا: سعر ثابت من غير عمولة مضافة — مفيش خانة عمولة ولا «سعر العميل / ربحك»
                 echo '<p class="marketer-preview" data-ui="u-1f8c4581 do dc d15"><span>سعر ثابت: <b>' . wf_ui_money($sale_p) . '</b> ' . esc(wf_ui_currency($full_mp)) . ' — من غير عمولة مضافة</span></p>';
             } else {
+                if ($base_c > 0) {
+                    // عمولة ثابتة لكل قطعة حددها الأدمن (منتجات يدوية مصرية) — بتتدفع تلقائيًا من غير ما تزوّد سعر العميل
+                    echo '<p class="field-hint" style="color:#059669;font-weight:700">⭐ عمولة أساسية للقطعة: <b>+' . wf_ui_money($base_c) . '</b> ' . esc(wf_ui_currency($full_mp)) . ' — بتتسجل تلقائيًا مع كل طلب</p>';
+                }
                 echo '<label class="field-label" for="ex_' . esc($card_uid) . '">عمولتك المضافة للقطعة (' . esc(wf_ui_currency($full_mp)) . ')</label><input type="number" id="ex_' . esc($card_uid) . '" data-card-markup value="' . esc($saved_ex) . '" min="0" max="' . esc(MAX_MARKUP_AMOUNT) . '" step="5">';
                 echo '<div class="marketer-preview"><span>سعر العميل: <b id="sp_' . esc($card_uid) . '">' . wf_ui_money($sale_p) . '</b> ' . esc(wf_ui_currency($full_mp)) . '</span><span>ربحك: <b id="tc_' . esc($card_uid) . '">+' . wf_ui_money($tot_c) . '</b> ' . esc(wf_ui_currency($full_mp)) . '</span></div>';
                 echo '<p class="field-hint">بالنسبة للسعر الأساسي: <span id="tp_' . esc($card_uid) . '">' . ($base_p > 0 ? number_format($tot_c / $base_p * 100,1) . '%' : '—') . '</span> — المعاينة فقط؛ الحساب النهائي على الخادم.</p>';

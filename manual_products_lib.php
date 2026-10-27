@@ -74,7 +74,11 @@ function manual_row_to_product($r) {
     $currency = wf_country_currency($country);
     // سعر الشحن الخاص بالمنتج (لو المالك حدده) — بيُستخدم بدل جدول مناطق الدولة
     $ship_fee = (isset($d['ship_fee']) && is_numeric($d['ship_fee'])) ? round((float)$d['ship_fee'], 2) : null;
-    $extra = ['manual_id' => (int)$r['id'], 'colors' => array_values((array)($d['colors'] ?? []))];
+    // العمولة الثابتة لكل قطعة (يحددها الأدمن) — للمنتجات المصرية فقط حاليًا لأن رصيد المسوقين بالجنيه.
+    // بتتدفع للمسوق على كل قطعة مباعة من غير ما سعر العميل يتغير (شوف product_commission_unit).
+    $fixed_comm = (isset($d['commission']) && is_numeric($d['commission'])) ? round((float)$d['commission'], 2) : 0.0;
+    if ($country !== 'مصر' || $fixed_comm < 0) $fixed_comm = 0.0;
+    $extra = ['manual_id' => (int)$r['id'], 'colors' => array_values((array)($d['colors'] ?? [])), 'manual_commission' => $fixed_comm];
     foreach (['material', 'weight', 'dimensions'] as $k) {
         if (!empty($d[$k])) $extra[$k] = (string)$d[$k];
     }
@@ -150,6 +154,7 @@ function manual_product_form_values($id) {
         'price' => (string)(float)$r['price'],
         'country' => wf_match_country($d['country'] ?? '', 'مصر'),
         'ship_fee' => (isset($d['ship_fee']) && is_numeric($d['ship_fee'])) ? (string)(float)$d['ship_fee'] : '',
+        'commission' => (isset($d['commission']) && is_numeric($d['commission']) && (float)$d['commission'] > 0) ? (string)(float)$d['commission'] : '',
         'category' => (string)$r['category'],
         'stock' => (string)(int)$r['stock'],
         'sku' => (string)($d['sku'] ?? ''),
@@ -201,6 +206,8 @@ function manual_details_json($c) {
         'country' => wf_match_country($c['country'] ?? '', 'مصر'),
         // سعر شحن ثابت للمنتج نفسه بعملة دولته — null = الرسوم من جدول مناطق الدولة
         'ship_fee' => (isset($c['ship_fee']) && is_numeric($c['ship_fee'])) ? round((float)$c['ship_fee'], 2) : null,
+        // عمولة ثابتة لكل قطعة للمسوق (بالجنيه، المنتجات المصرية فقط) — 0 = بدون عمولة أساسية
+        'commission' => (isset($c['commission']) && is_numeric($c['commission'])) ? max(0, round((float)$c['commission'], 2)) : 0,
     ];
     // ملامح البحث بالصورة (h/t) — بتتحسب مرة واحدة وبتتحدّث لما الصورة الرئيسية تتغير
     if (!empty($c['vf']) && is_array($c['vf'])) $d['vf'] = $c['vf'];
@@ -289,6 +296,16 @@ function manual_validate_row($in) {
         $ship_fee = round((float)$ship_raw, 2);
         if ($ship_fee > 2000) return [null, 'سعر الشحن كبير جداً (أقصى 2000) (' . $name . ')'];
     }
+    // العمولة الثابتة للمسوق عن كل قطعة: اختيارية، بالجنيه المصري، وللمنتجات المصرية فقط
+    // (رصيد المسوقين بالجنيه والموقع ما بيحوّلش عملات). فاضي أو صفر = بدون عمولة أساسية.
+    $comm_raw = str_replace([',', '٬', ' '], '', trim((string)($in['commission'] ?? '')));
+    $commission = 0.0;
+    if ($comm_raw !== '') {
+        if (!is_numeric($comm_raw) || (float)$comm_raw < 0) return [null, 'العمولة لازم تكون رقم صفر أو أكبر (' . $name . ')'];
+        $commission = round((float)$comm_raw, 2);
+        if ($commission > 0 && $country !== 'مصر') return [null, 'العمولة الثابتة متاحة للمنتجات المصرية فقط حالياً (' . $name . ')'];
+        if ($commission >= round((float)$price_raw, 2)) return [null, 'العمولة لازم تكون أقل من سعر المنتج (' . $name . ')'];
+    }
 
     $images = [];
     foreach (manual_split_list($in['images'] ?? '', "|\n\r") as $u) {
@@ -304,6 +321,7 @@ function manual_validate_row($in) {
         'category' => $cat,
         'country' => $country,
         'ship_fee' => $ship_fee,
+        'commission' => $commission,
         'stock' => $stock,
         'images' => $images,
         'description' => mb_substr($desc, 0, 5000),
@@ -341,9 +359,10 @@ function manual_save_uploads($files) {
 }
 
 // قراءة ملف CSV (UTF-8 أو ويندوز عربي من Excel). بترجع [صفوف_صحيحة, أخطاء]
-// الأعمدة: name,price,country,ship_fee,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs
+// الأعمدة: name,price,country,ship_fee,commission,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs
 // (الترتيب مش مهم — الأعمدة بتتقرا بالاسم، وعمود country اختياري وافتراضيه مصر،
-//  وship_fee اختياري: فاضي = الرسوم من جدول مناطق الدولة، وصفر = شحن مجاني)
+//  وship_fee اختياري: فاضي = الرسوم من جدول مناطق الدولة، وصفر = شحن مجاني،
+//  وcommission اختياري: عمولة ثابتة بالجنيه للمسوق عن كل قطعة — للمنتجات المصرية فقط، وفاضي/صفر = بدون عمولة أساسية)
 // داخل الخلية: القيم المتعددة مفصولة بـ | (والصور كمان بسطر جديد)، والأسئلة: السؤال::الجواب|السؤال::الجواب
 function manual_parse_csv($path, $max_rows = 2000) {
     $raw = (string)@file_get_contents($path);
@@ -357,7 +376,7 @@ function manual_parse_csv($path, $max_rows = 2000) {
     $cols = array_map(function ($h) { return strtolower(trim((string)$h)); }, $header);
     if (!in_array('name', $cols, true) || !in_array('price', $cols, true)) {
         fclose($fh);
-        return [[], ['أول صف لازم يكون فيه العناوين: name,price,country,ship_fee,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs']];
+        return [[], ['أول صف لازم يكون فيه العناوين: name,price,country,ship_fee,commission,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs']];
     }
     $rows = []; $errors = []; $line = 1;
     while (($cells = fgetcsv($fh)) !== false) {

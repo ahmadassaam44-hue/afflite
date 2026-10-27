@@ -92,8 +92,9 @@ $base_store_price = list_price($p, $plat) ?: display_price($p, $plat);
 $final_price = round($base_store_price + $extra_comm, 2);
 $old_price = round($final_price * 1.28);
 $savings = max(0, $old_price - $final_price);
-$base_comm = 0.0;
-$total_comm = round($extra_comm, 2);
+// العمولة الثابتة للمنتج اليدوي (لو الأدمن حددها) + العمولة الإضافية للمسوق
+$base_comm = ($plat === 'manual') ? round((float)($ex['manual_commission'] ?? 0), 2) : 0.0;
+$total_comm = round($base_comm + $extra_comm, 2);
 
 $colors = clean_product_colors($p, $plat);
 $sizes = clean_product_sizes($p, $plat);

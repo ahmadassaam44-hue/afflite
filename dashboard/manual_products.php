@@ -4,7 +4,7 @@ if (!is_admin_user()) {
     header('Location: ../index.php'); exit;
 }
 
-$FIELDS = ['name', 'price', 'country', 'ship_fee', 'category', 'stock', 'sku', 'description', 'colors', 'sizes', 'material', 'weight', 'dimensions', 'faqs'];
+$FIELDS = ['name', 'price', 'country', 'ship_fee', 'commission', 'category', 'stock', 'sku', 'description', 'colors', 'sizes', 'material', 'weight', 'dimensions', 'faqs'];
 $msgs = []; $errs = [];
 $status = manual_db_status();
 $cats = array_values(array_filter(wf_category_canonical(), function ($c) { return !in_array($c, ['منتجات رقمية', 'سوشيال ميديا'], true); }));
@@ -108,6 +108,8 @@ function manual_form_html($v, $mode, $cats) {
     // سعر الشحن: رقم واحد ثابت للمنتج كله بعملة دولته، وبيتقدم على جدول مناطق الدولة.
     // فاضي = الرسوم تتحسب حسب منطقة العميل من «إعدادات الشحن» — ومفيش أي تحويل عملات.
     echo '<label>سعر الشحن (<span class="mp-cur">' . esc(wf_country_currency($country)) . '</span>) — اختياري<input name="ship_fee" inputmode="decimal" placeholder="فاضي = حسب منطقة العميل" value="' . $g('ship_fee') . '"></label>';
+    // العمولة الثابتة للمسوق: جنيه مصري لكل قطعة، للمنتجات المصرية فقط (رصيد المسوقين بالجنيه)
+    echo '<label>عمولة المسوق لكل قطعة (ج.م) — اختياري<input name="commission" inputmode="decimal" placeholder="0 = بدون عمولة أساسية" value="' . $g('commission') . '"></label>';
     echo '<label>القسم *<select name="category" required><option value="">— اختار —</option>';
     foreach ($cats as $c) echo '<option value="' . esc($c) . '"' . ($c === $sel ? ' selected' : '') . '>' . esc($c) . '</option>';
     echo '</select></label>';
@@ -120,6 +122,7 @@ function manual_form_html($v, $mode, $cats) {
     echo '<label>المقاسات (اختياري)<input name="sizes" placeholder="S | M | L | XL" value="' . $g('sizes') . '"></label>';
     echo '</div>';
     echo '<p class="mut" style="margin:2px 0 0">سعر الشحن اختياري: لو سبته فاضي، الرسوم هتتحسب حسب منطقة العميل من <a href="admin_shipping.php">إعدادات الشحن</a>. ولو دخلت رقم، هو ده الشحن لكل المناطق بعملة دولة المنتج (مفيش تحويل عملات).</p>';
+    echo '<p class="mut" style="margin:2px 0 0">عمولة المسوق اختيارية (مبلغ ثابت بالجنيه عن كل قطعة، للمنتجات المصرية فقط): بتتسجل للمسوق على كل أوركر تلقائيًا من غير ما سعر العميل يتغير، وفوقها العمولة الإضافية اللي هو بيضيفها بنفسه. فاضي أو صفر = زي ما كانت، بدون عمولة أساسية.</p>';
     echo '<label>الوصف التفصيلي (سطر لكل فكرة)<textarea name="description" rows="6">' . $g('description') . '</textarea></label>';
     echo '<label>الأسئلة الشائعة (سؤال :: جواب، كل سؤال في سطر)<textarea name="faqs" rows="4" placeholder="هل المنتج أصلي؟ :: أيوه، أصلي 100%">' . $g('faqs') . '</textarea></label>';
 
@@ -159,9 +162,10 @@ if ($status !== '') {
     echo '</div>';
 
     echo '<div class="card"><h3>رفع ملف Excel / CSV</h3>';
-    echo '<p class="mut">الصف الأول لازم يكون العناوين: name,price,country,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs (الترتيب مش مهم — الأعمدة بتتقرا بالاسم)<br>';
+    echo '<p class="mut">الصف الأول لازم يكون العناوين: name,price,country,ship_fee,commission,category,stock,sku,description,colors,sizes,material,weight,dimensions,images,faqs (الترتيب مش مهم — الأعمدة بتتقرا بالاسم)<br>';
     echo 'القيم المتعددة (الألوان، المقاسات، الصور) بتتفصل بـ | . الأسئلة: السؤال::الجواب|السؤال::الجواب . القسم لازم يكون اسم قسم من أقسام الموقع.<br>';
     echo '<b>country</b> اختياري (الافتراضي مصر): ' . esc(implode(' / ', wf_country_list())) . ' — والعملة بتتحدد منها أوتوماتيك (' . esc(implode(' / ', array_values(wf_country_currencies()))) . ') والسعر بيتسجّل بالعملة دي من غير تحويل.<br>';
+    echo '<b>ship_fee</b> اختياري (شحن ثابت بعملة الدولة، فاضي = حسب المنطقة، صفر = شحن مجاني). و<b>commission</b> اختياري: عمولة ثابتة بالجنيه للمسوق عن كل قطعة — للمنتجات المصرية فقط، وأقل من السعر، وفاضي/صفر = بدون عمولة أساسية.<br>';
     echo 'في Excel: احفظ الملف كـ «CSV (Comma delimited)».</p>';
     echo '<form method="post" enctype="multipart/form-data">' . csrf_field() . '<input type="hidden" name="action" value="csv">';
     echo '<input type="file" name="csv_file" accept=".csv,text/csv" required> <button class="btn" type="submit">رفع</button></form></div>';
@@ -204,7 +208,10 @@ if ($status !== '') {
         echo $imgs ? '<img src="' . esc(manual_img_src($imgs[0])) . '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:6px">' : '<span style="width:56px;height:56px;background:#f1f5f9;border-radius:6px;display:inline-block"></span>';
         // شحن المنتج (لو المالك حدده) بيظهر في القائمة عشان يعرف أنهي منتجات ليها سعر ثابت
         $row_ship = (isset($d['ship_fee']) && is_numeric($d['ship_fee'])) ? (' — شحن ' . rtrim(rtrim(number_format((float)$d['ship_fee'], 2, '.', ''), '0'), '.') . ' ' . $row_cur) : '';
-        echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ' . esc($row_cur) . esc($row_ship) . ' — ' . esc($row_country) . ' — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
+        // عمولة المسوق الثابتة (مصرية بالجنيه بس) — تظهر في السطر لما تكون أكبر من صفر
+        $row_comm = ($row_country === 'مصر' && isset($d['commission']) && is_numeric($d['commission']) && (float)$d['commission'] > 0)
+            ? (' — عمولة ' . rtrim(rtrim(number_format((float)$d['commission'], 2, '.', ''), '0'), '.') . ' ج.م/قطعة') : '';
+        echo '<div style="flex:1;min-width:200px"><strong>' . esc($r['name']) . '</strong><br><span class="mut">' . esc($r['price']) . ' ' . esc($row_cur) . esc($row_ship) . esc($row_comm) . ' — ' . esc($row_country) . ' — ' . esc($r['category']) . ' — ' . count($imgs) . ' صورة</span></div>';
         // التفاصيل الإضافية (وصف/ألوان/مقاسات/خامة/وزن/أبعاد/SKU/أسئلة) في ديالوج بدل ما تتحشر في السطر
         $mp_rows = [];
         $mp_push = function ($l, $v) use (&$mp_rows) { $v = trim((string)$v); if ($v !== '') $mp_rows[] = [$l, $v]; };
@@ -214,6 +221,7 @@ if ($status !== '') {
         $mp_push('الكمية', (string)($d['stock'] ?? ''));
         $mp_push('كود SKU', (string)($d['sku'] ?? ''));
         if (isset($d['ship_fee']) && is_numeric($d['ship_fee'])) $mp_push('سعر الشحن', rtrim(rtrim(number_format((float)$d['ship_fee'], 2, '.', ''), '0'), '.') . ' ' . $row_cur);
+        if ($row_country === 'مصر' && isset($d['commission']) && is_numeric($d['commission']) && (float)$d['commission'] > 0) $mp_push('عمولة المسوق لكل قطعة', rtrim(rtrim(number_format((float)$d['commission'], 2, '.', ''), '0'), '.') . ' ج.م');
         $mp_push('الخامة', (string)($d['material'] ?? ''));
         $mp_push('الوزن', (string)($d['weight'] ?? ''));
         $mp_push('الأبعاد', (string)($d['dimensions'] ?? ''));

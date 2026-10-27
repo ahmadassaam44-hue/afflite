@@ -56,8 +56,9 @@ $base = base_price($p, $plat);
 $base_store_price = list_price($p, $plat) ?: display_price($p, $plat);
 $extra_comm = $ref ? marketer_store_product_comm($ref, $plat, (string)$p['id']) : 0.0;
 $unit0 = round($base_store_price + $extra_comm, 2);
-$base_comm = 0.0;
-$comm = round($extra_comm, 2);
+// العمولة الأساسية الثابتة للمنتج اليدوي (لو الأدمن حددها) — باقي المنصات صفر
+$base_comm = ($plat === 'manual') ? round((float)($ex['manual_commission'] ?? 0), 2) : 0.0;
+$comm = round($base_comm + $extra_comm, 2);
 if ($sdisc) {
     $sdisc['old'] = round(store_price_from_saved($p, $plat, (float)$sdisc['old']) + $extra_comm, 2);
     $sdisc['pct'] = $sdisc['old'] > 0 ? (int)round((1 - $unit0 / $sdisc['old']) * 100) : 0;
@@ -148,7 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_to_mk_store']) &&
                 'in_store' => isset($prods_mk[$pkey]),
                 'extra_comm' => $custom_extra,
                 'sale_price' => round($base_store_price + $custom_extra, 2),
-                'total_comm' => round($custom_extra, 2),
+                // إجمالي العمولة = الثابتة للمنتج اليدوي (لو موجودة) + العمولة الإضافية للمسوق
+                'total_comm' => round($base_comm + $custom_extra, 2),
                 'store_url' => $host_u . '/store.php?store=' . urlencode($mcode_s),
                 'landing_url' => landing_page_url($p['id'], $mcode_s, $custom_extra, $plat),
             ], JSON_UNESCAPED_UNICODE);
@@ -279,7 +281,7 @@ $pb_max = isset($ex['price_max']) && is_numeric($ex['price_max']) && (float)$ex[
 <div data-ui="u-32212ec8 d21 d2b d1s d62">
 <div> السعر الأساسي للمنتج: <b data-ui="u-9aa26154 d2p"><?php echo number_format((float)$base_store_price); ?> <?php echo esc($cur); ?></b></div>
 <?php if ($pb_sugg > $base_store_price): ?><div><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> السعر المقترح الأصلي: <b><?php echo number_format((float)$pb_sugg); ?> <?php echo esc($cur); ?></b></div><?php endif; ?>
-<div><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-box></use></svg> العمولة الأساسية: <b data-ui="u-0ec29c9b d1a">0 <?php echo esc($cur); ?></b></div>
+<div><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-box></use></svg> العمولة الأساسية: <b data-ui="u-0ec29c9b d1a"><?php echo number_format((float)$base_comm) . ' ' . esc($cur); ?></b></div>
 <div><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-plus></use></svg> عمولتك المحددة: <b data-ui="u-61a4e8ed d1x"><?php echo $extra_comm > 0 ? '+' . number_format((float)$extra_comm) . ' ' . esc($cur) : 'حدد عمولتك بنفسك من الأسفل'; ?></b></div>
 <?php if ($pb_min !== null || $pb_max !== null): ?><div><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chart></use></svg> نطاق السعر المقترح: <b><?php echo $pb_min !== null ? number_format((float)$pb_min) : '—'; ?> — <?php echo $pb_max !== null ? number_format((float)$pb_max) : '—'; ?> <?php echo esc($cur); ?></b></div><?php endif; ?>
 </div>
@@ -620,7 +622,7 @@ $store_rel = $mcode ? ('../store.php?store=' . urlencode($mcode)) : '';
     <span id="mkStoreBadge" class="badge <?php echo $in_my_store ? 'green' : 'neutral'; ?>"><?php echo $in_my_store ? ' مضاف في متجرك' : 'غير مضاف لمتجرك بعد'; ?></span>
   </div>
   <div data-ui="u-45f84e93 d4u d64 da dg d11">
-    <label for="mkCustomCommInput" data-ui="u-658be79d do dc d9m d27 d2"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> العمولة الأساسية 0 <?php echo esc($cur); ?> — حدد عمولتك التي تريد إضافتها على المنتج:</label>
+    <label for="mkCustomCommInput" data-ui="u-658be79d do dc d9m d27 d2"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> العمولة الأساسية <?php echo number_format((float)$base_comm) . ' ' . esc($cur); ?> — حدد عمولتك التي تريد إضافتها على المنتج:</label>
     <div data-ui="u-9db13808 dh d1s d1p dj">
       <input type="number" id="mkCustomCommInput" name="mk_extra_comm" form="mkSaveForm" value="<?php echo (float)$my_saved_extra; ?>" min="0" max="5000" step="5" data-ui="u-15c86a20 d93 d85 d8v d24 d1 d12 d19" oninput="updateMkPreview()">
       <button type="submit" form="mkSaveForm" class="btn sm">✔ حفظ العمولة</button>
@@ -629,7 +631,23 @@ $store_rel = $mcode ? ('../store.php?store=' . urlencode($mcode)) : '';
         <button type="button" onclick="document.getElementById('mkCustomCommInput').value=<?php echo $qcomm; ?>;updateMkPreview();" data-ui="u-b1c28ce4 d4i d1u d64 ds d2k do dc d3j">+<?php echo $qcomm; ?></button>
         <?php endforeach; ?>
       </div>
-      <span data-ui="u-70bda48d do dc d2k">سعر البيع للعميل: <b id="mkPrevPrice" data-ui="u-c0c478b3 d4y"><?php echo number_format($base_store_price + $my_saved_extra, 0); ?></b> <?php echo esc($cur); ?> | إجمالي عمولتك: <b id="mkPrevComm" data-ui="u-61a4e8ed d1x"><?php echo number_format($my_saved_extra, 0); ?></b> <?php echo esc($cur); ?></span>
+      <span data-ui="u-70bda48d do dc d2k">سعر البيع للعميل: <b id="mkPrevPrice" data-ui="u-c0c478b3 d4y"><?php echo number_format($base_store_price + $my_saved_extra, 0); ?></b> <?php echo esc($cur); ?> | إجمالي عمولتك: <b id="mkPrevComm" data-ui="u-61a4e8ed d1x"><?php echo number_format($base_comm + $my_saved_extra, 0); ?></b> <?php echo esc($cur); ?></span>
+      <script>
+      // معاينة حية: السعر = السعر الأساسي + العمولة الإضافية، وإجمالي العمولة = الثابتة + الإضافية
+      // (العمولة الثابتة للمنتجات اليدوية بتتدفع تلقائيًا من غير ما تتضاف على سعر العميل)
+      window.mkPreviewBase = <?php echo json_encode(['price' => (float)$base_store_price, 'fixed' => (float)$base_comm], JSON_UNESCAPED_UNICODE); ?>;
+      function updateMkPreview() {
+        var inp = document.getElementById('mkCustomCommInput');
+        if (!inp || !window.mkPreviewBase) return;
+        var extra = Math.max(0, parseFloat(inp.value) || 0);
+        var max = parseFloat(inp.max) || 0;
+        if (max > 0) extra = Math.min(extra, max);
+        var priceEl = document.getElementById('mkPrevPrice');
+        var commEl = document.getElementById('mkPrevComm');
+        if (priceEl) priceEl.textContent = (window.mkPreviewBase.price + extra).toLocaleString('en-US');
+        if (commEl) commEl.textContent = (window.mkPreviewBase.fixed + extra).toLocaleString('en-US');
+      }
+      </script>
     </div>
     <?php
     $mk_clean_summary = product_marketing_summary($p, $plat);
