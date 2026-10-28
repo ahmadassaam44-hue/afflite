@@ -5,34 +5,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: rename htaccess
+      - name: empty htaccess
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
         run: |
-          python - <<'PY'
-          import ftplib
+          python - <<'PY' || true
+          import ftplib, io
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
           try:
-              f.rename('.htaccess','.htaccess.bak')
-              print("renamed htaccess to bak")
-              print("::notice::HTACCESS_RENAMED")
+              f.rename('.htaccess','.htaccess.bak2')
+              print("renamed")
           except Exception as e:
               print(f"rename fail {e}")
-              print(f"::notice::HTACCESS_RENAME_FAIL {e}")
+          # try to create empty htaccess
+          try:
+              f.storbinary('STOR .htaccess', io.BytesIO(b'# empty htaccess\n'))
+              print("emptied")
+          except Exception as e:
+              print(f"empty fail {e}")
           f.quit()
           PY
-      - name: curl test after rename
+          echo "done empty"
+      - name: curl after
         run: |
           sleep 5
-          for u in "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1"; do
-            echo "=== $u ==="
-            curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "$u" || echo "curl fail $?"
-            H=$(cat /tmp/h.txt | head -n 5 | tr '\n' ' ' | cut -c1-800)
-            echo "::notice::AFTER_HTACCESS $u H:$H"
-            B=$(head -c 200 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
-            echo "::notice::AFTER_HTACCESS_B $u -> $B"
-          done
+          curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "https://wafirinhalk.ct.ws/test2.php?i=1" || echo "curl fail"
+          cat /tmp/h.txt | head -n 20
+          cat /tmp/b.txt | head -n 20
+          echo "::notice::AFTER $(head -c 300 /tmp/b.txt | tr '\n' ' ')"
