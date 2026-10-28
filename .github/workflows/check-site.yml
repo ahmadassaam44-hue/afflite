@@ -5,9 +5,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          for u in "https://wafirinhalk.ct.ws/robots.txt?i=1" "https://wafirinhalk.ct.ws/assets/style.css?i=1" "https://wafirinhalk.ct.ws/test.php?i=1"; do
-            echo "URL $u"
-            OUT=$(curl -s -i -L "$u" --max-time 20 2>&1 | head -c 1500 | tr '\n' ' ' | tr '\r' ' ')
-            echo "::notice::CURL $u -> ${OUT:0:900}"
-          done
+      - name: FTP perms
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          python - <<'PY'
+          import ftplib, os
+          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
+          f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
+          lines=[]
+          f.retrlines('LIST', lines.append)
+          for l in lines:
+              print(l)
+              if 'test.php' in l or 'config.php' in l or 'robots.txt' in l:
+                  print(f"::notice::{l}")
+          # try MLST
+          for fn in ['test.php','config.php','index.php']:
+              try:
+                  resp=f.sendcmd(f'MLST {fn}')
+                  print(f"MLST {fn}: {resp}")
+                  print(f"::notice::MLST {fn}: {resp}")
+              except Exception as e:
+                  print(f"MLST fail {fn}: {e}")
+          f.quit()
+          PY
