@@ -1,0 +1,36 @@
+name: deploy-fix
+on: push
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'deploy-fix')
+    steps:
+      - uses: actions/checkout@v4
+      - run: php -l config.php
+      - run: php -l index.php
+      - name: FTP upload config
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          python - <<'PY'
+          import ftplib, os, hashlib
+          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
+          f=ftplib.FTP(host, timeout=60)
+          f.login(user,pw)
+          f.cwd(root)
+          with open('config.php','rb') as fh:
+              data=fh.read()
+          print("local md5", hashlib.md5(data).hexdigest(), len(data))
+          f.storbinary('STOR config.php', open('config.php','rb'))
+          # verify
+          import io
+          buf=io.BytesIO()
+          f.retrbinary('RETR config.php', buf.write)
+          remote=buf.getvalue()
+          print("remote md5", hashlib.md5(remote).hexdigest(), len(remote))
+          print("match", hashlib.md5(data).hexdigest()==hashlib.md5(remote).hexdigest())
+          f.quit()
+          PY
