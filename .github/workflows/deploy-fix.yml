@@ -7,8 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: php -l config.php
-      - run: php -l index.php
-      - name: FTP upload php+html
+      - name: FTP upload hello
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -16,13 +15,16 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY'
-          import ftplib, glob
+          import ftplib, os
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          files = glob.glob('*.php') + glob.glob('*.html') + glob.glob('dashboard/*.php')
-          print(f"upload {files}")
-          for rel in files:
-              print(f"STOR {rel}")
-              f.storbinary(f'STOR {rel}', open(rel,'rb'))
+          for fn in ['hello.html','test2.php','test.php','config.php','index.php']:
+              try:
+                  print(f"upload {fn}")
+                  f.storbinary(f'STOR {fn}', open(fn,'rb'))
+                  print(f"ok {fn}")
+              except Exception as e:
+                  print(f"fail {fn}: {e}")
           f.quit()
+          print("done")
           PY
