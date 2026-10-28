@@ -5,42 +5,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: curl debug
+        continue-on-error: true
         run: |
-          curl -s -D /tmp/h.txt -L "https://wafirinhalk.ct.ws/debug.php?i=1" -o /tmp/b.txt --max-time 30 || true
-          echo "=== HEADERS ==="; cat /tmp/h.txt
-          echo "=== BODY ==="; head -n 100 /tmp/b.txt; wc -c /tmp/b.txt
-          OUT=$(head -c 2000 /tmp/b.txt | tr -d '\n' | cut -c1-1000)
-          echo "::error file=debug.php,line=1::BODY:$OUT"
-          echo "::notice::HEADERS:$(cat /tmp/h.txt | tr '\n' ' ' | cut -c1-500)"
-          # FTP
-          echo "FTP check"
+          set +e
+          curl -s -i -L "https://wafirinhalk.ct.ws/debug.php?i=1" -o /tmp/b.txt --max-time 30
+          echo "exit:$?"
+          cat /tmp/b.txt | head -n 200
+          wc -c /tmp/b.txt
+          MSG=$(head -c 1500 /tmp/b.txt | tr '\n' ' ' | tr '\r' ' ' | cut -c1-1000)
+          echo "::notice::DEBUG_BODY:${MSG}"
+          curl -s -i -L "https://wafirinhalk.ct.ws/?i=1" -o /tmp/m.txt --max-time 30 || true
+          head -n 30 /tmp/m.txt
       - name: FTP check
+        continue-on-error: true
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
         run: |
+          set +e
           python - <<'PY'
           import ftplib, os, io
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host, timeout=30)
           f.login(user,pw)
           f.cwd(root)
+          import subprocess
           for x in f.nlst():
-              print(x)
+              pass
           for err in ['error_log','error.log']:
               try:
                   buf=io.BytesIO()
                   f.retrbinary(f'RETR {err}', buf.write)
-                  txt=buf.getvalue().decode(errors='ignore')[:2000]
-                  print(f"ERR:{err}:{txt}")
-                  # annotation
-                  import sys
-                  # escape for ::error
-                  esc=txt.replace('\n',' ').replace('%','%25').replace('\r','%0D')
-                  print(f"::notice::ERRLOG:{esc[:900]}")
+                  txt=buf.getvalue().decode(errors='ignore')[:1500].replace('\n',' ').replace('\r',' ')
+                  print(f"::notice::ERRLOG_{err}:{txt[:900]}")
               except Exception as e:
-                  print(f"no {err}: {e}")
+                  print(f"no {err}")
           f.quit()
           PY
