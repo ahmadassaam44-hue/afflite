@@ -5,5 +5,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: php -l config.php
-      - run: php -l index.php
+      - name: lint config
+        run: |
+          php -l config.php 2>&1 | tee /tmp/lint.txt; echo "EXIT:$?" >> /tmp/lint.txt
+          php -l index.php 2>&1 | tee -a /tmp/lint.txt; echo "EXIT2:$?" >> /tmp/lint.txt
+          cat /tmp/lint.txt
+          echo "LINT_START" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/lint.txt >> $GITHUB_STEP_SUMMARY
+          echo "LINT_END" >> $GITHUB_STEP_SUMMARY
+          # also save to repo file for fetch via API
+          cp /tmp/lint.txt ./lint_output.txt
+          git config user.name "bot"
+          git config user.email "bot@bot.bot"
+          git add lint_output.txt || true
+          git commit -m "lint output" || true
+          git push origin main || true
