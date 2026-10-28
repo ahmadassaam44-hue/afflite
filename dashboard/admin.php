@@ -341,7 +341,7 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
                 $cur_prod = function_exists('find_product_by_id') ? find_product_by_id($raw_id, $plat) : null;
                 $cur_cat = is_array($cur_prod) ? trim((string)($cur_prod['category'] ?? '')) : '';
             }
-            jupdate('product_overrides.json', function (&$ov) use ($ok, $action, &$saved, &$fail_reason, $cur_cat) {
+            jupdate('product_overrides.json', function (&$ov) use ($ok, $action, &$saved, &$fail_reason, $cur_cat, $plat, $cur_prod) {
                 if (!is_array($ov)) $ov = [];
                 if (!isset($ov[$ok]) || !is_array($ov[$ok])) $ov[$ok] = [];
                 if ($action === 'hide') $ov[$ok]['hidden'] = empty($ov[$ok]['hidden']);
@@ -384,6 +384,20 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
                     $ov[$ok]['name'] = mb_substr($name, 0, 200);
                     $ov[$ok]['category'] = $category;
                     $ov[$ok]['price'] = (float)$price_raw;
+                    // عمولة ثابتة لكل قطعة للمنتجات اليدوية (مصرية بالجنيه فقط) — نفس قواعد فورم المنتجات اليدوية
+                    if ($plat === 'manual') {
+                        $comm_raw = trim((string)($_POST['full_commission'] ?? ''));
+                        if ($comm_raw === '') {
+                            $ov[$ok]['manual_commission'] = 0;
+                        } else {
+                            if (!is_numeric($comm_raw) || (float)$comm_raw < 0) { $fail_reason = 'العمولة لازم تكون رقم صفر أو أكبر'; return false; }
+                            $comm_val = round((float)$comm_raw, 2);
+                            $manual_country = trim((string)($cur_prod['country'] ?? '')) ?: 'مصر';
+                            if ($comm_val > 0 && $manual_country !== 'مصر') { $fail_reason = 'العمولة الثابتة متاحة للمنتجات المصرية فقط حالياً'; return false; }
+                            if ($comm_val >= (float)$price_raw) { $fail_reason = 'العمولة لازم تكون أقل من سعر المنتج'; return false; }
+                            $ov[$ok]['manual_commission'] = $comm_val;
+                        }
+                    }
                     $ov[$ok]['sku'] = mb_substr(trim((string)($_POST['full_sku'] ?? '')), 0, 100);
                     $ov[$ok]['description'] = mb_substr(trim((string)($_POST['full_description'] ?? '')), 0, 12000);
                     $ov[$ok]['images'] = $images;
@@ -402,7 +416,7 @@ if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
                     log_audit('product_permanent_delete', $ok, ['scope' => 'storefront catalog only']);
                     $msg = 'تم حذف المنتج من المتجر نهائيًا ✅ (لم تُمس الطلبات أو السجلات التاريخية)';
                 } else {
-                    log_audit('product_override_' . $action, $ok, $action === 'full_details' ? ['fields' => 'name,category,price,images,description,options,specifications'] : []);
+                    log_audit('product_override_' . $action, $ok, $action === 'full_details' ? ['fields' => 'name,category,price,images,description,options,specifications,manual_commission'] : []);
                     $msg = 'تم حفظ التعديلات ✅';
                 }
             } else $msg = 'تعذر الحفظ' . ($fail_reason !== '' ? ': ' . $fail_reason : '. راجع الاسم والسعر والقسم وروابط الصور.');
@@ -1525,7 +1539,10 @@ elseif ($tab === 'products') {
         echo '<tr>';
         echo '<td><input type="checkbox" class="prod-pick" form="prodBulkForm" name="bulk_keys[]" value="' . esc($uid) . '" aria-label="تحديد المنتج"></td>';
         echo '<td>' . ($img ? '<img alt="' . esc(aff_clean($p['name'] ?? 'صورة المنتج', true)) . '" loading="lazy" width="48" height="48" src="' . esc(asset_url($img)) . '" data-ui="u-25323dcd d2z d30 d2t d1u">' : '') . '</td>';
-        echo '<td><b>' . esc(mb_substr(aff_clean($p['name'] ?? '', true), 0, 55)) . '</b><br><span class="mut" dir="ltr">#' . esc($p['id'] ?? '') . '</span></td>';
+        echo '<td><b>' . esc(mb_substr(aff_clean($p['name'] ?? '', true), 0, 55)) . '</b><br><span class="mut" dir="ltr">#' . esc($p['id'] ?? '') . '</span>'
+            . ($pl_k === 'manual' && (float)($p['extra']['manual_commission'] ?? 0) > 0
+                ? '<br><span class="badge green">⭐ عمولة ' . rtrim(rtrim(number_format((float)$p['extra']['manual_commission'], 2, '.', ''), '0'), '.') . ' ج.م/قطعة</span>'
+                : '') . '</td>';
         $category_options = wf_category_canonical();
         $product_category = trim((string)($p['category'] ?? ''));
         if ($product_category !== '' && !in_array($product_category, $category_options, true)) $category_options[] = $product_category;
@@ -1555,6 +1572,9 @@ elseif ($tab === 'products') {
             . '<input type="hidden" name="ov_plat" value="' . esc($pl_k) . '"><input type="hidden" name="ov_id" value="' . esc($p['id'] ?? '') . '"><input type="hidden" name="ov_action" value="full_details">'
             . '<label>الاسم<input name="full_name" required maxlength="200" value="' . esc($p['name'] ?? '') . '"></label>'
             . '<label>السعر<input name="full_price" required type="number" min="0" step="0.01" value="' . esc($pr_now) . '"></label>'
+            . ($pl_k === 'manual'
+                ? '<label>عمولة المسوق لكل قطعة (ج.م) — اختياري<input name="full_commission" type="number" min="0" step="0.01" value="' . esc((float)($extra_data['manual_commission'] ?? 0)) . '"><small class="mut">بتتسجل للمسوق تلقائيًا مع كل طلب من غير ما سعر العميل يتغير. فاضي أو صفر = بدون عمولة أساسية. للمنتجات المصرية فقط، ولازم تكون أقل من السعر.</small></label>'
+                : '')
             . '<label>القسم<select name="full_category"><option value="">قسم المصدر</option>';
         $full_categories = wf_category_canonical();
         if (!empty($p['category']) && !in_array($p['category'], $full_categories, true)) $full_categories[] = $p['category'];

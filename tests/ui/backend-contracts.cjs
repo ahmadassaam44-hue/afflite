@@ -4,7 +4,10 @@ function stable(node){if(Array.isArray(node))return node.map(stable);if(node&&ty
 const runtimeFixes=process.env.UI_RUNTIME_FIXES==='1'?['jload','find_product_by_id']:[];
 // تغييرات مقصودة وموثّقة: نواة خصم الكمية + أدوار الحساب (مشترٍ/مسوّق) + إصلاح تبويبات المسوق.
 // باقي دوال التسعير والعمولات والسحب تفضل محميّة بالمقارنة دي.
-const intendedChanges=['wf_bundle_total','wf_landing_bundle_discount','ensure_user_affiliate','wf_marketer_link_stats'];
+// product_commission_unit: عمولة ثابتة لكل قطعة للمنتجات اليدوية (extra.manual_commission، مصرية بالجنيه)
+// apply_product_override_record: نفس العمولة قابلة للتعديل من فورم «تعديل كل التفاصيل» في تبويب منتجات الأدمن
+// — موثّقة في docs/manual-product-commission-2026-10-28.md، وسعر العميل وكل الثوابت ما اتغيرتش.
+const intendedChanges=['wf_bundle_total','wf_landing_bundle_discount','ensure_user_affiliate','wf_marketer_link_stats','product_commission_unit','apply_product_override_record'];
 const before=functions('.cache/ui-baseline/config.php'),after=functions('config.php');const uiOnly=['render_easyorder_dialog_html','render_product_details_html','vd_size_chart_html','mz_sizechart_html'];let checked=0;
 for(const [name,node]of Object.entries(before)){assert(after[name],'Removed PHP function '+name);if(uiOnly.includes(name)||runtimeFixes.includes(name)||intendedChanges.includes(name))continue;assert.deepStrictEqual(stable(after[name]),stable(node),'Unexpected non-UI function change: '+name);checked++;}
 const payoutBefore=functions('.cache/ui-baseline/dashboard/_payout.php'),payoutAfter=functions('dashboard/_payout.php');assert.deepStrictEqual(stable(payoutAfter.payout_handle_post),stable(payoutBefore.payout_handle_post));
