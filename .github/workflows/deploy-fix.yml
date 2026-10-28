@@ -8,8 +8,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: php -l config.php
       - run: php -l index.php
-      - run: php -l debug.php
-      - name: FTP upload all php
+      - name: FTP upload php+html
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -17,22 +16,13 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY'
-          import ftplib, os, hashlib, glob
+          import ftplib, glob
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
-          f=ftplib.FTP(host, timeout=60)
-          f.login(user,pw)
-          f.cwd(root)
-          files = glob.glob('*.php') + glob.glob('dashboard/*.php')
-          print(f"uploading {len(files)} php files")
+          f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
+          files = glob.glob('*.php') + glob.glob('*.html') + glob.glob('dashboard/*.php')
+          print(f"upload {files}")
           for rel in files:
               print(f"STOR {rel}")
-              with open(rel,'rb') as fh:
-                  f.storbinary(f'STOR {rel}', fh)
-              # verify
-              import io
-              buf=io.BytesIO()
-              f.retrbinary(f'RETR {rel}', buf.write)
-              print(f"  remote size {len(buf.getvalue())}")
+              f.storbinary(f'STOR {rel}', open(rel,'rb'))
           f.quit()
-          print("done")
           PY
