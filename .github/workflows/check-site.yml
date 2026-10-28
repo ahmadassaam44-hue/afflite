@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: FTP perms
+      - name: FTP dump
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -13,22 +13,28 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY'
-          import ftplib, os
+          import ftplib, os, io
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          lines=[]
-          f.retrlines('LIST', lines.append)
-          for l in lines:
-              print(l)
-              if 'test.php' in l or 'config.php' in l or 'robots.txt' in l:
-                  print(f"::notice::{l}")
-          # try MLST
-          for fn in ['test.php','config.php','index.php']:
+          # get htaccess
+          for fn in ['.htaccess','php.ini','test.php','config.php']:
               try:
-                  resp=f.sendcmd(f'MLST {fn}')
-                  print(f"MLST {fn}: {resp}")
-                  print(f"::notice::MLST {fn}: {resp}")
+                  b=io.BytesIO()
+                  f.retrbinary(f'RETR {fn}', b.write)
+                  txt=b.getvalue().decode(errors='ignore')
+                  print(f"=== {fn} len {len(txt)} ===")
+                  for line in txt.splitlines()[:100]:
+                      print(line)
+                  # annotation for first 5 lines
+                  safe=txt[:900].replace('\n',' ').replace('\r',' ')
+                  print(f"::notice::{fn}:{safe[:800]}")
               except Exception as e:
-                  print(f"MLST fail {fn}: {e}")
+                  print(f"fail {fn}: {e}")
+          # list all with LIST -a
+          try:
+              f.retrlines('LIST -a', lambda x: print(x))
+          except Exception as e:
+              print(f"LIST -a fail {e}")
+              f.retrlines('LIST', lambda x: print(x))
           f.quit()
           PY
