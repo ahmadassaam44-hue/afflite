@@ -13,6 +13,10 @@ try:
     import mnfean
     HAS_MNFEAN=True
 except: HAS_MNFEAN=False
+try:
+    import storedooo
+    HAS_STOREDOOO=True
+except: HAS_STOREDOOO=False
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'data')
@@ -2204,8 +2208,8 @@ def _catalog_row_has_image(row, plat, local_detail_ids):
 
 
 def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
-    """Keep storefront category counts and the Cezma search-index freshness marker."""
-    physical = ('timehand', 'safqa', 'vendoor', 'angazny', 'shopmart')
+    """Build physical catalog counts — now with mnfean + storedooo (no cezma shards)."""
+    physical = ('timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean', 'storedooo')
     local_details = jload('detail_index.json', {})
     local_detail_ids = set()
     if isinstance(local_details, dict):
@@ -2217,6 +2221,8 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
     physical_categories = {}
     for plat in physical:
         rows = jload(f'lite_{plat}.json', [])
+        if not isinstance(rows, list) or not rows:
+            rows = jload(f'{plat}.json', [])
         if not isinstance(rows, list):
             rows = []
         count = 0
@@ -2228,33 +2234,32 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
             if category:
                 physical_categories[category] = physical_categories.get(category, 0) + 1
         platform_counts[plat] = count
-
-    if not isinstance(cezma_rows, list):
-        cezma_rows = _cezma_load_shards()
-    cezma_count = 0
-    cezma_categories = {}
-    for row in cezma_rows:
-        if not _catalog_row_has_image(row, 'cezma', local_detail_ids):
-            continue
-        cezma_count += 1
-        category = str(row.get('category') or '').strip()
-        if category:
-            cezma_categories[category] = cezma_categories.get(category, 0) + 1
-    platform_counts['cezma'] = cezma_count
+    # mnfean / storedooo breakdowns for frontend
+    mnfean_categories = {}
+    for row in jload('lite_mnfean.json', []) or jload('mnfean.json', []):
+        cat = str(row.get('category') or '').strip()
+        if cat:
+            mnfean_categories[cat] = mnfean_categories.get(cat, 0) + 1
+    storedooo_categories = {}
+    for row in jload('lite_storedooo.json', []) or jload('storedooo.json', []):
+        cat = str(row.get('category') or '').strip()
+        if cat:
+            storedooo_categories[cat] = storedooo_categories.get(cat, 0) + 1
     return {
         'version': 2,
         'physical_with_images': sum(platform_counts.values()),
         'physical_platforms': platform_counts,
         'physical_categories': dict(sorted(physical_categories.items())),
-        'cezma_categories': dict(sorted(cezma_categories.items())),
-        'cezma_index_signature': str(cezma_index_signature or ''),
+        'mnfean_categories': dict(sorted(mnfean_categories.items())),
+        'storedooo_categories': dict(sorted(storedooo_categories.items())),
+        'mnfean_index_signature': str(cezma_index_signature or ''),
     }
 
 
 # ---------------------------------------------------------------- Open production: normalized virtual stock; source inventory never limits sales.
 def force_open_production():
     open_qty = 999999
-    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean']
+    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'storedooo']
     def open_item(item):
         if not isinstance(item, dict): return
         item['stock'] = open_qty
@@ -3702,7 +3707,7 @@ def _audit_requested_in_push():
 
 
 if __name__ == '__main__':
-    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean']
+    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean', 'storedooo']
     _pre_platform_ids = snapshot_platform_ids()  # قبل أي تحديث: عشان نعرف المنتجات الجديدة في الآخر
     if only == ['deploy'] and _audit_requested_in_push():
         only = ['cezma-audit']
@@ -3760,12 +3765,40 @@ if __name__ == '__main__':
         # Empty signature disables a stale index if source/build validation fails.
         log('❌ Cezma search index failed:', str(_index_error)[:200])
         summary['cezma_search_index'] = {'error': str(_index_error)[:200]}
+    # Mnfean: fetch fresh catalog (uses MNFEAN_USER/PASS or defaults)
+    if HAS_MNFEAN:
+        try:
+            mn_prods = mnfean.fetch_all()
+            if mn_prods:
+                jdump('mnfean.json', mn_prods)
+                jdump('lite_mnfean.json', [{k: p[k] for k in LITE_KEYS if k in p} for p in mn_prods])
+                summary['mnfean'] = len(mn_prods)
+                log(f"Mnfean updated {len(mn_prods)} products")
+            else:
+                log("Mnfean fetch returned 0 — keeping existing files")
+        except Exception as e:
+            log("Mnfean fetch failed:", str(e)[:200])
+    # Storedooo: fetch fresh catalog (uses STOREDOOO_USER/PASS or MNFEAN fallback)
+    if HAS_STOREDOOO:
+        try:
+            st_prods = storedooo.fetch_all()
+            if st_prods:
+                jdump('storedooo.json', st_prods)
+                jdump('lite_storedooo.json', [{k: p[k] for k in LITE_KEYS if k in p} for p in st_prods])
+                summary['storedooo'] = len(st_prods)
+                log(f"Storedooo updated {len(st_prods)} products")
+            else:
+                log("Storedooo fetch returned 0 — keeping existing files")
+        except Exception as e:
+            log("Storedooo fetch failed:", str(e)[:200])
     try:
         _catalog_counts = build_catalog_counts(_cezma_index_signature, _cezma_index_rows)
         jsave('catalog_counts.json', _catalog_counts)
         summary['catalog_counts'] = {
             'physical_with_images': _catalog_counts['physical_with_images'],
-            'cezma_categories': len(_catalog_counts['cezma_categories']),
+            'physical_platforms': _catalog_counts.get('physical_platforms', {}),
+            'mnfean': len(_catalog_counts.get('mnfean_categories', {})),
+            'storedooo': len(_catalog_counts.get('storedooo_categories', {})),
         }
         log('catalog counts', summary['catalog_counts'])
     except Exception as _count_error:
