@@ -5,36 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: FTP dump
-        env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASS: ${{ secrets.FTP_PASS }}
-          FTP_ROOT: /htdocs
-        run: |
-          python - <<'PY'
-          import ftplib, os, io
-          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
-          f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          # get htaccess
-          for fn in ['.htaccess','php.ini','test.php','config.php']:
-              try:
-                  b=io.BytesIO()
-                  f.retrbinary(f'RETR {fn}', b.write)
-                  txt=b.getvalue().decode(errors='ignore')
-                  print(f"=== {fn} len {len(txt)} ===")
-                  for line in txt.splitlines()[:100]:
-                      print(line)
-                  # annotation for first 5 lines
-                  safe=txt[:900].replace('\n',' ').replace('\r',' ')
-                  print(f"::notice::{fn}:{safe[:800]}")
-              except Exception as e:
-                  print(f"fail {fn}: {e}")
-          # list all with LIST -a
-          try:
-              f.retrlines('LIST -a', lambda x: print(x))
-          except Exception as e:
-              print(f"LIST -a fail {e}")
-              f.retrlines('LIST', lambda x: print(x))
-          f.quit()
-          PY
+      - run: |
+          for u in "https://wafirinhalk.ct.ws/hello.html?i=1" "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/test.php?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1"; do
+            echo "URL $u"
+            OUT=$(curl -s -i -L "$u" --max-time 20 2>&1 | head -c 2000 | tr '\n' ' ' | tr '\r' ' ')
+            echo "::notice::CURL $u -> ${OUT:0:900}"
+          done
