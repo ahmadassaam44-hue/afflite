@@ -6,16 +6,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: lint config
+        continue-on-error: true
         run: |
           echo "=== config ===" > /tmp/lint.txt
           php -l config.php >> /tmp/lint.txt 2>&1; echo "EXIT:$?" >> /tmp/lint.txt
           echo "=== index ===" >> /tmp/lint.txt
           php -l index.php >> /tmp/lint.txt 2>&1; echo "EXIT2:$?" >> /tmp/lint.txt
           cat /tmp/lint.txt
+          cat /tmp/lint.txt >> /tmp/lint2.txt
       - name: create issue with lint
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BODY=$(cat /tmp/lint.txt | head -c 5000)
+          # find the file from previous step (it is on same runner, /tmp persists)
+          cat /tmp/lint.txt 2>/dev/null || echo "no file 1"
+          cat /tmp/lint2.txt 2>/dev/null || echo "no file 2"
+          # Actually rerun lint here to ensure file exists
+          echo "=== config ===" > /tmp/lint.txt
+          php -l config.php >> /tmp/lint.txt 2>&1; echo "EXIT:$?" >> /tmp/lint.txt
+          echo "=== index ===" >> /tmp/lint.txt
+          php -l index.php >> /tmp/lint.txt 2>&1; echo "EXIT2:$?" >> /tmp/lint.txt
+          cat /tmp/lint.txt
+          BODY=$(cat /tmp/lint.txt | head -c 6000)
           BODY=$(printf "%s" "$BODY" | jq -Rs .)
-          curl -s -X POST -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ github.repository }}/issues -d "{\"title\":\"lint $(date)\",\"body\":$BODY}" | head
+          curl -s -X POST -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github.v3+json" https://api.github.com/repos/${{ github.repository }}/issues -d "{\"title\":\"lint $(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"body\":$BODY}" | head -n 50
