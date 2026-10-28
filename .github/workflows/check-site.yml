@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: restore htaccess
+      - name: test phpini
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -13,15 +13,36 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY' || true
+          import ftplib, io
+          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
+          f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
+          # rename php.ini
+          try:
+              f.rename('php.ini','php.ini.bak')
+              print("renamed php.ini")
+          except Exception as e:
+              print(f"rename php.ini fail {e}")
+          f.quit()
+          PY
+          echo "renamed"
+          sleep 5
+          curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "https://wafirinhalk.ct.ws/test2.php?i=1" || echo "curl fail"
+          cat /tmp/h.txt | head -n 20
+          cat /tmp/b.txt | head -n 20
+          echo "size $(wc -c < /tmp/b.txt)"
+          # restore
+          python - <<'PY' || true
           import ftplib
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          # restore from local
           try:
-              f.storbinary('STOR .htaccess', open('.htaccess','rb'))
-              print("restored htaccess")
-          except Exception as e:
-              print(f"restore fail {e}")
+              f.rename('php.ini.bak','php.ini')
+              print("restored php.ini")
+          except:
+              try:
+                  f.storbinary('STOR php.ini', open('php.ini','rb'))
+                  print("restored via STOR")
+              except Exception as e:
+                  print(f"restore fail {e}")
           f.quit()
           PY
-          echo "restored"
