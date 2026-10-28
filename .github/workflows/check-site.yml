@@ -5,9 +5,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          for u in "https://wafirinhalk.ct.ws/hello.html?i=1" "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/test.php?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1"; do
-            echo "URL $u"
-            OUT=$(curl -s -i -L "$u" --max-time 20 2>&1 | head -c 2000 | tr '\n' ' ' | tr '\r' ' ')
-            echo "::notice::CURL $u -> ${OUT:0:900}"
-          done
+      - name: dump htaccess
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          python - <<'PY'
+          import ftplib, io
+          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
+          f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
+          b=io.BytesIO()
+          f.retrbinary('RETR .htaccess', b.write)
+          txt=b.getvalue().decode(errors='ignore')
+          lines=txt.splitlines()
+          for i,l in enumerate(lines,1):
+              # escape for ::notice
+              safe=l[:800].replace('\n',' ').replace('\r',' ')
+              print(f"::notice::HT {i:03d}:{safe}")
+          print(f"total {len(lines)} lines")
+          f.quit()
+          PY
