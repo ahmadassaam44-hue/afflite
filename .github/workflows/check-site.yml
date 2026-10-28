@@ -5,12 +5,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          for u in "https://wafirinhalk.ct.ws/hello.html?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1" "https://wafirinhalk.ct.ws/test2.php?i=1"; do
-            echo "=== $u ==="
-            curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "$u" || echo "curl fail $?"
-            H=$(head -n 5 /tmp/h.txt | tr '\n' ' ' | cut -c1-800)
-            echo "::notice::H $u -> $H"
-            B=$(head -c 200 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
-            echo "::notice::B $u -> $B size $(wc -c < /tmp/b.txt)"
-          done
+      - name: FTP ini
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          python - <<'PY'
+          import ftplib, io
+          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
+          f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
+          for fn in ['php.ini','.user.ini','.htaccess']:
+              try:
+                  b=io.BytesIO()
+                  f.retrbinary(f'RETR {fn}', b.write)
+                  txt=b.getvalue().decode(errors='ignore')
+                  print(f"=== {fn} len {len(txt)} ===")
+                  for i,line in enumerate(txt.splitlines(),1):
+                      print(f"{i:03d}:{line}")
+                      if i<5:
+                          safe=line[:700].replace('\n',' ')
+                          print(f"::notice::{fn} {i}:{safe}")
+                  # also check for auto_prepend
+                  if 'auto_prepend' in txt or 'open_basedir' in txt:
+                      print(f"::notice::FOUND auto/open in {fn}")
+              except Exception as e:
+                  print(f"fail {fn}: {e}")
+          # list all ini files
+          try:
+              lst=f.nlst()
+              print("NLST", lst[:30])
+              for x in lst:
+                  if x.endswith('.ini') or x.endswith('.user.ini') or x.startswith('.'):
+                      print(f"found {x}")
+                      print(f"::notice::FILE {x}")
+          except Exception as e:
+              print(f"nlst fail {e}")
+          f.quit()
+          PY
