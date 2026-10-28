@@ -5,24 +5,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: curl debug
-        id: curl
         run: |
-          echo "curling debug.php"
-          set +e
-          curl -s -D /tmp/headers.txt -L "https://wafirinhalk.ct.ws/debug.php?i=1" -o /tmp/body.txt --max-time 30
-          echo "curl exit $?" >> /tmp/log.txt
-          cat /tmp/headers.txt >> /tmp/log.txt
-          echo "---BODY---" >> /tmp/log.txt
-          head -n 200 /tmp/body.txt >> /tmp/log.txt
-          wc -c /tmp/body.txt >> /tmp/log.txt
-          # main
-          curl -s -D /tmp/headers2.txt -L "https://wafirinhalk.ct.ws/?i=1" -o /tmp/main.txt --max-time 30 || true
-          echo "---MAIN HEAD---" >> /tmp/log.txt
-          head -n 50 /tmp/main.txt >> /tmp/log.txt
-          cat /tmp/log.txt
-          echo "log<<EOF" >> $GITHUB_OUTPUT
-          cat /tmp/log.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          curl -s -D /tmp/h.txt -L "https://wafirinhalk.ct.ws/debug.php?i=1" -o /tmp/b.txt --max-time 30 || true
+          echo "=== HEADERS ==="; cat /tmp/h.txt
+          echo "=== BODY ==="; head -n 100 /tmp/b.txt; wc -c /tmp/b.txt
+          OUT=$(head -c 2000 /tmp/b.txt | tr -d '\n' | cut -c1-1000)
+          echo "::error file=debug.php,line=1::BODY:$OUT"
+          echo "::notice::HEADERS:$(cat /tmp/h.txt | tr '\n' ' ' | cut -c1-500)"
+          # FTP
+          echo "FTP check"
       - name: FTP check
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
@@ -30,38 +21,26 @@ jobs:
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
         run: |
-          python - <<'PY' >> /tmp/ftp.txt 2>&1 || true
+          python - <<'PY'
           import ftplib, os, io
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
-          try:
-              f=ftplib.FTP(host, timeout=30)
-              f.login(user,pw)
-              f.cwd(root)
-              print("LIST")
-              for x in f.nlst():
-                  print(x)
-              for err in ['error_log','error.log','php_error.log','logs/error.log','_error_log']:
-                  try:
-                      buf=io.BytesIO()
-                      f.retrbinary(f'RETR {err}', buf.write)
-                      print(f"=== {err} ===")
-                      print(buf.getvalue().decode(errors='ignore')[:5000])
-                  except Exception as e:
-                      print(f"{err} not found: {e}")
-              f.quit()
-          except Exception as e:
-              print("FTP error", e)
+          f=ftplib.FTP(host, timeout=30)
+          f.login(user,pw)
+          f.cwd(root)
+          for x in f.nlst():
+              print(x)
+          for err in ['error_log','error.log']:
+              try:
+                  buf=io.BytesIO()
+                  f.retrbinary(f'RETR {err}', buf.write)
+                  txt=buf.getvalue().decode(errors='ignore')[:2000]
+                  print(f"ERR:{err}:{txt}")
+                  # annotation
+                  import sys
+                  # escape for ::error
+                  esc=txt.replace('\n',' ').replace('%','%25').replace('\r','%0D')
+                  print(f"::notice::ERRLOG:{esc[:900]}")
+              except Exception as e:
+                  print(f"no {err}: {e}")
+          f.quit()
           PY
-          cat /tmp/ftp.txt
-          echo "ftp_log<<EOF" >> $GITHUB_OUTPUT
-          cat /tmp/ftp.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-        id: ftp
-      - name: create issue
-        if: always()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          BODY=$(cat /tmp/log.txt /tmp/ftp.txt 2>/dev/null | head -c 8000)
-          BODY=$(printf "%s" "$BODY" | jq -Rs .)
-          curl -s -X POST -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/${{ github.repository }}/issues -d "{\"title\":\"site check $(date -u +%H:%M)\",\"body\":$BODY}" | head
