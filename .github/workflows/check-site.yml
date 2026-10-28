@@ -6,7 +6,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          echo "test hello.html"
-          curl -s -i -L "https://wafirinhalk.ct.ws/hello.html?i=1" --max-time 20 -o /tmp/b.txt -w "CODE:%{http_code}\n" 2>&1 | head -c 500
-          cat /tmp/b.txt | head -n 30
-          echo "::notice::HELLO:$(head -c 500 /tmp/b.txt | tr '\n' ' ')"
+          for u in "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1"; do
+            echo "=== $u ==="
+            curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "$u" || echo "curl fail $?"
+            echo "headers:"
+            cat /tmp/h.txt
+            echo "body size $(wc -c < /tmp/b.txt)"
+            head -n 20 /tmp/b.txt
+            echo "---"
+            # try with -L
+            curl -s -L -D /tmp/h2.txt -o /tmp/b2.txt --max-time 20 "$u" || echo "curl L fail $?"
+            echo "L headers:"
+            cat /tmp/h2.txt | head -n 20
+            echo "L body head:"
+            head -n 20 /tmp/b2.txt
+          done
+          # dump to notice
+          OUT=$(cat /tmp/b.txt 2>/dev/null | head -c 800 | tr '\n' ' ')
+          echo "::notice::BODYSNIP:${OUT:0:800}"
