@@ -736,4 +736,4 @@ echo wf_catalog_toolbar([
 <script src="assets/ui.js?v=<?= wf_asset_v('ui.js') ?>" defer></script>
 <script src="assets/tracker.js?v=<?= wf_asset_v('tracker.js') ?>" defer></script>
 </body></html>
-<!-- fix 1793223358 -->
+<!-- PR for fix 500 2026-10-28 -->
