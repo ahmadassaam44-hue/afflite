@@ -1,0 +1,54 @@
+name: check-site
+on: push
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: curl debug
+        run: |
+          echo "curling debug.php"
+          curl -s -D /tmp/headers.txt -L "https://wafirinhalk.ct.ws/debug.php?i=1" -o /tmp/body.txt --max-time 30 || true
+          echo "=== HEADERS ==="
+          cat /tmp/headers.txt
+          echo "=== BODY head ==="
+          head -n 100 /tmp/body.txt
+          echo "=== BODY wc ==="
+          wc -c /tmp/body.txt
+          # also try without i=1
+          curl -s -L "https://wafirinhalk.ct.ws/debug.php" -o /tmp/body2.txt --max-time 30 || true
+          head -n 20 /tmp/body2.txt
+          # also try main site
+          curl -s -L "https://wafirinhalk.ct.ws/?i=1" -o /tmp/main.txt --max-time 30 || true
+          head -n 20 /tmp/main.txt
+          # try to get error via FTP error_log if exists
+      - name: FTP check error log
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          python - <<'PY'
+          import ftplib, os, io
+          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
+          try:
+              f=ftplib.FTP(host, timeout=30)
+              f.login(user,pw)
+              f.cwd(root)
+              # list
+              print("LIST")
+              for x in f.nlst():
+                  print(x)
+              # try error log
+              for err in ['error_log','error.log','php_error.log','logs/error.log']:
+                  try:
+                      buf=io.BytesIO()
+                      f.retrbinary(f'RETR {err}', buf.write)
+                      print(f"=== {err} ===")
+                      print(buf.getvalue().decode(errors='ignore')[:3000])
+                  except Exception as e:
+                      print(f"{err} not found: {e}")
+              f.quit()
+          except Exception as e:
+              print("FTP error", e)
+          PY
