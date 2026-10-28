@@ -5,37 +5,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: FTP ini
+      - name: rename htaccess
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
         run: |
-          python - <<'PY' 2>&1 | tee /tmp/ini.txt
-          import ftplib, io
+          python - <<'PY'
+          import ftplib
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          for fn in ['php.ini','.user.ini','.htaccess','php.ini.bak']:
-              try:
-                  b=io.BytesIO()
-                  f.retrbinary(f'RETR {fn}', b.write)
-                  txt=b.getvalue().decode(errors='ignore')
-                  print(f"=== {fn} len {len(txt)} ===")
-                  print(txt[:4000])
-              except Exception as e:
-                  print(f"fail {fn}: {e}")
-          # list
           try:
-              lst=f.nlst()
-              print("NLST", lst[:40])
+              f.rename('.htaccess','.htaccess.bak')
+              print("renamed htaccess to bak")
+              print("::notice::HTACCESS_RENAMED")
           except Exception as e:
-              print(f"nlst fail {e}")
+              print(f"rename fail {e}")
+              print(f"::notice::HTACCESS_RENAME_FAIL {e}")
           f.quit()
           PY
-          cat /tmp/ini.txt
-          cp /tmp/ini.txt ./ini_dump.txt
-          git config user.name "bot"; git config user.email "bot@bot.bot"
-          git add ini_dump.txt
-          git commit -m "ini dump" || true
-          git push origin main || true
+      - name: curl test after rename
+        run: |
+          sleep 5
+          for u in "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1"; do
+            echo "=== $u ==="
+            curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "$u" || echo "curl fail $?"
+            H=$(cat /tmp/h.txt | head -n 5 | tr '\n' ' ' | cut -c1-800)
+            echo "::notice::AFTER_HTACCESS $u H:$H"
+            B=$(head -c 200 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
+            echo "::notice::AFTER_HTACCESS_B $u -> $B"
+          done
