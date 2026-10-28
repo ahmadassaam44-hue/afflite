@@ -1,5 +1,5 @@
 {
- "at": "2026-10-28T06:19:40+00:00",
+ "at": "2026-10-28T08:38:28+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -89,10 +89,10 @@
    "same_as_git": true
   },
   "landing.php": {
-   "remote_size": 24732,
-   "remote_md5": "6b7d3ed8922b228bead9e7f730d21676",
-   "local_size": 24732,
-   "local_md5": "6b7d3ed8922b228bead9e7f730d21676",
+   "remote_size": 24956,
+   "remote_md5": "e185db3a28eff700cfcc7bd526bbf633",
+   "local_size": 24956,
+   "local_md5": "e185db3a28eff700cfcc7bd526bbf633",
    "same_as_git": true
   },
   ".htaccess": {
@@ -118,9 +118,9 @@
   },
   "data/catalog_counts.json": {
    "remote_size": 1034,
-   "remote_md5": "89f43f11cfa7da0e7946f3c22a8f9fc5",
+   "remote_md5": "1e3727c928dd52e1afa4ee89a2d752b9",
    "local_size": 1034,
-   "local_md5": "89f43f11cfa7da0e7946f3c22a8f9fc5",
+   "local_md5": "1e3727c928dd52e1afa4ee89a2d752b9",
    "same_as_git": true
   }
  },
