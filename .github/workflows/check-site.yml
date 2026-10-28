@@ -7,10 +7,11 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           curl -A "Mozilla/5.0" -s "https://wafirinhalk.ct.ws/test2.php?i=1" -o /tmp/ch.html
-          cat /tmp/ch.html
-          wc -c /tmp/ch.html
-          echo "---"
-          curl -A "Mozilla/5.0" -s -D /tmp/h2.txt -o /tmp/b2.txt "https://wafirinhalk.ct.ws/test2.php?i=1"
-          cat /tmp/h2.txt
-          echo "body:"
-          cat /tmp/b2.txt | head -n 50
+          CH=$(cat /tmp/ch.html | head -c 1500 | tr '\n' ' ' | tr '\r' ' ' | cut -c1-800)
+          echo "::notice::CHALLENGE $CH"
+          cat /tmp/ch.html | wc -c | xargs echo "::notice::CH_SIZE"
+          curl -A "Mozilla/5.0" -s -D /tmp/h.txt -o /tmp/b.txt "https://wafirinhalk.ct.ws/test2.php?i=1"
+          H=$(head -n 1 /tmp/h.txt | tr '\n' ' ' | cut -c1-800)
+          echo "::notice::H $H"
+          B=$(head -c 500 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
+          echo "::notice::B $B"
