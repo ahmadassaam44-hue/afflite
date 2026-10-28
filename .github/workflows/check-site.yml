@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: empty htaccess
+      - name: restore htaccess
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -13,27 +13,15 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY' || true
-          import ftplib, io
+          import ftplib
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
+          # restore from local
           try:
-              f.rename('.htaccess','.htaccess.bak2')
-              print("renamed")
+              f.storbinary('STOR .htaccess', open('.htaccess','rb'))
+              print("restored htaccess")
           except Exception as e:
-              print(f"rename fail {e}")
-          # try to create empty htaccess
-          try:
-              f.storbinary('STOR .htaccess', io.BytesIO(b'# empty htaccess\n'))
-              print("emptied")
-          except Exception as e:
-              print(f"empty fail {e}")
+              print(f"restore fail {e}")
           f.quit()
           PY
-          echo "done empty"
-      - name: curl after
-        run: |
-          sleep 5
-          curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "https://wafirinhalk.ct.ws/test2.php?i=1" || echo "curl fail"
-          cat /tmp/h.txt | head -n 20
-          cat /tmp/b.txt | head -n 20
-          echo "::notice::AFTER $(head -c 300 /tmp/b.txt | tr '\n' ' ')"
+          echo "restored"
