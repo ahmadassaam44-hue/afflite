@@ -4,10 +4,5 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - name: curl debug
-        run: |
-          curl -s -L "https://wafirinhalk.ct.ws/debug.php?i=1" --max-time 30 -o /tmp/out.txt
-          echo "curl done"
-          cat /tmp/out.txt | head -n 100
-          wc -c /tmp/out.txt
-          echo "::notice::OUT:$(head -c 800 /tmp/out.txt | tr '\n' ' ')"
+      - run: |
+          for u in "https://wafirinhalk.ct.ws/test.php?i=1" "https://wafirinhalk.ct.ws/test.php" "https://wafirinhalk.ct.ws/debug.php?i=1" "https://wafirinhalk.ct.ws/?i=1"; do echo "URL $u"; curl -s -i -L "$u" --max-time 20 -o /tmp/o.txt || echo "curl fail $?"; head -n 20 /tmp/o.txt; echo "---"; done
