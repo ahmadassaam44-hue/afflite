@@ -6,12 +6,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          curl -A "Mozilla/5.0" -s "https://wafirinhalk.ct.ws/test2.php?i=1" -o /tmp/ch.html
-          CH=$(cat /tmp/ch.html | head -c 1500 | tr '\n' ' ' | tr '\r' ' ' | cut -c1-800)
-          echo "::notice::CHALLENGE $CH"
-          cat /tmp/ch.html | wc -c | xargs echo "::notice::CH_SIZE"
-          curl -A "Mozilla/5.0" -s -D /tmp/h.txt -o /tmp/b.txt "https://wafirinhalk.ct.ws/test2.php?i=1"
-          H=$(head -n 1 /tmp/h.txt | tr '\n' ' ' | cut -c1-800)
-          echo "::notice::H $H"
-          B=$(head -c 500 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
-          echo "::notice::B $B"
+          curl -A "Mozilla/5.0" -s "https://wafirinhalk.ct.ws/aes.js" -o /tmp/aes.js
+          head -n 20 /tmp/aes.js
+          node - <<'JS' 2>&1 | tee /tmp/cookie.txt
+          const fs=require('fs');
+          const vm=require('vm');
+          const aesCode=fs.readFileSync('/tmp/aes.js','utf8');
+          vm.runInThisContext(aesCode);
+          function toNumbers(d){var e=[];d.replace(/(..)/g,function(d){e.push(parseInt(d,16))});return e}
+          function toHex(){for(var d=[],d=1==arguments.length&&arguments[0].constructor==Array?arguments[0]:arguments,e="",f=0;f<d.length;f++)e+=(16>d[f]?"0":"")+d[f].toString(16);return e.toLowerCase()}
+          var a=toNumbers("f655ba9d09a112d4968c63579db590b4"),b=toNumbers("98344c2eee86c3994890592585b49f80"),c=toNumbers("03e946cb3d2648f1117b6839e479a83a");
+          var cookie=toHex(slowAES.decrypt(c,2,a,b));
+          console.log("COOKIE:"+cookie);
+          JS
+          cat /tmp/cookie.txt
+          COOKIE=$(grep COOKIE /tmp/cookie.txt | cut -d: -f2 | tr -d '[:space:]')
+          echo "cookie $COOKIE"
+          curl -A "Mozilla/5.0" -b "__test=$COOKIE" -s -D /tmp/h2.txt -o /tmp/b2.txt "https://wafirinhalk.ct.ws/test2.php?i=2" || echo "curl fail"
+          cat /tmp/h2.txt | head -n 20
+          cat /tmp/b2.txt | head -n 50
+          echo "::notice::B2 $(head -c 500 /tmp/b2.txt | tr '\n' ' ')"
