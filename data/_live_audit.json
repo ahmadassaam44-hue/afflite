@@ -1,5 +1,5 @@
 {
- "at": "2026-10-28T08:38:28+00:00",
+ "at": "2026-10-28T17:39:00+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -117,10 +117,10 @@
    "same_as_git": false
   },
   "data/catalog_counts.json": {
-   "remote_size": 1034,
-   "remote_md5": "1e3727c928dd52e1afa4ee89a2d752b9",
-   "local_size": 1034,
-   "local_md5": "1e3727c928dd52e1afa4ee89a2d752b9",
+   "remote_size": 584,
+   "remote_md5": "d445158f7710d9c023fbf04343c7ee80",
+   "local_size": 584,
+   "local_md5": "d445158f7710d9c023fbf04343c7ee80",
    "same_as_git": true
   }
  },
