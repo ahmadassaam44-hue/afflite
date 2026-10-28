@@ -830,7 +830,7 @@ function team_commission_reverse_for_order($order_idx, $reason = 'إلغاء/إ�
     }
     return round($total, 2);
 }
-$MARGINS = ['safqa' => 0, 'vendoor' => 0, 'timehand' => 0, 'm5zoon' => 0, 'angazny' => 0, 'shopmart' => 0, 'g2g' => 0, 'ledger' => 0, 'social' => 0, 'cezma' => 0];
+$MARGINS = ['safqa' => 0, 'vendoor' => 0, 'timehand' => 0, 'm5zoon' => 0, 'angazny' => 0, 'shopmart' => 0, 'g2g' => 0, 'ledger' => 0, 'social' => 0, 'mnfean' => 0];
 // أسماء المنصات للعرض
 
 function social_plat($name) {
@@ -858,7 +858,7 @@ function social_plat($name) {
     }
     return 'أخرى';
 }
-$PLATFORM_NAMES = ['manual' => 'منتجات يدوية', 'g2g' => '🎮 رقمي', 'social' => '📣 سوشيال ميديا', 'm5zoon' => 'M5zoon', 'vendoor' => 'Vendoor', 'safqa' => 'Safqa', 'timehand' => 'Time Hand', 'angazny' => 'Angazny', 'shopmart' => 'Shopmart', 'cezma' => 'Cezma'];
+$PLATFORM_NAMES = ['manual' => 'منتجات يدوية', 'g2g' => '🎮 رقمي', 'social' => '📣 سوشيال ميديا', 'm5zoon' => 'M5zoon', 'vendoor' => 'Vendoor', 'safqa' => 'Safqa', 'timehand' => 'Time Hand', 'angazny' => 'Angazny', 'shopmart' => 'Shopmart', 'mnfean' => 'Mnfean'];
 function platform_name($plat, $remote = []) {
     global $PLATFORM_NAMES;
     if (isset($remote[$plat]['name'])) return $remote[$plat]['name'];
@@ -881,7 +881,7 @@ function wf_round_5_or_0($v) {
 function wf_round_price($v) {
     return wf_round_5_or_0($v);
 }
-// زيادة 2% على أسعار المنتجات الفيزيكال بس (vendoor/timehand/safqa/angazny/m5zoon/shopmart/cezma).
+// زيادة 2% على أسعار المنتجات الفيزيكال بس (vendoor/timehand/safqa/angazny/m5zoon/shopmart/mnfean).
 // الرقمي والسوشيال ميديا مش متأثرين. التقريب بيفضل زي تقريب الموقع (لأقرب 5 أو 0).
 define('PHYS_PRICE_UPLIFT', 0.02);
 // قرار الإدارة الدائم (2026-10-21): تخفيض 12% على كل أسعار البيع الفيزيائية
@@ -889,7 +889,7 @@ define('PHYS_PRICE_UPLIFT', 0.02);
 // بيُطبَّق في wf_price_uplift وقت القراءة، فملفات المصدر بتفضل زي ما هي وكل تحديث cron بياخده تلقائي.
 if (!defined('PRICE_GLOBAL_DISCOUNT')) define('PRICE_GLOBAL_DISCOUNT', 0.12);
 function wf_is_physical_plat($plat) {
-    return in_array(strtolower(trim((string)$plat)), ['vendoor', 'timehand', 'safqa', 'angazny', 'm5zoon', 'shopmart', 'cezma'], true);
+    return in_array(strtolower(trim((string)$plat)), ['vendoor', 'timehand', 'safqa', 'angazny', 'm5zoon', 'shopmart', 'mnfean'], true);
 }
 function wf_price_uplift($plat, $v) {
     $v = (float)$v;
@@ -1372,7 +1372,7 @@ if (!defined('USE_SUPABASE')) define('USE_SUPABASE', false);
 function resolve_plat($id, $plat_hint = '') {
     $id = trim((string)$id);
     $plat_hint = trim((string)$plat_hint);
-    if ($plat_hint !== '' && in_array($plat_hint, ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'cezma', 'g2g', 'social'], true)) {
+    if ($plat_hint !== '' && in_array($plat_hint, ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'mnfean', 'g2g', 'social'], true)) {
         return $plat_hint;
     }
     if ($id === '') return 'vendoor';
@@ -1564,7 +1564,7 @@ function platform_products_lite($key) {
         unset($x);
         return $cache[$key] = apply_product_overrides($all, 'manual');
     }
-    if ($key === 'cezma') {
+    if ($key === 'mnfean' && false) {
         $all = cezma_all_products();
         foreach ($all as &$x) {
             $x = normalize_product_record($x, $key);
@@ -1602,7 +1602,7 @@ function wf_home_platform_window($pk, $limit) {
         if (is_array($c) && isset($c['items']) && is_array($c['items']) && $c['items']) $items = $c['items'];
     }
     if ($items === null) {
-        $all = ($key === 'cezma') ? cezma_recent_products(900) : platform_products_lite($key);
+        $all = platform_products_lite($key);
         // ترتيب ascending بختم added_at (اللي من غير ختم يفضلوا الأول بترتيب الملف) — فالآخر يبقى الأحدث فعلًا
         usort($all, function ($a, $b) {
             return strcmp((string)($a['added_at'] ?? ''), (string)($b['added_at'] ?? ''));
@@ -1623,7 +1623,7 @@ function platform_products($key, $lite = false) {
     if ($lite) return platform_products_lite($key);
     static $cache = [];
     if (isset($cache[$key])) return $cache[$key];
-    if ($key === 'cezma') return $cache[$key] = platform_products_lite($key);
+    if ($key === 'mnfean' && false) return $cache[$key] = platform_products_lite($key);
     $all = jload($key . '.json', []);
     if (!$all) $all = jload('lite_' . $key . '.json', []);
     foreach ($all as &$x) {
@@ -1640,13 +1640,15 @@ function platform_products($key, $lite = false) {
 // الطريقة الجديدة: نقرا نص الملف مرة واحدة لكل منصة ونقطّع سجل واحد بس ونفكه.
 // ============================================================================
 function wf_catalog_plats() {
-    return ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma', 'manual'];
+    return ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'manual'];
 }
 
 // نص ملف الكتالوج الخام لمنصة واحدة (مرة واحدة في الطلب — نص فقط، بدون فك كتالوج)
 
 // ===== Cezma: كتالوج مقسم لشظايا (data/cezma_shards/lite_cezma_XX.json) =====
 function cezma_shard_files() {
+    return [];
+
     static $files = null;
     if ($files !== null) return $files;
     $files = glob(DATA_DIR . '/cezma_shards/lite_cezma_*.json') ?: [];
@@ -1662,6 +1664,8 @@ if (!defined('WF_CEZMA_POOL_SHARDS')) define('WF_CEZMA_POOL_SHARDS', 17);
 //   • مع تغيّر الساعة بتتغيّر الشظايا → الكتالوج كله بياخد فرصته في الظهور.
 // بحث المنتج الواحد بالـ ID مش متأثر: wf_catalog_find_record بيقرأ الشظايا كلها.
 function cezma_pool_files() {
+    return [];
+
     static $pool = null;
     if ($pool !== null) return $pool;
     $files = cezma_shard_files();
@@ -1674,6 +1678,8 @@ function cezma_pool_files() {
     return $pool = $out;
 }
 function cezma_all_products() {
+    return [];
+
     static $all = null;
     if ($all !== null) return $all;
     $all = [];
@@ -1686,6 +1692,8 @@ function cezma_all_products() {
 
 // فهرس مشتق من الشظايا يبنيه updater؛ لا نستخدمه إلا إذا طابق توقيع المصدر الحالي.
 function cezma_search_index_manifest() {
+    return null;
+
     static $loaded = false, $manifest = null;
     if ($loaded) return $manifest;
     $loaded = true;
@@ -1768,6 +1776,8 @@ function cezma_search_index_manifest() {
 }
 
 function cezma_index_override_flags() {
+    return [];
+
     static $flags = null;
     if ($flags !== null) return $flags;
     $flags = ['title' => false, 'hidden' => false];
@@ -1781,6 +1791,8 @@ function cezma_index_override_flags() {
 }
 
 function cezma_search_index_path($filename, $kind = 'product') {
+    return null;
+
     if (!is_string($filename)) return null;
     $pattern = $kind === 'search'
         ? '/^search_[0-9a-f]\\.json$/D'
@@ -1790,6 +1802,8 @@ function cezma_search_index_path($filename, $kind = 'product') {
 }
 
 function cezma_search_index_read_json($filename, $manifest, $kind = 'product') {
+    return null;
+
     $path = cezma_search_index_path($filename, $kind);
     if ($path === null) return null;
     $raw = @file_get_contents($path);
@@ -1802,6 +1816,8 @@ function cezma_search_index_read_json($filename, $manifest, $kind = 'product') {
 }
 
 function cezma_search_index_is_list($value) {
+    return false;
+
     if (!is_array($value)) return false;
     $expected_key = 0;
     foreach ($value as $key => $_item) {
@@ -1811,6 +1827,8 @@ function cezma_search_index_is_list($value) {
 }
 
 function cezma_search_query_trigrams($query) {
+    return [];
+
     $chars = preg_split('//u', mb_strtolower((string)$query, 'UTF-8'), -1, PREG_SPLIT_NO_EMPTY);
     if (!is_array($chars) || count($chars) < 3) return null;
     $grams = [];
@@ -1822,6 +1840,8 @@ function cezma_search_query_trigrams($query) {
 
 // يرجع null لو الفهرس ناقص/قديم (فيكمل المسار الأصلي)، وقائمة فارغة لو لا توجد نتائج.
 function cezma_indexed_products($cat, $q) {
+    return [];
+
     $manifest = cezma_search_index_manifest();
     if ($manifest === null) return null;
 
@@ -1892,7 +1912,7 @@ function cezma_indexed_products($cat, $q) {
             }
             $order = (int)$row['__wf_cezma_order'];
             unset($row['__wf_cezma_order']);
-            $row = normalize_product_record($row, 'cezma');
+            $row = normalize_product_record($row, 'mnfean');
             $row['category'] = wf_cezma_site_category($row['category'] ?? '', $row['name'] ?? '');
             if (!$row || !cezma_filter_available_rows([$row])) continue;
             // تطبيق المطابقة الدقيقة فورًا يقلّل الذاكرة في البحث واسع المرشحين؛ وتُعاد الفلاتر لاحقًا كحارس.
@@ -1910,7 +1930,7 @@ function cezma_indexed_products($cat, $q) {
         unset($product['__wf_cezma_order']);
     }
     unset($product);
-    return apply_product_overrides($products, 'cezma');
+    return apply_product_overrides($products, 'mnfean');
 }
 
 function cezma_search_index_category_counts($country = 'all') {
@@ -1932,7 +1952,7 @@ function cezma_search_index_category_counts($country = 'all') {
 
     // Missing/stale index or hidden overrides: use the original full Cezma scan.
     $out = [];
-    foreach (platform_products_lite('cezma') as $product) {
+    foreach (platform_products_lite('mnfean') as $product) {
         if ($country !== 'all' && ($product['country'] ?? 'مصر') !== $country) continue;
         $category = wf_normalize_category($product['category'] ?? '');
         if ($category === '' || in_array($category, ['المنتجات الرقمية', 'سوشيال ميديا', 'منتجات رقمية'], true)) continue;
@@ -1945,6 +1965,8 @@ function cezma_search_index_category_counts($country = 'all') {
 // نقرأ الشظايا من النهاية ونحتفظ بصفوفها مؤقتًا داخل الطلب؛ صفحات الترقيم تطلب
 // نافذة أكبر تدريجيًا، بينما البحث والتصفية الدقيقة يستمران باستخدام المسار الكامل.
 function cezma_recent_products($limit) {
+    return [];
+
     $limit = max(0, min(100000, (int)$limit));
     if ($limit === 0) return [];
 
@@ -1966,7 +1988,7 @@ function cezma_recent_products($limit) {
         while ($row_pos >= 0 && count($newest_first) < $limit) {
             $row = $rows[$row_pos--];
             if (!is_array($row)) continue;
-            $row = normalize_product_record($row, 'cezma');
+            $row = normalize_product_record($row, 'mnfean');
             $row['category'] = wf_cezma_site_category($row['category'] ?? '', $row['name'] ?? '');
             if (!cezma_filter_available_rows([$row])) continue;
             $newest_first[] = $row;
@@ -1978,7 +2000,7 @@ function cezma_recent_products($limit) {
         return strcmp((string)($b['added_at'] ?? ''), (string)($a['added_at'] ?? ''));
     });
     $tail = array_reverse(array_slice($newest_first, 0, $limit));
-    return apply_product_overrides($tail, 'cezma');
+    return apply_product_overrides($tail, 'mnfean');
 }
 // IDs discovered from live unavailable-product reports; kept hidden even if the source feed still lists them.
 function cezma_unavailable_ids() {
@@ -1997,10 +2019,14 @@ function cezma_unavailable_ids() {
     return $ids;
 }
 function cezma_is_unavailable_id($id) {
+    return false;
+
     $id = preg_replace('/^cezma-/', '', trim((string)$id));
     return $id !== '' && isset(cezma_unavailable_ids()[$id]);
 }
 function cezma_mark_unavailable_id($id) {
+    return;
+
     $id = preg_replace('/^cezma-/', '', trim((string)$id));
     if ($id === '' || !ctype_digit($id)) return;
     jupdate('cezma_unavailable.json', function (&$ids) use ($id) {
@@ -2011,6 +2037,8 @@ function cezma_mark_unavailable_id($id) {
     unset($GLOBALS['_CEZMA_UNAVAILABLE_IDS']);
 }
 function cezma_contains_unavailable_notice($value) {
+    return false;
+
     $needle = preg_replace('/\\s+/u', '', 'هذا المنتج غير متوفر في الوقت الحالي');
     if (is_string($value)) {
         $text = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -2021,6 +2049,8 @@ function cezma_contains_unavailable_notice($value) {
     return false;
 }
 function cezma_filter_available_rows($rows) {
+    return $all ?? [];
+
     if (!is_array($rows)) return [];
     $ids = cezma_unavailable_ids();
     return array_values(array_filter($rows, function ($row) use ($ids) {
@@ -2093,6 +2123,8 @@ function cezma_extract_variant_options($product) {
 // إغناء منتج سيزما بالتفاصيل الكاملة (كل الصور + الوصف + المواصفات) من API سيزما،
 // مع كاش على الاستضافة data/cezma_details/<id>.json عشان تتجاب مرة واحدة بس.
 function cezma_enrich_record($row) {
+    return $row ?? null;
+
     $cid = (int)($row['extra']['cezma_id'] ?? $row['orig_id'] ?? 0);
     if ($cid <= 0) return $row;
     if (cezma_is_unavailable_id($cid)) return null;
@@ -2176,9 +2208,8 @@ function wf_catalog_raw($plat) {
     if ($plat === '') return '';
     if (array_key_exists($plat, $cache)) return $cache[$plat];
     $raw = '';
-    if ($plat === 'cezma') {
-        $sh = cezma_shard_files();
-        return $cache[$plat] = $sh ? (string)@file_get_contents($sh[0]) : '';
+    if ($plat === 'mnfean') {
+        // mnfean uses generic lite_mnfean.json / mnfean.json handling below
     }
     foreach ([$plat . '.json', 'lite_' . $plat . '.json'] as $fn) {
         $path = DATA_DIR . '/' . $fn;
@@ -2210,7 +2241,7 @@ function wf_json_object_slice($raw, $start) {
 // استخراج سجل منتج واحد من نص كتالوج منصة (بالـ id أو بالـ orig_id)
 function wf_catalog_find_record($plat, $id) {
     if ($plat === 'manual') return manual_product_find($id);
-    if ($plat === 'cezma') {
+    if ($plat === 'cezma' && false) {
         // Fast path: id-hash buckets (data/cezma_buckets/b_<md5(id)[:2]>.json).
         // One small read per lookup instead of scanning all shards (slow host disk).
         $cands = [];
@@ -2307,7 +2338,7 @@ function find_product_by_id($id, $plat_hint = '') {
         foreach ($tries as $try) {
             $row = wf_catalog_find_record($pl, $try);
             if (is_array($row)) {
-                if ($pl === 'cezma') {
+                if ($pl === 'mnfean' && false) {
                     $row = cezma_enrich_record($row);
                     if (!is_array($row)) return $memo[$mkey] = null;
                     // نفس توحيد الأقسام اللي بيحصل في قوائم المنتجات (صفحة المنتج بتقرا السجل الخام)
@@ -2324,7 +2355,7 @@ function find_product_by_id($id, $plat_hint = '') {
 }
 
 // خلط المنتجات بالتناوب (Round-Robin): منتج من تايم هاند → صفقة → فيندور → ليدجر → أنجزني
-function mix_by_platform($items, $order = ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'cezma', 'manual']) {
+function mix_by_platform($items, $order = ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'mnfean', 'manual']) {
     $groups = [];
     foreach ($order as $ok) $groups[$ok] = [];
     foreach ($items as $it) {
@@ -2359,7 +2390,7 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         $plats = ['m5zoon', 'manual'];
     } else {
         // الترتيب المطلوب بالضبط: تايم هاند → صفقة → فيندور → ليدجر → أنجزني → شوب مارت → سيزما
-        $plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'cezma', 'manual'];
+        $plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean', 'manual'];
     }
     $views = jload('views.json', []);
     static $soldmap_memo = null;
@@ -2377,25 +2408,25 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         // البحث والتصنيفات تستخدم فهرس سيزما عند صلاحيته، وإلا فالمسار الكامل الأصلي.
         // الصفحة الرئيسية تظل تقرأ نافذة أحدث فقط لتقليل الذاكرة.
         $cezma_indexed = null;
-        if ($pk === 'cezma' && ($q !== '' || ($cat !== '' && $cat !== 'all' && !in_array($cat, ['المنتجات المميزة', 'أحدث المنتجات', 'الأكثر مبيعاً', 'الأكثر مشاهدة'], true)))) {
+        if ($pk === 'mnfean' && false && ($q !== '' || ($cat !== '' && $cat !== 'all' && !in_array($cat, ['المنتجات المميزة', 'أحدث المنتجات', 'الأكثر مبيعاً', 'الأكثر مشاهدة'], true)))) {
             $cezma_indexed = cezma_indexed_products($cat, $q);
         }
         $use_home_window = ($source_limit !== null && $q === '' && $pk !== 'manual' && ((int)$source_limit + 100) <= 900);
         if ($cezma_indexed !== null) {
             $arr = $cezma_indexed;
-        } elseif ($pk === 'cezma' && ($source_limit !== null ||
+        } elseif ($pk === 'mnfean' && false && ($source_limit !== null ||
             // المتجر الافتراضي و«المنتجات المميزة» بلا فلاتر: نافذة محدودة من الأحدث بدل تطييع 43 ألف منتج في كل طلب.
             // «أحدث المنتجات» و«الأكثر مبيعاً/مشاهدة» تظل بالمسار الكامل لأنها صارت مرتبة على الكتالوج كاملاً.
             ($q === '' && in_array($cat, ['', 'all', 'المنتجات المميزة'], true)))) {
             $arr = $use_home_window
-                ? wf_home_platform_window('cezma', (int)$source_limit + 100)
-                : cezma_recent_products($source_limit !== null ? max(1, (int)$source_limit + 100) : 3000);
+                ? wf_home_platform_window('mnfean', (int)$source_limit + 100)
+                : platform_products_lite('mnfean') !== null ? max(1, (int)$source_limit + 100) : 3000);
         } else {
             $arr = $use_home_window
                 ? wf_home_platform_window($pk, (int)$source_limit + 100)
                 : platform_products_lite($pk);
         }
-        if ($source_limit !== null && $pk !== 'cezma' && count($arr) > (int)$source_limit + 100) {
+        if ($source_limit !== null && $pk !== 'mnfean' && count($arr) > (int)$source_limit + 100) {
             // الأقسام الأفقية ولوحة المنتجات الافتراضية تحتاج مرشحين حديثين فقط؛
             // نحدّ القائمة قبل الفلاتر والفرز المكلفين بدل فرز الكتالوج كاملًا.
             $arr = array_slice($arr, -((int)$source_limit + 100));
@@ -2796,12 +2827,12 @@ function categories_by_mode($mode = 'physical', $country = 'all', $include_cezma
     $plats = in_array($country, $gulf, true)
         ? ['m5zoon']
         : ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart'];
-    if (!in_array($country, $gulf, true) && $include_cezma) $plats[] = 'cezma';
+    if (!in_array($country, $gulf, true) && $include_cezma) $plats[] = 'mnfean';
     // المنتجات اليدوية لكل الدول: كل منتج بياخد دولته (وعملتها) من لوحة الأدمن
     $plats[] = 'manual';
     $cats = [];
     foreach ($plats as $pk) {
-        if ($pk === 'cezma') {
+        if ($pk === 'mnfean' && false) {
             foreach (cezma_search_index_category_counts($country) as $category => $count) {
                 $cats[$category] = ($cats[$category] ?? 0) + (int)$count;
             }
@@ -4920,7 +4951,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
     // Display the existing Egyptian supplier rates, not one shared Vendoor table.
     // Non-EGP shipping/accounting behaviour is unchanged and still shows the currency warning.
     $ship_by_platform = [];
-    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'shopmart', 'cezma'] as $ship_platform) {
+    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'shopmart', 'mnfean'] as $ship_platform) {
         $ship_by_platform[$ship_platform] = site_ship_map($ship_platform);
     }
     $ship_by_platform['safka'] = $ship_by_platform['safqa'];

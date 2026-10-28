@@ -12,9 +12,9 @@ on:
       - 'assets/**'
       - 'data/id_index.json'
       - 'updater/update_catalog.py'
-      - '.github/workflows/audit-cezma-pages.yml'
+      - 'updater/mnfean.py'
       - 'updater/category_overrides.json'
-      - 'updater/visual_cezma.py'
+      - 'updater/mnfean.py'
       - 'updater/visual_features.py'
       - '.github/workflows/update-catalog.yml'
   schedule:
@@ -56,18 +56,14 @@ jobs:
         if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}
         run: pip install --quiet pillow requests
 
-      - name: استرجاع فهرس سيزما من الكاش (بيكمّل من آخر تشغيل)
-        if: ${{ github.event_name != 'workflow_dispatch' || !contains(github.event.inputs.only, 'index-only') }}
+      - name: استرجاع الكاش (عام)
         uses: actions/cache@v4
         with:
           path: |
-            data/visual_cezma.bin
-            data/visual_cezma.idx
-            data/visual_cezma.bin.part-*
-            data/visual_cezma.idx.part-*
-          key: visual-cezma-${{ github.run_id }}
+            data/cache
+          key: catalog-cache-${{ github.run_id }}
           restore-keys: |
-            visual-cezma-
+            catalog-cache-
 
       - name: تشغيل المحدّث + رفع FTP
         if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
@@ -79,7 +75,8 @@ jobs:
           ONLY_INPUT: ${{ github.event.inputs.only }}
           USD_EGP: ${{ vars.USD_EGP || '56' }}
           VISUAL_FEATURES_BUDGET: '900'
-          VISUAL_CEZMA_BUDGET: '1800'
+          MNFEAN_USER: ${{ secrets.MNFEAN_USER || vars.MNFEAN_USER || 'ae782236@gmail.com' }}
+          MNFEAN_PASS: ${{ secrets.MNFEAN_PASS || vars.MNFEAN_PASS || 'aA55667788' }}
           SAFQA_API_KEY: ${{ secrets.SAFQA_API_KEY }}
           VENDOOR_USER: ${{ secrets.VENDOOR_USER }}
           VENDOOR_PASS: ${{ secrets.VENDOOR_PASS }}
@@ -103,12 +100,12 @@ jobs:
             python updater/update_catalog.py "${only_args[@]}"
           fi
 
-      - name: Upload Cezma page audit report
+      - name: Upload Mnfean report (if any)
         if: ${{ always() && hashFiles('data/cezma_page_audit_report.json') != '' }}
         uses: actions/upload-artifact@v4
         with:
-          name: cezma-product-page-audit-${{ github.run_id }}
-          path: data/cezma_page_audit_report.json
+          name: mnfean-report-${{ github.run_id }}
+          path: data/mnfean_report.json
           if-no-files-found: warn
           retention-days: 30
 
@@ -233,8 +230,7 @@ jobs:
           git config user.name  "catalog-bot"
           git config user.email "bot@users.noreply.github.com"
           git add data/*.json || true
-          git add data/cezma_shards/*.json || true
-          git add -u data/cezma_shards/ || true
+          git add data/mnfean.json data/lite_mnfean.json || true
           git diff --cached --quiet && echo "لا تغييرات" || git commit -m "🤖 تحديث الكتالوج $(date -u +'%Y-%m-%d %H:%M UTC')" && git push
 
       - name: تأكيد اكتمال رفع FTP

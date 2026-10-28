@@ -9,6 +9,10 @@
   5) يرفع الملفات المتغيرة فقط على FTP مع تحقق بايت-ببايت في نفس الاتصال
 """
 import json, os, re, sys, time, io, hashlib, ftplib, urllib.request, urllib.parse, datetime, html
+try:
+    import mnfean
+    HAS_MNFEAN=True
+except: HAS_MNFEAN=False
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'data')
@@ -24,23 +28,16 @@ summary = {}
 changed_files = set()
 
 # إشعارات «منتج جديد» لكل المسوقين: لقطه ids قبل التحديث، ومقارنة بعد التشغيل
-_NOTIFY_PLATFORMS = ('hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'sources', 'cezma')
+_NOTIFY_PLATFORMS = ('hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'sources', 'mnfean')
 
 def _cezma_shard_files():
-    import glob as _g
-    return sorted(_g.glob(os.path.join(DATA, 'cezma_shards', 'lite_cezma_*.json')))
+    return []
 
 def _cezma_shard_name(path):
-    return 'cezma_shards/' + os.path.basename(path)
+    return ''
 
 def snapshot_platform_ids():
     snap = {p: {str(x.get('id')) for x in jload(p + '.json', [])} for p in _NOTIFY_PLATFORMS}
-    shards = {}
-    for path in _cezma_shard_files():
-        rel = os.path.relpath(path, ROOT).replace(os.sep, '/')
-        rows = jload(_cezma_shard_name(path), [])
-        shards[rel] = {str(x.get('id')) for x in rows if isinstance(x, dict)}
-    snap['cezma_shards'] = shards
     return snap
 
 def stamp_new_products(pre_ids):
@@ -52,7 +49,7 @@ def stamp_new_products(pre_ids):
     """
     new_cezma = []
     for p in _NOTIFY_PLATFORMS:
-        if p == 'cezma':
+        if p == 'mnfean' and False:
             continue
         rows = jload(p + '.json', [])
         if not isinstance(rows, list) or not rows:
@@ -807,7 +804,7 @@ def apply_category_overrides():
 def repair_product_categories():
     """مراجعة أقسام المنتجات في كل الأفلييتات: توحيد القيم + تصحيح الواقع في القسم الافتراضي غلط."""
     fixed = 0
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
         rows = jload(plat + '.json', [])
         if not isinstance(rows, list) or not rows: continue
         ch = 0
@@ -824,7 +821,7 @@ def repair_product_categories():
     fixed += apply_category_overrides()
     # سيزما: منتجاتها متخزّنة في شظايا (data/cezma_shards/lite_cezma_*.json) مش في cezma.json،
     # وأقسامها أقسام سيزما الرئيسية — بتتوحّد مع أقسام الموقع (شوف cezma_category تحت).
-    fixed += repair_cezma_shards()
+    # mnfean does not need shard repair
     if fixed: summary['categories'] = {'fixed': fixed}; log('categories: total fixed', fixed)
     return fixed
 
@@ -2018,7 +2015,7 @@ def update_json_sources():
 # ---------------------------------------------------------------- clean names & images
 def clean_catalog_names_and_images():
     """تنظيف أسماء المنتجات والصور من الروابط الوهمية (place-holder / '/') والتكرار والأسماء المبتورة"""
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
         rows = jload(plat + '.json', None)
         if not isinstance(rows, list): continue
         dedup = []
@@ -2135,7 +2132,7 @@ def rebuild_lite():
     """يحدّث lite_*.json مع الحفاظ على بنيته الحالية (نلمس فقط الحقول المتغيرة)"""
     SYNC = ['price', 'price_text', 'old_price', 'discount', 'stock', 'name', 'category', 'sizes', 'cost', 'commission', 'currency',
             'added_at', 'price_drop_at', 'price_updated_at', 'unavailable_since', 'availability', 'is_available']
-    for plat in ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma']:
+    for plat in ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean']:
         full = jload(f'{plat}.json', None)
         if full is None: continue
         old_lite = {str(x.get('id')): x for x in jload(f'lite_{plat}.json', [])}
@@ -2171,9 +2168,9 @@ def rebuild_lite():
             lite.append(y)
         jsave(f'lite_{plat}.json', lite)
     idx_map = {}
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
         for fn in (f'{plat}.json', f'lite_{plat}.json'):
-            rows = _cezma_load_shards() if plat == 'cezma' and fn.startswith('lite_') else jload(fn, [])
+            rows = jload(fn, [])
             if not isinstance(rows, list): continue
             for r in rows:
                 pid = str(r.get('id', '')).strip() if isinstance(r, dict) else ''
@@ -2257,7 +2254,7 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
 # ---------------------------------------------------------------- Open production: normalized virtual stock; source inventory never limits sales.
 def force_open_production():
     open_qty = 999999
-    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma']
+    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean']
     def open_item(item):
         if not isinstance(item, dict): return
         item['stock'] = open_qty
@@ -2308,8 +2305,8 @@ def site_deploy_files():
         if os.path.isfile(os.path.join(ROOT, extra)):
             out.add(extra)
     import glob as _g
-    out.update(os.path.relpath(f, ROOT).replace('\\', '/') for f in sorted(_g.glob(os.path.join(DATA, 'cezma_shards', 'lite_cezma_*.json'))))
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'cezma'):
+    # cezma shards removed
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
         for fn in (f'data/{plat}.json', f'data/lite_{plat}.json'):
             if os.path.isfile(os.path.join(ROOT, fn)):
                 out.add(fn)
@@ -2318,9 +2315,9 @@ def site_deploy_files():
     for extra_fn in ('data/id_index.json', 'data/detail_index.json', 'data/catalog_counts.json', 'data/shipping.json', 'data/shipping_cities_shopmart.json', 'data/shipping_cities_gulf.json', 'data/visual_index.json', 'data/visual_features.json'):
         if os.path.isfile(os.path.join(ROOT, extra_fn)):
             out.add(extra_fn)
-    out.update(os.path.relpath(f, ROOT).replace(os.sep, '/') for f in sorted(_g.glob(os.path.join(DATA, 'visual_cezma.*.part-*'))))
-    out.update(os.path.relpath(f, ROOT).replace(os.sep, '/') for f in sorted(_g.glob(os.path.join(DATA, 'zz_cezma_index', '*.json'))))
-    out.update(os.path.relpath(f, ROOT).replace(os.sep, '/') for f in sorted(_g.glob(os.path.join(DATA, 'cezma_buckets', 'b_*.json'))))
+    # visual_cezma parts removed
+    # zz_cezma_index removed
+    # cezma buckets removed
     return out
 
 def ftp_upload(files, cleanup_source_shards=True):
@@ -2347,18 +2344,16 @@ def ftp_upload(files, cleanup_source_shards=True):
     # Shared PHP helpers must arrive before controllers; publish the index manifest last.
     def _upload_order(rel):
         priority = 0 if rel in ('ui-components.php', 'ui-runtime.php') else (2 if rel.startswith('data/') else 1)
-        manifest_last = 1 if rel == 'data/zz_cezma_index/zz_manifest.json' else 0
+        manifest_last = 0
         return priority, manifest_last, rel
     ordered_files = sorted(files, key=_upload_order)
     for rel in ordered_files:
-        if (rel.startswith('data/cezma_shards/') or rel.startswith('data/zz_cezma_index/') or rel.startswith('data/cezma_buckets/')) and 'data/catalog_counts.json' in failed:
+        if False and 'data/catalog_counts.json' in failed:
             failed.append(rel)
             log('⏭️ skipped Cezma source/index/buckets because catalog signature did not upload:', rel)
             continue
-        if rel == 'data/zz_cezma_index/zz_manifest.json':
-            blockers = [name for name in failed if name.startswith('data/cezma_shards/') or
-                        (name.startswith('data/zz_cezma_index/') and name != rel) or
-                        name.startswith('data/cezma_buckets/')]
+        if False:
+            blockers = []
             if blockers:
                 failed.append(rel)
                 log('⏭️ skipped Cezma index manifest because a source/index file failed')
@@ -2367,7 +2362,7 @@ def ftp_upload(files, cleanup_source_shards=True):
         if not os.path.isfile(local_path): continue
         data = open(local_path, 'rb').read()
         # فهارس الصور متعددة الصور أكبر من ملفات الكتالوج العادية؛ ارفع لها حدًا مناسبًا.
-        if rel in ('data/visual_cezma.bin', 'data/visual_cezma.idx'):
+        if False and rel in ('data/visual_cezma.bin', 'data/visual_cezma.idx'):
             _limit = 96 * 1024 * 1024
         elif rel == 'data/visual_features.json':
             _limit = 32 * 1024 * 1024
@@ -2398,7 +2393,7 @@ def ftp_upload(files, cleanup_source_shards=True):
                     except Exception as e2: log('❌ reconnect failed:', str(e2)[:160])
         if not done:
             failed.append(rel); log('❌ failed', rel)
-            if 'visual_cezma' in rel:
+            if False and 'visual_cezma' in rel:
                 # تشخيص: هل الملف موجود على السيرفر؟ وحجمه؟
                 try:
                     _names = [n for n in ftp.nlst('data') if 'visual' in n]
@@ -3707,7 +3702,7 @@ def _audit_requested_in_push():
 
 
 if __name__ == '__main__':
-    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'cezma']
+    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean']
     _pre_platform_ids = snapshot_platform_ids()  # قبل أي تحديث: عشان نعرف المنتجات الجديدة في الآخر
     if only == ['deploy'] and _audit_requested_in_push():
         only = ['cezma-audit']
@@ -3732,19 +3727,12 @@ if __name__ == '__main__':
             summary['gamsgo_probe'] = {'error': str(_pe)[:200]}
             jsave('gamsgo_probe.json', {'at': NOW, 'error': str(_pe)[:300]})
     for step, fn in (('hevo', update_hevo), ('g2g', update_g2g), ('gamsgo', update_gamsgo), ('gamsgo_probe', gamsgo_probe), ('safqa', update_safqa), ('vendoor', update_vendoor),
-                     ('m5zoon', update_m5zoon), ('angazny', update_angazny), ('timehand', update_timehand), ('sources', update_json_sources), ('shopmart_probe', probe_shopmart), ('shopmart', update_shopmart), ('shopmart_shipping', update_shopmart_shipping), ('cezma', update_cezma)):
+                     ('m5zoon', update_m5zoon), ('angazny', update_angazny), ('timehand', update_timehand), ('sources', update_json_sources), ('shopmart_probe', probe_shopmart), ('shopmart', update_shopmart), ('shopmart_shipping', update_shopmart_shipping)):
         if step not in only: continue
         try: fn()
         except Exception as e:
             log(f'❌ {step} failed: {e}'); summary[step] = {'error': str(e)[:200]}
-    # Prune unavailable Cezma placeholder records on every run, including deploy-only runs.
-    remove_cezma_unavailable_notice_products()
-    # سيزما بقت 2026 بس: احذف أي منتج اتعمل قبل 2026 في كل تشغيل (بما فيها تشغيل النشر فقط)،
-    # عشان منتجات 2025 ماترجعش من شظية قديمة أو فرع تاني أو إعادة استيراد.
-    remove_pre_2026_cezma()
-    # Enforce the Cezma price floor on every run, including deploy-only runs,
-    # so removed products cannot return through a partial/update-skipped run.
-    remove_low_price_cezma()
+    # cezma pruning removed — mnfean has no such restrictions
     clean_catalog_names_and_images()
     normalize_physical_commissions()
     remove_blocked_products()
