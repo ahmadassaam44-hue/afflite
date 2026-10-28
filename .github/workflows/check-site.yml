@@ -10,16 +10,14 @@ jobs:
           for u in "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1"; do
             echo "=== $u ==="
             curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "$u" || echo "curl fail $?"
-            echo "headers:"
+            echo "HEADERS:"
             cat /tmp/h.txt
-            echo "body size $(wc -c < /tmp/b.txt)"
-            head -n 20 /tmp/b.txt
-            echo "---"
-            curl -s -L -D /tmp/h2.txt -o /tmp/b2.txt --max-time 20 "$u" || echo "curl L fail $?"
-            echo "L headers:"
-            cat /tmp/h2.txt | head -n 20
-            echo "L body head:"
-            head -n 20 /tmp/b2.txt
+            echo "BODY head:"
+            head -c 1000 /tmp/b.txt | od -c | head
+            # emit as notice
+            H=$(head -n 10 /tmp/h.txt | tr '\n' ' ' | cut -c1-800)
+            echo "::notice::H $u -> $H"
+            B=$(head -c 500 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
+            echo "::notice::B $u -> $B"
           done
           echo "done"
-          echo "::notice::DONE"
