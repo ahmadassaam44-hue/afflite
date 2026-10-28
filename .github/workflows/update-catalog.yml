@@ -77,6 +77,8 @@ jobs:
           VISUAL_FEATURES_BUDGET: '900'
           MNFEAN_USER: ${{ secrets.MNFEAN_USER || vars.MNFEAN_USER || 'ae782236@gmail.com' }}
           MNFEAN_PASS: ${{ secrets.MNFEAN_PASS || vars.MNFEAN_PASS || 'aA55667788' }}
+          STOREDOOO_USER: ${{ secrets.STOREDOOO_USER || vars.STOREDOOO_USER || secrets.MNFEAN_USER || 'ae782236@gmail.com' }}
+          STOREDOOO_PASS: ${{ secrets.STOREDOOO_PASS || vars.STOREDOOO_PASS || secrets.MNFEAN_PASS || 'aA55667788' }}
           SAFQA_API_KEY: ${{ secrets.SAFQA_API_KEY }}
           VENDOOR_USER: ${{ secrets.VENDOOR_USER }}
           VENDOOR_PASS: ${{ secrets.VENDOOR_PASS }}
