@@ -13,36 +13,39 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY' || true
-          import ftplib, io
+          import ftplib
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          # rename php.ini
           try:
               f.rename('php.ini','php.ini.bak')
               print("renamed php.ini")
+              print("::notice::RENAMED php.ini")
           except Exception as e:
-              print(f"rename php.ini fail {e}")
+              print(f"rename fail {e}")
+              print(f"::notice::RENAME_FAIL {e}")
           f.quit()
           PY
-          echo "renamed"
           sleep 5
-          curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "https://wafirinhalk.ct.ws/test2.php?i=1" || echo "curl fail"
-          cat /tmp/h.txt | head -n 20
-          cat /tmp/b.txt | head -n 20
-          echo "size $(wc -c < /tmp/b.txt)"
-          # restore
+          curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "https://wafirinhalk.ct.ws/test2.php?i=1" || echo "curl fail $?"
+          H=$(cat /tmp/h.txt 2>/dev/null | head -n 10 | tr '\n' ' ' | cut -c1-800)
+          B=$(cat /tmp/b.txt 2>/dev/null | head -c 500 | tr '\n' ' ' | cut -c1-800)
+          echo "::notice::AFTER_RENAME_H $H"
+          echo "::notice::AFTER_RENAME_B $B size $(wc -c < /tmp/b.txt 2>/dev/null)"
           python - <<'PY' || true
           import ftplib
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
           try:
               f.rename('php.ini.bak','php.ini')
-              print("restored php.ini")
-          except:
+              print("restored")
+              print("::notice::RESTORED")
+          except Exception as e:
+              print(f"restore fail {e}")
               try:
                   f.storbinary('STOR php.ini', open('php.ini','rb'))
                   print("restored via STOR")
-              except Exception as e:
-                  print(f"restore fail {e}")
+                  print("::notice::RESTORED_STOR")
+              except Exception as e2:
+                  print(f"restore stor fail {e2}")
           f.quit()
           PY
