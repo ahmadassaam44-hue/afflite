@@ -6,9 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          for u in "https://wafirinhalk.ct.ws/error.php?c=500&i=1" "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/hello.html?i=1"; do
-            echo "URL $u"
-            curl -s -i -L "$u" --max-time 20 -o /tmp/b.txt -w "HTTP_CODE:%{http_code} SIZE:%{size_download}\n" 2>&1
-            head -n 30 /tmp/b.txt
-            echo "---"
-          done
+          echo "test hello.html"
+          curl -s -i -L "https://wafirinhalk.ct.ws/hello.html?i=1" --max-time 20 -o /tmp/b.txt -w "CODE:%{http_code}\n" 2>&1 | head -c 500
+          cat /tmp/b.txt | head -n 30
+          echo "::notice::HELLO:$(head -c 500 /tmp/b.txt | tr '\n' ' ')"
