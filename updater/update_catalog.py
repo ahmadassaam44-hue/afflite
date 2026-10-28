@@ -2209,7 +2209,7 @@ def _catalog_row_has_image(row, plat, local_detail_ids):
 
 def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
     """Build physical catalog counts — now with mnfean + storedooo (no cezma shards)."""
-    physical = ('timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean', 'storedooo')
+    physical = ('timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean')
     local_details = jload('detail_index.json', {})
     local_detail_ids = set()
     if isinstance(local_details, dict):
@@ -2259,7 +2259,7 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
 # ---------------------------------------------------------------- Open production: normalized virtual stock; source inventory never limits sales.
 def force_open_production():
     open_qty = 999999
-    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'storedooo']
+    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean']
     def open_item(item):
         if not isinstance(item, dict): return
         item['stock'] = open_qty
@@ -3707,7 +3707,7 @@ def _audit_requested_in_push():
 
 
 if __name__ == '__main__':
-    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean', 'storedooo']
+    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean']
     _pre_platform_ids = snapshot_platform_ids()  # قبل أي تحديث: عشان نعرف المنتجات الجديدة في الآخر
     if only == ['deploy'] and _audit_requested_in_push():
         only = ['cezma-audit']

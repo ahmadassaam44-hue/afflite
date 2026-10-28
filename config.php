@@ -830,7 +830,7 @@ function team_commission_reverse_for_order($order_idx, $reason = 'إلغاء/إ�
     }
     return round($total, 2);
 }
-$MARGINS = ['safqa' => 0, 'vendoor' => 0, 'timehand' => 0, 'm5zoon' => 0, 'angazny' => 0, 'shopmart' => 0, 'g2g' => 0, 'ledger' => 0, 'social' => 0, 'mnfean' => 0, 'storedooo' => 0];
+$MARGINS = ['safqa' => 0, 'vendoor' => 0, 'timehand' => 0, 'm5zoon' => 0, 'angazny' => 0, 'shopmart' => 0, 'g2g' => 0, 'ledger' => 0, 'social' => 0, 'mnfean' => 0];
 // أسماء المنصات للعرض
 
 function social_plat($name) {
@@ -858,7 +858,7 @@ function social_plat($name) {
     }
     return 'أخرى';
 }
-$PLATFORM_NAMES = ['manual' => 'منتجات يدوية', 'g2g' => '🎮 رقمي', 'social' => '📣 سوشيال ميديا', 'm5zoon' => 'M5zoon', 'vendoor' => 'Vendoor', 'safqa' => 'Safqa', 'timehand' => 'Time Hand', 'angazny' => 'Angazny', 'shopmart' => 'Shopmart', 'mnfean' => 'Mnfean', 'storedooo' => 'Storedooo'];
+$PLATFORM_NAMES = ['manual' => 'منتجات يدوية', 'g2g' => '🎮 رقمي', 'social' => '📣 سوشيال ميديا', 'm5zoon' => 'M5zoon', 'vendoor' => 'Vendoor', 'safqa' => 'Safqa', 'timehand' => 'Time Hand', 'angazny' => 'Angazny', 'shopmart' => 'Shopmart', 'mnfean' => 'Mnfean'];
 function platform_name($plat, $remote = []) {
     global $PLATFORM_NAMES;
     if (isset($remote[$plat]['name'])) return $remote[$plat]['name'];
@@ -881,7 +881,7 @@ function wf_round_5_or_0($v) {
 function wf_round_price($v) {
     return wf_round_5_or_0($v);
 }
-// زيادة 2% على أسعار المنتجات الفيزيكال بس (vendoor/timehand/safqa/angazny/m5zoon/shopmart/mnfean/storedooo).
+// زيادة 2% على أسعار المنتجات الفيزيكال بس (vendoor/timehand/safqa/angazny/m5zoon/shopmart/mnfean).
 // الرقمي والسوشيال ميديا مش متأثرين. التقريب بيفضل زي تقريب الموقع (لأقرب 5 أو 0).
 define('PHYS_PRICE_UPLIFT', 0.02);
 // قرار الإدارة الدائم (2026-10-21): تخفيض 12% على كل أسعار البيع الفيزيائية
@@ -889,7 +889,7 @@ define('PHYS_PRICE_UPLIFT', 0.02);
 // بيُطبَّق في wf_price_uplift وقت القراءة، فملفات المصدر بتفضل زي ما هي وكل تحديث cron بياخده تلقائي.
 if (!defined('PRICE_GLOBAL_DISCOUNT')) define('PRICE_GLOBAL_DISCOUNT', 0.12);
 function wf_is_physical_plat($plat) {
-    return in_array(strtolower(trim((string)$plat)), ['vendoor', 'timehand', 'safqa', 'angazny', 'm5zoon', 'shopmart', 'mnfean', 'storedooo'], true);
+    return in_array(strtolower(trim((string)$plat)), ['vendoor', 'timehand', 'safqa', 'angazny', 'm5zoon', 'shopmart', 'mnfean'], true);
 }
 function wf_price_uplift($plat, $v) {
     $v = (float)$v;
@@ -1372,7 +1372,7 @@ if (!defined('USE_SUPABASE')) define('USE_SUPABASE', false);
 function resolve_plat($id, $plat_hint = '') {
     $id = trim((string)$id);
     $plat_hint = trim((string)$plat_hint);
-    if ($plat_hint !== '' && in_array($plat_hint, ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'mnfean', 'storedooo', 'g2g', 'social'], true)) {
+    if ($plat_hint !== '' && in_array($plat_hint, ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'mnfean', 'g2g', 'social'], true)) {
         return $plat_hint;
     }
     if ($id === '') return 'vendoor';
@@ -1640,7 +1640,7 @@ function platform_products($key, $lite = false) {
 // الطريقة الجديدة: نقرا نص الملف مرة واحدة لكل منصة ونقطّع سجل واحد بس ونفكه.
 // ============================================================================
 function wf_catalog_plats() {
-    return ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'storedooo', 'manual'];
+    return ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'manual'];
 }
 
 // نص ملف الكتالوج الخام لمنصة واحدة (مرة واحدة في الطلب — نص فقط، بدون فك كتالوج)
@@ -2355,7 +2355,7 @@ function find_product_by_id($id, $plat_hint = '') {
 }
 
 // خلط المنتجات بالتناوب (Round-Robin): منتج من تايم هاند → صفقة → فيندور → ليدجر → أنجزني
-function mix_by_platform($items, $order = ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'mnfean', 'storedooo', 'manual']) {
+function mix_by_platform($items, $order = ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'mnfean', 'manual']) {
     $groups = [];
     foreach ($order as $ok) $groups[$ok] = [];
     foreach ($items as $it) {
@@ -2390,7 +2390,7 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
         $plats = ['m5zoon', 'manual'];
     } else {
         // الترتيب المطلوب بالضبط: تايم هاند → صفقة → فيندور → ليدجر → أنجزني → شوب مارت → سيزما
-        $plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean', 'storedooo', 'manual'];
+        $plats = ['timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean', 'manual'];
     }
     $views = jload('views.json', []);
     static $soldmap_memo = null;
@@ -4951,7 +4951,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
     // Display the existing Egyptian supplier rates, not one shared Vendoor table.
     // Non-EGP shipping/accounting behaviour is unchanged and still shows the currency warning.
     $ship_by_platform = [];
-    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'shopmart', 'mnfean', 'storedooo'] as $ship_platform) {
+    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'shopmart', 'mnfean'] as $ship_platform) {
         $ship_by_platform[$ship_platform] = site_ship_map($ship_platform);
     }
     $ship_by_platform['safka'] = $ship_by_platform['safqa'];

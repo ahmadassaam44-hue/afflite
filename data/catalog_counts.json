@@ -7,8 +7,7 @@
     "vendoor": 999,
     "angazny": 193,
     "shopmart": 185,
-    "mnfean": 41,
-    "storedooo": 0
+    "mnfean": 41
   },
   "physical_categories": {
     "أحذية": 510,
@@ -34,6 +33,5 @@
     "ملابس حريمي": 1,
     "ملابس رجالي": 13
   },
-  "mnfean_index_signature": "",
-  "storedooo_categories": {}
+  "mnfean_index_signature": ""
 }
