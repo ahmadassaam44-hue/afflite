@@ -6,8 +6,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          set +e
-          for u in "https://wafirinhalk.ct.ws/robots.txt?i=1" "https://wafirinhalk.ct.ws/assets/style.css?i=1" "https://wafirinhalk.ct.ws/test.php?i=1" "https://wafirinhalk.ct.ws/debug.php?i=1"; do echo "=== $u ===" >> /tmp/out.txt; curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 -L "$u" || echo "curl fail $?" >> /tmp/out.txt; cat /tmp/h.txt >> /tmp/out.txt; echo "---BODY---" >> /tmp/out.txt; head -n 20 /tmp/b.txt >> /tmp/out.txt; echo "---" >> /tmp/out.txt; done
-          cat /tmp/out.txt
-          cp /tmp/out.txt ./check_static.txt
-          git config user.name "bot"; git config user.email "bot@bot.bot"; git add check_static.txt; git commit -m "check static result" || true; git push origin main || true
+          for u in "https://wafirinhalk.ct.ws/robots.txt?i=1" "https://wafirinhalk.ct.ws/assets/style.css?i=1" "https://wafirinhalk.ct.ws/test.php?i=1"; do
+            echo "URL $u"
+            OUT=$(curl -s -i -L "$u" --max-time 20 2>&1 | head -c 1500 | tr '\n' ' ' | tr '\r' ' ')
+            echo "::notice::CURL $u -> ${OUT:0:900}"
+          done
