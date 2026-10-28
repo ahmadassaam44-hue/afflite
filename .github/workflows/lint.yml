@@ -5,14 +5,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: lint config
-        run: |
-          OUT=$(php -l config.php 2>&1 || true)
-          echo "$OUT"
-          # create annotation
-          echo "::error file=config.php,line=1::$OUT"
-          # also try notice
-          echo "::notice::$OUT"
-          # also save to output
-          echo "OUT=$OUT" >> $GITHUB_OUTPUT
-          exit 1
+      - run: php -l config.php
+      - run: php -l index.php
