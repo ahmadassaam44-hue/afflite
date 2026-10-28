@@ -6,18 +6,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          set +e
-          for u in "https://wafirinhalk.ct.ws/test2.php?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1"; do
+          for u in "https://wafirinhalk.ct.ws/hello.html?i=1" "https://wafirinhalk.ct.ws/robots.txt?i=1" "https://wafirinhalk.ct.ws/test2.php?i=1"; do
             echo "=== $u ==="
             curl -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "$u" || echo "curl fail $?"
-            echo "HEADERS:"
-            cat /tmp/h.txt
-            echo "BODY head:"
-            head -c 1000 /tmp/b.txt | od -c | head
-            # emit as notice
-            H=$(head -n 10 /tmp/h.txt | tr '\n' ' ' | cut -c1-800)
+            H=$(head -n 5 /tmp/h.txt | tr '\n' ' ' | cut -c1-800)
             echo "::notice::H $u -> $H"
-            B=$(head -c 500 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
-            echo "::notice::B $u -> $B"
+            B=$(head -c 200 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
+            echo "::notice::B $u -> $B size $(wc -c < /tmp/b.txt)"
           done
-          echo "done"
