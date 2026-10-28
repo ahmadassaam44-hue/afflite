@@ -1014,11 +1014,7 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITU
 // ============================================================================
 $GLOBALS['_JMEM'] = [];
 $GLOBALS['_JLOAD_MS'] = [];
-if (!function_exists('wfp')) {
-    function wfp($label) {}
-}
 
-// ===== زمن العناصر (تشخيص مؤقت): لا يعمل إلا مع ?perf=<WF_PERF_TOKEN> في تحقق session =====
 if (!defined('WF_PERF_TOKEN')) define('WF_PERF_TOKEN', 'perft0k17');
 (function () {
     if (($_GET['perf'] ?? '') !== WF_PERF_TOKEN) return;
@@ -2420,7 +2416,7 @@ function physical_collection($type = 'all', $country = 'all', $cat = 'all', $q =
             ($q === '' && in_array($cat, ['', 'all', 'المنتجات المميزة'], true)))) {
             $arr = $use_home_window
                 ? wf_home_platform_window('mnfean', (int)$source_limit + 100)
-                : platform_products_lite('mnfean') !== null ? max(1, (int)$source_limit + 100) : 3000);
+                : platform_products_lite('mnfean') !== null ? max(1, (int)$source_limit + 100) : 3000;
         } else {
             $arr = $use_home_window
                 ? wf_home_platform_window($pk, (int)$source_limit + 100)
