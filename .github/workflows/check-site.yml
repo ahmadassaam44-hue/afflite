@@ -5,54 +5,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: test local config load
+      - name: lint all php
         run: |
-          php -r "require 'config.php'; echo 'local ok:'.implode(',', wf_catalog_plats()).PHP_EOL;" 2>&1 | tee /tmp/local.txt
-          MSG=$(cat /tmp/local.txt | tr '\n' ' ' | cut -c1-500)
-          echo "::notice::LOCAL:${MSG}"
-      - name: FTP audit
-        env:
-          FTP_HOST: ${{ secrets.FTP_HOST }}
-          FTP_USER: ${{ secrets.FTP_USER }}
-          FTP_PASS: ${{ secrets.FTP_PASS }}
-          FTP_ROOT: /htdocs
-        run: |
-          python - <<'PY'
-          import ftplib, hashlib, io, os
-          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
-          f=ftplib.FTP(host, timeout=60)
-          f.login(user,pw)
-          f.cwd(root)
-          local=open('config.php','rb').read()
-          lh=hashlib.md5(local).hexdigest()
-          print(f"local {lh} len {len(local)}")
-          import io as bio
-          buf=bio.BytesIO()
-          f.retrbinary('RETR config.php', buf.write)
-          remote=buf.getvalue()
-          rh=hashlib.md5(remote).hexdigest()
-          same=lh==rh
-          print(f"::notice::FTP_CONFIG local {lh} remote {rh} same {same} len {len(remote)}")
-          # test.php
-          try:
-              b2=bio.BytesIO()
-              f.retrbinary('RETR test.php', b2.write)
-              print(f"::notice::TESTPHP:{b2.getvalue()[:100]}")
-          except Exception as e:
-              print(f"::notice::TESTPHP_FAIL:{e}")
-          # index.php
-          try:
-              b3=bio.BytesIO()
-              f.retrbinary('RETR index.php', b3.write)
-              print(f"::notice::INDEXPHP len {len(b3.getvalue())} md5 {hashlib.md5(b3.getvalue()).hexdigest()}")
-          except Exception as e:
-              print(f"::notice::INDEX_FAIL:{e}")
-          # debug.php
-          try:
-              b4=bio.BytesIO()
-              f.retrbinary('RETR debug.php', b4.write)
-              print(f"::notice::DEBUGPHP len {len(b4.getvalue())}")
-          except Exception as e:
-              print(f"::notice::DEBUGPHP_FAIL:{e}")
-          f.quit()
-          PY
+          set +e
+          for f in *.php dashboard/*.php updater/*.php; do
+            [ -f "$f" ] || continue
+            OUT=$(php -l "$f" 2>&1)
+            CODE=$?
+            if [ $CODE -ne 0 ]; then
+              echo "::error file=$f::${OUT}"
+            else
+              echo "::notice::$f OK"
+            fi
+            echo "$f: $OUT"
+          done
