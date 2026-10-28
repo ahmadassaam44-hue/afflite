@@ -12,35 +12,30 @@ jobs:
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
         run: |
-          python - <<'PY'
+          python - <<'PY' 2>&1 | tee /tmp/ini.txt
           import ftplib, io
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          for fn in ['php.ini','.user.ini','.htaccess']:
+          for fn in ['php.ini','.user.ini','.htaccess','php.ini.bak']:
               try:
                   b=io.BytesIO()
                   f.retrbinary(f'RETR {fn}', b.write)
                   txt=b.getvalue().decode(errors='ignore')
                   print(f"=== {fn} len {len(txt)} ===")
-                  for i,line in enumerate(txt.splitlines(),1):
-                      print(f"{i:03d}:{line}")
-                      if i<5:
-                          safe=line[:700].replace('\n',' ')
-                          print(f"::notice::{fn} {i}:{safe}")
-                  # also check for auto_prepend
-                  if 'auto_prepend' in txt or 'open_basedir' in txt:
-                      print(f"::notice::FOUND auto/open in {fn}")
+                  print(txt[:4000])
               except Exception as e:
                   print(f"fail {fn}: {e}")
-          # list all ini files
+          # list
           try:
               lst=f.nlst()
-              print("NLST", lst[:30])
-              for x in lst:
-                  if x.endswith('.ini') or x.endswith('.user.ini') or x.startswith('.'):
-                      print(f"found {x}")
-                      print(f"::notice::FILE {x}")
+              print("NLST", lst[:40])
           except Exception as e:
               print(f"nlst fail {e}")
           f.quit()
           PY
+          cat /tmp/ini.txt
+          cp /tmp/ini.txt ./ini_dump.txt
+          git config user.name "bot"; git config user.email "bot@bot.bot"
+          git add ini_dump.txt
+          git commit -m "ini dump" || true
+          git push origin main || true
