@@ -8,7 +8,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: php -l config.php
       - run: php -l index.php
-      - name: FTP upload config
+      - run: php -l debug.php
+      - name: FTP upload all php
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -16,21 +17,22 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY'
-          import ftplib, os, hashlib
+          import ftplib, os, hashlib, glob
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host, timeout=60)
           f.login(user,pw)
           f.cwd(root)
-          with open('config.php','rb') as fh:
-              data=fh.read()
-          print("local md5", hashlib.md5(data).hexdigest(), len(data))
-          f.storbinary('STOR config.php', open('config.php','rb'))
-          # verify
-          import io
-          buf=io.BytesIO()
-          f.retrbinary('RETR config.php', buf.write)
-          remote=buf.getvalue()
-          print("remote md5", hashlib.md5(remote).hexdigest(), len(remote))
-          print("match", hashlib.md5(data).hexdigest()==hashlib.md5(remote).hexdigest())
+          files = glob.glob('*.php') + glob.glob('dashboard/*.php')
+          print(f"uploading {len(files)} php files")
+          for rel in files:
+              print(f"STOR {rel}")
+              with open(rel,'rb') as fh:
+                  f.storbinary(f'STOR {rel}', fh)
+              # verify
+              import io
+              buf=io.BytesIO()
+              f.retrbinary(f'RETR {rel}', buf.write)
+              print(f"  remote size {len(buf.getvalue())}")
           f.quit()
+          print("done")
           PY
