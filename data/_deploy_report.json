@@ -3,9 +3,9 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 407924,
+   "remote_size": 408209,
    "on_server": true,
-   "local_size": 407924,
+   "local_size": 408209,
    "match": true
   },
   "index.php": {
@@ -15,9 +15,9 @@
    "match": true
   },
   "data/catalog_counts.json": {
-   "remote_size": 1034,
+   "remote_size": 584,
    "on_server": true,
-   "local_size": 1034,
+   "local_size": 584,
    "match": true
   },
   ".htaccess": {
