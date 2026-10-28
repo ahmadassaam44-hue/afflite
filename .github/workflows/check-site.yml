@@ -6,11 +6,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          for ua in "curl/8.4.0" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"; do
-            echo "UA $ua"
-            curl -A "$ua" -s -D /tmp/h.txt -o /tmp/b.txt --max-time 20 "https://wafirinhalk.ct.ws/test2.php?i=1" || echo "fail $?"
-            H=$(head -n 5 /tmp/h.txt | tr '\n' ' ' | cut -c1-800)
-            echo "::notice::UA $ua H:$H"
-            B=$(head -c 200 /tmp/b.txt | tr '\n' ' ' | cut -c1-800)
-            echo "::notice::UA $ua B:$B size $(wc -c < /tmp/b.txt)"
-          done
+          curl -A "Mozilla/5.0" -s "https://wafirinhalk.ct.ws/test2.php?i=1" -o /tmp/ch.html
+          cat /tmp/ch.html
+          wc -c /tmp/ch.html
+          echo "---"
+          curl -A "Mozilla/5.0" -s -D /tmp/h2.txt -o /tmp/b2.txt "https://wafirinhalk.ct.ws/test2.php?i=1"
+          cat /tmp/h2.txt
+          echo "body:"
+          cat /tmp/b2.txt | head -n 50
