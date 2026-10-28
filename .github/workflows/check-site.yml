@@ -7,7 +7,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: test local config load
         run: |
-          php -r "require 'config.php'; echo 'local ok:'.implode(',', wf_catalog_plats()).PHP_EOL;"
+          php -r "require 'config.php'; echo 'local ok:'.implode(',', wf_catalog_plats()).PHP_EOL;" 2>&1 | tee /tmp/local.txt
+          cat /tmp/local.txt
       - name: FTP audit
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
@@ -15,34 +16,36 @@ jobs:
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
         run: |
-          python - <<'PY'
-          import ftplib, hashlib, io, os
+          python - <<'PY' 2>&1 | tee /tmp/ftp.txt
+          import ftplib, hashlib, io, os, glob
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host, timeout=60)
           f.login(user,pw)
           f.cwd(root)
-          # check config.php remote vs local
           local=open('config.php','rb').read()
           print(f"local md5 {hashlib.md5(local).hexdigest()} len {len(local)}")
+          # run php -r locally output already
           buf=io.BytesIO()
           f.retrbinary('RETR config.php', buf.write)
           remote=buf.getvalue()
           print(f"remote md5 {hashlib.md5(remote).hexdigest()} len {len(remote)} same={hashlib.md5(local).hexdigest()==hashlib.md5(remote).hexdigest()}")
           # check test.php
           try:
-              buf2=io.BytesIO()
-              f.retrbinary('RETR test.php', buf2.write)
-              print(f"test.php remote {buf2.getvalue()[:100]}")
+              b2=io.BytesIO()
+              f.retrbinary('RETR test.php', b2.write)
+              print(f"test.php remote {b2.getvalue()[:200]}")
           except Exception as e:
               print(f"test.php fetch fail {e}")
-          # list root
-          print("ROOT LIST", f.nlst()[:20])
-          # try to find error log in any subdir
-          for p in ['error_log','error.log','logs/error.log','_error_log','tmp/error.log']:
-              try:
-                  b=io.BytesIO()
-                  f.retrbinary(f'RETR {p}', b.write)
-                  print(f"LOG {p}: {b.getvalue()[:2000]}")
-              except: pass
+          # list
+          lst=f.nlst()
+          print(f"ROOT count {len(lst)} sample {lst[:30]}")
           f.quit()
           PY
+          cat /tmp/ftp.txt
+          cat /tmp/local.txt >> /tmp/ftp.txt
+          cp /tmp/ftp.txt ./check_output.txt
+          git config user.name "bot"
+          git config user.email "bot@bot.bot"
+          git add check_output.txt
+          git commit -m "check output" || true
+          git push origin main || true
