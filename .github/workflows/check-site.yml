@@ -4,5 +4,51 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          for u in "https://wafirinhalk.ct.ws/test.php?i=1" "https://wafirinhalk.ct.ws/test.php" "https://wafirinhalk.ct.ws/debug.php?i=1" "https://wafirinhalk.ct.ws/?i=1"; do echo "URL $u"; curl -s -i -L "$u" --max-time 20 -o /tmp/o.txt || echo "curl fail $?"; head -n 20 /tmp/o.txt; echo "---"; done
+      - name: FTP error log
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+        run: |
+          set +e
+          python - <<'PY'
+          import ftplib, os, io
+          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
+          f=ftplib.FTP(host, timeout=30)
+          f.login(user,pw)
+          f.cwd(root)
+          # list all files for error logs
+          try:
+              lst = f.nlst()
+              print("FILES:", lst[:50])
+          except Exception as e:
+              print("nlst fail", e)
+          # try to find error_log in subdirs
+          for path in ['error_log','error.log','php_error.log','.htaccess','php.ini']:
+              try:
+                  buf=io.BytesIO()
+                  f.retrbinary(f'RETR {path}', buf.write)
+                  txt=buf.getvalue().decode(errors='ignore')
+                  print(f"=== {path} size {len(txt)} ===")
+                  print(txt[:3000])
+                  # annotation
+                  safe=txt.replace('\n',' ').replace('\r',' ')[:900]
+                  print(f"::notice::{path}:{safe}")
+              except Exception as e:
+                  print(f"no {path}: {e}")
+          # also check config.php size/md5
+          try:
+              buf=io.BytesIO()
+              f.retrbinary('RETR config.php', buf.write)
+              import hashlib
+              data=buf.getvalue()
+              print(f"config.php remote {len(data)} md5 {hashlib.md5(data).hexdigest()}")
+              # check for syntax
+              if b'Unclosed' in data or b'Parse error' in data:
+                  print("config contains error string")
+          except Exception as e:
+              print("config fetch fail", e)
+          f.quit()
+          PY
+          echo "done"
