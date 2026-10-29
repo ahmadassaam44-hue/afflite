@@ -1,5 +1,5 @@
 {
- "at": "2026-10-28T21:47:56+00:00",
+ "at": "2026-10-29T06:09:38+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -23,6 +23,7 @@
   "customer_req_lib.php",
   "dashboard",
   "data",
+  "debug.php",
   "digital.php",
   "error.php",
   "forgot.php",
@@ -30,6 +31,7 @@
   "google_callback.php",
   "google_finish.php",
   "google_start.php",
+  "hello.html",
   "hevo_api.php",
   "htaccess.before-fix.bak",
   "index.php",
@@ -59,16 +61,18 @@
   "supabase_docs.php",
   "supabase_schema.sql",
   "supabase_users.php",
+  "test.php",
+  "test2.php",
   "ui-components.php",
   "ui-runtime.php",
   "updater"
  ],
  "files": {
   "index.php": {
-   "remote_size": 52645,
-   "remote_md5": "3f90f828bb3831195bd688bd9bc711ce",
-   "local_size": 52645,
-   "local_md5": "3f90f828bb3831195bd688bd9bc711ce",
+   "remote_size": 52656,
+   "remote_md5": "a55a513f085c2719f07163e25941e8b5",
+   "local_size": 52656,
+   "local_md5": "a55a513f085c2719f07163e25941e8b5",
    "same_as_git": true
   },
   "index.html": {
@@ -117,10 +121,10 @@
    "same_as_git": false
   },
   "data/catalog_counts.json": {
-   "remote_size": 799,
-   "remote_md5": "d1eb816c763fa7ab0f4dca11d10fc893",
-   "local_size": 799,
-   "local_md5": "d1eb816c763fa7ab0f4dca11d10fc893",
+   "remote_size": 800,
+   "remote_md5": "946cab610df4a51a2e68d21141340e89",
+   "local_size": 800,
+   "local_md5": "946cab610df4a51a2e68d21141340e89",
    "same_as_git": true
   }
  },
