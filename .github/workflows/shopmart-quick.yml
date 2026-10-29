@@ -1,0 +1,40 @@
+name: shopmart-quick
+on:
+  push:
+    paths:
+      - '.github/workflows/shopmart-quick.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python - <<'PY'
+          import os, requests, json, re
+          user=os.environ.get('SHOPMART_USER',''); pw=os.environ.get('SHOPMART_PASS','')
+          print(f"USER present={bool(user)} len={len(pw)} prefix={user[:3] if user else ''}")
+          if not user or not pw:
+              print("no creds")
+              exit(0)
+          try:
+              r=requests.post('https://api.aff-shopmart.com/api/auth/login', json={'email':user,'password':pw}, headers={'Origin':'https://www.aff-shopmart.com','Referer':'https://www.aff-shopmart.com/ar/auth/login','Accept':'application/json','Content-Type':'application/json'}, timeout=30)
+              print(f"LOGIN {r.status_code}")
+              print(r.text[:4000])
+              # try products
+              if r.status_code==200:
+                  try:
+                      j=r.json()
+                      tok=j.get('access_token') or j.get('token') or j.get('data',{}).get('access_token')
+                      print(f"TOKEN found={bool(tok)} len={len(tok) if tok else 0}")
+                      if tok:
+                          h={'Authorization':f'Bearer {tok}','Accept':'application/json'}
+                          rp=requests.get('https://api.aff-shopmart.com/api/products', headers=h, timeout=20)
+                          print(f"PRODUCTS {rp.status_code} {rp.text[:2000]}")
+                  except Exception as e:
+                      print(f"json parse fail {e}")
+          except Exception as e:
+              print(f"request fail {e}")
+          PY
+        env:
+          SHOPMART_USER: ${{ secrets.SHOPMART_USER }}
+          SHOPMART_PASS: ${{ secrets.SHOPMART_PASS }}
