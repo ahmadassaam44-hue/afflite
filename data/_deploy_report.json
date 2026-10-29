@@ -3,21 +3,21 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 408209,
+   "remote_size": 408019,
    "on_server": true,
-   "local_size": 408209,
+   "local_size": 408019,
    "match": true
   },
   "index.php": {
-   "remote_size": 52645,
+   "remote_size": 52656,
    "on_server": true,
-   "local_size": 52645,
+   "local_size": 52656,
    "match": true
   },
   "data/catalog_counts.json": {
-   "remote_size": 799,
+   "remote_size": 800,
    "on_server": true,
-   "local_size": 799,
+   "local_size": 800,
    "match": true
   },
   ".htaccess": {
