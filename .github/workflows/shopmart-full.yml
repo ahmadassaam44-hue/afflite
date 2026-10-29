@@ -6,8 +6,13 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -18,12 +23,20 @@ jobs:
           SHOPMART_PASS: ${{ secrets.SHOPMART_PASS }}
         run: |
           python updater/update_catalog.py shopmart 2>&1 | tee /tmp/log.txt
-          cat /tmp/log.txt | tail -n 50
+          cat /tmp/log.txt | tail -n 60
           echo "---SUMMARY---"
-          cat data/catalog_update.json | python3 -m json.tool | grep -A 10 shopmart || cat data/catalog_update.json | head -n 100
-          echo "::notice::LOG $(tail -n 20 /tmp/log.txt | tr '\n' ' ' | cut -c1-900)"
+          cat data/catalog_update.json 2>/dev/null | head -n 80 || true
+          echo "::notice::DONE shopmart=$(cat data/catalog_update.json 2>/dev/null | grep -o 'shopmart[^}]*' | head -n 1)"
       - name: commit result
         run: |
-          git config user.name "bot"; git config user.email "bot@bot.bot"
-          git add data/shopmart.json data/lite_shopmart.json data/catalog_counts.json data/catalog_update.json data/price_history.json || true
-          git diff --cached --quiet && echo "no change" || (git commit -m "shopmart update" && git push origin main)
+          git config user.name "bot"
+          git config user.email "bot@bot.bot"
+          git add data/shopmart.json data/lite_shopmart.json data/catalog_counts.json data/catalog_update.json data/price_history.json data/lite_safqa.json data/lite_timehand.json data/lite_vendoor.json data/lite_mnfean.json || true
+          git diff --cached --quiet && echo "no change to commit" || git commit -m "shopmart update 233"
+          git fetch origin main
+          git rebase origin/main || (git rebase --abort; git reset --hard origin/main; git cherry-pick HEAD 2>/dev/null || true)
+          git push origin HEAD:main || (git pull --rebase origin main && git push origin HEAD:main)
+          echo "PUSH_DONE"
+      - name: show log tail
+        if: always()
+        run: cat /tmp/log.txt | tail -n 80; echo "counts:"; cat data/catalog_counts.json | head -n 40
