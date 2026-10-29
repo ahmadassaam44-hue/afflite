@@ -13,6 +13,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -22,21 +23,39 @@ jobs:
           SHOPMART_USER: ${{ secrets.SHOPMART_USER }}
           SHOPMART_PASS: ${{ secrets.SHOPMART_PASS }}
         run: |
+          set -x
           python updater/update_catalog.py shopmart 2>&1 | tee /tmp/log.txt
-          cat /tmp/log.txt | tail -n 60
-          echo "---SUMMARY---"
-          cat data/catalog_update.json 2>/dev/null | head -n 80 || true
-          echo "::notice::DONE shopmart=$(cat data/catalog_update.json 2>/dev/null | grep -o 'shopmart[^}]*' | head -n 1)"
+          cat /tmp/log.txt | tail -n 80 | head -n 80
+          echo "::notice::SHOPMART_LOG $(tail -n 40 /tmp/log.txt | tr '\n' '|' | cut -c1-900)"
+          echo "---counts---"
+          cat data/catalog_counts.json | tr '\n' ' ' | cut -c1-900 | xargs -I{} echo "::notice::COUNTS {}"
+          echo "---update---"
+          cat data/catalog_update.json | tr '\n' ' ' | cut -c1-900 | xargs -I{} echo "::notice::UPDATE {}"
       - name: commit result
         run: |
+          set +e
+          set -x
           git config user.name "bot"
           git config user.email "bot@bot.bot"
-          git add data/shopmart.json data/lite_shopmart.json data/catalog_counts.json data/catalog_update.json data/price_history.json data/lite_safqa.json data/lite_timehand.json data/lite_vendoor.json data/lite_mnfean.json || true
-          git diff --cached --quiet && echo "no change to commit" || git commit -m "shopmart update 233"
-          git fetch origin main
-          git rebase origin/main || (git rebase --abort; git reset --hard origin/main; git cherry-pick HEAD 2>/dev/null || true)
-          git push origin HEAD:main || (git pull --rebase origin main && git push origin HEAD:main)
-          echo "PUSH_DONE"
-      - name: show log tail
-        if: always()
-        run: cat /tmp/log.txt | tail -n 80; echo "counts:"; cat data/catalog_counts.json | head -n 40
+          git status
+          git add data/shopmart.json data/lite_shopmart.json data/catalog_counts.json data/catalog_update.json data/price_history.json 2>&1 | head
+          git diff --cached --quiet
+          if [ $? -eq 0 ]; then echo "::notice::NO_CHANGE"; exit 0; fi
+          git commit -m "shopmart update 233" 2>&1 | head
+          echo "::notice::COMMITTED $(git rev-parse HEAD)"
+          git log --oneline -5 | head
+          git remote -v
+          # try push with token
+          git push origin HEAD:main 2>&1 | tee /tmp/push.log
+          EC=$?
+          cat /tmp/push.log | head -n 20 | tr '\n' ' ' | cut -c1-900 | xargs -I{} echo "::notice::PUSH_LOG {}"
+          echo "::notice::PUSH_EXIT $EC"
+          if [ $EC -ne 0 ]; then
+            echo "retry with fetch rebase"
+            git fetch origin main 2>&1 | head
+            git rebase origin/main 2>&1 | head || (echo "::notice::REBASE_FAIL"; git rebase --abort 2>&1 | head; git reset --hard origin/main 2>&1 | head)
+            git push origin HEAD:main 2>&1 | tee /tmp/push2.log; EC2=$?
+            cat /tmp/push2.log | head -n 20 | tr '\n' ' ' | cut -c1-900 | xargs -I{} echo "::notice::PUSH2_LOG {}"
+            echo "::notice::PUSH2_EXIT $EC2"
+            exit $EC2
+          fi
