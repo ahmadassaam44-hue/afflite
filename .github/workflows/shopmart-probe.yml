@@ -1,0 +1,27 @@
+name: shopmart-probe
+on:
+  push:
+    paths:
+      - '.github/workflows/shopmart-probe.yml'
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet requests pillow
+      - name: run probe
+        env:
+          SHOPMART_USER: ${{ secrets.SHOPMART_USER }}
+          SHOPMART_PASS: ${{ secrets.SHOPMART_PASS }}
+        run: |
+          python updater/update_catalog.py shopmart_probe
+          cat data/_shopmart_probe.json || echo "no file"
+          cat data/_shopmart_probe.json | head -c 3000
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shopmart-probe
+          path: data/_shopmart_probe.json
+          if-no-files-found: warn
