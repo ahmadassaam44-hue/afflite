@@ -1,0 +1,29 @@
+name: shopmart-full
+on:
+  push:
+    paths:
+      - '.github/workflows/shopmart-full.yml'
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet requests pillow
+      - name: run shopmart
+        env:
+          SHOPMART_USER: ${{ secrets.SHOPMART_USER }}
+          SHOPMART_PASS: ${{ secrets.SHOPMART_PASS }}
+        run: |
+          python updater/update_catalog.py shopmart 2>&1 | tee /tmp/log.txt
+          cat /tmp/log.txt | tail -n 50
+          echo "---SUMMARY---"
+          cat data/catalog_update.json | python3 -m json.tool | grep -A 10 shopmart || cat data/catalog_update.json | head -n 100
+          echo "::notice::LOG $(tail -n 20 /tmp/log.txt | tr '\n' ' ' | cut -c1-900)"
+      - name: commit result
+        run: |
+          git config user.name "bot"; git config user.email "bot@bot.bot"
+          git add data/shopmart.json data/lite_shopmart.json data/catalog_counts.json data/catalog_update.json data/price_history.json || true
+          git diff --cached --quiet && echo "no change" || (git commit -m "shopmart update" && git push origin main)
