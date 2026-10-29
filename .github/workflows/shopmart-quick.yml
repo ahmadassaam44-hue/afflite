@@ -10,30 +10,28 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           python - <<'PY'
-          import os, requests, json, re
+          import os, requests, json
           user=os.environ.get('SHOPMART_USER',''); pw=os.environ.get('SHOPMART_PASS','')
-          print(f"USER present={bool(user)} len={len(pw)} prefix={user[:3] if user else ''}")
+          print(f"::notice::USER present={bool(user)} pw_len={len(pw)} prefix={user[:4] if user else ''}")
           if not user or not pw:
-              print("no creds")
+              print("::notice::NO_CREDS")
               exit(0)
           try:
               r=requests.post('https://api.aff-shopmart.com/api/auth/login', json={'email':user,'password':pw}, headers={'Origin':'https://www.aff-shopmart.com','Referer':'https://www.aff-shopmart.com/ar/auth/login','Accept':'application/json','Content-Type':'application/json'}, timeout=30)
-              print(f"LOGIN {r.status_code}")
-              print(r.text[:4000])
-              # try products
+              print(f"::notice::LOGIN {r.status_code} {r.text[:900]}")
               if r.status_code==200:
                   try:
                       j=r.json()
-                      tok=j.get('access_token') or j.get('token') or j.get('data',{}).get('access_token')
-                      print(f"TOKEN found={bool(tok)} len={len(tok) if tok else 0}")
+                      tok=j.get('access_token') or j.get('token') or j.get('data',{}).get('access_token') or j.get('data',{}).get('token')
+                      print(f"::notice::TOKEN found={bool(tok)}")
                       if tok:
                           h={'Authorization':f'Bearer {tok}','Accept':'application/json'}
-                          rp=requests.get('https://api.aff-shopmart.com/api/products', headers=h, timeout=20)
-                          print(f"PRODUCTS {rp.status_code} {rp.text[:2000]}")
+                          rp=requests.get('https://api.aff-shopmart.com/api/products?page=1&limit=10', headers=h, timeout=20)
+                          print(f"::notice::PRODUCTS {rp.status_code} {rp.text[:900]}")
                   except Exception as e:
-                      print(f"json parse fail {e}")
+                      print(f"::notice::JSON_FAIL {e}")
           except Exception as e:
-              print(f"request fail {e}")
+              print(f"::notice::REQ_FAIL {e}")
           PY
         env:
           SHOPMART_USER: ${{ secrets.SHOPMART_USER }}
