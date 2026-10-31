@@ -654,8 +654,12 @@ function site_settings_schema() {
             'usd_egp'            => ['سعر الدولار اللي بيتحسب به المنتج الرقمي (ج.م لكل دولار) — تركه فاضي = 56', 'text'],
             'social_price_addon' => ['إضافة الخدمات الصغيرة بس: أي مبلغ سوشيال ميديا أقل من المبلغ ده (ج.م) بيتضاف عليه، والأكبر منه بيفضل سعر المصدر — تركه فاضي = 0.10', 'text'],
         ],
+        'حالة الموقع' => [
+            'site_closed'   => ['إغلاق الموقع للزوار الجدد (1 = مغلق، فاضي = مفتوح) — المسجلين دخول يفضلون يشوفوه', 'text'],
+            'closed_msg'    => ['رسالة الإغلاق للزوار الجدد', 'textarea'],
+        ],
         'التواصل' => [
-            'whatsapp'      => ['رقم واتساب الدعم (بصيغة دولية 2010xxxxxxx)', 'text'],
+            'whatsapp'      => ['رقم واتساب الدعم (بصيغة دولية 2010xxxxxxx) — معطل حالياً', 'text'],
             'wa_cloud_token'=> ['WhatsApp Cloud API — Access Token (اختياري)', 'password'],
             'wa_phone_id'   => ['WhatsApp Cloud API — Phone Number ID (اختياري)', 'text'],
             'wa_admin_to'   => ['رقم الأدمن لاستقبال إشعارات واتساب', 'text'],
@@ -6866,5 +6870,55 @@ function wf_impersonation_banner_state($dash_pre = null) {
     ];
 }
 remember_login();
+
+// ===========================================================================
+// قفل الموقع للزوار الجدد — المسجلين دخول فقط يشوفوا الموقع
+// ===========================================================================
+function site_is_closed() {
+    $v = trim((string)site_setting('site_closed', ''));
+    return $v !== '' && $v !== '0' && strtolower($v) !== 'false';
+}
+function site_closed_exempt_script($script) {
+    $script = basename((string)$script);
+    $allowed = [
+        'login.php', 'register.php', 'forgot.php', 'logout.php',
+        'google_start.php', 'google_callback.php', 'google_finish.php',
+        'error.php', 'manifest.json', 'sw.js',
+        'api_events.php', 'api_chat.php', 'api_image_search.php', 'go.php',
+        'jmi.php', 'amz.php', 'hevo_api.php', // affiliate redirects
+    ];
+    return in_array($script, $allowed, true);
+}
+function enforce_site_closed() {
+    if (!site_is_closed()) return;
+    // الأدمن والمسجلين دخول يعدّوا
+    if (is_admin_user()) return;
+    $cu = function_exists('current_user') ? current_user() : null;
+    if (!empty($cu) && !empty($cu['email'])) return;
+    // السماح لصفحات تسجيل الدخول نفسها حتى يقدر الزائر الجديد يسجل
+    $script = (string)($_SERVER['SCRIPT_NAME'] ?? '');
+    if (site_closed_exempt_script($script)) return;
+    // السماح لطلبات الأصول (assets) غير PHP لا تمر هنا أصلاً
+    if (php_sapi_name() === 'cli') return;
+    // منع التخزين المؤقت لصفحة الإغلاق
+    if (!headers_sent()) {
+        http_response_code(503);
+        header('Retry-After: 3600');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    }
+    $brand = defined('BRAND') ? BRAND : 'وفرنهالك';
+    $msg = trim((string)site_setting('closed_msg', ''));
+    if ($msg === '') $msg = 'الموقع مغلق مؤقتاً — نعمل على تحديثات. المسجلين حالياً يقدرون الدخول بحسابهم، وسيُفتح قريباً للجميع. للتواصل: ' . (function_exists('site_setting') ? site_setting('email', 'support@wafirinhalk.ct.ws') : 'support@wafirinhalk.ct.ws');
+    $login_url = 'login.php';
+    $register_url = 'register.php';
+    // تحديد المسار النسبي حسب مجلد dashboard
+    if (strpos(str_replace('\\', '/', $script), '/dashboard/') !== false) {
+        $login_url = '../login.php';
+        $register_url = '../register.php';
+    }
+    echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>الموقع مغلق مؤقتاً | ' . esc($brand) . '</title><style>body{font-family:system-ui,-apple-system,Segoe UI,Tahoma,Arial,sans-serif;background:#f8fafc;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px} .box{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;max-width:520px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.06)} h1{font-size:22px;margin:0 0 12px;color:#0f172a} p{color:#475569;line-height:1.7;margin:8px 0} .btn{display:inline-block;margin:6px;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:700} .pri{background:#0f172a;color:#fff} .out{border:1px solid #e2e8f0;color:#0f172a;background:#fff} small{color:#94a3b8}</style></head><body><div class="box"><div style="font-size:40px;margin-bottom:10px">🔒</div><h1>الموقع مغلق مؤقتاً</h1><p>' . nl2br(esc($msg)) . '</p><p><a class="btn pri" href="' . esc($login_url) . '">تسجيل الدخول</a> <a class="btn out" href="' . esc($register_url) . '">إنشاء حساب</a></p><p><small>أنت ترى هذه الصفحة لأنك زائر جديد — الأعضاء المسجلين يمكنهم الدخول بشكل طبيعي.</small></p></div></body></html>';
+    exit;
+}
+enforce_site_closed();
 
 

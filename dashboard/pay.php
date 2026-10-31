@@ -58,7 +58,7 @@ if ($ps === 'confirmed') {
 if ($ps === 'proof_uploaded' || $msg === 'ok') {
     echo '<div class="card" data-ui="u-9330a276 df d78 d8 d79"><div data-ui="u-cc519402 d20"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-clock></use></svg></div><h3>استلمنا إيصالك — جاري المراجعة</h3><p class="mut">بنراجع التحويل يدوياً وهنأكد طلبك في أقرب وقت (وفق دور المراجعة). هيوصلك إشعار.</p>';
     if (!empty($o['payment']['proof'])) echo '<img alt="صورة المنتج" src="' . esc(asset_url($o['payment']['proof'])) . '" data-ui="u-1ff33781 d4p da d23 dt">';
-    if ($wa = site_setting('whatsapp')) echo '<br><a class="btn outline" data-ui="u-89901732 dp" target="_blank" href="' . esc(wa_link($wa, 'دفعت الطلب ' . $ono . ' ومستني التأكيد')) . '"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chat></use></svg> تواصل واتساب</a>';
+
     echo '</div>' . tracking_event_js('checkout', $amount);
 } elseif ($ps === 'awaiting') {
     if ($err) echo '<div class="card" data-ui="u-fa3891a7 dr d54 d5y d5m dc">' . esc($err) . '</div>';
