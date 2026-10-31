@@ -360,9 +360,7 @@ if (function_exists('wf_event')) {
 <?php render_easyorder_dialog_html($ref, $plat, wf_ui_currency($p), $lp_country); ?>
 
 <div hidden id="wfLandingState" data-state="<?php echo esc(json_encode(['id'=>(string)$p['id'], 'plat'=>$plat, 'ref'=>$ref, 'unit'=>(float)$final_price, 'bundle_discount'=>(int)LP_BUNDLE_DISCOUNT, 'bundle_max'=>99, 'bulk_applies'=>function_exists('wf_bulk_discount_plat_ok')?wf_bulk_discount_plat_ok($plat, wf_ui_currency($p)):true, 'currency'=>wf_ui_currency($p), 'payload'=>json_decode($eo_payload, true)], JSON_UNESCAPED_UNICODE)); ?>"></div>
-<?php if (!empty($store_cfg['whatsapp'])): ?>
-<a class="wa-float" href="https://wa.me/2<?php echo esc(preg_replace('/\D+/', '', $store_cfg['whatsapp'])); ?>" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب"></a>
-<?php endif; ?>
+
 <?php if (function_exists('render_marketer_pixels_html')) render_marketer_pixels_html($store_cfg); ?>
 
 <div hidden data-track-meta="<?php echo esc(json_encode(['ref_code'=>$ref, 'product_id'=>(string)$p['id']], JSON_UNESCAPED_UNICODE)); ?>"></div>

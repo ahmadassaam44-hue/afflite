@@ -297,15 +297,9 @@ $cart_s = wf_cart_summary();
 // متجر مسوّق: منمنعش روابط المتجر الرئيسي/تتبع الطلب/برنامج المسوقين (العميل يتعامل مع المسوق صاحب المتجر)
 // أي متجر بيتفتح بـ store=<كود> هو متجر مسوّق (حتى لو سجل المستخدم مش موجود/اتغيّر)
 $is_mk_store = ($store_code !== '');
-// قناة التواصل مع صاحب المتجر: واتساب المتجر ثم موبايل المسوق، وإلا صفحة الدعم
+// قناة التواصل مع صاحب المتجر: تم تعطيل واتساب بناءً على طلب الإدارة — الرابط يذهب لصفحة الدعم فقط
 $store_owner_wa = '';
-foreach ([($store_cfg['whatsapp'] ?? ''), ($mk_owner['phone'] ?? ''), ($mk_owner['whatsapp'] ?? '')] as $wa_try) {
-    $wa_digits = preg_replace('/\D+/', '', (string)$wa_try);
-    if (strlen($wa_digits) >= 9) { $store_owner_wa = $wa_digits; break; }
-}
-$store_contact_href = ($store_owner_wa !== '')
-    ? 'https://wa.me/2' . $store_owner_wa . '?text=' . rawurlencode('السلام عليكم، عندي استفسار بخصوص أحد منتجات متجر ' . ($store_cfg['title'] ?: BRAND))
-    : 'dashboard/support.php?ctx=customer&store=' . urlencode($store_code);
+$store_contact_href = 'dashboard/support.php?ctx=customer&store=' . urlencode($store_code);
 $top_links = [];
 if (!$is_mk_store) $top_links[] = ['href' => 'dashboard/orders.php', 'label' => 'تتبع طلبك', 'icon' => 'truck'];
 $cu_is_mk = function_exists('wf_is_marketer_account') && wf_is_marketer_account($cu);
@@ -468,15 +462,13 @@ echo wf_catalog_toolbar([
 <?php
 $st_social = array_filter((array)($store_cfg['social'] ?? []), function ($v) { return trim((string)$v) !== ''; });
 $st_contact = (array)($store_cfg['contact'] ?? []);
-$st_has_contact = ($st_contact['phone'] ?? '') !== '' || ($st_contact['email'] ?? '') !== '' || ($st_contact['address'] ?? '') !== '' || $store_cfg['whatsapp'] !== '';
+$st_has_contact = ($st_contact['phone'] ?? '') !== '' || ($st_contact['email'] ?? '') !== '' || ($st_contact['address'] ?? '') !== '';
 ?>
 <?php if (!empty($store_sec['contact']) && ($st_has_contact || $st_social)): ?>
 <section class="st-sec" aria-labelledby="stContactTitle">
   <h2 id="stContactTitle">ابقَ على تواصل</h2>
   <div class="st-contact">
-    <?php if ($store_cfg['whatsapp'] !== ''): $wa_d = preg_replace('/\D+/', '', $store_cfg['whatsapp']); ?>
-    <a class="st-contact-item" href="https://wa.me/2<?php echo esc($wa_d); ?>" target="_blank" rel="noopener"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chat></use></svg><b>واتساب</b><span dir="ltr"><?php echo esc($store_cfg['whatsapp']); ?></span></a>
-    <?php endif; ?>
+
     <?php if (($st_contact['phone'] ?? '') !== ''): ?>
     <a class="st-contact-item" href="tel:<?php echo esc(preg_replace('/[^0-9+]/', '', $st_contact['phone'])); ?>"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-phone></use></svg><b>هاتف</b><span dir="ltr"><?php echo esc($st_contact['phone']); ?></span></a>
     <?php endif; ?>
@@ -508,9 +500,7 @@ $st_has_contact = ($st_contact['phone'] ?? '') !== '' || ($st_contact['email'] ?
 </footer>
 <?php endif; ?>
 
-<?php if (!empty($store_cfg['whatsapp'])): ?>
-<a class="wa-float" href="https://wa.me/2<?php echo esc(preg_replace('/\D+/', '', $store_cfg['whatsapp'])); ?>" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب"><?php echo wf_whatsapp_glyph(26); ?></a>
-<?php endif; ?>
+
 <?php if (function_exists('render_marketer_pixels_html')) render_marketer_pixels_html($store_cfg); ?>
 <?php render_easyorder_dialog_html($store_code); ?>
 <!-- MOBILE BOTTOM NAVIGATION الموحّد -->
