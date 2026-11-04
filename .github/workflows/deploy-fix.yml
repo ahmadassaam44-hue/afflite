@@ -6,8 +6,12 @@ jobs:
     if: contains(github.event.head_commit.message, 'deploy-fix')
     steps:
       - uses: actions/checkout@v4
-      - run: php -l config.php
-      - name: FTP upload hello
+      - name: Validate changed PHP files
+        run: |
+          php -l config.php
+          php -l dashboard/admin.php
+          php -l dashboard/marketer.php
+      - name: Deploy referral-code fix via FTP and verify uploaded bytes
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
@@ -15,16 +19,29 @@ jobs:
           FTP_ROOT: /htdocs
         run: |
           python - <<'PY'
-          import ftplib, os
-          host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
-          f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          for fn in ['hello.html','test2.php','test.php','config.php','index.php']:
-              try:
-                  print(f"upload {fn}")
-                  f.storbinary(f'STOR {fn}', open(fn,'rb'))
-                  print(f"ok {fn}")
-              except Exception as e:
-                  print(f"fail {fn}: {e}")
-          f.quit()
-          print("done")
+          import hashlib, os, sys
+          from ftplib import FTP
+
+          host = os.environ.get('FTP_HOST', '').strip()
+          user = os.environ.get('FTP_USER', '').strip()
+          password = os.environ.get('FTP_PASS', '')
+          root = os.environ.get('FTP_ROOT', '/htdocs').strip() or '/htdocs'
+          if not (host and user and password):
+              raise SystemExit('FTP credentials are not configured')
+
+          files = ['config.php', 'dashboard/admin.php', 'dashboard/marketer.php']
+          ftp = FTP(host, timeout=60)
+          ftp.login(user, password)
+          ftp.cwd(root)
+          for path in files:
+              with open(path, 'rb') as source:
+                  expected = source.read()
+              with open(path, 'rb') as source:
+                  ftp.storbinary('STOR ' + path, source)
+              remote = bytearray()
+              ftp.retrbinary('RETR ' + path, remote.extend)
+              if hashlib.sha256(remote).digest() != hashlib.sha256(expected).digest():
+                  raise SystemExit('FTP verification failed for ' + path)
+              print('Verified upload:', path, len(remote), 'bytes')
+          ftp.quit()
           PY
