@@ -3765,7 +3765,34 @@ function update_user($email, $fn) {
     // الحسابات على Supabase (جدول profiles) — قراءة/تعديل/كتابة بشرط عدم التغيير
     return update_user_row($email, $fn);
 }
-function mk_code($name) { $c = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $name)); $c = substr($c ?: 'MK', 0, 5); return 'MK-' . $c . '-' . rand(10, 99); }
+function mk_code($name) {
+    // Arabic names (and any name without Latin letters/digits) normalize to "MK".
+    // A two-digit suffix was too small and allowed duplicate referral identities.
+    $prefix = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', (string)$name));
+    $prefix = substr($prefix ?: 'MK', 0, 5);
+
+    // Check existing profiles as well as using a much larger cryptographically-random
+    // suffix. This keeps referral codes unique in normal registration flows; the
+    // check also avoids collisions with older codes already stored in profiles.
+    $used_codes = [];
+    if (function_exists('users')) {
+        foreach ((array)users() as $u) {
+            $existing = strtoupper(trim((string)($u['ref_code'] ?? '')));
+            if ($existing !== '') $used_codes[$existing] = true;
+        }
+    }
+    for ($attempt = 0; $attempt < 20; $attempt++) {
+        $candidate = 'MK-' . $prefix . '-' . strtoupper(bin2hex(random_bytes(4)));
+        if (!isset($used_codes[strtoupper($candidate)])) return $candidate;
+    }
+
+    // Practically unreachable, but retain a safe fallback if random candidates
+    // happened to collide with existing records.
+    do {
+        $candidate = 'MK-' . $prefix . '-' . strtoupper(bin2hex(random_bytes(8)));
+    } while (isset($used_codes[strtoupper($candidate)]));
+    return $candidate;
+}
 
 // ===== إدارة متاجر المسوقين والعمولات المخصصة =====
 function marketer_stores_all() {

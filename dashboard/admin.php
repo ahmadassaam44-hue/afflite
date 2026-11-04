@@ -34,6 +34,53 @@ if (!is_string($tab) || !in_array($tab, ['overview', 'visitors', 'cart', 'loves'
 }
 $msg = '';
 
+// إصلاح تكرار كود الإحالة: يظل الكود القديم للحساب الذي كان سيُختار أولاً،
+// ويُصدر كود جديد للحسابات الأخرى بعد تأكيد إداري وCSRF.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reissue_duplicate_ref_email'])) {
+    if (!csrf_ok()) {
+        $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    } else {
+        $target_email = strtolower(trim((string)$_POST['reissue_duplicate_ref_email']));
+        $current_users = (array)users();
+        $code_groups = [];
+        foreach ($current_users as $current_user) {
+            $current_code = strtoupper(trim((string)($current_user['ref_code'] ?? '')));
+            if ($current_code !== '') $code_groups[$current_code][] = $current_user;
+        }
+        $target = null; $canonical_email = '';
+        foreach ($code_groups as $group) {
+            if (count($group) < 2) continue;
+            foreach ($group as $group_user) {
+                if (strcasecmp((string)($group_user['email'] ?? ''), $target_email) === 0) {
+                    $duplicate_group = $group;
+                    $target = $group_user;
+                    $canonical_email = (string)($group[0]['email'] ?? '');
+                    break 2;
+                }
+            }
+        }
+        if (!$target || strcasecmp($target_email, $canonical_email) === 0) {
+            $msg = 'لم يتم تغيير الكود: الحساب غير موجود ضمن كود مكرر، أو أنه الحساب الذي سيحتفظ بالكود الحالي.';
+        } else {
+            $old_code = trim((string)($target['ref_code'] ?? ''));
+            $new_code = mk_code((string)($target['name'] ?? 'MK'));
+            $updated = update_user($target_email, function (&$row) use ($old_code, $new_code) {
+                if (strcasecmp(trim((string)($row['ref_code'] ?? '')), $old_code) === 0) $row['ref_code'] = $new_code;
+            });
+            $fresh_target = $updated ? find_user($target_email) : null;
+            if ($fresh_target && strcasecmp((string)($fresh_target['ref_code'] ?? ''), $new_code) === 0) {
+                log_audit('reissue_duplicate_marketer_code', $target_email, [
+                    'old_code' => $old_code, 'new_code' => $new_code,
+                    'canonical_email' => $canonical_email,
+                ]);
+                $msg = 'تم إصدار كود جديد للحساب ' . esc((string)($target['name'] ?? $target_email)) . ' ✅ — الطلبات القديمة لم يتم نقلها وستظل على الكود الأصلي.';
+            } else {
+                $msg = 'تعذر حفظ الكود الجديد. لم يتم تأكيد التغيير؛ أعد تحميل الصفحة وتحقق من حالة الحساب.';
+            }
+        }
+    }
+}
+
 // ===== ACTIONS =====
 // الدخول بحساب أي مستخدم مسجل (للأدمن فقط، بدون تغيير كلمة سر المستخدم)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['impersonate_email'])) {
@@ -1606,6 +1653,34 @@ elseif ($tab === 'products') {
 // =========================================================================
 elseif ($tab === 'marketers') {
     //  روابط GET القديمة للموافقة/الرفض أُزيلت — العمليات المالية تتم عبر POST + CSRF فقط
+    // الأكواد المكررة تربط الطلبات بأكثر من حساب، فتظهر أرقام الطلبات/المبيعات مشتركة.
+    $mk_codes = [];
+    foreach ($marketers as $mk_user) {
+        $mk_ref = strtoupper(trim((string)($mk_user['ref_code'] ?? '')));
+        if ($mk_ref !== '') $mk_codes[$mk_ref][] = $mk_user;
+    }
+    $duplicate_mk_codes = array_filter($mk_codes, function ($rows) { return count($rows) > 1; });
+    if ($duplicate_mk_codes) {
+        $dupe_labels = [];
+        foreach ($duplicate_mk_codes as $dup_code => $dup_users) {
+            $dup_names = array_map(function ($u) { return trim((string)($u['name'] ?? $u['email'] ?? 'حساب')); }, $dup_users);
+            $dupe_labels[] = esc($dup_code) . ' (' . esc(implode('، ', $dup_names)) . ')';
+        }
+        echo '<div class="alert danger"><div><b>تنبيه مهم: توجد أكواد إحالة مكررة</b><br>'
+           . 'الطلبات والعمولات المسجلة على هذه الأكواد لا يمكن نسبتها تلقائيًا لحساب واحد، وقد تظهر الأرقام نفسها عند أكثر من مسوق. الحساب الأول سيحتفظ بالكود الحالي، وأي طلبات قديمة لن تُنقل عند إصدار كود جديد.'
+           . '<br>راجع بيانات الطلبات والعمولات قبل اعتماد أي تسوية: ' . implode('؛ ', $dupe_labels);
+        foreach ($duplicate_mk_codes as $dup_code => $dup_users) {
+            foreach (array_slice($dup_users, 1) as $duplicate_user) {
+                $duplicate_email = (string)($duplicate_user['email'] ?? '');
+                $duplicate_name = (string)($duplicate_user['name'] ?? $duplicate_email);
+                if ($duplicate_email === '') continue;
+                echo '<form method="post" style="margin-top:8px">' . csrf_field()
+                   . '<input type="hidden" name="reissue_duplicate_ref_email" value="' . esc($duplicate_email) . '">'
+                   . '<button class="btn sm" data-confirm="إصدار كود جديد لـ ' . esc($duplicate_name) . '؟ الحساب الأول سيحتفظ بالكود الحالي، والطلبات والعمولات القديمة لن تُنقل.">إصدار كود جديد لـ ' . esc($duplicate_name) . ' (' . esc($dup_code) . ')</button></form>';
+            }
+        }
+        echo '</div></div>';
+    }
 
     // ===== صفحة تفاصيل مسوق محدد =====
     $mk_view = trim((string)($_GET['mk'] ?? ''));

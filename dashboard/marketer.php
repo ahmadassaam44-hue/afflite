@@ -7,6 +7,14 @@ if ($user && !empty($user['email']) && ($user['role'] ?? '') !== 'admin') {
 }
 if (!$me) { header('Location: ./'); exit; }
 $code = $me['ref_code'] ?? '';
+$code_ambiguous = false;
+if ($code !== '') {
+    $matching_codes = 0;
+    foreach ((array)users() as $candidate_user) {
+        if (strcasecmp(trim((string)($candidate_user['ref_code'] ?? '')), trim((string)$code)) === 0) $matching_codes++;
+        if ($matching_codes > 1) { $code_ambiguous = true; break; }
+    }
+}
 $msg = ''; $msg_type = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // عمولة المسوق على رابط المنتج (من تبويب الروابط): بتتحفظ وبتتضاف لسعر صفحة الهبوط والرابط
@@ -202,6 +210,11 @@ $my_store_cfg = marketer_store_get($code);
 $my_store_url = $base . '/store.php?store=' . urlencode($code);
 
 layout_top('لوحة المسوق', 'marketer');
+if ($code_ambiguous) {
+    echo '<div class="alert danger"><div><b>تنبيه: كود الإحالة ده مستخدم في حساب آخر</b><br>'
+       . 'قد تظهر طلبات أو عمولات الحسابين معًا، وقد تُنسب الطلبات الجديدة للحساب الخطأ. أوقف استخدام الروابط بهذا الكود مؤقتًا وتواصل مع الإدارة لمراجعة الكود والطلبات.'
+       . '</div></div>';
+}
 
 if ($msg) {
     $mc = $msg_type === 'err' ? ['#fee2e2','var(--danger-text)','var(--danger-border)'] : ['#dcfce7','var(--success)','var(--tone-86efac)'];
