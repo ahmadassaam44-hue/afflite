@@ -16,78 +16,105 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install --quiet requests beautifulsoup4 lxml
-      - name: probe scrape products detail
+      - name: probe web products table
         env:
           JAMMALEG_USER: ${{ secrets.JAMMALEG_USER || vars.JAMMALEG_USER || 'ae782236@gmail.com' }}
           JAMMALEG_PASS: ${{ secrets.JAMMALEG_PASS || vars.JAMMALEG_PASS || 'aA55667788' }}
         run: |
           python - <<'PY'
-          import os, requests, json, re, time
+          import os, requests, re, json
           from bs4 import BeautifulSoup
           user=os.environ.get('JAMMALEG_USER')
           pw=os.environ.get('JAMMALEG_PASS')
           s=requests.Session()
-          s.headers.update({"User-Agent":"Mozilla/5.0 Chrome/124","Accept":"text/html,*/*"})
+          s.headers.update({"User-Agent":"Mozilla/5.0 Chrome/124"})
           out=[]
           def log(*a):
               m=" ".join(str(x) for x in a)
               print(m, flush=True)
               out.append(m)
-          # login web
           r=s.get("https://jammaleg.com/affiliate/login", timeout=20)
-          m=re.search(r'name="_token" value="([^"]+)"', r.text)
-          tok=m.group(1) if m else ""
-          log(f"token {tok[:20]}")
+          tok=re.search(r'name="_token" value="([^"]+)"', r.text).group(1)
           r2=s.post("https://jammaleg.com/login", data={"_token": tok, "email": user, "password": pw}, headers={"Referer":"https://jammaleg.com/affiliate/login","Origin":"https://jammaleg.com"}, timeout=20)
-          log(f"login POST {r2.status_code} final {r2.url}")
-          # fetch /products page (affiliate product list)
-          for url in ["https://jammaleg.com/products","https://jammaleg.com/products?page=1","https://jammaleg.com/sellers"]:
-              rr=s.get(url, timeout=20)
-              log(f"GET {url} {rr.status_code} len={len(rr.text)}")
-              log(rr.text[:12000])
+          log(f"login {r2.status_code} {r2.url}")
+          # get products page
+          for page in [1,2]:
+              rr=s.get(f"https://jammaleg.com/products?page={page}", timeout=20)
+              log(f"GET products?page={page} {rr.status_code} len={len(rr.text)}")
+              # save snippet
+              # find table
               soup=BeautifulSoup(rr.text,'lxml')
-              # find product cards
-              ids=re.findall(r'/product/detils/(\d+)', rr.text)
-              log(f"ids {ids[:15]}")
-              # try to find product card structure
-              # look for div with class product
-              cards=soup.find_all('div', class_=re.compile(r'product|card'))
-              log(f"cards found {len(cards)}")
-              if cards:
-                  for c in cards[:2]:
-                      log(str(c)[:3000])
-              # save for later
-              if len(rr.text) > 5000 and ids:
-                  break
-          # fetch product detail and parse
-          for pid in ["1790","1789","1784"]:
+              # find table
+              tbl=soup.find('table')
+              if tbl:
+                  log(f"table found class={tbl.get('class')}")
+                  headers=[th.get_text(strip=True) for th in tbl.find_all('th')]
+                  log(f"headers {headers}")
+                  rows=tbl.find('tbody').find_all('tr') if tbl.find('tbody') else tbl.find_all('tr')[1:]
+                  log(f"rows {len(rows)}")
+                  for tr in rows[:5]:
+                      cols=[td.get_text(" ", strip=True) for td in tr.find_all(['td','th'])]
+                      log(f"ROW cols={cols}")
+                      # also get links
+                      links=[a.get('href') for a in tr.find_all('a')]
+                      log(f"  links {links}")
+                      imgs=[img.get('src') for img in tr.find_all('img')]
+                      log(f"  imgs {imgs[:2]}")
+                  # also check for pagination
+                  pag=soup.find('ul', class_=re.compile(r'pagination'))
+                  if pag:
+                      log(f"pagination {pag.get_text(strip=True)[:200]}")
+                      log(str(pag)[:5000])
+                  # check for product images in table?
+                  # look for any product link pattern
+                  ids=re.findall(r'/product/detils/\d+', rr.text)
+                  log(f"ids in page {ids[:10]}")
+              else:
+                  log("no table")
+                  log(rr.text[:8000])
+              # also try to find commission info in page source near سعر
+              # check for "عمولة" occurrences
+              if "عمولة" in rr.text:
+                  idx=rr.text.find("عمولة")
+                  log(f"عمولة context {rr.text[max(0,idx-500):idx+500]}")
+          # detail page deep parse for stock table
+          for pid in ["1790","1784"]:
               rr=s.get(f"https://jammaleg.com/product/detils/{pid}", timeout=20)
-              log(f"GET detail {pid} {rr.status_code} len={len(rr.text)}")
-              log(rr.text[:15000])
+              log(f"detail {pid} len={len(rr.text)}")
               soup=BeautifulSoup(rr.text,'lxml')
-              # price
-              price_m=re.search(r'(\d{2,5}(?:\.\d+)?)\s*(?:ج\.م|جنيه|EGP)', rr.text)
-              log(f"price_match {price_m.group(0) if price_m else 'none'}")
-              # images
-              imgs=re.findall(r'https://jammaleg\.com/uploads/products_images/[^\"\'\s<>]+', rr.text)
-              log(f"imgs {imgs[:5]}")
-              # also try uploads/products_images pattern
-              # commission / purchase price
-              # look for "سعر الشراء" and "العمولة" or "سعر البيع"
-              for term in ["سعر الشراء","سعر البيع","العمولة","السعر","purchase","commission"]:
-                  if term in rr.text:
-                      idx=rr.text.find(term)
-                      log(f"term {term} context: {rr.text[max(0,idx-150):idx+150].replace(chr(10),' ')}")
-              # categories
-              cats=re.findall(r'category[^\n]{0,100}', rr.text, re.I)
-              log(f"cats snippet {cats[:5]}")
-          os.makedirs("data", exist_ok=True)
-          open("data/_jammaleg_probe5.json","w",encoding="utf-8").write(json.dumps({"log": out}, ensure_ascii=False, indent=2))
+              # find price purchase
+              price_el=soup.find(string=re.compile(r'سعر الشراء'))
+              if price_el:
+                  log(f"price element parent {price_el.parent} text {price_el.parent.get_text()}")
+                  # find next span
+                  span=price_el.parent.find('span')
+                  if span:
+                      log(f"price span {span.get_text()}")
+              # find table with sizes
+              tbl=soup.find('table', class_=re.compile(r'table-product'))
+              if tbl:
+                  log(f"detail table found")
+                  ths=[th.get_text(strip=True) for th in tbl.find_all('th')]
+                  log(f"detail ths {ths}")
+                  # get tbody rows
+                  for tr in tbl.find_all('tr')[:3]:
+                      cols=[td.get_text(strip=True) for td in tr.find_all(['th','td'])]
+                      log(f"detail row {cols}")
+              # find seller
+              seller=re.search(r'البائع\s*:\s*<span>(.*?)</span>', rr.text)
+              if seller:
+                  log(f"seller {seller.group(1)}")
+              # find description
+              desc_p=soup.find('p', class_=re.compile(r'prodcut-titles'))
+              if desc_p:
+                  log(f"desc {desc_p.get_text(' ', strip=True)[:500]}")
+              # find commission maybe in product list table, not detail
+          open("data/_jammaleg_probe6.json","w",encoding="utf-8").write(json.dumps({"log":out}, ensure_ascii=False, indent=2))
           PY
-          cat data/_jammaleg_probe5.json | head -c 18000
+          cat data/_jammaleg_probe6.json | head -c 20000
       - name: commit
         run: |
           git config user.name "probe-bot"
           git config user.email "probe@users.noreply.github.com"
-          git add data/_jammaleg_probe5.json || true
-          git diff --cached --quiet && echo "no" || (git commit -m "probe5 $(date -u +%H:%M)" && git push)
+          git add data/_jammaleg_probe6.json || true
+          git diff --cached --quiet && echo "no" || (git commit -m "probe6 $(date -u +%H:%M)" && git push)
