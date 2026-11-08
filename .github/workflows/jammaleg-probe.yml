@@ -16,115 +16,104 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install --quiet requests
-      - name: probe jammaleg login + products
+      - name: probe jammaleg with token
         env:
           JAMMALEG_USER: ${{ secrets.JAMMALEG_USER || vars.JAMMALEG_USER || 'ae782236@gmail.com' }}
           JAMMALEG_PASS: ${{ secrets.JAMMALEG_PASS || vars.JAMMALEG_PASS || 'aA55667788' }}
         run: |
           python - <<'PY'
-          import os, requests, json, re, time
+          import os, requests, json, re
           user=os.environ.get('JAMMALEG_USER','ae782236@gmail.com')
           pw=os.environ.get('JAMMALEG_PASS','aA55667788')
+          s=requests.Session()
+          s.headers.update({"User-Agent":"Mozilla/5.0 Chrome/124","Accept":"application/json","Accept-Language":"ar,en;q=0.8"})
           out=[]
           def log(*a):
               msg=" ".join(str(x) for x in a)
               print(msg, flush=True)
               out.append(msg)
-          log(f"USER={user} pw_len={len(pw)}")
-          s=requests.Session()
-          s.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124 Safari/537.36","Accept":"application/json, text/html,*/*","Accept-Language":"ar,en;q=0.8"})
-          # 1: GET affiliate/login to get CSRF
-          token=None
+          # login
+          r=s.post("https://jammaleg.com/api/login", json={"phone": user, "password": pw}, headers={"Accept":"application/json","Content-Type":"application/json","Origin":"https://jammaleg.com","Referer":"https://jammaleg.com/affiliate/login"}, timeout=20)
+          log(f"LOGIN {r.status_code}")
+          log(r.text[:8000])
           try:
-              r=s.get("https://jammaleg.com/affiliate/login", timeout=20)
-              log(f"GET affiliate/login {r.status_code} len={len(r.text)}")
-              log(r.text[:3500])
-              m=re.search(r'name="_token" value="([^"]+)"', r.text)
-              log(f"CSRF found={bool(m)}")
-              if m:
-                  token=m.group(1)
-                  log(f"token {token[:30]}...")
-                  # also look for cookies
-                  log(f"cookies after GET: {s.cookies.get_dict()}")
-          except Exception as e:
-              log(f"GET affiliate/login fail {e}")
-          # 2: POST /api/login with various payloads
-          for endpoint in ["https://jammaleg.com/api/login", "https://jammaleg.com/api/auth/login", "https://jammaleg.com/affiliate/login"]:
-              for payload_type in ["json","form"]:
-                  for pl in [
-                      {"email": user, "password": pw},
-                      {"email": user, "password": pw, "remember": "1"},
-                      {"phone": user, "password": pw},
+              j=r.json()
+              token=j.get("data",{}).get("api_token") if isinstance(j.get("data"), dict) else j.get("api_token")
+              if not token:
+                  token=j.get("data",{}).get("token") if isinstance(j.get("data"), dict) else None
+              log(f"TOKEN extracted len={len(token) if token else 0}")
+              log(f"TOKEN full: {token}")
+              if token:
+                  # try various auth headers
+                  for hdr_name in ["Authorization","authorization","X-Authorization","X-Token","token"]:
+                      for prefix in ["Bearer ", ""]:
+                          headers={"Accept":"application/json", hdr_name: prefix+token}
+                          try:
+                              rr=s.get("https://jammaleg.com/api/products", headers=headers, timeout=15)
+                              log(f"TRY header {hdr_name}: {prefix}*** => {rr.status_code} ct={rr.headers.get('content-type')} len={len(rr.text)}")
+                              log(rr.text[:5000])
+                              if rr.status_code==200 and '"status":1' in rr.text:
+                                  # parse products
+                                  jj=rr.json()
+                                  data=jj.get("data")
+                                  if isinstance(data, list):
+                                      log(f"PRODUCTS found {len(data)}")
+                                      if data:
+                                          log(json.dumps(data[0], ensure_ascii=False)[:6000])
+                                  elif isinstance(data, dict):
+                                      # maybe paginated
+                                      log(f"DATA keys {list(data.keys())}")
+                                      for k in ["products","data","items"]:
+                                          if k in data and isinstance(data[k], list):
+                                              log(f"FOUND {k} len={len(data[k])}")
+                                              if data[k]:
+                                                  log(json.dumps(data[k][0], ensure_ascii=False)[:6000])
+                          except Exception as e:
+                              log(f"header try fail {e}")
+                          break
+                      break
+                  # try with query param ?api_token=
+                  try:
+                      rr=s.get(f"https://jammaleg.com/api/products?api_token={token}", headers={"Accept":"application/json"}, timeout=15)
+                      log(f"GET api/products?api_token => {rr.status_code} {rr.text[:5000]}")
+                  except Exception as e:
+                      log(f"query token fail {e}")
+                  # try /api/products/list etc with token
+                  for url in [
+                      "https://jammaleg.com/api/products",
+                      "https://jammaleg.com/api/products/list",
+                      "https://jammaleg.com/api/products?page=1",
+                      "https://jammaleg.com/api/products?per_page=100",
+                      "https://jammaleg.com/api/user/products",
+                      "https://jammaleg.com/api/affiliate/products",
+                      "https://jammaleg.com/api/categories",
+                      "https://jammaleg.com/api/v1/products",
+                      "https://jammaleg.com/api/app/products",
                   ]:
                       try:
-                          if token and endpoint.endswith("/affiliate/login"):
-                              pl["_token"]=token
-                          hdrs={"Accept":"application/json, text/html,*/*","Origin":"https://jammaleg.com","Referer":"https://jammaleg.com/affiliate/login"}
-                          if payload_type=="json":
-                              hdrs["Content-Type"]="application/json"
-                              r=s.post(endpoint, json=pl, headers=hdrs, timeout=20)
-                          else:
-                              r=s.post(endpoint, data=pl, headers=hdrs, timeout=20)
-                          log(f"POST {endpoint} {payload_type} keys={list(pl.keys())} => {r.status_code} ct={r.headers.get('content-type','')} len={len(r.text)}")
-                          log(r.text[:4000])
-                          log(f"cookies after POST: {s.cookies.get_dict()}")
-                          # if success, try to fetch protected endpoints immediately
-                          if r.status_code in (200,302) and ("success" in r.text.lower() or "token" in r.text.lower() or "dashboard" in r.text.lower()):
-                              # save response
-                              pass
+                          headers={"Accept":"application/json","Authorization": f"Bearer {token}"}
+                          rr=s.get(url, headers=headers, timeout=15)
+                          log(f"GET {url} with Bearer => {rr.status_code} {rr.text[:5000]}")
                       except Exception as e:
-                          log(f"POST {endpoint} {payload_type} fail {e}")
-                  break
-              break
-          # 3: try other known API routes
-          try:
-              r=s.get("https://jammaleg.com/", timeout=20)
-              log(f"GET / {r.status_code}")
-              apis=re.findall(r'/api/[a-zA-Z0-9/_-]+', r.text)
-              log(f"APIs in homepage: {sorted(set(apis))}")
+                          log(f"GET {url} fail {e}")
+                  # try product detail endpoint with token
+                  try:
+                      rr=s.get("https://jammaleg.com/api/product/1790", headers={"Accept":"application/json","Authorization": f"Bearer {token}"}, timeout=15)
+                      log(f"GET api/product/1790 with Bearer => {rr.status_code} {rr.text[:5000]}")
+                  except Exception as e:
+                      log(f"detail fail {e}")
           except Exception as e:
-              log(f"homepage fail {e}")
-          # 4: try protected endpoints with current session (after login attempts)
-          for url in [
-              "https://jammaleg.com/api/products",
-              "https://jammaleg.com/api/products?page=1",
-              "https://jammaleg.com/api/categories",
-              "https://jammaleg.com/api/user",
-              "https://jammaleg.com/api/me",
-              "https://jammaleg.com/api/affiliate/products",
-              "https://jammaleg.com/affiliate/products",
-              "https://jammaleg.com/affiliate/dashboard",
-              "https://jammaleg.com/affiliate/api/products",
-          ]:
-              try:
-                  r=s.get(url, timeout=15, headers={"Accept":"application/json, text/html,*/*"})
-                  log(f"GET {url} => {r.status_code} ct={r.headers.get('content-type','')} len={len(r.text)}")
-                  log(r.text[:3000])
-                  log(f"cookies: {s.cookies.get_dict()}")
-              except Exception as e:
-                  log(f"GET {url} fail {e}")
-          # also try POST login to /login (without api prefix) with CSRF
-          if token:
-              try:
-                  pl={"_token": token, "email": user, "password": pw}
-                  r=s.post("https://jammaleg.com/affiliate/login", data=pl, headers={"Referer":"https://jammaleg.com/affiliate/login","Origin":"https://jammaleg.com","Accept":"text/html,*/*"}, timeout=20)
-                  log(f"POST affiliate/login with _token => {r.status_code} final_url={r.url} len={len(r.text)}")
-                  log(r.text[:4000])
-                  # after this, try dashboard
-                  r2=s.get("https://jammaleg.com/affiliate/dashboard", timeout=15)
-                  log(f"GET affiliate/dashboard after login => {r2.status_code} len={len(r2.text)}")
-                  log(r2.text[:4000])
-              except Exception as e:
-                  log(f"affiliate/login form POST fail {e}")
-          # save to file
+              log(f"parse fail {e}")
+          # also try to discover via HTML affiliate page after login with token as cookie?
+          # save
           os.makedirs("data", exist_ok=True)
-          open("data/_jammaleg_probe.json","w",encoding="utf-8").write(json.dumps({"at": __import__("datetime").datetime.utcnow().isoformat(), "log": out}, ensure_ascii=False, indent=2))
-          print("saved data/_jammaleg_probe.json")
+          open("data/_jammaleg_probe2.json","w",encoding="utf-8").write(json.dumps({"at": __import__("datetime").datetime.utcnow().isoformat(), "log": out}, ensure_ascii=False, indent=2))
+          print("saved")
           PY
-          cat data/_jammaleg_probe.json | head -c 8000
+          cat data/_jammaleg_probe2.json | head -c 12000
       - name: commit probe result
         run: |
           git config user.name "probe-bot"
           git config user.email "probe@users.noreply.github.com"
-          git add data/_jammaleg_probe.json || true
-          git diff --cached --quiet && echo "no changes" || (git commit -m "probe jammaleg $(date -u +%H:%M)" && git push)
+          git add data/_jammaleg_probe2.json || true
+          git diff --cached --quiet && echo "no changes" || (git commit -m "probe jammaleg2 $(date -u +%H:%M)" && git push)
