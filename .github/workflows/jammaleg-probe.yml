@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install --quiet requests beautifulsoup4 lxml
-      - name: probe web login + scrape products
+      - name: probe scrape products detail
         env:
           JAMMALEG_USER: ${{ secrets.JAMMALEG_USER || vars.JAMMALEG_USER || 'ae782236@gmail.com' }}
           JAMMALEG_PASS: ${{ secrets.JAMMALEG_PASS || vars.JAMMALEG_PASS || 'aA55667788' }}
@@ -24,117 +24,70 @@ jobs:
           python - <<'PY'
           import os, requests, json, re, time
           from bs4 import BeautifulSoup
-          user=os.environ.get('JAMMALEG_USER','ae782236@gmail.com')
-          pw=os.environ.get('JAMMALEG_PASS','aA55667788')
+          user=os.environ.get('JAMMALEG_USER')
+          pw=os.environ.get('JAMMALEG_PASS')
+          s=requests.Session()
+          s.headers.update({"User-Agent":"Mozilla/5.0 Chrome/124","Accept":"text/html,*/*"})
           out=[]
           def log(*a):
               m=" ".join(str(x) for x in a)
               print(m, flush=True)
               out.append(m)
-          s=requests.Session()
-          s.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"ar,en;q=0.8"})
-          # 1. GET login page
+          # login web
           r=s.get("https://jammaleg.com/affiliate/login", timeout=20)
-          log(f"GET login {r.status_code} len={len(r.text)} cookies={s.cookies.get_dict()}")
-          log(r.text[:8000])
-          # parse form
-          soup=BeautifulSoup(r.text, 'lxml')
-          form=soup.find('form')
-          if form:
-              action=form.get('action')
-              method=form.get('method','GET')
-              inputs=form.find_all('input')
-              log(f"FORM action={action} method={method}")
-              for inp in inputs:
-                  log(f"  INPUT name={inp.get('name')} type={inp.get('type')} value={inp.get('value','')[:50]}")
-              # also meta csrf
-              meta=soup.find('meta', attrs={'name':'csrf-token'})
-              if meta:
-                  log(f"meta csrf {meta.get('content')[:40]}")
-              # find _token input
-              tok_inp=soup.find('input', attrs={'name':'_token'})
-              if tok_inp:
-                  log(f"_token input {tok_inp.get('value')[:40]}")
-          else:
-              log("NO FORM found")
-          # Try to find all API calls in JS
-          scripts=soup.find_all('script')
-          for sc in scripts:
-              if sc.string and ('api' in sc.string.lower() or 'login' in sc.string.lower()):
-                  log(f"SCRIPT snippet: {sc.string[:2000]}")
-          # 2. Try POST with different endpoints
-          # Extract _token
-          tok=None
-          try:
-              m=re.search(r'name="_token" value="([^"]+)"', r.text)
-              if m:
-                  tok=m.group(1)
-                  log(f"extracted _token {tok[:30]}")
-          except: pass
-          # endpoint candidates - look at network via form action
-          # Try POST to form action
-          if form and action:
-              url=action
-              if url.startswith('/'):
-                  url='https://jammaleg.com'+url
-              elif not url.startswith('http'):
-                  url='https://jammaleg.com/affiliate/login'
-              log(f"TRY POST to form action {url}")
-              # payload with email
-              for field_name in ['email','phone','username','user']:
-                  payload={'_token': tok, field_name: user, 'password': pw}
-                  try:
-                      rr=s.post(url, data=payload, headers={"Referer":"https://jammaleg.com/affiliate/login","Origin":"https://jammaleg.com"}, timeout=20, allow_redirects=True)
-                      log(f"POST {url} field={field_name} => {rr.status_code} final_url={rr.url} len={len(rr.text)} cookies={s.cookies.get_dict()}")
-                      log(rr.text[:8000])
-                  except Exception as e:
-                      log(f"POST fail {e}")
-                  break
-          # Also try POST to /api/login with email (not phone) to see difference
-          try:
-              rr=s.post("https://jammaleg.com/api/login", json={"email": user, "password": pw}, headers={"Accept":"application/json","Content-Type":"application/json"}, timeout=15)
-              log(f"POST api/login email => {rr.status_code} {rr.text[:5000]}")
-          except Exception as e:
-              log(f"api login email fail {e}")
-          # 3. After web login attempt, try to fetch affiliate pages that might contain products
-          for url in [
-              "https://jammaleg.com/affiliate/dashboard",
-              "https://jammaleg.com/affiliate/products",
-              "https://jammaleg.com/affiliate/product/list",
-              "https://jammaleg.com/dashboard",
-              "https://jammaleg.com/products",
-              "https://jammaleg.com/product/detils/1790",
-          ]:
-              try:
-                  rr=s.get(url, timeout=15)
-                  log(f"GET {url} after login => {rr.status_code} len={len(rr.text)}")
-                  log(rr.text[:6000])
-                  # look for product IDs
-                  ids=re.findall(r'/product/detils/(\d+)', rr.text)
-                  if ids:
-                      log(f"  FOUND product ids {ids[:10]}")
-                  # look for /api calls
-                  apis=re.findall(r'/api/[^\s\"\'<>]+', rr.text)
-                  if apis:
-                      log(f"  apis {set(apis)}")
-              except Exception as e:
-                  log(f"GET {url} fail {e}")
-          # 4. Also check homepage product extraction as guest vs logged in
-          try:
-              rr=s.get("https://jammaleg.com/", timeout=15)
-              log(f"GET / after login {rr.status_code} len={len(rr.text)}")
-              # find product blocks
+          m=re.search(r'name="_token" value="([^"]+)"', r.text)
+          tok=m.group(1) if m else ""
+          log(f"token {tok[:20]}")
+          r2=s.post("https://jammaleg.com/login", data={"_token": tok, "email": user, "password": pw}, headers={"Referer":"https://jammaleg.com/affiliate/login","Origin":"https://jammaleg.com"}, timeout=20)
+          log(f"login POST {r2.status_code} final {r2.url}")
+          # fetch /products page (affiliate product list)
+          for url in ["https://jammaleg.com/products","https://jammaleg.com/products?page=1","https://jammaleg.com/sellers"]:
+              rr=s.get(url, timeout=20)
+              log(f"GET {url} {rr.status_code} len={len(rr.text)}")
+              log(rr.text[:12000])
+              soup=BeautifulSoup(rr.text,'lxml')
+              # find product cards
               ids=re.findall(r'/product/detils/(\d+)', rr.text)
-              log(f"homepage ids {ids[:20]}")
-          except Exception as e:
-              log(f"homepage fail {e}")
+              log(f"ids {ids[:15]}")
+              # try to find product card structure
+              # look for div with class product
+              cards=soup.find_all('div', class_=re.compile(r'product|card'))
+              log(f"cards found {len(cards)}")
+              if cards:
+                  for c in cards[:2]:
+                      log(str(c)[:3000])
+              # save for later
+              if len(rr.text) > 5000 and ids:
+                  break
+          # fetch product detail and parse
+          for pid in ["1790","1789","1784"]:
+              rr=s.get(f"https://jammaleg.com/product/detils/{pid}", timeout=20)
+              log(f"GET detail {pid} {rr.status_code} len={len(rr.text)}")
+              log(rr.text[:15000])
+              soup=BeautifulSoup(rr.text,'lxml')
+              # price
+              price_m=re.search(r'(\d{2,5}(?:\.\d+)?)\s*(?:ج\.م|جنيه|EGP)', rr.text)
+              log(f"price_match {price_m.group(0) if price_m else 'none'}")
+              # images
+              imgs=re.findall(r'https://jammaleg\.com/uploads/products_images/[^\"\'\s<>]+', rr.text)
+              log(f"imgs {imgs[:5]}")
+              # also try uploads/products_images pattern
+              # commission / purchase price
+              # look for "سعر الشراء" and "العمولة" or "سعر البيع"
+              for term in ["سعر الشراء","سعر البيع","العمولة","السعر","purchase","commission"]:
+                  if term in rr.text:
+                      idx=rr.text.find(term)
+                      log(f"term {term} context: {rr.text[max(0,idx-150):idx+150].replace(chr(10),' ')}")
+              # categories
+              cats=re.findall(r'category[^\n]{0,100}', rr.text, re.I)
+              log(f"cats snippet {cats[:5]}")
           os.makedirs("data", exist_ok=True)
-          open("data/_jammaleg_probe4.json","w",encoding="utf-8").write(json.dumps({"at": __import__("datetime").datetime.utcnow().isoformat(),"log": out}, ensure_ascii=False, indent=2))
+          open("data/_jammaleg_probe5.json","w",encoding="utf-8").write(json.dumps({"log": out}, ensure_ascii=False, indent=2))
           PY
-          cat data/_jammaleg_probe4.json | head -c 15000
-      - name: commit probe result
+          cat data/_jammaleg_probe5.json | head -c 18000
+      - name: commit
         run: |
           git config user.name "probe-bot"
           git config user.email "probe@users.noreply.github.com"
-          git add data/_jammaleg_probe4.json || true
-          git diff --cached --quiet && echo "no changes" || (git commit -m "probe jammaleg web $(date -u +%H:%M)" && git push)
+          git add data/_jammaleg_probe5.json || true
+          git diff --cached --quiet && echo "no" || (git commit -m "probe5 $(date -u +%H:%M)" && git push)
