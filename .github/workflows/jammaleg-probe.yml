@@ -1,0 +1,91 @@
+name: jammaleg-probe
+on:
+  push:
+    paths:
+      - '.github/workflows/jammaleg-probe.yml'
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet requests
+      - name: probe jammaleg login + products
+        env:
+          JAMMALEG_USER: ${{ secrets.JAMMALEG_USER || vars.JAMMALEG_USER || 'ae782236@gmail.com' }}
+          JAMMALEG_PASS: ${{ secrets.JAMMALEG_PASS || vars.JAMMALEG_PASS || 'aA55667788' }}
+        run: |
+          python - <<'PY'
+          import os, requests, json, re
+          user=os.environ.get('JAMMALEG_USER','ae782236@gmail.com')
+          pw=os.environ.get('JAMMALEG_PASS','aA55667788')
+          print(f"USER={user} pw_len={len(pw)}")
+          s=requests.Session()
+          s.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124 Safari/537.36","Accept":"application/json, text/html,*/*","Accept-Language":"ar,en;q=0.8"})
+          # try 1: GET affiliate/login to get CSRF
+          try:
+              r=s.get("https://jammaleg.com/affiliate/login", timeout=20)
+              print(f"GET affiliate/login {r.status_code} len={len(r.text)}")
+              print(r.text[:3000])
+              # find _token
+              m=re.search(r'name="_token" value="([^"]+)"', r.text)
+              print(f"CSRF token found={bool(m)}")
+              if m:
+                  print(f"token prefix {m.group(1)[:20]}")
+          except Exception as e:
+              print(f"GET affiliate/login fail {e}")
+          # try 2: POST /api/login with various payloads
+          for endpoint in ["https://jammaleg.com/api/login", "https://jammaleg.com/api/auth/login", "https://jammaleg.com/affiliate/login"]:
+              for payload in [
+                  {"email": user, "password": pw},
+                  {"email": user, "password": pw, "username": user},
+                  {"phone": user, "password": pw},
+                  {"user": user, "pass": pw},
+                  {"_token": m.group(1) if 'm' in locals() and m else "", "email": user, "password": pw},
+              ]:
+                  try:
+                      # try as JSON
+                      headers={"Accept":"application/json","Content-Type":"application/json","Origin":"https://jammaleg.com","Referer":"https://jammaleg.com/affiliate/login"}
+                      r=s.post(endpoint, json=payload, headers=headers, timeout=20)
+                      print(f"POST {endpoint} JSON {list(payload.keys())} => {r.status_code} {r.text[:1500]}")
+                  except Exception as e:
+                      print(f"POST {endpoint} JSON fail {e}")
+                  try:
+                      # try as form
+                      headers2={"Accept":"application/json","Origin":"https://jammaleg.com","Referer":"https://jammaleg.com/affiliate/login"}
+                      r2=s.post(endpoint, data=payload, headers=headers2, timeout=20)
+                      print(f"POST {endpoint} FORM {list(payload.keys())} => {r2.status_code} {r2.text[:1500]}")
+                  except Exception as e:
+                      print(f"POST {endpoint} FORM fail {e}")
+                  # only test one payload per endpoint for brevity, break after first
+                  break
+          # try 3: direct API login endpoint discovery via fetch of homepage JS for API routes
+          try:
+              r=s.get("https://jammaleg.com/", timeout=20)
+              print(f"GET / {r.status_code}")
+              # find api routes in page
+              apis=re.findall(r'/api/[a-z/_]+', r.text)
+              print(f"APIs found in homepage: {set(apis)}")
+          except Exception as e:
+              print(f"homepage fail {e}")
+          # try 4: try to fetch products unauthenticated vs authenticated attempts
+          endpoints_to_try=[
+              "https://jammaleg.com/api/products",
+              "https://jammaleg.com/api/products?page=1",
+              "https://jammaleg.com/api/products/list",
+              "https://jammaleg.com/api/categories",
+              "https://jammaleg.com/api/user",
+              "https://jammaleg.com/api/me",
+              "https://jammaleg.com/api/affiliate/products",
+          ]
+          for url in endpoints_to_try:
+              try:
+                  r=s.get(url, timeout=15, headers={"Accept":"application/json"})
+                  print(f"GET {url} => {r.status_code} {r.text[:800]}")
+              except Exception as e:
+                  print(f"GET {url} fail {e}")
+          PY
