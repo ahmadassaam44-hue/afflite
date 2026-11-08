@@ -15,94 +15,126 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install --quiet requests
-      - name: probe jammaleg products with category
+      - run: pip install --quiet requests beautifulsoup4 lxml
+      - name: probe web login + scrape products
         env:
           JAMMALEG_USER: ${{ secrets.JAMMALEG_USER || vars.JAMMALEG_USER || 'ae782236@gmail.com' }}
           JAMMALEG_PASS: ${{ secrets.JAMMALEG_PASS || vars.JAMMALEG_PASS || 'aA55667788' }}
         run: |
           python - <<'PY'
-          import os, requests, json
-          user=os.environ.get('JAMMALEG_USER')
-          pw=os.environ.get('JAMMALEG_PASS')
-          s=requests.Session()
-          s.headers.update({"User-Agent":"Mozilla/5.0","Accept":"application/json"})
+          import os, requests, json, re, time
+          from bs4 import BeautifulSoup
+          user=os.environ.get('JAMMALEG_USER','ae782236@gmail.com')
+          pw=os.environ.get('JAMMALEG_PASS','aA55667788')
           out=[]
           def log(*a):
               m=" ".join(str(x) for x in a)
               print(m, flush=True)
               out.append(m)
-          r=s.post("https://jammaleg.com/api/login", json={"phone": user, "password": pw}, headers={"Accept":"application/json","Content-Type":"application/json"}, timeout=20)
-          j=r.json()
-          token=j.get("data",{}).get("api_token")
-          log(f"token len {len(token)}")
-          headers={"Accept":"application/json","Authorization": f"Bearer {token}"}
-          # get categories
-          rc=s.get("https://jammaleg.com/api/categories", headers=headers, timeout=15)
-          log(f"categories {rc.status_code} {rc.text[:6000]}")
-          cats=rc.json().get("data",{}).get("categories",[])
-          log(f"found {len(cats)} cats: {[(c['id'],c['name']) for c in cats]}")
-          # try products with various params
-          test_urls=[
-              "https://jammaleg.com/api/products",
-              "https://jammaleg.com/api/products?page=1&per_page=20",
-              "https://jammaleg.com/api/products?category_id=22",
-              "https://jammaleg.com/api/products?category=22",
-              "https://jammaleg.com/api/products?cat=22",
-              "https://jammaleg.com/api/product/list?category_id=22",
-              "https://jammaleg.com/api/products/list?category_id=22",
-              "https://jammaleg.com/api/category/22/products",
-              "https://jammaleg.com/api/categories/22/products",
-              "https://jammaleg.com/api/category/products?category_id=22",
-              "https://jammaleg.com/api/products?category_id=25",
-              "https://jammaleg.com/api/products?category_id=26",
-              "https://jammaleg.com/api/products?category_id=28",
-              "https://jammaleg.com/api/products?category_id=30",
-              "https://jammaleg.com/api/products?category_id=32",
-              "https://jammaleg.com/api/products?category_id=33",
-              "https://jammaleg.com/api/products?category_id=34",
-              "https://jammaleg.com/api/products?search=",
-              "https://jammaleg.com/api/products?affiliate_code=387305",
-              "https://jammaleg.com/api/affiliate/products",
-              "https://jammaleg.com/api/products/all",
-              "https://jammaleg.com/api/all/products",
-              "https://jammaleg.com/api/products?limit=100",
-              "https://jammaleg.com/api/products?per_page=100",
-          ]
-          for url in test_urls:
-              try:
-                  rr=s.get(url, headers=headers, timeout=15)
-                  log(f"GET {url} => {rr.status_code} {rr.text[:8000]}")
-              except Exception as e:
-                  log(f"fail {url} {e}")
-          # also try POST to products with body
-          for url in ["https://jammaleg.com/api/products", "https://jammaleg.com/api/products/search", "https://jammaleg.com/api/products/filter"]:
-              for body in [{"category_id":22}, {"category_id":25}, {"page":1}, {"per_page":100}, {}]:
+          s=requests.Session()
+          s.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124 Safari/537.36","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language":"ar,en;q=0.8"})
+          # 1. GET login page
+          r=s.get("https://jammaleg.com/affiliate/login", timeout=20)
+          log(f"GET login {r.status_code} len={len(r.text)} cookies={s.cookies.get_dict()}")
+          log(r.text[:8000])
+          # parse form
+          soup=BeautifulSoup(r.text, 'lxml')
+          form=soup.find('form')
+          if form:
+              action=form.get('action')
+              method=form.get('method','GET')
+              inputs=form.find_all('input')
+              log(f"FORM action={action} method={method}")
+              for inp in inputs:
+                  log(f"  INPUT name={inp.get('name')} type={inp.get('type')} value={inp.get('value','')[:50]}")
+              # also meta csrf
+              meta=soup.find('meta', attrs={'name':'csrf-token'})
+              if meta:
+                  log(f"meta csrf {meta.get('content')[:40]}")
+              # find _token input
+              tok_inp=soup.find('input', attrs={'name':'_token'})
+              if tok_inp:
+                  log(f"_token input {tok_inp.get('value')[:40]}")
+          else:
+              log("NO FORM found")
+          # Try to find all API calls in JS
+          scripts=soup.find_all('script')
+          for sc in scripts:
+              if sc.string and ('api' in sc.string.lower() or 'login' in sc.string.lower()):
+                  log(f"SCRIPT snippet: {sc.string[:2000]}")
+          # 2. Try POST with different endpoints
+          # Extract _token
+          tok=None
+          try:
+              m=re.search(r'name="_token" value="([^"]+)"', r.text)
+              if m:
+                  tok=m.group(1)
+                  log(f"extracted _token {tok[:30]}")
+          except: pass
+          # endpoint candidates - look at network via form action
+          # Try POST to form action
+          if form and action:
+              url=action
+              if url.startswith('/'):
+                  url='https://jammaleg.com'+url
+              elif not url.startswith('http'):
+                  url='https://jammaleg.com/affiliate/login'
+              log(f"TRY POST to form action {url}")
+              # payload with email
+              for field_name in ['email','phone','username','user']:
+                  payload={'_token': tok, field_name: user, 'password': pw}
                   try:
-                      rr=s.post(url, json=body, headers=headers, timeout=15)
-                      log(f"POST {url} body={body} => {rr.status_code} {rr.text[:5000]}")
+                      rr=s.post(url, data=payload, headers={"Referer":"https://jammaleg.com/affiliate/login","Origin":"https://jammaleg.com"}, timeout=20, allow_redirects=True)
+                      log(f"POST {url} field={field_name} => {rr.status_code} final_url={rr.url} len={len(rr.text)} cookies={s.cookies.get_dict()}")
+                      log(rr.text[:8000])
                   except Exception as e:
                       log(f"POST fail {e}")
-          # try to get user info to see affiliate_code
+                  break
+          # Also try POST to /api/login with email (not phone) to see difference
           try:
-              rr=s.get("https://jammaleg.com/api/user", headers=headers, timeout=15)
-              log(f"GET user => {rr.status_code} {rr.text[:5000]}")
+              rr=s.post("https://jammaleg.com/api/login", json={"email": user, "password": pw}, headers={"Accept":"application/json","Content-Type":"application/json"}, timeout=15)
+              log(f"POST api/login email => {rr.status_code} {rr.text[:5000]}")
           except Exception as e:
-              log(f"user fail {e}")
-          # try to discover via affiliate_code in URL params from homepage product links: product/detils/1790 may be accessible with token?
-          for pid in [1790,1789,1788,1787,1779,1778,1777]:
-              for url in [f"https://jammaleg.com/api/products/{pid}", f"https://jammaleg.com/api/product/{pid}", f"https://jammaleg.com/api/product/detils/{pid}", f"https://jammaleg.com/api/products/show/{pid}"]:
-                  try:
-                      rr=s.get(url, headers=headers, timeout=15)
-                      log(f"GET {url} => {rr.status_code} {rr.text[:4000]}")
-                  except Exception as e:
-                      log(f"fail prod detail {e}")
+              log(f"api login email fail {e}")
+          # 3. After web login attempt, try to fetch affiliate pages that might contain products
+          for url in [
+              "https://jammaleg.com/affiliate/dashboard",
+              "https://jammaleg.com/affiliate/products",
+              "https://jammaleg.com/affiliate/product/list",
+              "https://jammaleg.com/dashboard",
+              "https://jammaleg.com/products",
+              "https://jammaleg.com/product/detils/1790",
+          ]:
+              try:
+                  rr=s.get(url, timeout=15)
+                  log(f"GET {url} after login => {rr.status_code} len={len(rr.text)}")
+                  log(rr.text[:6000])
+                  # look for product IDs
+                  ids=re.findall(r'/product/detils/(\d+)', rr.text)
+                  if ids:
+                      log(f"  FOUND product ids {ids[:10]}")
+                  # look for /api calls
+                  apis=re.findall(r'/api/[^\s\"\'<>]+', rr.text)
+                  if apis:
+                      log(f"  apis {set(apis)}")
+              except Exception as e:
+                  log(f"GET {url} fail {e}")
+          # 4. Also check homepage product extraction as guest vs logged in
+          try:
+              rr=s.get("https://jammaleg.com/", timeout=15)
+              log(f"GET / after login {rr.status_code} len={len(rr.text)}")
+              # find product blocks
+              ids=re.findall(r'/product/detils/(\d+)', rr.text)
+              log(f"homepage ids {ids[:20]}")
+          except Exception as e:
+              log(f"homepage fail {e}")
           os.makedirs("data", exist_ok=True)
-          open("data/_jammaleg_probe3.json","w",encoding="utf-8").write(json.dumps({"at": __import__("datetime").datetime.utcnow().isoformat(), "log": out}, ensure_ascii=False, indent=2))
+          open("data/_jammaleg_probe4.json","w",encoding="utf-8").write(json.dumps({"at": __import__("datetime").datetime.utcnow().isoformat(),"log": out}, ensure_ascii=False, indent=2))
           PY
+          cat data/_jammaleg_probe4.json | head -c 15000
       - name: commit probe result
         run: |
           git config user.name "probe-bot"
           git config user.email "probe@users.noreply.github.com"
-          git add data/_jammaleg_probe3.json || true
-          git diff --cached --quiet && echo "no changes" || (git commit -m "probe jammaleg3 $(date -u +%H:%M)" && git push)
+          git add data/_jammaleg_probe4.json || true
+          git diff --cached --quiet && echo "no changes" || (git commit -m "probe jammaleg web $(date -u +%H:%M)" && git push)
