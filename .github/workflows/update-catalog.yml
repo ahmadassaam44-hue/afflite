@@ -13,8 +13,8 @@ on:
       - 'data/id_index.json'
       - 'updater/update_catalog.py'
       - 'updater/mnfean.py'
+      - 'updater/jammaleg.py'
       - 'updater/category_overrides.json'
-      - 'updater/mnfean.py'
       - 'updater/visual_features.py'
       - '.github/workflows/update-catalog.yml'
   schedule:

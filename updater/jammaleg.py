@@ -478,6 +478,17 @@ def normalize_row(raw, idx=0):
     try: commission=float(commission)
     except: commission=0
     total_price = price + commission if commission else price
+    # خصم 10% عن سعر المصدر - السعر المعروض للعميل أقل 10% من السعر الأصلي
+    JAMMALEG_DISCOUNT = 0.10
+    orig_total = float(total_price)
+    orig_price = float(price)
+    if total_price > 0:
+        total_price = round(total_price * (1 - JAMMALEG_DISCOUNT), 2)
+        if price > 0:
+            price = round(price * (1 - JAMMALEG_DISCOUNT), 2)
+    # لحساب الخصم في الواجهة (old_price > price)
+    old_price_val = round(orig_total, 2) if orig_total > total_price else 0
+    disc_pct = 10 if old_price_val else 0
     # stock
     stock = raw.get('stock') or 100
     try: stock=int(float(stock))
@@ -491,8 +502,8 @@ def normalize_row(raw, idx=0):
         'sku': str(raw.get('sku') or raw.get('code') or pid),
         'price': float(total_price),
         'cost': float(price) if price else 0,
-        'old_price': 0,
-        'discount': 0,
+        'old_price': float(old_price_val),
+        'discount': int(disc_pct),
         'price_text': f'{int(total_price) if float(total_price).is_integer() else total_price} جنيه',
         'commission': float(commission),
         'currency': 'جنيه',
