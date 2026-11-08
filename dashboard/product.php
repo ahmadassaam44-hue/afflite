@@ -288,26 +288,7 @@ $pb_max = isset($ex['price_max']) && is_numeric($ex['price_max']) && (float)$ex[
 </div>
 <?php endif; ?>
 
-<?php
-// زرار «السعر عالي؟ تواصل معنا» للمسوقين بس (الزوار مابيشوفوهوش)، ومش للمنتجات الرقمية
-// بيفتح خدمة العملاء، ومعاها تفاصيل المنتج جاهزة في خانة الرسالة (المستخدم يقدر يعدلها قبل الإرسال)
-if (!wf_is_digital_plat($plat) && function_exists('wf_current_is_marketer') && wf_current_is_marketer()) {
-    $cta_code = trim((string)$ref);
-    if ($cta_code === '' && !empty($_SESSION['aff_ref'])) $cta_code = trim((string)$_SESSION['aff_ref']);
-    $cta_name = function_exists('aff_clean') ? (aff_clean($p['name'] ?? '', true) ?: (string)($p['name'] ?? '')) : (string)($p['name'] ?? '');
-    $cta_base = (float)(list_price($p, $plat) ?: display_price($p, $plat));
-    $cta_comm = $cta_code !== '' ? (float)marketer_store_product_comm($cta_code, $plat, (string)$p['id']) : 0.0;
-    $cta_lines = [
-        'السلام عليكم، السعر عالي شوية — محتاج مساعدة في المنتج ده',
-        'المنتج: ' . $cta_name,
-        'الكود: ' . $p['id'] . ' (' . $plat . ')',
-        'السعر: ' . number_format($cta_base + $cta_comm, 2) . ' ' . $cur,
-    ];
-    if ($cta_code !== '') $cta_lines[] = 'الرابط: ' . landing_page_url((string)$p['id'], $cta_code, $cta_comm, $plat);
-    $cta_href = 'support.php?ctx=customer&prefill=' . rawurlencode(mb_substr(implode(' | ', $cta_lines), 0, 900));
-    echo '<div class="price-cta-wrap"><a class="btn lp-cta-btn price-cta" href="' . esc($cta_href) . '"><span>' . wf_svg_icon('wallet', 18) . ' السعر عالي؟ تواصل معنا</span></a></div>';
-}
-?>
+
 <ul class="product-assurance" aria-label="معلومات الشراء">
 <li><?php echo wf_svg_icon('wallet',18); ?>الدفع عند الاستلام</li>
 <?php $pd_ship = function_exists('wf_product_shipping') ? wf_product_shipping($p) : null; ?>
