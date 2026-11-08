@@ -17,6 +17,10 @@ try:
     import storedooo
     HAS_STOREDOOO=True
 except: HAS_STOREDOOO=False
+try:
+    import jammaleg
+    HAS_JAMMALEG=True
+except: HAS_JAMMALEG=False
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, 'data')
@@ -32,7 +36,7 @@ summary = {}
 changed_files = set()
 
 # إشعارات «منتج جديد» لكل المسوقين: لقطه ids قبل التحديث، ومقارنة بعد التشغيل
-_NOTIFY_PLATFORMS = ('hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'sources', 'mnfean')
+_NOTIFY_PLATFORMS = ('hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'sources', 'mnfean', 'jammaleg')
 
 def _cezma_shard_files():
     return []
@@ -766,7 +770,7 @@ def remove_blocked_products():
     if not blocked:
         return 0
     removed = 0
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg'):
         for fname in (f'{plat}.json', f'lite_{plat}.json'):
             rows = jload(fname, [])
             if not isinstance(rows, list) or not rows:
@@ -788,7 +792,7 @@ def apply_category_overrides():
     if not isinstance(ov, dict) or not ov:
         return 0
     fixed = 0
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg'):
         for fname in (f'{plat}.json', f'lite_{plat}.json'):
             rows = jload(fname, [])
             if not isinstance(rows, list) or not rows:
@@ -808,7 +812,7 @@ def apply_category_overrides():
 def repair_product_categories():
     """مراجعة أقسام المنتجات في كل الأفلييتات: توحيد القيم + تصحيح الواقع في القسم الافتراضي غلط."""
     fixed = 0
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg'):
         rows = jload(plat + '.json', [])
         if not isinstance(rows, list) or not rows: continue
         ch = 0
@@ -2019,7 +2023,7 @@ def update_json_sources():
 # ---------------------------------------------------------------- clean names & images
 def clean_catalog_names_and_images():
     """تنظيف أسماء المنتجات والصور من الروابط الوهمية (place-holder / '/') والتكرار والأسماء المبتورة"""
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg'):
         rows = jload(plat + '.json', None)
         if not isinstance(rows, list): continue
         dedup = []
@@ -2136,7 +2140,7 @@ def rebuild_lite():
     """يحدّث lite_*.json مع الحفاظ على بنيته الحالية (نلمس فقط الحقول المتغيرة)"""
     SYNC = ['price', 'price_text', 'old_price', 'discount', 'stock', 'name', 'category', 'sizes', 'cost', 'commission', 'currency',
             'added_at', 'price_drop_at', 'price_updated_at', 'unavailable_since', 'availability', 'is_available']
-    for plat in ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean']:
+    for plat in ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg']:
         full = jload(f'{plat}.json', None)
         if full is None: continue
         old_lite = {str(x.get('id')): x for x in jload(f'lite_{plat}.json', [])}
@@ -2172,7 +2176,7 @@ def rebuild_lite():
             lite.append(y)
         jsave(f'lite_{plat}.json', lite)
     idx_map = {}
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg'):
         for fn in (f'{plat}.json', f'lite_{plat}.json'):
             rows = jload(fn, [])
             if not isinstance(rows, list): continue
@@ -2209,7 +2213,7 @@ def _catalog_row_has_image(row, plat, local_detail_ids):
 
 def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
     """Build physical catalog counts — now with mnfean + storedooo (no cezma shards)."""
-    physical = ('timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean')
+    physical = ('timehand', 'safqa', 'vendoor', 'angazny', 'shopmart', 'mnfean', 'jammaleg')
     local_details = jload('detail_index.json', {})
     local_detail_ids = set()
     if isinstance(local_details, dict):
@@ -2234,12 +2238,17 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
             if category:
                 physical_categories[category] = physical_categories.get(category, 0) + 1
         platform_counts[plat] = count
-    # mnfean / storedooo breakdowns for frontend
+    # mnfean / storedooo / jammaleg breakdowns for frontend
     mnfean_categories = {}
     for row in jload('lite_mnfean.json', []) or jload('mnfean.json', []):
         cat = str(row.get('category') or '').strip()
         if cat:
             mnfean_categories[cat] = mnfean_categories.get(cat, 0) + 1
+    jammaleg_categories = {}
+    for row in jload('lite_jammaleg.json', []) or jload('jammaleg.json', []):
+        cat = str(row.get('category') or '').strip()
+        if cat:
+            jammaleg_categories[cat] = jammaleg_categories.get(cat, 0) + 1
     storedooo_categories = {}
     for row in jload('lite_storedooo.json', []) or jload('storedooo.json', []):
         cat = str(row.get('category') or '').strip()
@@ -2251,6 +2260,7 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
         'physical_platforms': platform_counts,
         'physical_categories': dict(sorted(physical_categories.items())),
         'mnfean_categories': dict(sorted(mnfean_categories.items())),
+        'jammaleg_categories': dict(sorted(jammaleg_categories.items())),
         'storedooo_categories': dict(sorted(storedooo_categories.items())),
         'mnfean_index_signature': str(cezma_index_signature or ''),
     }
@@ -2259,7 +2269,7 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
 # ---------------------------------------------------------------- Open production: normalized virtual stock; source inventory never limits sales.
 def force_open_production():
     open_qty = 999999
-    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean']
+    platforms = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg']
     def open_item(item):
         if not isinstance(item, dict): return
         item['stock'] = open_qty
@@ -2311,7 +2321,7 @@ def site_deploy_files():
             out.add(extra)
     import glob as _g
     # cezma shards removed
-    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean'):
+    for plat in ('vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'jammaleg'):
         for fn in (f'data/{plat}.json', f'data/lite_{plat}.json'):
             if os.path.isfile(os.path.join(ROOT, fn)):
                 out.add(fn)
@@ -3707,7 +3717,7 @@ def _audit_requested_in_push():
 
 
 if __name__ == '__main__':
-    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean']
+    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean', 'jammaleg']
     _pre_platform_ids = snapshot_platform_ids()  # قبل أي تحديث: عشان نعرف المنتجات الجديدة في الآخر
     if only == ['deploy'] and _audit_requested_in_push():
         only = ['cezma-audit']
@@ -3778,6 +3788,22 @@ if __name__ == '__main__':
                 log("Mnfean fetch returned 0 — keeping existing files")
         except Exception as e:
             log("Mnfean fetch failed:", str(e)[:200])
+            summary['mnfean'] = {'error': str(e)[:200]}
+    # Jammaleg: fetch fresh catalog (uses JAMMALEG_USER/PASS or MNFEAN fallback)
+    if HAS_JAMMALEG:
+        try:
+            jm_prods = jammaleg.fetch_all()
+            if jm_prods:
+                jdump('jammaleg.json', jm_prods)
+                jdump('lite_jammaleg.json', [{k: p[k] for k in LITE_KEYS if k in p} for p in jm_prods])
+                summary['jammaleg'] = len(jm_prods)
+                log(f"Jammaleg updated {len(jm_prods)} products")
+            else:
+                log("Jammaleg fetch returned 0 — keeping existing files")
+                summary['jammaleg'] = 0
+        except Exception as e:
+            log("Jammaleg fetch failed:", str(e)[:200])
+            summary['jammaleg'] = {'error': str(e)[:200]}
     # Storedooo: fetch fresh catalog (uses STOREDOOO_USER/PASS or MNFEAN fallback)
     if HAS_STOREDOOO:
         try:
@@ -3798,6 +3824,7 @@ if __name__ == '__main__':
             'physical_with_images': _catalog_counts['physical_with_images'],
             'physical_platforms': _catalog_counts.get('physical_platforms', {}),
             'mnfean': len(_catalog_counts.get('mnfean_categories', {})),
+            'jammaleg': len(_catalog_counts.get('jammaleg_categories', {})),
             'storedooo': len(_catalog_counts.get('storedooo_categories', {})),
         }
         log('catalog counts', summary['catalog_counts'])
