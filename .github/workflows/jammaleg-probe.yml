@@ -16,104 +16,93 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install --quiet requests
-      - name: probe jammaleg with token
+      - name: probe jammaleg products with category
         env:
           JAMMALEG_USER: ${{ secrets.JAMMALEG_USER || vars.JAMMALEG_USER || 'ae782236@gmail.com' }}
           JAMMALEG_PASS: ${{ secrets.JAMMALEG_PASS || vars.JAMMALEG_PASS || 'aA55667788' }}
         run: |
           python - <<'PY'
-          import os, requests, json, re
-          user=os.environ.get('JAMMALEG_USER','ae782236@gmail.com')
-          pw=os.environ.get('JAMMALEG_PASS','aA55667788')
+          import os, requests, json
+          user=os.environ.get('JAMMALEG_USER')
+          pw=os.environ.get('JAMMALEG_PASS')
           s=requests.Session()
-          s.headers.update({"User-Agent":"Mozilla/5.0 Chrome/124","Accept":"application/json","Accept-Language":"ar,en;q=0.8"})
+          s.headers.update({"User-Agent":"Mozilla/5.0","Accept":"application/json"})
           out=[]
           def log(*a):
-              msg=" ".join(str(x) for x in a)
-              print(msg, flush=True)
-              out.append(msg)
-          # login
-          r=s.post("https://jammaleg.com/api/login", json={"phone": user, "password": pw}, headers={"Accept":"application/json","Content-Type":"application/json","Origin":"https://jammaleg.com","Referer":"https://jammaleg.com/affiliate/login"}, timeout=20)
-          log(f"LOGIN {r.status_code}")
-          log(r.text[:8000])
+              m=" ".join(str(x) for x in a)
+              print(m, flush=True)
+              out.append(m)
+          r=s.post("https://jammaleg.com/api/login", json={"phone": user, "password": pw}, headers={"Accept":"application/json","Content-Type":"application/json"}, timeout=20)
+          j=r.json()
+          token=j.get("data",{}).get("api_token")
+          log(f"token len {len(token)}")
+          headers={"Accept":"application/json","Authorization": f"Bearer {token}"}
+          # get categories
+          rc=s.get("https://jammaleg.com/api/categories", headers=headers, timeout=15)
+          log(f"categories {rc.status_code} {rc.text[:6000]}")
+          cats=rc.json().get("data",{}).get("categories",[])
+          log(f"found {len(cats)} cats: {[(c['id'],c['name']) for c in cats]}")
+          # try products with various params
+          test_urls=[
+              "https://jammaleg.com/api/products",
+              "https://jammaleg.com/api/products?page=1&per_page=20",
+              "https://jammaleg.com/api/products?category_id=22",
+              "https://jammaleg.com/api/products?category=22",
+              "https://jammaleg.com/api/products?cat=22",
+              "https://jammaleg.com/api/product/list?category_id=22",
+              "https://jammaleg.com/api/products/list?category_id=22",
+              "https://jammaleg.com/api/category/22/products",
+              "https://jammaleg.com/api/categories/22/products",
+              "https://jammaleg.com/api/category/products?category_id=22",
+              "https://jammaleg.com/api/products?category_id=25",
+              "https://jammaleg.com/api/products?category_id=26",
+              "https://jammaleg.com/api/products?category_id=28",
+              "https://jammaleg.com/api/products?category_id=30",
+              "https://jammaleg.com/api/products?category_id=32",
+              "https://jammaleg.com/api/products?category_id=33",
+              "https://jammaleg.com/api/products?category_id=34",
+              "https://jammaleg.com/api/products?search=",
+              "https://jammaleg.com/api/products?affiliate_code=387305",
+              "https://jammaleg.com/api/affiliate/products",
+              "https://jammaleg.com/api/products/all",
+              "https://jammaleg.com/api/all/products",
+              "https://jammaleg.com/api/products?limit=100",
+              "https://jammaleg.com/api/products?per_page=100",
+          ]
+          for url in test_urls:
+              try:
+                  rr=s.get(url, headers=headers, timeout=15)
+                  log(f"GET {url} => {rr.status_code} {rr.text[:8000]}")
+              except Exception as e:
+                  log(f"fail {url} {e}")
+          # also try POST to products with body
+          for url in ["https://jammaleg.com/api/products", "https://jammaleg.com/api/products/search", "https://jammaleg.com/api/products/filter"]:
+              for body in [{"category_id":22}, {"category_id":25}, {"page":1}, {"per_page":100}, {}]:
+                  try:
+                      rr=s.post(url, json=body, headers=headers, timeout=15)
+                      log(f"POST {url} body={body} => {rr.status_code} {rr.text[:5000]}")
+                  except Exception as e:
+                      log(f"POST fail {e}")
+          # try to get user info to see affiliate_code
           try:
-              j=r.json()
-              token=j.get("data",{}).get("api_token") if isinstance(j.get("data"), dict) else j.get("api_token")
-              if not token:
-                  token=j.get("data",{}).get("token") if isinstance(j.get("data"), dict) else None
-              log(f"TOKEN extracted len={len(token) if token else 0}")
-              log(f"TOKEN full: {token}")
-              if token:
-                  # try various auth headers
-                  for hdr_name in ["Authorization","authorization","X-Authorization","X-Token","token"]:
-                      for prefix in ["Bearer ", ""]:
-                          headers={"Accept":"application/json", hdr_name: prefix+token}
-                          try:
-                              rr=s.get("https://jammaleg.com/api/products", headers=headers, timeout=15)
-                              log(f"TRY header {hdr_name}: {prefix}*** => {rr.status_code} ct={rr.headers.get('content-type')} len={len(rr.text)}")
-                              log(rr.text[:5000])
-                              if rr.status_code==200 and '"status":1' in rr.text:
-                                  # parse products
-                                  jj=rr.json()
-                                  data=jj.get("data")
-                                  if isinstance(data, list):
-                                      log(f"PRODUCTS found {len(data)}")
-                                      if data:
-                                          log(json.dumps(data[0], ensure_ascii=False)[:6000])
-                                  elif isinstance(data, dict):
-                                      # maybe paginated
-                                      log(f"DATA keys {list(data.keys())}")
-                                      for k in ["products","data","items"]:
-                                          if k in data and isinstance(data[k], list):
-                                              log(f"FOUND {k} len={len(data[k])}")
-                                              if data[k]:
-                                                  log(json.dumps(data[k][0], ensure_ascii=False)[:6000])
-                          except Exception as e:
-                              log(f"header try fail {e}")
-                          break
-                      break
-                  # try with query param ?api_token=
-                  try:
-                      rr=s.get(f"https://jammaleg.com/api/products?api_token={token}", headers={"Accept":"application/json"}, timeout=15)
-                      log(f"GET api/products?api_token => {rr.status_code} {rr.text[:5000]}")
-                  except Exception as e:
-                      log(f"query token fail {e}")
-                  # try /api/products/list etc with token
-                  for url in [
-                      "https://jammaleg.com/api/products",
-                      "https://jammaleg.com/api/products/list",
-                      "https://jammaleg.com/api/products?page=1",
-                      "https://jammaleg.com/api/products?per_page=100",
-                      "https://jammaleg.com/api/user/products",
-                      "https://jammaleg.com/api/affiliate/products",
-                      "https://jammaleg.com/api/categories",
-                      "https://jammaleg.com/api/v1/products",
-                      "https://jammaleg.com/api/app/products",
-                  ]:
-                      try:
-                          headers={"Accept":"application/json","Authorization": f"Bearer {token}"}
-                          rr=s.get(url, headers=headers, timeout=15)
-                          log(f"GET {url} with Bearer => {rr.status_code} {rr.text[:5000]}")
-                      except Exception as e:
-                          log(f"GET {url} fail {e}")
-                  # try product detail endpoint with token
-                  try:
-                      rr=s.get("https://jammaleg.com/api/product/1790", headers={"Accept":"application/json","Authorization": f"Bearer {token}"}, timeout=15)
-                      log(f"GET api/product/1790 with Bearer => {rr.status_code} {rr.text[:5000]}")
-                  except Exception as e:
-                      log(f"detail fail {e}")
+              rr=s.get("https://jammaleg.com/api/user", headers=headers, timeout=15)
+              log(f"GET user => {rr.status_code} {rr.text[:5000]}")
           except Exception as e:
-              log(f"parse fail {e}")
-          # also try to discover via HTML affiliate page after login with token as cookie?
-          # save
+              log(f"user fail {e}")
+          # try to discover via affiliate_code in URL params from homepage product links: product/detils/1790 may be accessible with token?
+          for pid in [1790,1789,1788,1787,1779,1778,1777]:
+              for url in [f"https://jammaleg.com/api/products/{pid}", f"https://jammaleg.com/api/product/{pid}", f"https://jammaleg.com/api/product/detils/{pid}", f"https://jammaleg.com/api/products/show/{pid}"]:
+                  try:
+                      rr=s.get(url, headers=headers, timeout=15)
+                      log(f"GET {url} => {rr.status_code} {rr.text[:4000]}")
+                  except Exception as e:
+                      log(f"fail prod detail {e}")
           os.makedirs("data", exist_ok=True)
-          open("data/_jammaleg_probe2.json","w",encoding="utf-8").write(json.dumps({"at": __import__("datetime").datetime.utcnow().isoformat(), "log": out}, ensure_ascii=False, indent=2))
-          print("saved")
+          open("data/_jammaleg_probe3.json","w",encoding="utf-8").write(json.dumps({"at": __import__("datetime").datetime.utcnow().isoformat(), "log": out}, ensure_ascii=False, indent=2))
           PY
-          cat data/_jammaleg_probe2.json | head -c 12000
       - name: commit probe result
         run: |
           git config user.name "probe-bot"
           git config user.email "probe@users.noreply.github.com"
-          git add data/_jammaleg_probe2.json || true
-          git diff --cached --quiet && echo "no changes" || (git commit -m "probe jammaleg2 $(date -u +%H:%M)" && git push)
+          git add data/_jammaleg_probe3.json || true
+          git diff --cached --quiet && echo "no changes" || (git commit -m "probe jammaleg3 $(date -u +%H:%M)" && git push)
