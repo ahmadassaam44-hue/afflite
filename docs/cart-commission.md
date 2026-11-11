@@ -31,3 +31,13 @@
 
 ملاحظة: أسعار السلة بتتقرّب لأقرب 5 جنيه زي باقي الموقع، فممكن العمولة الفعلية تزيد أو تقل
 بفارق بسيط عن الرقم المكتوب، والقيمة النهائية دايماً اللي بترجعها `server_order_line`.
+
+## حالة الرفع على الاستضافة
+- **2026-11-11 18:13 UTC** — الملفين الاتنين اترفعوا على `wafirinhalk.ct.ws` عن طريق
+  `.github/workflows/deploy-code.yml` (FTP على `ftpupload.net`، المجلد `/htdocs`)،
+  واتأكدت المطابقة بالـ MD5 للسيرفر:
+  - `dashboard/cart.php` → `78f2323720df677b192f3e4adf686898`
+  - `dashboard/checkout_cart.php` → `575426a5abb984b7dea2e5eb8ac2116d`
+- بعد الرفع: الرئيسية رجعت **200** بعنوانها الصح (226KB)، و`/dashboard/cart.php` **200**،
+  و`/dashboard/checkout_cart.php` **302** (تحويل طبيعي لأن السلة فاضية)، ومفيش أي PHP error.
+- التفاصيل الخام في `data/_code_deploy.json`.
