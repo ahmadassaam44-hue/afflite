@@ -3707,7 +3707,7 @@ def _audit_requested_in_push():
 
 
 if __name__ == '__main__':
-    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'shopmart', 'shopmart_shipping', 'sources', 'mnfean']
+    only = sys.argv[1:] or ['hevo', 'g2g', 'gamsgo', 'safqa', 'vendoor', 'm5zoon', 'angazny', 'timehand', 'sources', 'mnfean']
     _pre_platform_ids = snapshot_platform_ids()  # قبل أي تحديث: عشان نعرف المنتجات الجديدة في الآخر
     if only == ['deploy'] and _audit_requested_in_push():
         only = ['cezma-audit']
@@ -3732,7 +3732,7 @@ if __name__ == '__main__':
             summary['gamsgo_probe'] = {'error': str(_pe)[:200]}
             jsave('gamsgo_probe.json', {'at': NOW, 'error': str(_pe)[:300]})
     for step, fn in (('hevo', update_hevo), ('g2g', update_g2g), ('gamsgo', update_gamsgo), ('gamsgo_probe', gamsgo_probe), ('safqa', update_safqa), ('vendoor', update_vendoor),
-                     ('m5zoon', update_m5zoon), ('angazny', update_angazny), ('timehand', update_timehand), ('sources', update_json_sources), ('shopmart_probe', probe_shopmart), ('shopmart', update_shopmart), ('shopmart_shipping', update_shopmart_shipping)):
+                     ('m5zoon', update_m5zoon), ('angazny', update_angazny), ('timehand', update_timehand), ('sources', update_json_sources)):
         if step not in only: continue
         try: fn()
         except Exception as e:
