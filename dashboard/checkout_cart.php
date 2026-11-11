@@ -34,8 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['name'])) {
         $ref  = active_ref($c['ref'] ?? '');
 
         // 🔴 السعر من السيرفر فقط — سعر السلة (اللي جاي من المتصفح) يُتجاهل تماماً
-        $req  = (isset($c['price']) && (float)$c['price'] > 0) ? (float)$c['price'] : null;
-        $line = server_order_line($pid, $pl, $qty, $req, $ref);
+        // عمولة المسوق المضافة على السطر (من السلة) بتتحسب هنا كمان عشان تتحول لعمولة معلقة
+        $c_ex = (isset($c['extra_comm']) && is_numeric($c['extra_comm']) && (float)$c['extra_comm'] >= 0) ? (float)$c['extra_comm'] : null;
+        $req  = ($c_ex === null && isset($c['price']) && (float)$c['price'] > 0) ? (float)$c['price'] : null;
+        $line = server_order_line($pid, $pl, $qty, $req, $ref, $c_ex);
         if (!$line) continue;                       // منتج غير متاح → يُتخطى
 
         $prod = $line['product'];
@@ -94,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['name'])) {
         $oi = $GLOBALS['_WF_NEW_ORDER_IDX'] ?? null;
 
         $GLOBALS['_WF_ORDER_IDX'] = $oi;
-        $aff    = credit_affiliate_order($ref, $prod, $pl, $qty, $unit);
+        $aff    = credit_affiliate_order($ref, $prod, $pl, $qty, $unit, $c_ex);
         $m_earn = (float)($aff['m_earn'] ?? 0);
 
         jupdate('orders.json', function (&$orders) use ($oi, $m_earn, $aff) {
