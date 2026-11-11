@@ -68,6 +68,30 @@ jobs:
           results['_http_plain'] = sh("curl -sS -i --max-time 25 -A 'Mozilla/5.0' http://wafirinhalk.ct.ws/ 2>&1 | head -c 1200")
           results['_verbose'] = sh("curl -sS -v -o /dev/null --max-time 25 https://wafirinhalk.ct.ws/ 2>&1 | tail -n 25")
 
+          # ── فحص من شبكات تانية برّه (check-host.net) ───────────────────
+          try:
+              import urllib.request, urllib.parse, time as _t
+              def ch_api(path):
+                  req = urllib.request.Request('https://check-host.net/' + path,
+                                               headers={'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0'})
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      return json.loads(r.read().decode('utf-8', 'replace'))
+              node_res = {}
+              for kind, host in (('http', 'https://wafirinhalk.ct.ws/'), ('tcp', 'wafirinhalk.ct.ws:443'), ('dns', 'wafirinhalk.ct.ws')):
+                  try:
+                      start = ch_api('check-%s?host=%s&max_nodes=6' % (kind, urllib.parse.quote(host, safe='')))
+                      rid = start.get('request_id')
+                      _t.sleep(18)
+                      node_res[kind] = {'request_id': rid, 'nodes': start.get('nodes'), 'result': ch_api('check-result/' + str(rid))}
+                  except Exception as e:
+                      node_res[kind] = {'error': str(e)}
+              results['_check_host'] = node_res
+          except Exception as e:
+              results['_check_host_error'] = str(e)
+
+          # ── محاولة قراءة الموقع من خلال بروكسي خارجي ──────────────────
+          results['_via_proxy'] = sh("curl -sS -i --max-time 30 'https://api.codetabs.com/v1/proxy?quest=https://wafirinhalk.ct.ws/' 2>&1 | head -c 800")
+
           for t in targets:
               url = BASE + t
               try:
