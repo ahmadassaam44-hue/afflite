@@ -1,0 +1,105 @@
+name: فحص حالة الموقع (تشخيص)
+
+# بيحاول يفتح الموقع الحقيقي من برّه ويسجّل أول رد بيرجع (كود الحالة + الهيدرز + أول جزء من الصفحة)
+# النتيجة بتتحفظ في data/_site_probe.json عشان نقدر نقراها من الريبو.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: فحص الردود
+        run: |
+          python3 - <<'PY'
+          import json, subprocess, datetime, re, os
+
+          BASE = os.environ.get('PROBE_BASE', 'https://wafirinhalk.ct.ws')
+          UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+          targets = ['/', '/index.php', '/hello.html', '/login.php', '/robots.txt']
+          results = {}
+
+          def curl(url, extra=None):
+              cmd = ['curl', '-sS', '--max-time', '30', '-A', UA,
+                     '-D', '/tmp/h.txt', '-o', '/tmp/b.txt', '-w', '%{http_code} %{url_effective} %{size_download} %{time_total}']
+              if extra:
+                  cmd += extra
+              cmd.append(url)
+              p = subprocess.run(cmd, capture_output=True, text=True)
+              code = p.stdout.strip() if p.stdout else ('ERR:' + (p.stderr or '').strip()[:200])
+              try:
+                  hdrs = open('/tmp/h.txt', encoding='utf-8', errors='replace').read()
+              except Exception:
+                  hdrs = ''
+              try:
+                  body = open('/tmp/b.txt', 'rb').read().decode('utf-8', 'replace')
+              except Exception:
+                  body = ''
+              keep = [l for l in hdrs.splitlines()
+                      if re.match(r'(?i)^(http/|server:|content-type:|location:|x-powered-by:|cf-|x-|retry-after)', l)]
+              title = re.search(r'(?is)<title[^>]*>(.*?)</title>', body)
+              return {
+                  'result': code,
+                  'headers': keep[:25],
+                  'title': (title.group(1).strip()[:200] if title else None),
+                  'body_head': re.sub(r'\s+', ' ', body)[:1200],
+                  'body_len': len(body),
+              }
+
+          for t in targets:
+              url = BASE + t
+              try:
+                  results[t] = curl(url)
+              except Exception as e:
+                  results[t] = {'error': str(e)}
+
+          # محاولة تخطّي فحص الجافاسكريبت بتاع الاستضافة (لو ظهر)
+          try:
+              subprocess.run(['curl', '-sS', '--max-time', '30', '-A', UA,
+                              '-o', '/tmp/aes.js', BASE + '/aes.js'], check=False)
+              js = open('/tmp/aes.js', encoding='utf-8', errors='replace').read()
+              results['_aes_js_len'] = len(js)
+              results['_aes_js_head'] = re.sub(r'\s+', ' ', js)[:600]
+              m = re.search(r"var a=toNumbers\(\"([0-9a-f]+)\"\),b=toNumbers\(\"([0-9a-f]+)\"\),c=toNumbers\(\"([0-9a-f]+)\"\)", js)
+              if m:
+                  node = '''
+                  const fs=require('fs'),vm=require('vm');
+                  vm.runInThisContext(fs.readFileSync('/tmp/aes.js','utf8'));
+                  function toNumbers(d){var e=[];d.replace(/(..)/g,function(d){e.push(parseInt(d,16))});return e}
+                  function toHex(){for(var d=[],d=1==arguments.length&&arguments[0].constructor==Array?arguments[0]:arguments,e="",f=0;f<d.length;f++)e+=(16>d[f]?"0":"")+d[f].toString(16);return e.toLowerCase()}
+                  var a=toNumbers("%s"),b=toNumbers("%s"),c=toNumbers("%s");
+                  console.log(toHex(slowAES.decrypt(c,2,a,b)));
+                  ''' % (m.group(1), m.group(2), m.group(3))
+                  open('/tmp/solve.js', 'w').write(node)
+                  p = subprocess.run(['node', '/tmp/solve.js'], capture_output=True, text=True)
+                  cookie = (p.stdout or '').strip()
+                  results['_challenge_cookie'] = cookie[:80]
+                  if cookie and re.fullmatch(r'[0-9a-f]{16,64}', cookie):
+                      results['_with_cookie'] = curl(BASE + '/', ['-b', '__test=' + cookie])
+          except Exception as e:
+              results['_aes_error'] = str(e)
+
+          payload = {
+              'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
+              'base': BASE,
+              'results': results,
+          }
+          os.makedirs('data', exist_ok=True)
+          with open('data/_site_probe.json', 'w', encoding='utf-8') as f:
+              json.dump(payload, f, ensure_ascii=False, indent=1)
+          print(json.dumps(payload, ensure_ascii=False)[:3000])
+          PY
+
+      - name: حفظ النتيجة في الريبو
+        run: |
+          git config user.name 'site-probe'
+          git config user.email 'probe@users.noreply.github.com'
+          git add data/_site_probe.json
+          git diff --cached --quiet || git commit -m "🔎 نتيجة فحص حالة الموقع $(date -u +%H:%M)"
+          git push
