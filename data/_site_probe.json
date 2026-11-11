@@ -1,5 +1,5 @@
 {
- "at": "2026-11-11T16:22:10+00:00",
+ "at": "2026-11-11T16:28:08+00:00",
  "base": "https://wafirinhalk.ct.ws",
  "results": {
   "_dns": {
@@ -8,12 +8,12 @@
    "rc": 0
   },
   "_control_example_com": {
-   "out": "200 0.056635",
+   "out": "200 0.086063",
    "err": "",
    "rc": 0
   },
   "_control_infinityfree": {
-   "out": "302 0.655145",
+   "out": "302 0.485647",
    "err": "",
    "rc": 0
   },
@@ -28,7 +28,7 @@
    "rc": 0
   },
   "_http_plain": {
-   "out": "curl: (28) Connection timed out after 25001 milliseconds\n",
+   "out": "curl: (28) Connection timed out after 25002 milliseconds\n",
    "err": "",
    "rc": 0
   },
@@ -37,36 +37,152 @@
    "err": "",
    "rc": 0
   },
+  "_check_host": {
+   "http": {
+    "request_id": "5719a2b9k388",
+    "nodes": {
+     "de4.node.check-host.net": [
+      "de",
+      "Germany",
+      "Frankfurt",
+      "185.37.147.117",
+      "AS34549"
+     ],
+     "il1.node.check-host.net": [
+      "il",
+      "Israel",
+      "Tel Aviv",
+      "94.154.123.196",
+      "AS206446"
+     ],
+     "pl2.node.check-host.net": [
+      "pl",
+      "Poland",
+      "Warsaw",
+      "195.137.244.1",
+      "AS214379"
+     ],
+     "rs1.node.check-host.net": [
+      "rs",
+      "Serbia",
+      "Belgrade",
+      "194.146.57.64",
+      "AS35779"
+     ],
+     "se1.node.check-host.net": [
+      "se",
+      "Sweden",
+      "Stockholm",
+      "143.246.193.61",
+      "AS200019"
+     ],
+     "uk1.node.check-host.net": [
+      "gb",
+      "UK",
+      "London",
+      "107.181.134.162",
+      "AS213535"
+     ]
+    },
+    "result": {
+     "de4.node.check-host.net": [
+      [
+       0,
+       3.05806612968445,
+       "Connection timed out",
+       null,
+       null
+      ]
+     ],
+     "il1.node.check-host.net": [
+      [
+       0,
+       3.2742600440979,
+       "Connection timed out",
+       null,
+       null
+      ]
+     ],
+     "pl2.node.check-host.net": [
+      [
+       0,
+       3.21539211273193,
+       "Connection timed out",
+       null,
+       null
+      ]
+     ],
+     "rs1.node.check-host.net": [
+      [
+       0,
+       3.07891201972961,
+       "Connection timed out",
+       null,
+       null
+      ]
+     ],
+     "se1.node.check-host.net": [
+      [
+       0,
+       3.1334388256073,
+       "Connection timed out",
+       null,
+       null
+      ]
+     ],
+     "uk1.node.check-host.net": [
+      [
+       0,
+       3.16924595832825,
+       "Connection timed out",
+       null,
+       null
+      ]
+     ]
+    }
+   },
+   "tcp": {
+    "error": "HTTP Error 429: Too Many Requests"
+   },
+   "dns": {
+    "error": "HTTP Error 429: Too Many Requests"
+   }
+  },
+  "_via_proxy": {
+   "out": "HTTP/2 522 \ndate: Wed, 11 Nov 2026 16:25:08 GMT\ncontent-type: text/plain; charset=UTF-8\ncontent-length: 16\ncache-control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0\nexpires: Thu, 01 Jan 1970 00:00:01 GMT\nreferrer-policy: same-origin\nx-frame-options: SAMEORIGIN\nserver: cloudflare\ncf-ray: a58ea63669557217-PIT\nalt-svc: h3=\":443\"; ma=86400\n\nerror code: 522\n",
+   "err": "",
+   "rc": 0
+  },
   "/": {
-   "result": "000 https://wafirinhalk.ct.ws/ 0 30.002244",
+   "result": "000 https://wafirinhalk.ct.ws/ 0 30.002089",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/index.php": {
-   "result": "000 https://wafirinhalk.ct.ws/index.php 0 30.002936",
+   "result": "000 https://wafirinhalk.ct.ws/index.php 0 30.002632",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/hello.html": {
-   "result": "000 https://wafirinhalk.ct.ws/hello.html 0 30.002370",
+   "result": "000 https://wafirinhalk.ct.ws/hello.html 0 30.001160",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/login.php": {
-   "result": "000 https://wafirinhalk.ct.ws/login.php 0 30.002005",
+   "result": "000 https://wafirinhalk.ct.ws/login.php 0 30.002403",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/robots.txt": {
-   "result": "000 https://wafirinhalk.ct.ws/robots.txt 0 30.002661",
+   "result": "000 https://wafirinhalk.ct.ws/robots.txt 0 30.000554",
    "headers": [],
    "title": null,
    "body_head": "",
