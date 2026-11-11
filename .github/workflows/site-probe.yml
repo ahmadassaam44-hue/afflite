@@ -4,6 +4,9 @@ name: فحص حالة الموقع (تشخيص)
 # النتيجة بتتحفظ في data/_site_probe.json عشان نقدر نقراها من الريبو.
 on:
   workflow_dispatch:
+  push:
+    paths-ignore:
+      - 'data/_site_probe.json'
 
 permissions:
   contents: write
