@@ -3,10 +3,10 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 408019,
+   "remote_size": 409508,
    "on_server": true,
    "local_size": 408019,
-   "match": true
+   "match": false
   },
   "index.php": {
    "remote_size": 52656,
@@ -75,10 +75,10 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 343209,
+   "remote_size": 343183,
    "on_server": true,
    "local_size": 343209,
-   "match": true
+   "match": false
   },
   "dashboard/layout.php": {
    "remote_size": 38685,
@@ -87,10 +87,10 @@
    "match": true
   },
   "dashboard/marketer.php": {
-   "remote_size": 123612,
+   "remote_size": 123591,
    "on_server": true,
    "local_size": 123612,
-   "match": true
+   "match": false
   },
   "assets/style.css": {
    "remote_size": 160662,
