@@ -1,89 +1,17 @@
 {
- "at": "2026-11-11T18:31:02+00:00",
+ "at": "2026-11-11T18:33:24+00:00",
  "files_requested": [
-  "config.php",
-  "dashboard/marketer.php",
-  "dashboard/admin.php",
-  "data/shopmart.json",
-  "data/lite_shopmart.json",
-  "data/id_index.json",
-  "data/visual_features.json",
-  "data/price_history.json",
-  "data/shipping.json",
-  "data/catalog_counts.json"
+  "config.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
  "uploaded": [
   {
    "file": "config.php",
-   "local_md5": "f82c661b666f75587620501f59429446",
-   "local_size": 408007,
-   "remote_size": 408007,
-   "remote_md5": "f82c661b666f75587620501f59429446"
-  },
-  {
-   "file": "dashboard/marketer.php",
-   "local_md5": "ca136ec24e311cca8e5aef4c8d248ed2",
-   "local_size": 123591,
-   "remote_size": 123591,
-   "remote_md5": "ca136ec24e311cca8e5aef4c8d248ed2"
-  },
-  {
-   "file": "dashboard/admin.php",
-   "local_md5": "1f733606f20a35429d41cb87190080cf",
-   "local_size": 343183,
-   "remote_size": 343183,
-   "remote_md5": "1f733606f20a35429d41cb87190080cf"
-  },
-  {
-   "file": "data/shopmart.json",
-   "local_md5": "d751713988987e9331980363e24189ce",
-   "local_size": 2,
-   "remote_size": 2,
-   "remote_md5": "d751713988987e9331980363e24189ce"
-  },
-  {
-   "file": "data/lite_shopmart.json",
-   "local_md5": "d751713988987e9331980363e24189ce",
-   "local_size": 2,
-   "remote_size": 2,
-   "remote_md5": "d751713988987e9331980363e24189ce"
-  },
-  {
-   "file": "data/id_index.json",
-   "local_md5": "adbf15b03ac80bf1459f7498b6deed4d",
-   "local_size": 120341,
-   "remote_size": 120341,
-   "remote_md5": "adbf15b03ac80bf1459f7498b6deed4d"
-  },
-  {
-   "file": "data/visual_features.json",
-   "local_md5": "c19323da10af96f885c0a076f639f7c0",
-   "local_size": 10626811,
-   "remote_size": 10626811,
-   "remote_md5": "c19323da10af96f885c0a076f639f7c0"
-  },
-  {
-   "file": "data/price_history.json",
-   "local_md5": "cc9a06f784dd17d9c500095378453f68",
-   "local_size": 256793,
-   "remote_size": 256793,
-   "remote_md5": "cc9a06f784dd17d9c500095378453f68"
-  },
-  {
-   "file": "data/shipping.json",
-   "local_md5": "b955fba3e3ecd8fea268a0bcfd0cb014",
-   "local_size": 17769,
-   "remote_size": 17769,
-   "remote_md5": "b955fba3e3ecd8fea268a0bcfd0cb014"
-  },
-  {
-   "file": "data/catalog_counts.json",
-   "local_md5": "16aa285183fac240c5f8ba455cca3d48",
-   "local_size": 860,
-   "remote_size": 860,
-   "remote_md5": "16aa285183fac240c5f8ba455cca3d48"
+   "local_md5": "d94ee83f8270a736f0432cf5965a0aab",
+   "local_size": 409508,
+   "remote_size": 409508,
+   "remote_md5": "d94ee83f8270a736f0432cf5965a0aab"
   }
  ],
  "unverified": [],
@@ -93,7 +21,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|231467",
+   "status": "200|227592",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -133,5 +61,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-11T18:31:40+00:00"
+ "checked_at": "2026-11-11T18:33:36+00:00"
 }
