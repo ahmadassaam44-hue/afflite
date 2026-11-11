@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: 'المصادر (deploy index-only clean hevo g2g gamsgo gamsgo_probe safqa vendoor m5zoon angazny timehand sources shopmart shopmart_probe) — index-only deploy يبني/يرفع الفهرس من الشظايا الحية فقط دون تعديل المنتجات'
+        description: 'المصادر (deploy index-only clean hevo g2g gamsgo gamsgo_probe safqa vendoor m5zoon angazny timehand sources) — index-only deploy يبني/يرفع الفهرس من الشظايا الحية فقط دون تعديل المنتجات'
         required: false
         default: ''
       shopmart_user:

@@ -1,0 +1,145 @@
+{
+ "at": "2026-11-11T16:34:08+00:00",
+ "base": "https://wafirinhalk.ct.ws",
+ "results": {
+  "_dns": {
+   "out": "185.27.134.151  wafirinhalk.ct.ws\n---\n185.27.134.151  STREAM wafirinhalk.ct.ws\n185.27.134.151  DGRAM  \n185.27.134.151  RAW    \n",
+   "err": "",
+   "rc": 0
+  },
+  "_control_example_com": {
+   "out": "200 0.028603",
+   "err": "",
+   "rc": 0
+  },
+  "_control_infinityfree": {
+   "out": "302 0.220381",
+   "err": "",
+   "rc": 0
+  },
+  "_tcp443": {
+   "out": "CLOSED\n",
+   "err": "",
+   "rc": 0
+  },
+  "_tcp80": {
+   "out": "CLOSED\n",
+   "err": "",
+   "rc": 0
+  },
+  "_http_plain": {
+   "out": "curl: (28) Connection timed out after 25002 milliseconds\n",
+   "err": "",
+   "rc": 0
+  },
+  "_verbose": {
+   "out": "* Host wafirinhalk.ct.ws:443 was resolved.\n* IPv6: (none)\n* IPv4: 185.27.134.151\n*   Trying 185.27.134.151:443...\n* Connection timed out after 25002 milliseconds\n* closing connection #0\ncurl: (28) Connection timed out after 25002 milliseconds\n",
+   "err": "",
+   "rc": 0
+  },
+  "_check_host": {
+   "http": {
+    "request_id": "5719e1d2kb16",
+    "nodes": {
+     "hk1.node.check-host.net": [
+      "hk",
+      "Hong Kong",
+      "Hong Kong",
+      "141.98.234.68",
+      "AS207713"
+     ],
+     "id1.node.check-host.net": [
+      "id",
+      "Indonesia",
+      "Jakarta",
+      "178.83.180.17",
+      " AS200177"
+     ],
+     "il2.node.check-host.net": [
+      "il",
+      "Israel",
+      "Netanya",
+      "195.211.24.52",
+      "AS206446"
+     ],
+     "pl2.node.check-host.net": [
+      "pl",
+      "Poland",
+      "Warsaw",
+      "195.137.244.1",
+      "AS214379"
+     ],
+     "ru1.node.check-host.net": [
+      "ru",
+      "Russia",
+      "Moscow",
+      "185.130.104.238",
+      "AS14576"
+     ],
+     "se2.node.check-host.net": [
+      "se",
+      "Sweden",
+      "Stockholm",
+      "195.137.245.1",
+      "AS214379"
+     ]
+    },
+    "result": {
+     "hk1.node.check-host.net": null,
+     "id1.node.check-host.net": null,
+     "il2.node.check-host.net": null,
+     "pl2.node.check-host.net": null,
+     "ru1.node.check-host.net": null,
+     "se2.node.check-host.net": null
+    }
+   },
+   "tcp": {
+    "error": "HTTP Error 429: Too Many Requests"
+   },
+   "dns": {
+    "error": "HTTP Error 429: Too Many Requests"
+   }
+  },
+  "_via_proxy": {
+   "out": "HTTP/2 522 \ndate: Wed, 11 Nov 2026 16:31:08 GMT\ncontent-type: text/plain; charset=UTF-8\ncontent-length: 16\ncache-control: private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0\nexpires: Thu, 01 Jan 1970 00:00:01 GMT\nreferrer-policy: same-origin\nx-frame-options: SAMEORIGIN\nserver: cloudflare\ncf-ray: a58eaf0559098b88-EWR\nalt-svc: h3=\":443\"; ma=86400\n\nerror code: 522\n",
+   "err": "",
+   "rc": 0
+  },
+  "/": {
+   "result": "000 https://wafirinhalk.ct.ws/ 0 30.001265",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/index.php": {
+   "result": "000 https://wafirinhalk.ct.ws/index.php 0 30.001687",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/hello.html": {
+   "result": "000 https://wafirinhalk.ct.ws/hello.html 0 30.002311",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/login.php": {
+   "result": "000 https://wafirinhalk.ct.ws/login.php 0 30.001712",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/robots.txt": {
+   "result": "000 https://wafirinhalk.ct.ws/robots.txt 0 30.001877",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "_aes_error": "[Errno 2] No such file or directory: '/tmp/aes.js'"
+ }
+}

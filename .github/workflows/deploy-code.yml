@@ -1,0 +1,204 @@
+name: رفع ملفات الكود للاستضافة
+
+# رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
+# مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
+# بيستخدم نفس أسرار الـ FTP اللي بوت الكتالوج بيستخدمها (FTP_HOST / FTP_USER / FTP_PASS).
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-code.yml'
+  workflow_dispatch:
+    inputs:
+      files:
+        description: 'مسارات الملفات المطلوب رفعها (مسافات بينها)'
+        required: false
+        default: 'config.php'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: رفع الملفات + تأكيد المطابقة
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+          INPUT_FILES: ${{ github.event.inputs.files }}
+        run: |
+          python3 - <<'PY'
+          import os, json, ftplib, hashlib, datetime, socket, time
+
+          report = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')}
+          host = (os.environ.get('FTP_HOST') or '').strip()
+          user = (os.environ.get('FTP_USER') or '').strip()
+          pw   = os.environ.get('FTP_PASS') or ''
+          root = (os.environ.get('FTP_ROOT') or '/htdocs').strip()
+          files = (os.environ.get('INPUT_FILES') or '').split() or 'config.php'.split()
+          report['files_requested'] = files
+
+          ftp = None
+          if not (host and user and pw):
+              report['status'] = 'no_credentials'
+              print('❌ أسرار الـ FTP مش مضافة (FTP_HOST / FTP_USER / FTP_PASS)')
+          else:
+              report['host'] = host
+              try:
+                  socket.setdefaulttimeout(45)
+                  ftp = ftplib.FTP(host, timeout=45)
+                  ftp.login(user, pw)
+                  ftp.set_pasv(True)
+                  report['connection'] = 'ok'
+                  print('✅ اتصال FTP ناجح بـ', host)
+              except Exception as e:
+                  report.update(status='connect_failed', error=str(e)[:300])
+                  print('❌ فشل الاتصال/الدخول على الـ FTP:', e)
+                  ftp = None
+
+          if ftp is not None:
+              uploaded, unverified, failed = [], [], []
+              try:
+                  ftp.cwd(root)
+                  print('📂', root, 'مفتوح')
+              except Exception as e:
+                  report['cwd_warning'] = str(e)[:200]
+                  print('⚠️ تعذر فتح', root, e)
+
+              for rel in files:
+                  if not os.path.isfile(rel):
+                      failed.append({'file': rel, 'error': 'مش موجود محليًا'})
+                      continue
+                  data = open(rel, 'rb').read()
+                  local_md5 = hashlib.md5(data).hexdigest()
+                  base = os.path.basename(rel)
+                  remote_dir = os.path.dirname(rel)
+                  entry = {'file': rel, 'local_md5': local_md5, 'local_size': len(data)}
+                  try:
+                      if remote_dir:
+                          try:
+                              ftp.cwd(remote_dir)
+                          except Exception:
+                              try: ftp.mkd(remote_dir)
+                              except Exception: pass
+                              ftp.cwd(remote_dir)
+                      with open(rel, 'rb') as fh:
+                          ftp.storbinary('STOR ' + base, fh)
+                      print('⬆️ اترفع', rel)
+                  except Exception as e:
+                      entry['error'] = 'فشل الرفع: ' + str(e)[:180]
+                      failed.append(entry)
+                      print('❌ رفع', rel, e)
+                      try: ftp.cwd(root)
+                      except Exception: pass
+                      continue
+
+                  # تأكيد المطابقة: SIZE/RETR على سيرفرات InfinityFree بترجع 550 أحيانًا
+                  # مباشرة بعد الرفع، فبنعيد المحاولة وبعدها نعتبره "غير متحقَّق" مش فاشل.
+                  remote_md5 = remote_size = None
+                  for attempt in range(4):
+                      time.sleep(1 + attempt)
+                      try:
+                          remote_size = ftp.size(base)
+                          buf = bytearray()
+                          ftp.retrbinary('RETR ' + base, buf.extend)
+                          remote_md5 = hashlib.md5(bytes(buf)).hexdigest()
+                          break
+                      except Exception as e:
+                          entry['verify_note'] = str(e)[:120]
+
+                  entry['remote_size'] = remote_size
+                  entry['remote_md5'] = remote_md5
+                  if remote_md5:
+                      if remote_md5 == local_md5:
+                          uploaded.append(entry)
+                          print('✅ مطابق على السيرفر:', rel, len(data), 'bytes')
+                      else:
+                          entry['error'] = 'الملف على السيرفر مختلف (MD5)'
+                          failed.append(entry)
+                          print('❌ اختلاف MD5:', rel)
+                  else:
+                      unverified.append(entry)
+                      print('⚠️ اترفع بس مش اتأكد:', rel)
+
+                  try: ftp.cwd(root)
+                  except Exception: pass
+
+              try: ftp.quit()
+              except Exception: pass
+              report.update(uploaded=uploaded, unverified=unverified, failed=failed)
+              report['status'] = 'ok' if (uploaded and not failed and not unverified) else (
+                  'partial' if (uploaded or unverified) else 'failed')
+
+          os.makedirs('data', exist_ok=True)
+          json.dump(report, open('data/_code_deploy.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+          print(json.dumps(report, ensure_ascii=False)[:2000])
+          PY
+
+      - name: فحص الموقع الحقيقي (بعد تخطي فحص الجافاسكريبت)
+        run: |
+          python3 - <<'PY'
+          import json, re, subprocess, datetime
+
+          rep = json.load(open('data/_code_deploy.json', encoding='utf-8'))
+          UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+          BASE = 'https://wafirinhalk.ct.ws'
+
+          def curl(args, url):
+              p = subprocess.run(['curl', '-sS', '--max-time', '30', '-A', UA] + args + [url],
+                                 capture_output=True, text=True)
+              return p.stdout or ''
+
+          home = curl(['-D', '/tmp/h.txt'], BASE + '/')
+          rep['raw_status'] = (open('/tmp/h.txt', encoding='utf-8', errors='replace').read().splitlines() or [''])[0] if True else ''
+
+          cookie = ''
+          m = re.search(r'var a=toNumbers\("([0-9a-f]+)"\),b=toNumbers\("([0-9a-f]+)"\),c=toNumbers\("([0-9a-f]+)"\)', home)
+          if m:
+              open('/tmp/aes.js', 'w').write(curl([], BASE + '/aes.js'))
+              open('/tmp/solve.js', 'w').write(
+                  'const fs=require("fs"),vm=require("vm");'
+                  'vm.runInThisContext(fs.readFileSync("/tmp/aes.js","utf8"));'
+                  'function toNumbers(d){var e=[];d.replace(/(..)/g,function(d){e.push(parseInt(d,16))});return e}'
+                  'function toHex(){for(var d=[],d=1==arguments.length&&arguments[0].constructor==Array?arguments[0]:arguments,e="",f=0;f<d.length;f++)e+=(16>d[f]?"0":"")+d[f].toString(16);return e.toLowerCase()}'
+                  'var a=toNumbers("%s"),b=toNumbers("%s"),c=toNumbers("%s");'
+                  'console.log(toHex(slowAES.decrypt(c,2,a,b)));' % (m.group(1), m.group(2), m.group(3)))
+              p = subprocess.run(['node', '/tmp/solve.js'], capture_output=True, text=True)
+              cookie = (p.stdout or '').strip()
+
+          rep['challenge'] = 'solved' if re.fullmatch(r'[0-9a-f]{16,64}', cookie or '') else 'not_bypassed'
+          live = {}
+          for path in ['/', '/login.php', '/dashboard/cart.php', '/dashboard/checkout_cart.php', '/hello.html']:
+              args = (['-b', '__test=' + cookie] if cookie else []) + ['-w', '\n@@%{http_code}|%{size_download}']
+              body = curl(args, BASE + path)
+              body, _, meta = body.rpartition('\n@@')
+              title = re.search(r'(?is)<title[^>]*>(.*?)</title>', body)
+              live[path] = {
+                  'status': meta.strip(),
+                  'title': (title.group(1).strip()[:120] if title else None),
+                  'php_error': bool(re.search(r'(?i)(fatal error|parse error|uncaught|Warning:.*on line)', body)),
+                  'head': ' '.join(body.split())[:220],
+                  'shopmart_mentions': len(re.findall(r'(?i)shopmart', body)),
+                  'shopmart_imgs': len(re.findall(r'(?i)aff-shopmart[^"\' ]*', body)),
+              }
+              print(path, '->', meta.strip(), '|', live[path]['title'])
+          rep['live'] = live
+          rep['checked_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+          json.dump(rep, open('data/_code_deploy.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+          PY
+
+      - name: حفظ النتيجة في الريبو
+        if: always()
+        run: |
+          if [ ! -f data/_code_deploy.json ]; then echo '{"status":"no_report"}' > data/_code_deploy.json; fi
+          git config user.name 'deploy-bot'
+          git config user.email 'deploy-bot@users.noreply.github.com'
+          git add data/_code_deploy.json
+          git diff --cached --quiet || git commit -m "📤 نتيجة الرفع وفحص الموقع $(date -u +%H:%M)"
+          git pull --no-rebase -q --strategy-option=ours || true
+          git push

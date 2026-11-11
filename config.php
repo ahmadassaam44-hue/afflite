@@ -1,6 +1,9 @@
 <?php
 // سقف ذاكرة أعلى قدر ما تسمح به الاستضافة — بيقلل الأخطاء الفادحة (OOM) المسجلة في «آخر أخطاء الموقع»
 @ini_set('memory_limit', '256M');
+// منصات مقفولة: منتجاتها متشالة من الكتالوج ومش بتظهر حتى لو الملف رجع من المحدّث.
+// لإرجاعها: شيل اسمها من القايمة دي.
+if (!defined('WF_DISABLED_PLATFORMS')) define('WF_DISABLED_PLATFORMS', ['shopmart']);
 // ============================================================================
 // تحميل الأسرار من ملف منفصل (مستبعد من Git) — مع قيم احتياطية للطوارئ فقط
 // ============================================================================
@@ -1554,6 +1557,7 @@ require_once __DIR__ . '/manual_products_lib.php';
 function platform_products_lite($key) {
     static $cache = [];
     if (isset($cache[$key])) return $cache[$key];
+    if (wf_platform_disabled($key)) return [];   // منصة مقفولة (منتجاتها متشالة من الكتالوج)
     if ($key === 'manual') {
         $all = manual_products_all();
         foreach ($all as &$x) $x = normalize_product_record($x, 'manual');
@@ -1616,6 +1620,7 @@ function wf_home_platform_window($pk, $limit) {
 }
 
 function platform_products($key, $lite = false) {
+    if (wf_platform_disabled($key)) return [];
     if ($lite) return platform_products_lite($key);
     static $cache = [];
     if (isset($cache[$key])) return $cache[$key];
@@ -1635,8 +1640,24 @@ function platform_products($key, $lite = false) {
 // مشتركة ده بيستهلك الذاكرة/الوقت ويطلّع صفحة «تعذر تحميل الصفحة مؤقتًا».
 // الطريقة الجديدة: نقرا نص الملف مرة واحدة لكل منصة ونقطّع سجل واحد بس ونفكه.
 // ============================================================================
+// ============================================================================
+// منصات مقفولة: منتجاتها اتشالت من الكتالوج (زي Shopmart) ومش بتظهر في الموقع
+// حتى لو المحدّث رجّع ملفاتها تاني (تشغيل مجدول من فرع تاني مثلًا).
+// لإرجاع المنصة: شيل اسمها من WF_DISABLED_PLATFORMS (والمنتجات بترجع من المحدّث).
+// ============================================================================
+function wf_platform_disabled($plat) {
+    return in_array(strtolower(trim((string)$plat)), defined('WF_DISABLED_PLATFORMS') ? WF_DISABLED_PLATFORMS : [], true);
+}
+
 function wf_catalog_plats() {
-    return ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'manual'];
+    static $plats = null;
+    if ($plats === null) {
+        $plats = array_values(array_filter(
+            ['timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean', 'manual'],
+            function ($p) { return !wf_platform_disabled($p); }
+        ));
+    }
+    return $plats;
 }
 
 // نص ملف الكتالوج الخام لمنصة واحدة (مرة واحدة في الطلب — نص فقط، بدون فك كتالوج)
@@ -2236,6 +2257,7 @@ function wf_json_object_slice($raw, $start) {
 
 // استخراج سجل منتج واحد من نص كتالوج منصة (بالـ id أو بالـ orig_id)
 function wf_catalog_find_record($plat, $id) {
+    if (wf_platform_disabled($plat)) return null;   // منصة مقفولة: مفيش منتجاتها في الموقع
     if ($plat === 'manual') return manual_product_find($id);
     if ($plat === 'cezma' && false) {
         // Fast path: id-hash buckets (data/cezma_buckets/b_<md5(id)[:2]>.json).
@@ -4947,7 +4969,7 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
     // Display the existing Egyptian supplier rates, not one shared Vendoor table.
     // Non-EGP shipping/accounting behaviour is unchanged and still shows the currency warning.
     $ship_by_platform = [];
-    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'shopmart', 'mnfean'] as $ship_platform) {
+    foreach (['vendoor', 'angazny', 'timehand', 'safqa', 'mnfean'] as $ship_platform) {
         $ship_by_platform[$ship_platform] = site_ship_map($ship_platform);
     }
     $ship_by_platform['safka'] = $ship_by_platform['safqa'];

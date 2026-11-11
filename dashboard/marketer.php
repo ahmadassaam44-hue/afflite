@@ -694,7 +694,7 @@ elseif ($mtab === 'browse') { wfp('MTAB browse');
     foreach (wf_country_list() as $country_name) $countries[$country_name] = $country_name;
     $mcountry = $mk_param('country', 'all');
     if (!isset($countries[$mcountry]) || $mmode !== 'physical') $mcountry = 'all';
-    $platforms = ['all', 'timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'shopmart', 'cezma', 'manual'];
+    $platforms = ['all', 'timehand', 'safqa', 'vendoor', 'angazny', 'm5zoon', 'manual'];
     $mplat = $mk_param('plat', 'all');
     if (!in_array($mplat, $platforms, true) || $mmode !== 'physical') $mplat = 'all';
     $sorts = ['default'=>'الافتراضي', 'new'=>'أحدث المنتجات', 'featured'=>'المنتجات المميزة', 'viewed'=>'الأكثر مشاهدة', 'best'=>'الأكثر مبيعاً', 'commission'=>'أعلى عمولة مضافة', 'price_asc'=>'السعر: الأقل أولاً', 'price_desc'=>'السعر: الأعلى أولاً', 'name'=>'الاسم'];

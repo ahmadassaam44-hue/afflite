@@ -1513,7 +1513,7 @@ elseif ($tab === 'products') {
     echo '<input type="hidden" name="tab" value="products">';
     echo '<input name="q" value="' . esc($q) . '" placeholder="ابحث باسم المنتج أو الكود..." data-ui="u-b05aa79a d2i d3c d3d dt d24 d1v">';
     echo '<select name="plat" data-ui="u-747828c1 d3d dt d24 d1v">';
-    foreach (['all' => 'كل المنتجات', 'manual' => 'منتجات يدوية', 'vendoor' => 'قسم 1 (Vendoor)', 'safqa' => 'قسم 2 (Safqa)', 'timehand' => 'قسم 3 (Timehand)', 'angazny' => 'قسم 4 (Angazny)', 'm5zoon' => 'الخليج (M5zoon)', 'shopmart' => 'Shopmart', 'cezma' => 'Cezma (سيزما)', 'g2g' => 'المنتجات الرقمية', 'social' => 'خدمات السوشيال'] as $pk => $plbl) {
+    foreach (['all' => 'كل المنتجات', 'manual' => 'منتجات يدوية', 'vendoor' => 'قسم 1 (Vendoor)', 'safqa' => 'قسم 2 (Safqa)', 'timehand' => 'قسم 3 (Timehand)', 'angazny' => 'قسم 4 (Angazny)', 'm5zoon' => 'الخليج (M5zoon)', 'cezma' => 'Cezma (سيزما)', 'g2g' => 'المنتجات الرقمية', 'social' => 'خدمات السوشيال'] as $pk => $plbl) {
         echo '<option value="' . esc($pk) . '"' . ($plat_f === $pk ? ' selected' : '') . '>' . esc($plbl) . '</option>';
     }
     echo '</select><button class="btn"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-search></use></svg> بحث</button></form>';

@@ -1,0 +1,65 @@
+{
+ "at": "2026-11-11T18:33:24+00:00",
+ "files_requested": [
+  "config.php"
+ ],
+ "host": "ftpupload.net",
+ "connection": "ok",
+ "uploaded": [
+  {
+   "file": "config.php",
+   "local_md5": "d94ee83f8270a736f0432cf5965a0aab",
+   "local_size": 409508,
+   "remote_size": 409508,
+   "remote_md5": "d94ee83f8270a736f0432cf5965a0aab"
+  }
+ ],
+ "unverified": [],
+ "failed": [],
+ "status": "ok",
+ "raw_status": "HTTP/1.1 200 OK",
+ "challenge": "solved",
+ "live": {
+  "/": {
+   "status": "200|227592",
+   "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
+   "php_error": false,
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
+  },
+  "/login.php": {
+   "status": "200|10167",
+   "title": "تسجيل الدخول | وفرنهالك",
+   "php_error": false,
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
+  },
+  "/dashboard/cart.php": {
+   "status": "200|50218",
+   "title": "سلة التسوق | وفرنهالك",
+   "php_error": false,
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
+  },
+  "/dashboard/checkout_cart.php": {
+   "status": "302|0",
+   "title": null,
+   "php_error": false,
+   "head": "",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
+  },
+  "/hello.html": {
+   "status": "200|11",
+   "title": null,
+   "php_error": false,
+   "head": "hello world",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
+  }
+ },
+ "checked_at": "2026-11-11T18:33:36+00:00"
+}

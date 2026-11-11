@@ -1,6 +1,31 @@
 <?php $PUBLIC_PAGE = true; require 'layout.php';
 if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) $_SESSION['cart'] = [];
 
+// ✳️ عمولة المسوق على كل سطر في السلة (مش منتج واحد بس):
+// صاحب رابط الإحالة (المسوق) أو الأدمن يقدر يزوّد عمولته على أي سطر في السلة،
+// الزيادة بتتحفظ في السلة وبتُحسب من السيرفر وقت إعادة التسعير ووقت تأكيد الطلب.
+$cart_cu   = function_exists('current_user') ? current_user() : null;
+$cart_ref  = active_ref('');
+$cart_me   = ($cart_cu && !empty($cart_cu['email']) && function_exists('ensure_user_affiliate'))
+    ? ensure_user_affiliate($cart_cu['email']) : null;
+$cart_can_set_comm = ($cart_ref !== '' && (
+    ($cart_me && !empty($cart_me['ref_code']) && strcasecmp((string)$cart_me['ref_code'], (string)$cart_ref) === 0)
+    || ($cart_cu && ($cart_cu['role'] ?? '') === 'admin')
+));
+if ($cart_can_set_comm && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set_line_comm'])) {
+    $lc_key = (string)($_POST['line_key'] ?? '');
+    $lc_val = max(0, min((float)MAX_MARKUP_AMOUNT, round((float)($_POST['line_extra_comm'] ?? 0), 2)));
+    foreach ($_SESSION['cart'] as $lc_i => $lc_row) {
+        if (!is_array($lc_row) || (string)($lc_row['key'] ?? '') !== $lc_key) continue;
+        $lc_pl = resolve_plat((string)($lc_row['id'] ?? ''), $lc_row['plat'] ?? '');
+        $_SESSION['cart'][$lc_i]['extra_comm'] = (function_exists('wf_is_digital_plat') && wf_is_digital_plat($lc_pl)) ? 0.0 : $lc_val;
+        break;
+    }
+    header('Location: cart.php?saved_comm=1');
+    exit;
+}
+
+
 // تطبيع عناصر السلة (سواء تمت إضافتها من الصفحة الرئيسية أو من صفحة المنتج)
 $norm_cart = [];
 foreach ($_SESSION['cart'] as $ck => $cv) {
@@ -35,18 +60,23 @@ foreach ($_SESSION['cart'] as $ck => $cv) {
 foreach ($norm_cart as &$nc) {
     $nc_pid  = (string)($nc['id'] ?? '');
     if ($nc_pid === '') continue;
+    // العمولة الإضافية اللي المسوق حددها على السطر (لو موجودة) — بتحل محل سعر المتصفح
+    $nc_ex = (isset($nc['extra_comm']) && is_numeric($nc['extra_comm'])) ? (float)$nc['extra_comm'] : null;
     $nc_line = server_order_line($nc_pid, (string)($nc['plat'] ?? ''),
                                   max(1, min(999, (int)($nc['qty'] ?? 1))),
-                                  isset($nc['price']) ? (float)$nc['price'] : null,
-                                  active_ref((string)($nc['ref'] ?? '')));
+                                  $nc_ex !== null ? null : (isset($nc['price']) ? (float)$nc['price'] : null),
+                                  active_ref((string)($nc['ref'] ?? '')),
+                                  $nc_ex);
     if (!$nc_line) { $nc['unavailable'] = true; continue; }
     $nc['plat']     = $nc_line['plat'];
     $nc['pname']    = $nc_line['name'] ?: ($nc['pname'] ?? '');
     $nc['base']     = $nc_line['base_price'];
     $nc['price']    = $nc_line['unit_price'];
+    $nc['markup']   = (float)$nc_line['markup'];
     $nc['qty']      = $nc_line['qty'];          // مقيد: [سعر السيرفر .. +30%]
     $nc['img']      = $nc['img'] ?: ($nc_line['product']['images'][0] ?? '');
     $nc['unavailable'] = false;
+    if ($nc_ex !== null) $nc['extra_comm'] = $nc_ex;
 }
 unset($nc);
 $_SESSION['cart'] = $norm_cart;
@@ -144,6 +174,7 @@ $cart = $_SESSION['cart'];
 </div>
 <?php
 if (isset($_GET['added'])) echo '<div class="ok" data-ui="u-5fddd367 dh d1p d1s">تمت الإضافة للسلة بنجاح — <a href="../index.php" data-ui="u-fcccab35 dc d1d">متابعة التسوق</a></div>';
+if (isset($_GET['saved_comm'])) echo '<div class="ok" data-ui="u-5fddd367 dh d1p d1s">✅ تم تحديث عمولتك على السطر — بتتحسب على الطلب كله وقت التأكيد.</div>';
 if (!$cart) {
     echo '<div class="card" data-ui="u-1478eea5 df d5i"><h3 data-ui="u-01c70be2 d5j dc d2d">سلة التسوق فارغة حالياً</h3><p class="mut" data-ui="u-25724057 d0">تصفح أحدث العروض والمنتجات وأضف ما يعجبك إلى السلة.</p><a class="btn" href="../index.php" data-ui="u-4090fc41 dw">تصفح المنتجات</a></div>';
     layout_end();
@@ -176,6 +207,28 @@ $currencies = array_fill_keys(wf_ui_currencies($cart), true);
     </div>
     <b data-ui="u-8bf4bd79 d2k">= <?php echo number_format($t_net, 2); ?> <?php echo esc(wf_ui_currency($c)); ?><?php if ($c_disc > 0): ?> <span class="mut" data-ui="u-46c5a79e d5t d4x" style="color:var(--success);font-weight:700">(خصم الكمية <?php echo number_format($c_disc, 2); ?>)</span><?php endif; ?></b>
   </div>
+<?php
+  // ✳️ خانة عمولة المسوق لكل سطر — بتظهر لكل المنتجات في السلة (مش لما يبقى منتج واحد)
+  $c_plat_r    = function_exists('resolve_plat') ? resolve_plat((string)($c['id'] ?? ''), $c['plat'] ?? '') : (string)($c['plat'] ?? '');
+  $c_no_markup = function_exists('wf_is_digital_plat') && wf_is_digital_plat($c_plat_r);
+  if ($cart_can_set_comm && !$c_no_markup):
+      $c_extra  = max(0, (float)($c['extra_comm'] ?? 0));
+      $c_base   = (float)($c['base'] ?? $c['price']);
+      $c_profit = round(max(0, ((float)$c['price'] - $c_base) * (int)$c['qty']), 2);
+?>
+  <form method="post" class="cart-line-comm" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
+    <?php echo csrf_field(); ?>
+    <input type="hidden" name="set_line_comm" value="1">
+    <input type="hidden" name="line_key" value="<?php echo esc((string)($c['key'] ?? '')); ?>">
+    <label class="field-label" style="margin:0;font-size:12px" for="lc_<?php echo esc(md5((string)($c['key'] ?? $c['id'] ?? ''))); ?>">عمولتك المضافة للقطعة</label>
+    <input id="lc_<?php echo esc(md5((string)($c['key'] ?? $c['id'] ?? ''))); ?>" type="number" name="line_extra_comm"
+           value="<?php echo esc((string)$c_extra); ?>" min="0" max="<?php echo esc(MAX_MARKUP_AMOUNT); ?>" step="5" inputmode="decimal"
+           style="width:100px" aria-label="عمولتك المضافة للقطعة">
+    <span class="mut" style="font-size:12px"><?php echo esc(wf_ui_currency($c)); ?></span>
+    <button type="submit" class="btn sm outline">حفظ</button>
+    <span class="mut" style="font-size:12px">ربحك من السطر: <b style="color:var(--success)">+<?php echo number_format($c_profit, 2); ?></b> <?php echo esc(wf_ui_currency($c)); ?></span>
+  </form>
+<?php endif; ?>
 </div>
 <a data-cart-remove href="?del=<?php echo urlencode($c['key']); ?>" aria-label="حذف المنتج من السلة" data-ui="u-05ec11e3 d4y d26 dc d2l d5v d5w d3e d1p dw d1u d5y"></a>
 </article><?php endforeach; ?>
