@@ -1,37 +1,72 @@
 {
- "at": "2026-11-11T16:03:33+00:00",
+ "at": "2026-11-11T16:22:10+00:00",
  "base": "https://wafirinhalk.ct.ws",
  "results": {
+  "_dns": {
+   "out": "185.27.134.151  wafirinhalk.ct.ws\n---\n185.27.134.151  STREAM wafirinhalk.ct.ws\n185.27.134.151  DGRAM  \n185.27.134.151  RAW    \n",
+   "err": "",
+   "rc": 0
+  },
+  "_control_example_com": {
+   "out": "200 0.056635",
+   "err": "",
+   "rc": 0
+  },
+  "_control_infinityfree": {
+   "out": "302 0.655145",
+   "err": "",
+   "rc": 0
+  },
+  "_tcp443": {
+   "out": "CLOSED\n",
+   "err": "",
+   "rc": 0
+  },
+  "_tcp80": {
+   "out": "CLOSED\n",
+   "err": "",
+   "rc": 0
+  },
+  "_http_plain": {
+   "out": "curl: (28) Connection timed out after 25001 milliseconds\n",
+   "err": "",
+   "rc": 0
+  },
+  "_verbose": {
+   "out": "* Host wafirinhalk.ct.ws:443 was resolved.\n* IPv6: (none)\n* IPv4: 185.27.134.151\n*   Trying 185.27.134.151:443...\n* Connection timed out after 25002 milliseconds\n* closing connection #0\ncurl: (28) Connection timed out after 25002 milliseconds\n",
+   "err": "",
+   "rc": 0
+  },
   "/": {
-   "result": "000 https://wafirinhalk.ct.ws/ 0 30.001419",
+   "result": "000 https://wafirinhalk.ct.ws/ 0 30.002244",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/index.php": {
-   "result": "000 https://wafirinhalk.ct.ws/index.php 0 30.001514",
+   "result": "000 https://wafirinhalk.ct.ws/index.php 0 30.002936",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/hello.html": {
-   "result": "000 https://wafirinhalk.ct.ws/hello.html 0 30.001048",
+   "result": "000 https://wafirinhalk.ct.ws/hello.html 0 30.002370",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/login.php": {
-   "result": "000 https://wafirinhalk.ct.ws/login.php 0 30.001718",
+   "result": "000 https://wafirinhalk.ct.ws/login.php 0 30.002005",
    "headers": [],
    "title": null,
    "body_head": "",
    "body_len": 0
   },
   "/robots.txt": {
-   "result": "000 https://wafirinhalk.ct.ws/robots.txt 0 30.000795",
+   "result": "000 https://wafirinhalk.ct.ws/robots.txt 0 30.002661",
    "headers": [],
    "title": null,
    "body_head": "",
