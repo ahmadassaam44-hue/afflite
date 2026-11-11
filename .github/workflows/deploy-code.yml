@@ -183,6 +183,8 @@ jobs:
                   'title': (title.group(1).strip()[:120] if title else None),
                   'php_error': bool(re.search(r'(?i)(fatal error|parse error|uncaught|Warning:.*on line)', body)),
                   'head': ' '.join(body.split())[:220],
+                  'shopmart_mentions': len(re.findall(r'(?i)shopmart', body)),
+                  'shopmart_imgs': len(re.findall(r'(?i)aff-shopmart[^"\' ]*', body)),
               }
               print(path, '->', meta.strip(), '|', live[path]['title'])
           rep['live'] = live
