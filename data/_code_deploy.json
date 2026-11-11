@@ -1,5 +1,5 @@
 {
- "at": "2026-11-11T18:05:54+00:00",
+ "at": "2026-11-11T18:07:51+00:00",
  "files_requested": [
   "dashboard/cart.php",
   "dashboard/checkout_cart.php"
@@ -21,5 +21,11 @@
   }
  ],
  "failed": [],
- "status": "ok"
+ "status": "ok",
+ "live_http": {
+  "/": "200 844 0.475735",
+  "/login.php": "200 853 0.475163",
+  "/dashboard/cart.php": "200 862 0.478893"
+ },
+ "live_checked_at": "2026-11-11T18:07:57+00:00"
 }
