@@ -1,5 +1,5 @@
 {
- "at": "2026-11-11T18:28:48+00:00",
+ "at": "2026-11-11T18:31:02+00:00",
  "files_requested": [
   "config.php",
   "dashboard/marketer.php",
@@ -93,35 +93,45 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|231354",
+   "status": "200|231467",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a"
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
   },
   "/login.php": {
    "status": "200|10167",
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <"
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
    "status": "200|50218",
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال"
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
    "status": "302|0",
    "title": null,
    "php_error": false,
-   "head": ""
+   "head": "",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
   },
   "/hello.html": {
    "status": "200|11",
    "title": null,
    "php_error": false,
-   "head": "hello world"
+   "head": "hello world",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-11T18:29:24+00:00"
+ "checked_at": "2026-11-11T18:31:40+00:00"
 }
