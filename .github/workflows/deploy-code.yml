@@ -12,7 +12,7 @@ on:
       files:
         description: 'مسارات الملفات المطلوب رفعها (مسافات بينها)'
         required: false
-        default: 'dashboard/cart.php dashboard/checkout_cart.php'
+        default: 'config.php dashboard/marketer.php dashboard/admin.php data/shopmart.json data/lite_shopmart.json data/id_index.json data/visual_features.json data/price_history.json data/shipping.json data/catalog_counts.json'
 
 permissions:
   contents: write
@@ -40,7 +40,7 @@ jobs:
           user = (os.environ.get('FTP_USER') or '').strip()
           pw   = os.environ.get('FTP_PASS') or ''
           root = (os.environ.get('FTP_ROOT') or '/htdocs').strip()
-          files = (os.environ.get('INPUT_FILES') or '').split() or ['dashboard/cart.php', 'dashboard/checkout_cart.php']
+          files = (os.environ.get('INPUT_FILES') or '').split() or 'config.php dashboard/marketer.php dashboard/admin.php data/shopmart.json data/lite_shopmart.json data/id_index.json data/visual_features.json data/price_history.json data/shipping.json data/catalog_counts.json'.split()
           report['files_requested'] = files
 
           ftp = None
