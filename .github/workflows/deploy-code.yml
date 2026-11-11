@@ -105,6 +105,25 @@ jobs:
           print(json.dumps(report, ensure_ascii=False)[:2500])
           PY
 
+      - name: فحص إن الموقع بيرد بعد الرفع
+        run: |
+          python3 - <<'PY'
+          import json, subprocess, datetime
+          rep = json.load(open('data/_code_deploy.json', encoding='utf-8'))
+          UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36'
+          checks = {}
+          for path in ['/', '/login.php', '/dashboard/cart.php']:
+              url = 'https://wafirinhalk.ct.ws' + path
+              p = subprocess.run(['curl','-sS','-o','/dev/null','--max-time','25','-A',UA,
+                                  '-w','%{http_code} %{size_download} %{time_total}', url],
+                                 capture_output=True, text=True)
+              checks[path] = (p.stdout or '').strip() or ('ERR ' + (p.stderr or '').strip()[:160])
+              print(path, '->', checks[path])
+          rep['live_http'] = checks
+          rep['live_checked_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+          json.dump(rep, open('data/_code_deploy.json','w',encoding='utf-8'), ensure_ascii=False, indent=1)
+          PY
+
       - name: حفظ نتيجة الرفع في الريبو
         if: always()
         run: |
