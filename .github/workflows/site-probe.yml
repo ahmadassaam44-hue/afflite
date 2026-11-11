@@ -55,6 +55,19 @@ jobs:
                   'body_len': len(body),
               }
 
+          # ── اختبارات الشبكة الخام ─────────────────────────────────────
+          def sh(cmd):
+              p = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=90)
+              return {'out': (p.stdout or '')[-1500:], 'err': (p.stderr or '')[-1500:], 'rc': p.returncode}
+
+          results['_dns'] = sh("getent hosts wafirinhalk.ct.ws; echo '---'; getent ahostsv4 wafirinhalk.ct.ws | head -5")
+          results['_control_example_com'] = sh("curl -sS -o /dev/null --max-time 20 -w '%{http_code} %{time_total}' https://example.com/ 2>&1")
+          results['_control_infinityfree'] = sh("curl -sS -o /dev/null --max-time 20 -w '%{http_code} %{time_total}' https://dash.infinityfree.com/ 2>&1")
+          results['_tcp443'] = sh("timeout 15 bash -c '</dev/tcp/wafirinhalk.ct.ws/443' && echo OPEN || echo CLOSED")
+          results['_tcp80'] = sh("timeout 15 bash -c '</dev/tcp/wafirinhalk.ct.ws/80' && echo OPEN || echo CLOSED")
+          results['_http_plain'] = sh("curl -sS -i --max-time 25 -A 'Mozilla/5.0' http://wafirinhalk.ct.ws/ 2>&1 | head -c 1200")
+          results['_verbose'] = sh("curl -sS -v -o /dev/null --max-time 25 https://wafirinhalk.ct.ws/ 2>&1 | tail -n 25")
+
           for t in targets:
               url = BASE + t
               try:
