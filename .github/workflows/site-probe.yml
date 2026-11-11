@@ -5,8 +5,8 @@ name: فحص حالة الموقع (تشخيص)
 on:
   workflow_dispatch:
   push:
-    paths-ignore:
-      - 'data/_site_probe.json'
+    paths:
+      - '.github/workflows/site-probe.yml'
 
 permissions:
   contents: write
