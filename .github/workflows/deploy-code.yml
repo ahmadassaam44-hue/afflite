@@ -1,0 +1,116 @@
+name: رفع ملفات الكود للاستضافة
+
+# رفع مخصوص للملفات اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله).
+# بيستخدم نفس أسرار الـ FTP (FTP_HOST / FTP_USER / FTP_PASS) اللي بوت الكتالوج بيستخدمها.
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-code.yml'
+  workflow_dispatch:
+    inputs:
+      files:
+        description: 'مسارات الملفات المطلوب رفعها (مسافات بينها). افتراضي: الملفين المتغيّرين'
+        required: false
+        default: 'dashboard/cart.php dashboard/checkout_cart.php'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: فحص الـ FTP والرفع
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASS: ${{ secrets.FTP_PASS }}
+          FTP_ROOT: /htdocs
+          INPUT_FILES: ${{ github.event.inputs.files }}
+        run: |
+          python3 - <<'PY'
+          import os, json, ftplib, hashlib, datetime, socket
+
+          report = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')}
+          host = (os.environ.get('FTP_HOST') or '').strip()
+          user = (os.environ.get('FTP_USER') or '').strip()
+          pw   = os.environ.get('FTP_PASS') or ''
+          root = (os.environ.get('FTP_ROOT') or '/htdocs').strip()
+          files = (os.environ.get('INPUT_FILES') or '').split() or ['dashboard/cart.php', 'dashboard/checkout_cart.php']
+
+          report['files_requested'] = files
+          if not (host and user and pw):
+              report.update(status='no_credentials')
+              print('❌ أسرار الـ FTP مش مضافة (FTP_HOST / FTP_USER / FTP_PASS)')
+          else:
+              report['host'] = host
+              try:
+                  socket.setdefaulttimeout(45)
+                  ftp = ftplib.FTP(host, timeout=45)
+                  ftp.login(user, pw)
+                  report['connection'] = 'ok'
+                  print('✅ اتصال FTP ناجح بـ', host)
+                  ftp.set_pasv(True)
+              except Exception as e:
+                  report.update(status='connect_failed', error=str(e)[:300])
+                  print('❌ فشل الاتصال/الدخول على الـ FTP:', e)
+                  ftp = None
+
+              if ftp is not None:
+                  done, failed = [], []
+                  try:
+                      ftp.cwd(root)
+                      print('📂', root, 'مفتوح')
+                  except Exception as e:
+                      report['cwd_warning'] = str(e)[:200]
+                      print('⚠️ تعذر فتح', root, e)
+                  for rel in files:
+                      if not os.path.isfile(rel):
+                          failed.append({'file': rel, 'error': 'مش موجود محليًا'})
+                          continue
+                      data = open(rel, 'rb').read()
+                      local_md5 = hashlib.md5(data).hexdigest()
+                      remote_dir = os.path.dirname(rel)
+                      try:
+                          if remote_dir:
+                              try: ftp.cwd(remote_dir)
+                              except Exception: 
+                                  try: ftp.mkd(remote_dir)
+                                  except Exception: pass
+                                  ftp.cwd(remote_dir)
+                          ftp.storbinary('STOR ' + os.path.basename(rel), open(rel, 'rb'))
+                          size = ftp.size(os.path.basename(rel))
+                          ok = (size == len(data))
+                          (done if ok else failed).append({
+                              'file': rel, 'local_md5': local_md5, 'local_size': len(data), 'remote_size': size,
+                              **({} if ok else {'error': 'الحجم على السيرفر مختلف'}),
+                          })
+                          print(('✅ ' if ok else '⚠️ ') + rel, len(data), 'bytes')
+                          if remote_dir: ftp.cwd('/')
+                      except Exception as e:
+                          failed.append({'file': rel, 'error': str(e)[:200]})
+                          print('❌', rel, e)
+                          try: ftp.cwd('/')
+                          except Exception: pass
+                  try: ftp.quit()
+                  except Exception: pass
+                  report.update(uploaded=done, failed=failed,
+                                status='ok' if not failed else ('partial' if done else 'failed'))
+
+          os.makedirs('data', exist_ok=True)
+          json.dump(report, open('data/_code_deploy.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+          print(json.dumps(report, ensure_ascii=False)[:2500])
+          PY
+
+      - name: حفظ نتيجة الرفع في الريبو
+        if: always()
+        run: |
+          if [ ! -f data/_code_deploy.json ]; then echo '{"status":"no_report"}' > data/_code_deploy.json; fi
+          git config user.name 'deploy-bot'
+          git config user.email 'deploy-bot@users.noreply.github.com'
+          git add data/_code_deploy.json
+          git diff --cached --quiet || git commit -m "📤 نتيجة رفع الملفات $(date -u +%H:%M)"
+          git push
