@@ -1,5 +1,5 @@
 {
- "at": "2026-11-11T18:12:24+00:00",
+ "at": "2026-11-11T18:13:43+00:00",
  "files_requested": [
   "dashboard/cart.php",
   "dashboard/checkout_cart.php"
@@ -10,24 +10,54 @@
   {
    "file": "dashboard/cart.php",
    "local_md5": "78f2323720df677b192f3e4adf686898",
-   "remote_md5": "78f2323720df677b192f3e4adf686898",
    "local_size": 15748,
-   "remote_size": 15748
-  }
- ],
- "failed": [
+   "remote_size": 15748,
+   "remote_md5": "78f2323720df677b192f3e4adf686898"
+  },
   {
    "file": "dashboard/checkout_cart.php",
-   "error": "550 Can't check for file existence"
+   "local_md5": "575426a5abb984b7dea2e5eb8ac2116d",
+   "local_size": 14713,
+   "remote_size": 14713,
+   "remote_md5": "575426a5abb984b7dea2e5eb8ac2116d"
   }
  ],
- "status": "partial",
- "live_real": "no_challenge_found",
- "home_body": "<html><body><script type=\"text/javascript\" src=\"/aes.js\" ></script><script>function toNumbers(d){var e=[];d.replace(/(..)/g,function(d){e.push(parseInt(d,16))});return e}function toHex(){for(var d=[],d=1==arguments.length&&arguments[0].constructor==Array?arguments[0]:arguments,e=\"\",f=0;f<d.length;f++)e+=(16>d[f]?\"0\":\"\")+d[f].toString(16);return e.toLowerCase()}var a=toNumbers(\"f655ba9d09a112d4968c63579db590b4\"),b=toNumbers(\"98344c2eee86c3994890592585b49f80\"),c=toNumbers(\"e717c68babd408a802212f457efa5e8e\");document.cookie=\"__test=\"+toHex(slowAES.decrypt(c,2,a,b))+\"; max-age=21600; expires=Thu, 31-Dec-37 23:55:55 GMT; path=/\"; location.href=\"https://wafirinhalk.ct.ws/?i=1\";</script><noscript>T",
- "live_http": {
-  "/": "200 844 1.118744",
-  "/login.php": "200 853 0.421728",
-  "/dashboard/cart.php": "200 862 0.434357"
+ "unverified": [],
+ "failed": [],
+ "status": "ok",
+ "raw_status": "HTTP/1.1 200 OK",
+ "challenge": "solved",
+ "live": {
+  "/": {
+   "status": "200|226495",
+   "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
+   "php_error": false,
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a"
+  },
+  "/login.php": {
+   "status": "200|10167",
+   "title": "تسجيل الدخول | وفرنهالك",
+   "php_error": false,
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <"
+  },
+  "/dashboard/cart.php": {
+   "status": "200|50783",
+   "title": "سلة التسوق | وفرنهالك",
+   "php_error": false,
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال"
+  },
+  "/dashboard/checkout_cart.php": {
+   "status": "302|0",
+   "title": null,
+   "php_error": false,
+   "head": ""
+  },
+  "/hello.html": {
+   "status": "200|11",
+   "title": null,
+   "php_error": false,
+   "head": "hello world"
+  }
  },
- "live_checked_at": "2026-11-11T18:12:30+00:00"
+ "checked_at": "2026-11-11T18:13:53+00:00"
 }
