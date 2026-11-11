@@ -1,5 +1,5 @@
 {
- "at": "2026-11-11T18:10:04+00:00",
+ "at": "2026-11-11T18:12:24+00:00",
  "files_requested": [
   "dashboard/cart.php",
   "dashboard/checkout_cart.php"
@@ -13,22 +13,21 @@
    "remote_md5": "78f2323720df677b192f3e4adf686898",
    "local_size": 15748,
    "remote_size": 15748
-  },
-  {
-   "file": "dashboard/checkout_cart.php",
-   "local_md5": "575426a5abb984b7dea2e5eb8ac2116d",
-   "remote_md5": "575426a5abb984b7dea2e5eb8ac2116d",
-   "local_size": 14713,
-   "remote_size": 14713
   }
  ],
- "failed": [],
- "status": "ok",
+ "failed": [
+  {
+   "file": "dashboard/checkout_cart.php",
+   "error": "550 Can't check for file existence"
+  }
+ ],
+ "status": "partial",
  "live_real": "no_challenge_found",
+ "home_body": "<html><body><script type=\"text/javascript\" src=\"/aes.js\" ></script><script>function toNumbers(d){var e=[];d.replace(/(..)/g,function(d){e.push(parseInt(d,16))});return e}function toHex(){for(var d=[],d=1==arguments.length&&arguments[0].constructor==Array?arguments[0]:arguments,e=\"\",f=0;f<d.length;f++)e+=(16>d[f]?\"0\":\"\")+d[f].toString(16);return e.toLowerCase()}var a=toNumbers(\"f655ba9d09a112d4968c63579db590b4\"),b=toNumbers(\"98344c2eee86c3994890592585b49f80\"),c=toNumbers(\"e717c68babd408a802212f457efa5e8e\");document.cookie=\"__test=\"+toHex(slowAES.decrypt(c,2,a,b))+\"; max-age=21600; expires=Thu, 31-Dec-37 23:55:55 GMT; path=/\"; location.href=\"https://wafirinhalk.ct.ws/?i=1\";</script><noscript>T",
  "live_http": {
-  "/": "200 844 0.353736",
-  "/login.php": "200 853 0.286097",
-  "/dashboard/cart.php": "200 862 0.340856"
+  "/": "200 844 1.118744",
+  "/login.php": "200 853 0.421728",
+  "/dashboard/cart.php": "200 862 0.434357"
  },
- "live_checked_at": "2026-11-11T18:10:08+00:00"
+ "live_checked_at": "2026-11-11T18:12:30+00:00"
 }
