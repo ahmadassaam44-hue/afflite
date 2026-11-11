@@ -1,0 +1,25 @@
+{
+ "at": "2026-11-11T18:05:54+00:00",
+ "files_requested": [
+  "dashboard/cart.php",
+  "dashboard/checkout_cart.php"
+ ],
+ "host": "ftpupload.net",
+ "connection": "ok",
+ "uploaded": [
+  {
+   "file": "dashboard/cart.php",
+   "local_md5": "78f2323720df677b192f3e4adf686898",
+   "local_size": 15748,
+   "remote_size": 15748
+  },
+  {
+   "file": "dashboard/checkout_cart.php",
+   "local_md5": "575426a5abb984b7dea2e5eb8ac2116d",
+   "local_size": 14713,
+   "remote_size": 14713
+  }
+ ],
+ "failed": [],
+ "status": "ok"
+}
