@@ -1,0 +1,42 @@
+{
+ "at": "2026-11-11T16:03:33+00:00",
+ "base": "https://wafirinhalk.ct.ws",
+ "results": {
+  "/": {
+   "result": "000 https://wafirinhalk.ct.ws/ 0 30.001419",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/index.php": {
+   "result": "000 https://wafirinhalk.ct.ws/index.php 0 30.001514",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/hello.html": {
+   "result": "000 https://wafirinhalk.ct.ws/hello.html 0 30.001048",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/login.php": {
+   "result": "000 https://wafirinhalk.ct.ws/login.php 0 30.001718",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "/robots.txt": {
+   "result": "000 https://wafirinhalk.ct.ws/robots.txt 0 30.000795",
+   "headers": [],
+   "title": null,
+   "body_head": "",
+   "body_len": 0
+  },
+  "_aes_error": "[Errno 2] No such file or directory: '/tmp/aes.js'"
+ }
+}
