@@ -159,6 +159,14 @@ jobs:
           except Exception as e:
               rep['live_real_error'] = str(e)[:300]
 
+          # نص أول رد من الرئيسية (عشان نعرف لو دي صفحة فحص/خطأ بدل الموقع)
+          try:
+              p4 = subprocess.run(['curl','-sS','--max-time','25','-A',UA,'https://wafirinhalk.ct.ws/'],
+                                  capture_output=True, text=True)
+              rep['home_body'] = ' '.join((p4.stdout or '').split())[:700]
+          except Exception as e:
+              rep['home_body_error'] = str(e)[:200]
+
           rep['live_http'] = checks
           rep['live_checked_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
           json.dump(rep, open('data/_code_deploy.json','w',encoding='utf-8'), ensure_ascii=False, indent=1)
