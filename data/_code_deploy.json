@@ -1,5 +1,5 @@
 {
- "at": "2026-11-11T18:07:51+00:00",
+ "at": "2026-11-11T18:10:04+00:00",
  "files_requested": [
   "dashboard/cart.php",
   "dashboard/checkout_cart.php"
@@ -10,22 +10,25 @@
   {
    "file": "dashboard/cart.php",
    "local_md5": "78f2323720df677b192f3e4adf686898",
+   "remote_md5": "78f2323720df677b192f3e4adf686898",
    "local_size": 15748,
    "remote_size": 15748
   },
   {
    "file": "dashboard/checkout_cart.php",
    "local_md5": "575426a5abb984b7dea2e5eb8ac2116d",
+   "remote_md5": "575426a5abb984b7dea2e5eb8ac2116d",
    "local_size": 14713,
    "remote_size": 14713
   }
  ],
  "failed": [],
  "status": "ok",
+ "live_real": "no_challenge_found",
  "live_http": {
-  "/": "200 844 0.475735",
-  "/login.php": "200 853 0.475163",
-  "/dashboard/cart.php": "200 862 0.478893"
+  "/": "200 844 0.353736",
+  "/login.php": "200 853 0.286097",
+  "/dashboard/cart.php": "200 862 0.340856"
  },
- "live_checked_at": "2026-11-11T18:07:57+00:00"
+ "live_checked_at": "2026-11-11T18:10:08+00:00"
 }
