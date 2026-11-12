@@ -40,7 +40,7 @@ jobs:
           user = (os.environ.get('FTP_USER') or '').strip()
           pw   = os.environ.get('FTP_PASS') or ''
           root = (os.environ.get('FTP_ROOT') or '/htdocs').strip()
-          files = (os.environ.get('INPUT_FILES') or '').split() or 'config.php'.split()
+          files = (os.environ.get('INPUT_FILES') or '').split() or 'config.php dashboard/cart.php dashboard/layout.php dashboard/marketer.php store.php assets/ui.js'.split()
           report['files_requested'] = files
 
           ftp = None
