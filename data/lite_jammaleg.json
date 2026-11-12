@@ -1,0 +1,4197 @@
+[
+  {
+    "id": "jammaleg-1790",
+    "orig_id": "1790",
+    "name": "ترنج اطفالي مطبوع A46",
+    "sku": "1790",
+    "price": 295.0,
+    "cost": 295.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "295 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "أطفال وألعاب",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1591/b5KzKWsghnOxXxUE83EzndfJXtSZ2Va6sgngIW7X.jpg",
+      "https://jammaleg.com/uploads/products_images/1591/57748.jpg",
+      "https://jammaleg.com/uploads/products_images/1591/31130.jpg",
+      "https://jammaleg.com/uploads/products_images/1591/49133.jpg",
+      "https://jammaleg.com/uploads/products_images/1591/91655.jpg",
+      "https://jammaleg.com/uploads/products_images/1591/58373.jpg"
+    ],
+    "sizes": [
+      "2",
+      "4",
+      "6",
+      "8",
+      "10"
+    ],
+    "extra": {
+      "colors": [
+        "رصاصى",
+        "احمر",
+        "سماوى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "2",
+          "color": "رصاصى",
+          "stock": 50
+        },
+        {
+          "size": "4",
+          "color": "احمر",
+          "stock": 100
+        },
+        {
+          "size": "6",
+          "color": "سماوى",
+          "stock": 50
+        },
+        {
+          "size": "8",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "10",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "4",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "6",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "8",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "10",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "4",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "6",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "8",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "10",
+          "color": "",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 295.0,
+      "source_url": "https://jammaleg.com/product/detils/1790",
+      "jammaleg_id": "1790",
+      "category_raw": "أطفال وألعاب",
+      "seller": "luxury store"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1789",
+    "orig_id": "1789",
+    "name": "ترنج ميلتون شريط سوستة A45",
+    "sku": "1789",
+    "price": 410.0,
+    "cost": 410.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "410 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1590/SpVW9buDtg4kqsnJ6lgGZZSdUFVDQTbNaMQSsI6u.png",
+      "https://jammaleg.com/uploads/products_images/1590/37525.png",
+      "https://jammaleg.com/uploads/products_images/1590/12938.png",
+      "https://jammaleg.com/uploads/products_images/1590/45872.png",
+      "https://jammaleg.com/uploads/products_images/1590/77595.png",
+      "https://jammaleg.com/uploads/products_images/1590/14939.png"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "رصاصى فاتح",
+        "رصاصى غامق"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "رصاصى فاتح",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "رصاصى غامق",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 410.0,
+      "source_url": "https://jammaleg.com/product/detils/1789",
+      "jammaleg_id": "1789",
+      "category_raw": "ملابس رجالي",
+      "seller": "TG-Store"
+    },
+    "added_at": "2026-11-08",
+    "desc": "ترنج ميلتون سوستة شريط سادة -خامة ميلتون ضد الوبرة والانكماش -تقفيل وفينيش عالي -مزود ب زونط وجيوب امامية -غير شامل التيشرت اسفل السوي تيشرت -شريط جانبي الوان (اسود-رصاصي فاتح -رصاصي غامق ) مقاسات (L-XL-XXL) جدول التلبيس مقاس لارج من 55 ل 70 كيلو مقاس اكس لارج من 70 ل 80 كيلو مقاس اتنين اكس من 80 ل 95 كيلو"
+  },
+  {
+    "id": "jammaleg-1788",
+    "orig_id": "1788",
+    "name": "ترنج مقاس خاص STWDكA44",
+    "sku": "1788",
+    "price": 430.0,
+    "cost": 430.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "430 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1589/C7lDREyePueKjN9pGaGcSzWAPsy4kFqnwCQUD5M1.jpg",
+      "https://jammaleg.com/uploads/products_images/1589/24230.jpg",
+      "https://jammaleg.com/uploads/products_images/1589/52783.jpg",
+      "https://jammaleg.com/uploads/products_images/1589/36849.jpg",
+      "https://jammaleg.com/uploads/products_images/1589/57918.jpg"
+    ],
+    "sizes": [
+      "مقاس خاص"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "ابيض",
+        "رصاصى فاتح",
+        "زيتي"
+      ],
+      "variants_detailed": [
+        {
+          "size": "مقاس خاص",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "رصاصى فاتح",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "زيتي",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 430.0,
+      "source_url": "https://jammaleg.com/product/detils/1788",
+      "jammaleg_id": "1788",
+      "category_raw": "ملابس رجالي",
+      "seller": "luxury store"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1787",
+    "orig_id": "1787",
+    "name": "ترنج STWD لياقة شتوي A43",
+    "sku": "1787",
+    "price": 390.0,
+    "cost": 390.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "390 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1588/WT1lRMcZoCEckHrLBcdP9IWuFoSJmYhwWkCeRXdU.jpg",
+      "https://jammaleg.com/uploads/products_images/1588/55767.jpg",
+      "https://jammaleg.com/uploads/products_images/1588/87411.jpg",
+      "https://jammaleg.com/uploads/products_images/1588/90313.jpg",
+      "https://jammaleg.com/uploads/products_images/1588/71335.jpg",
+      "https://jammaleg.com/uploads/products_images/1588/21829.jpg",
+      "https://jammaleg.com/uploads/products_images/1588/87066.jpg",
+      "https://jammaleg.com/uploads/products_images/1588/81548.jpg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "ابيض",
+        "رصاصى فاتح",
+        "زيتي"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "رصاصى فاتح",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "زيتي",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 390.0,
+      "source_url": "https://jammaleg.com/product/detils/1787",
+      "jammaleg_id": "1787",
+      "category_raw": "ملابس رجالي",
+      "seller": "luxury store"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1784",
+    "orig_id": "1784",
+    "name": "ترنج كاردونية شتوي لياقة A4...",
+    "sku": "1784",
+    "price": 430.0,
+    "cost": 430.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "430 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1585/BBq13VKZzxZRQ9XK0ErVIEn5UEAPwOY02yxCOaQi.jpg",
+      "https://jammaleg.com/uploads/products_images/1585/66831.jpg",
+      "https://jammaleg.com/uploads/products_images/1585/48304.jpg",
+      "https://jammaleg.com/uploads/products_images/1585/40508.jpg",
+      "https://jammaleg.com/uploads/products_images/1585/48741.jpg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "ابيض",
+        "بيج",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "بيج",
+          "stock": 5
+        },
+        {
+          "size": "L",
+          "color": "رصاصى",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 5
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 430.0,
+      "source_url": "https://jammaleg.com/product/detils/1784",
+      "jammaleg_id": "1784",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": "ترنج كاردونية شتوي لياقة -خامة كاردونية مكسترة تقيلة -ضد الوبرة والانكماش -نص سوستة -الوان (اسود-ابيض-بيج-رصاصي) مقاسات (L-Xl-XXL)"
+  },
+  {
+    "id": "jammaleg-1779",
+    "orig_id": "1779",
+    "name": "بنطلون وايد ليج قطن كود A38",
+    "sku": "1779",
+    "price": 260.0,
+    "cost": 260.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "260 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1580/zmqEYj9RZmsGiE2aX8rkPcdyyAcT5s481iNdWBf7.jpg",
+      "https://jammaleg.com/uploads/products_images/1580/7513.jpg",
+      "https://jammaleg.com/uploads/products_images/1580/80946.jpg",
+      "https://jammaleg.com/uploads/products_images/1580/24847.jpg",
+      "https://jammaleg.com/uploads/products_images/1580/12131.jpg",
+      "https://jammaleg.com/uploads/products_images/1580/37477.jpg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "رصاصى",
+        "بيج"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "اسود",
+          "stock": 5
+        },
+        {
+          "size": "xl",
+          "color": "رصاصى",
+          "stock": 5
+        },
+        {
+          "size": "L",
+          "color": "بيج",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 260.0,
+      "source_url": "https://jammaleg.com/product/detils/1779",
+      "jammaleg_id": "1779",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1778",
+    "orig_id": "1778",
+    "name": "شنطة ظهر باك للاب توب والرح...",
+    "sku": "1778",
+    "price": 150.0,
+    "cost": 150.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "150 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "شنط ومحافظ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1579/LhEdtZKYabHN0fwripV72vS5uOckl6bGQha6PSYO.png",
+      "https://jammaleg.com/uploads/products_images/1579/95639.png",
+      "https://jammaleg.com/uploads/products_images/1579/16852.png",
+      "https://jammaleg.com/uploads/products_images/1579/72230.png",
+      "https://jammaleg.com/uploads/products_images/1579/95914.png",
+      "https://jammaleg.com/uploads/products_images/1579/94823.png"
+    ],
+    "sizes": [
+      "بدون مقاس"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "كحلي",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "بدون مقاس",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "بدون مقاس",
+          "color": "كحلي",
+          "stock": 5
+        },
+        {
+          "size": "بدون مقاس",
+          "color": "رصاصى",
+          "stock": 5
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 150.0,
+      "source_url": "https://jammaleg.com/product/detils/1778",
+      "jammaleg_id": "1778",
+      "category_raw": "شنط ومحافظ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1777",
+    "orig_id": "1777",
+    "name": "تيشرت نص سوسته شتوي خاص",
+    "sku": "1777",
+    "price": 270.0,
+    "cost": 270.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "270 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1578/cPdKr6PbCwnlR8sJ1Y4q3Zozm0KG53m3JEvOsRyv.jpg",
+      "https://jammaleg.com/uploads/products_images/1578/11049.jpg",
+      "https://jammaleg.com/uploads/products_images/1578/12547.jpg",
+      "https://jammaleg.com/uploads/products_images/1578/79289.jpg",
+      "https://jammaleg.com/uploads/products_images/1578/13868.jpg",
+      "https://jammaleg.com/uploads/products_images/1578/20743.jpg",
+      "https://jammaleg.com/uploads/products_images/1578/38511.jpg",
+      "https://jammaleg.com/uploads/products_images/1578/68602.jpg"
+    ],
+    "sizes": [
+      "مقاس خاص"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "ابيض",
+        "زيتي",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "مقاس خاص",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "زيتي",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "رصاصى",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 270.0,
+      "source_url": "https://jammaleg.com/product/detils/1777",
+      "jammaleg_id": "1777",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1774",
+    "orig_id": "1774",
+    "name": "ترنج مقاس خاص برق A008",
+    "sku": "1774",
+    "price": 430.0,
+    "cost": 430.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "430 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1575/nifaP4o78pT6K06GIcZCdWB8MnFafQJ3fl2AQjJe.jpg",
+      "https://jammaleg.com/uploads/products_images/1575/76846.jpg",
+      "https://jammaleg.com/uploads/products_images/1575/3016.jpg",
+      "https://jammaleg.com/uploads/products_images/1575/22617.jpg"
+    ],
+    "sizes": [
+      "مقاس خاص"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "ابيض",
+        "احمر",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "مقاس خاص",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "احمر",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "رصاصى",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 430.0,
+      "source_url": "https://jammaleg.com/product/detils/1774",
+      "jammaleg_id": "1774",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1773",
+    "orig_id": "1773",
+    "name": "ترنج بوما مقاس خاصA028",
+    "sku": "1773",
+    "price": 430.0,
+    "cost": 430.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "430 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1574/u95IsPyhTWv5x5QPEgTdB5a6UWxn5KpVX10tRjji.jpg",
+      "https://jammaleg.com/uploads/products_images/1574/94218.png",
+      "https://jammaleg.com/uploads/products_images/1574/61401.jpg",
+      "https://jammaleg.com/uploads/products_images/1574/30932.png",
+      "https://jammaleg.com/uploads/products_images/1574/40986.jpg",
+      "https://jammaleg.com/uploads/products_images/1574/57665.png",
+      "https://jammaleg.com/uploads/products_images/1574/86946.jpg",
+      "https://jammaleg.com/uploads/products_images/1574/91857.png"
+    ],
+    "sizes": [
+      "مقاس خاص"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "ابيض",
+        "احمر",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "مقاس خاص",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "احمر",
+          "stock": 100
+        },
+        {
+          "size": "مقاس خاص",
+          "color": "رصاصى",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 430.0,
+      "source_url": "https://jammaleg.com/product/detils/1773",
+      "jammaleg_id": "1773",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1771",
+    "orig_id": "1771",
+    "name": "تيشرت شتوي نص سوستهA027",
+    "sku": "1771",
+    "price": 245.0,
+    "cost": 245.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "245 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1572/23xaZsfK2f1kzrzNONyL8WH4xmfkAfIsjudULTAi.jpg",
+      "https://jammaleg.com/uploads/products_images/1572/14391.jpeg",
+      "https://jammaleg.com/uploads/products_images/1572/36803.jpg",
+      "https://jammaleg.com/uploads/products_images/1572/30058.jpg",
+      "https://jammaleg.com/uploads/products_images/1572/65599.jpg",
+      "https://jammaleg.com/uploads/products_images/1572/91783.jpg",
+      "https://jammaleg.com/uploads/products_images/1572/71462.jpg",
+      "https://jammaleg.com/uploads/products_images/1572/45030.jpg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "رصاصى فاتح",
+        "زيتي",
+        "ابيض"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "رصاصى فاتح",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "زيتي",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 245.0,
+      "source_url": "https://jammaleg.com/product/detils/1771",
+      "jammaleg_id": "1771",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1765",
+    "orig_id": "1765",
+    "name": "ترنج chicago bulls كودA021",
+    "sku": "1765",
+    "price": 390.0,
+    "cost": 390.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "390 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1566/4c3FTyiqJ86KvNXAKehTpH4PetCAV99wjOCLPcaF.jpg",
+      "https://jammaleg.com/uploads/products_images/1566/56291.jpeg",
+      "https://jammaleg.com/uploads/products_images/1566/87705.jpeg",
+      "https://jammaleg.com/uploads/products_images/1566/27597.jpeg",
+      "https://jammaleg.com/uploads/products_images/1566/48467.jpeg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "احمر",
+        "اسود",
+        "ابيض",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "احمر",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "اسود",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "ابيض",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "رصاصى",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 390.0,
+      "source_url": "https://jammaleg.com/product/detils/1765",
+      "jammaleg_id": "1765",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1755",
+    "orig_id": "1755",
+    "name": "ترنج اديدس لوتس سوستهA011",
+    "sku": "1755",
+    "price": 390.0,
+    "cost": 390.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "390 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1556/TaPsRxgraFyzIRt5hb2iD1funpJvBUGdaJSDMcS7.png",
+      "https://jammaleg.com/uploads/products_images/1556/11813.png",
+      "https://jammaleg.com/uploads/products_images/1556/33617.png",
+      "https://jammaleg.com/uploads/products_images/1556/2970.png",
+      "https://jammaleg.com/uploads/products_images/1556/72498.png",
+      "https://jammaleg.com/uploads/products_images/1556/36371.png",
+      "https://jammaleg.com/uploads/products_images/1556/5851.png",
+      "https://jammaleg.com/uploads/products_images/1556/59602.png"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "احمر",
+        "اسود",
+        "ابيض",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "احمر",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "رصاصى",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 390.0,
+      "source_url": "https://jammaleg.com/product/detils/1755",
+      "jammaleg_id": "1755",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1754",
+    "orig_id": "1754",
+    "name": "ترنج خاص اديدس لوتس A010",
+    "sku": "1754",
+    "price": 430.0,
+    "cost": 430.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "430 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1555/nWZko2p8EWUZKQENmy9IhXJKT2ZYmtp206oSASjz.png",
+      "https://jammaleg.com/uploads/products_images/1555/52445.png",
+      "https://jammaleg.com/uploads/products_images/1555/59776.png",
+      "https://jammaleg.com/uploads/products_images/1555/54448.png",
+      "https://jammaleg.com/uploads/products_images/1555/15392.png"
+    ],
+    "sizes": [
+      "3XL",
+      "4XL"
+    ],
+    "extra": {
+      "colors": [
+        "احمر",
+        "اسود",
+        "ابيض",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "3XL",
+          "color": "احمر",
+          "stock": 100
+        },
+        {
+          "size": "4XL",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "3XL",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "4XL",
+          "color": "رصاصى",
+          "stock": 100
+        },
+        {
+          "size": "3XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "4XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "3XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "4XL",
+          "color": "",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 430.0,
+      "source_url": "https://jammaleg.com/product/detils/1754",
+      "jammaleg_id": "1754",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1753",
+    "orig_id": "1753",
+    "name": "ترنج برق سوستة شتوي A009",
+    "sku": "1753",
+    "price": 390.0,
+    "cost": 390.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "390 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1554/p5dcOUADyhmG184M1PY3XAF7r4hpo2hM1cS79Gxb.jpg",
+      "https://jammaleg.com/uploads/products_images/1554/55891.jpg",
+      "https://jammaleg.com/uploads/products_images/1554/54657.jpg",
+      "https://jammaleg.com/uploads/products_images/1554/29855.jpg",
+      "https://jammaleg.com/uploads/products_images/1554/45827.jpg",
+      "https://jammaleg.com/uploads/products_images/1554/79033.jpg",
+      "https://jammaleg.com/uploads/products_images/1554/50586.jpg",
+      "https://jammaleg.com/uploads/products_images/1554/47919.jpg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "احمر",
+        "اسود",
+        "ابيض",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "احمر",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "اسود",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "ابيض",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "رصاصى",
+          "stock": 5
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 50
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 390.0,
+      "source_url": "https://jammaleg.com/product/detils/1753",
+      "jammaleg_id": "1753",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1748",
+    "orig_id": "1748",
+    "name": "ترنج بوما سوستة شتوي A004",
+    "sku": "1748",
+    "price": 390.0,
+    "cost": 390.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "390 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1549/8qhrQZlbNLEDDoowlvTToIeLj4bC9cdTaSGopjXC.jpg",
+      "https://jammaleg.com/uploads/products_images/1549/98477.png",
+      "https://jammaleg.com/uploads/products_images/1549/20393.jpg",
+      "https://jammaleg.com/uploads/products_images/1549/32048.png",
+      "https://jammaleg.com/uploads/products_images/1549/22394.png",
+      "https://jammaleg.com/uploads/products_images/1549/67811.jpg",
+      "https://jammaleg.com/uploads/products_images/1549/67343.jpg",
+      "https://jammaleg.com/uploads/products_images/1549/91396.jpg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "احمر",
+        "ابيض",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "احمر",
+          "stock": 50
+        },
+        {
+          "size": "2XL",
+          "color": "ابيض",
+          "stock": 50
+        },
+        {
+          "size": "L",
+          "color": "رصاصى",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 5
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 390.0,
+      "source_url": "https://jammaleg.com/product/detils/1748",
+      "jammaleg_id": "1748",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1745",
+    "orig_id": "1745",
+    "name": "ترنج  Ny رجالي شتوي بسوسته...",
+    "sku": "1745",
+    "price": 390.0,
+    "cost": 390.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "390 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1546/VckHHyaKKi77AAPejbgae4GlX4CIw3oYYgzPq3wj.jpg",
+      "https://jammaleg.com/uploads/products_images/1546/69852.jpg",
+      "https://jammaleg.com/uploads/products_images/1546/56059.jpg",
+      "https://jammaleg.com/uploads/products_images/1546/25466.jpg",
+      "https://jammaleg.com/uploads/products_images/1546/56825.jpg",
+      "https://jammaleg.com/uploads/products_images/1546/36244.jpg",
+      "https://jammaleg.com/uploads/products_images/1546/38097.jpg",
+      "https://jammaleg.com/uploads/products_images/1546/96461.jpg"
+    ],
+    "sizes": [
+      "L",
+      "xl",
+      "2XL"
+    ],
+    "extra": {
+      "colors": [
+        "احمر",
+        "اسود",
+        "ابيض",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "L",
+          "color": "احمر",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "ابيض",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "رصاصى",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "L",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "xl",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "2XL",
+          "color": "",
+          "stock": 100
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 390.0,
+      "source_url": "https://jammaleg.com/product/detils/1745",
+      "jammaleg_id": "1745",
+      "category_raw": "ملابس رجالي",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1742",
+    "orig_id": "1742",
+    "name": "محفظة HORSE الرجاليه",
+    "sku": "1742",
+    "price": 160.0,
+    "cost": 160.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "160 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1543/0Qvp9vlw6F8b1KrujR46YzKJzp4XF9Smy9HBasaQ.jpg",
+      "https://jammaleg.com/uploads/products_images/1543/13146.jpg",
+      "https://jammaleg.com/uploads/products_images/1543/24293.jpg",
+      "https://jammaleg.com/uploads/products_images/1543/85859.jpg",
+      "https://jammaleg.com/uploads/products_images/1543/47692.jpg"
+    ],
+    "sizes": [
+      "بدون مقاس"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "هافان",
+        "بنى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "بدون مقاس",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "بدون مقاس",
+          "color": "هافان",
+          "stock": 100
+        },
+        {
+          "size": "بدون مقاس",
+          "color": "بنى",
+          "stock": 50
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 160.0,
+      "source_url": "https://jammaleg.com/product/detils/1742",
+      "jammaleg_id": "1742",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1741",
+    "orig_id": "1741",
+    "name": "قلم حفر علي المعادن",
+    "sku": "1741",
+    "price": 120.0,
+    "cost": 120.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "120 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1542/GwF5GWRIicDKI8QtimDpjTZgUkxZaUmYLJ3zWL3E.jpg",
+      "https://jammaleg.com/uploads/products_images/1542/80057.jpg",
+      "https://jammaleg.com/uploads/products_images/1542/60624.jpg",
+      "https://jammaleg.com/uploads/products_images/1542/18801.jpg",
+      "https://jammaleg.com/uploads/products_images/1542/32537.jpg",
+      "https://jammaleg.com/uploads/products_images/1542/49734.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 120.0,
+      "source_url": "https://jammaleg.com/product/detils/1741",
+      "jammaleg_id": "1741",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1740",
+    "orig_id": "1740",
+    "name": "مكواه لفرد الشعر Sokany sy-...",
+    "sku": "1740",
+    "price": 240.0,
+    "cost": 240.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "240 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1541/HuQaPNyJylhG2V6QZkoecn8xiL3VBsU0RRXDOBNC.jpg",
+      "https://jammaleg.com/uploads/products_images/1541/62024.jpg",
+      "https://jammaleg.com/uploads/products_images/1541/42001.jpg",
+      "https://jammaleg.com/uploads/products_images/1541/41291.jpg",
+      "https://jammaleg.com/uploads/products_images/1541/51551.jpg",
+      "https://jammaleg.com/uploads/products_images/1541/18632.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 240.0,
+      "source_url": "https://jammaleg.com/product/detils/1740",
+      "jammaleg_id": "1740",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1738",
+    "orig_id": "1738",
+    "name": "مكنسة سيارات",
+    "sku": "1738",
+    "price": 150.0,
+    "cost": 150.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "150 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1539/nAwSbvZKLILZnZ7d9FrnkUsizhFAIvYlEbEmpCzC.jpg",
+      "https://jammaleg.com/uploads/products_images/1539/85704.jpg",
+      "https://jammaleg.com/uploads/products_images/1539/81838.jpg",
+      "https://jammaleg.com/uploads/products_images/1539/47357.jpg",
+      "https://jammaleg.com/uploads/products_images/1539/13450.jpg",
+      "https://jammaleg.com/uploads/products_images/1539/70447.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 150.0,
+      "source_url": "https://jammaleg.com/product/detils/1738",
+      "jammaleg_id": "1738",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1737",
+    "orig_id": "1737",
+    "name": "نضارة قيادة ليلية ونهاريه",
+    "sku": "1737",
+    "price": 100.0,
+    "cost": 100.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "100 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1538/LDDX2vMETYxyvmefIB0cwnd6kVxzRDQzFe343GCG.jpg",
+      "https://jammaleg.com/uploads/products_images/1538/22374.jpg",
+      "https://jammaleg.com/uploads/products_images/1538/75775.jpg",
+      "https://jammaleg.com/uploads/products_images/1538/93974.jpg",
+      "https://jammaleg.com/uploads/products_images/1538/56941.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 100.0,
+      "source_url": "https://jammaleg.com/product/detils/1737",
+      "jammaleg_id": "1737",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1736",
+    "orig_id": "1736",
+    "name": "ماكينه حلاقه Vgr v-982",
+    "sku": "1736",
+    "price": 380.0,
+    "cost": 380.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "380 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1537/XIYUyfbkg1s8m3gOURWboUazC48ciHsk6EeV2naN.jpg",
+      "https://jammaleg.com/uploads/products_images/1537/60368.jpg",
+      "https://jammaleg.com/uploads/products_images/1537/81281.jpg",
+      "https://jammaleg.com/uploads/products_images/1537/5404.jpg",
+      "https://jammaleg.com/uploads/products_images/1537/88550.jpg",
+      "https://jammaleg.com/uploads/products_images/1537/635.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 380.0,
+      "source_url": "https://jammaleg.com/product/detils/1736",
+      "jammaleg_id": "1736",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1735",
+    "orig_id": "1735",
+    "name": "ماكينة حلاقة Vgr v-955",
+    "sku": "1735",
+    "price": 360.0,
+    "cost": 360.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "360 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1536/CIFrKn5Hkps1OdRTdNCBmWDFVFV8YkhJWDDA9OKI.jpg",
+      "https://jammaleg.com/uploads/products_images/1536/55383.jpg",
+      "https://jammaleg.com/uploads/products_images/1536/10945.jpg",
+      "https://jammaleg.com/uploads/products_images/1536/14657.jpg",
+      "https://jammaleg.com/uploads/products_images/1536/37625.jpg",
+      "https://jammaleg.com/uploads/products_images/1536/56695.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 360.0,
+      "source_url": "https://jammaleg.com/product/detils/1735",
+      "jammaleg_id": "1735",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1734",
+    "orig_id": "1734",
+    "name": "ماكينة حلاقة Vgr v-963",
+    "sku": "1734",
+    "price": 410.0,
+    "cost": 410.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "410 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1535/ZoVibfsjeXIwAjE7ACMVfrj9LGpwHFD0rXrASfdO.jpg",
+      "https://jammaleg.com/uploads/products_images/1535/33113.jpg",
+      "https://jammaleg.com/uploads/products_images/1535/63217.jpg",
+      "https://jammaleg.com/uploads/products_images/1535/64353.jpg",
+      "https://jammaleg.com/uploads/products_images/1535/96913.jpg",
+      "https://jammaleg.com/uploads/products_images/1535/17349.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 410.0,
+      "source_url": "https://jammaleg.com/product/detils/1734",
+      "jammaleg_id": "1734",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1732",
+    "orig_id": "1732",
+    "name": "ماكينة حلاقة Kemei 4 in 1",
+    "sku": "1732",
+    "price": 420.0,
+    "cost": 420.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "420 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1533/oBLEUanNS4SNDXUCNmZbSXO3kI4NuA488eJw3V8L.jpg",
+      "https://jammaleg.com/uploads/products_images/1533/35581.jpg",
+      "https://jammaleg.com/uploads/products_images/1533/57825.jpg",
+      "https://jammaleg.com/uploads/products_images/1533/8788.jpg",
+      "https://jammaleg.com/uploads/products_images/1533/22713.jpg",
+      "https://jammaleg.com/uploads/products_images/1533/6343.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 420.0,
+      "source_url": "https://jammaleg.com/product/detils/1732",
+      "jammaleg_id": "1732",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1731",
+    "orig_id": "1731",
+    "name": "ماكينه كيمي حريمي لازاله ال...",
+    "sku": "1731",
+    "price": 290.0,
+    "cost": 290.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "290 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1532/J99yA7OdZvHbcK63oadNX40sS8EW7YxKwgoNOP2a.jpg",
+      "https://jammaleg.com/uploads/products_images/1532/71186.jpg",
+      "https://jammaleg.com/uploads/products_images/1532/79817.jpg",
+      "https://jammaleg.com/uploads/products_images/1532/92472.jpg",
+      "https://jammaleg.com/uploads/products_images/1532/3209.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 290.0,
+      "source_url": "https://jammaleg.com/product/detils/1731",
+      "jammaleg_id": "1731",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1730",
+    "orig_id": "1730",
+    "name": "ماكنه حلاقه Ws-t99",
+    "sku": "1730",
+    "price": 180.0,
+    "cost": 180.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "180 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1531/CQICqjwoH3hpmLiPrApeFlL9Vb8SlM8k5k5UbbZT.jpg",
+      "https://jammaleg.com/uploads/products_images/1531/20618.jpg",
+      "https://jammaleg.com/uploads/products_images/1531/85693.jpg",
+      "https://jammaleg.com/uploads/products_images/1531/34099.jpg",
+      "https://jammaleg.com/uploads/products_images/1531/52639.jpg",
+      "https://jammaleg.com/uploads/products_images/1531/54749.jpg"
+    ],
+    "sizes": [
+      "33",
+      "37",
+      "41"
+    ],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 180.0,
+      "source_url": "https://jammaleg.com/product/detils/1730",
+      "jammaleg_id": "1730",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1729",
+    "orig_id": "1729",
+    "name": "طقم أكريليك بيور",
+    "sku": "1729",
+    "price": 400.0,
+    "cost": 400.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "400 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "ملابس رجالي",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1530/JGNGMDTMBXWjsWLkRo9FtC3A9rCPeclGWQSBGv61.jpg",
+      "https://jammaleg.com/uploads/products_images/1530/39819.jpg",
+      "https://jammaleg.com/uploads/products_images/1530/72885.jpg",
+      "https://jammaleg.com/uploads/products_images/1530/26079.jpg",
+      "https://jammaleg.com/uploads/products_images/1530/25184.jpg",
+      "https://jammaleg.com/uploads/products_images/1530/14232.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 400.0,
+      "source_url": "https://jammaleg.com/product/detils/1729",
+      "jammaleg_id": "1729",
+      "category_raw": "ملابس رجالي",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1728",
+    "orig_id": "1728",
+    "name": "سماعة سبيكر",
+    "sku": "1728",
+    "price": 150.0,
+    "cost": 150.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "150 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1529/CsVDm8VHHGo1fDqeNlD7ujp3nrAynBFxzo9noRM0.jpg",
+      "https://jammaleg.com/uploads/products_images/1529/51309.jpg",
+      "https://jammaleg.com/uploads/products_images/1529/10258.jpg",
+      "https://jammaleg.com/uploads/products_images/1529/52367.jpg",
+      "https://jammaleg.com/uploads/products_images/1529/1640.jpg",
+      "https://jammaleg.com/uploads/products_images/1529/13054.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 150.0,
+      "source_url": "https://jammaleg.com/product/detils/1728",
+      "jammaleg_id": "1728",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1726",
+    "orig_id": "1726",
+    "name": "مساحة مثلث استانلس 3*1",
+    "sku": "1726",
+    "price": 80.0,
+    "cost": 80.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "80 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1527/2a2KuHiVsbriDfKICBIxZgOaugclsEwQobmuh7Te.jpg",
+      "https://jammaleg.com/uploads/products_images/1527/41385.jpg",
+      "https://jammaleg.com/uploads/products_images/1527/27370.jpg",
+      "https://jammaleg.com/uploads/products_images/1527/52251.jpg",
+      "https://jammaleg.com/uploads/products_images/1527/64831.jpg",
+      "https://jammaleg.com/uploads/products_images/1527/9046.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 80.0,
+      "source_url": "https://jammaleg.com/product/detils/1726",
+      "jammaleg_id": "1726",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1724",
+    "orig_id": "1724",
+    "name": "جهاز مساچ الرقبة والضهر",
+    "sku": "1724",
+    "price": 430.0,
+    "cost": 430.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "430 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1525/GCzudVZseTJhkDvuPB7Xs5EkbY4DbC2NIIQOLmsi.jpg",
+      "https://jammaleg.com/uploads/products_images/1525/22391.jpg",
+      "https://jammaleg.com/uploads/products_images/1525/95762.jpg",
+      "https://jammaleg.com/uploads/products_images/1525/36193.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 430.0,
+      "source_url": "https://jammaleg.com/product/detils/1724",
+      "jammaleg_id": "1724",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1723",
+    "orig_id": "1723",
+    "name": "مدلك الرقبة والعنق",
+    "sku": "1723",
+    "price": 430.0,
+    "cost": 430.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "430 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1524/Op2no0SsWGJvtIfheUkmonzSulO5N21LI0m9UxsC.jpg",
+      "https://jammaleg.com/uploads/products_images/1524/55465.jpg",
+      "https://jammaleg.com/uploads/products_images/1524/10309.jpg",
+      "https://jammaleg.com/uploads/products_images/1524/54695.jpg",
+      "https://jammaleg.com/uploads/products_images/1524/39747.jpg",
+      "https://jammaleg.com/uploads/products_images/1524/69873.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 430.0,
+      "source_url": "https://jammaleg.com/product/detils/1723",
+      "jammaleg_id": "1723",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1722",
+    "orig_id": "1722",
+    "name": "مظلة لحماية السيارة من الشم...",
+    "sku": "1722",
+    "price": 140.0,
+    "cost": 140.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "140 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1523/9UaR3L5PuKZ3mqokecKIQaUc64qFdB4kCUiGqrJA.jpg",
+      "https://jammaleg.com/uploads/products_images/1523/11397.jpg",
+      "https://jammaleg.com/uploads/products_images/1523/79595.jpg",
+      "https://jammaleg.com/uploads/products_images/1523/86932.jpg",
+      "https://jammaleg.com/uploads/products_images/1523/75786.jpg",
+      "https://jammaleg.com/uploads/products_images/1523/15543.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 140.0,
+      "source_url": "https://jammaleg.com/product/detils/1722",
+      "jammaleg_id": "1722",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1719",
+    "orig_id": "1719",
+    "name": "مسن للسكاكين",
+    "sku": "1719",
+    "price": 80.0,
+    "cost": 80.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "80 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1520/5M22wOw4LR7NLpvLnTurSRYagonL2Sigr3RVMvBR.jpg",
+      "https://jammaleg.com/uploads/products_images/1520/22729.jpg",
+      "https://jammaleg.com/uploads/products_images/1520/16886.jpg",
+      "https://jammaleg.com/uploads/products_images/1520/1245.jpg",
+      "https://jammaleg.com/uploads/products_images/1520/89082.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 80.0,
+      "source_url": "https://jammaleg.com/product/detils/1719",
+      "jammaleg_id": "1719",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1718",
+    "orig_id": "1718",
+    "name": "كورة القدم",
+    "sku": "1718",
+    "price": 165.0,
+    "cost": 165.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "165 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1519/vF7VvYGxCjgPbcWJXIzUoHAZHckAN1M9qczRGkMC.jpg",
+      "https://jammaleg.com/uploads/products_images/1519/60970.jpg",
+      "https://jammaleg.com/uploads/products_images/1519/3352.jpg",
+      "https://jammaleg.com/uploads/products_images/1519/64525.jpg",
+      "https://jammaleg.com/uploads/products_images/1519/1961.jpg",
+      "https://jammaleg.com/uploads/products_images/1519/56750.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 165.0,
+      "source_url": "https://jammaleg.com/product/detils/1718",
+      "jammaleg_id": "1718",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1717",
+    "orig_id": "1717",
+    "name": "بديل الرخام ال Marble",
+    "sku": "1717",
+    "price": 115.0,
+    "cost": 115.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "115 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1518/YQR2q3VAHoViuDwDOlsyQ8M4svWVt58x8auzhZQs.jpg",
+      "https://jammaleg.com/uploads/products_images/1518/52821.jpg",
+      "https://jammaleg.com/uploads/products_images/1518/75273.jpg",
+      "https://jammaleg.com/uploads/products_images/1518/56217.jpg",
+      "https://jammaleg.com/uploads/products_images/1518/9621.jpg",
+      "https://jammaleg.com/uploads/products_images/1518/93475.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 115.0,
+      "source_url": "https://jammaleg.com/product/detils/1717",
+      "jammaleg_id": "1717",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1716",
+    "orig_id": "1716",
+    "name": "ميزان يد علاقه",
+    "sku": "1716",
+    "price": 130.0,
+    "cost": 130.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "130 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1517/XIYkQuzuxBlTlGgL0IlXFoT8EXD2E0gQECsCdtmp.jpg",
+      "https://jammaleg.com/uploads/products_images/1517/72204.jpg",
+      "https://jammaleg.com/uploads/products_images/1517/76721.jpg",
+      "https://jammaleg.com/uploads/products_images/1517/61457.jpg",
+      "https://jammaleg.com/uploads/products_images/1517/40408.jpg",
+      "https://jammaleg.com/uploads/products_images/1517/72647.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 130.0,
+      "source_url": "https://jammaleg.com/product/detils/1716",
+      "jammaleg_id": "1716",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1710",
+    "orig_id": "1710",
+    "name": "راديو جولون Rx-607A",
+    "sku": "1710",
+    "price": 300.0,
+    "cost": 300.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "300 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1511/Qmf3A4xVNo3QvaLk2CpjCGWQtWQXaaUjI9ubDzO3.jpg",
+      "https://jammaleg.com/uploads/products_images/1511/395.jpg",
+      "https://jammaleg.com/uploads/products_images/1511/47135.jpg",
+      "https://jammaleg.com/uploads/products_images/1511/87634.jpg",
+      "https://jammaleg.com/uploads/products_images/1511/566.jpg",
+      "https://jammaleg.com/uploads/products_images/1511/31787.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 300.0,
+      "source_url": "https://jammaleg.com/product/detils/1710",
+      "jammaleg_id": "1710",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1708",
+    "orig_id": "1708",
+    "name": "قطاعة الشيبسي والخضروات",
+    "sku": "1708",
+    "price": 205.0,
+    "cost": 205.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "205 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1509/j99HHAnY7WasCR50LNOdJF0ELosoJ62gdfm400yP.jpg",
+      "https://jammaleg.com/uploads/products_images/1509/78705.jpg",
+      "https://jammaleg.com/uploads/products_images/1509/5402.jpg",
+      "https://jammaleg.com/uploads/products_images/1509/51229.jpg",
+      "https://jammaleg.com/uploads/products_images/1509/8545.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 205.0,
+      "source_url": "https://jammaleg.com/product/detils/1708",
+      "jammaleg_id": "1708",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1707",
+    "orig_id": "1707",
+    "name": "لفافة ورق العنب",
+    "sku": "1707",
+    "price": 80.0,
+    "cost": 80.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "80 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1508/HHpETQs2mI5qL2Sn0JZAQMLT1TwOqbxyf1CHVzMs.jpg",
+      "https://jammaleg.com/uploads/products_images/1508/40438.jpg",
+      "https://jammaleg.com/uploads/products_images/1508/52921.jpg",
+      "https://jammaleg.com/uploads/products_images/1508/14032.jpg",
+      "https://jammaleg.com/uploads/products_images/1508/21664.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 80.0,
+      "source_url": "https://jammaleg.com/product/detils/1707",
+      "jammaleg_id": "1707",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1706",
+    "orig_id": "1706",
+    "name": "كبه ميني usb",
+    "sku": "1706",
+    "price": 150.0,
+    "cost": 150.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "150 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1507/JFEBSautuIczsU2SjYurXFTqMIyO1l3a122Yqcv4.jpg",
+      "https://jammaleg.com/uploads/products_images/1507/63231.jpg",
+      "https://jammaleg.com/uploads/products_images/1507/31904.jpg",
+      "https://jammaleg.com/uploads/products_images/1507/54947.jpg",
+      "https://jammaleg.com/uploads/products_images/1507/5143.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 150.0,
+      "source_url": "https://jammaleg.com/product/detils/1706",
+      "jammaleg_id": "1706",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1705",
+    "orig_id": "1705",
+    "name": "لمبة صاعق الحشرات الطائرة",
+    "sku": "1705",
+    "price": 130.0,
+    "cost": 130.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "130 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1506/eYAomFmt3f9MDI1MEtb49E1QGOYwLVATTSP5FTqC.jpg",
+      "https://jammaleg.com/uploads/products_images/1506/60232.jpg",
+      "https://jammaleg.com/uploads/products_images/1506/21833.jpg",
+      "https://jammaleg.com/uploads/products_images/1506/5046.jpg",
+      "https://jammaleg.com/uploads/products_images/1506/71411.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 130.0,
+      "source_url": "https://jammaleg.com/product/detils/1705",
+      "jammaleg_id": "1705",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1704",
+    "orig_id": "1704",
+    "name": "حامل ومحرك أثاث",
+    "sku": "1704",
+    "price": 160.0,
+    "cost": 160.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "160 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1505/cLHBxIVrTsy74b8jcPpHIeC6Wk7EMSnd7Bm9FAAU.jpg",
+      "https://jammaleg.com/uploads/products_images/1505/96038.jpg",
+      "https://jammaleg.com/uploads/products_images/1505/81407.jpg",
+      "https://jammaleg.com/uploads/products_images/1505/18058.jpg",
+      "https://jammaleg.com/uploads/products_images/1505/21296.jpg",
+      "https://jammaleg.com/uploads/products_images/1505/99826.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 160.0,
+      "source_url": "https://jammaleg.com/product/detils/1704",
+      "jammaleg_id": "1704",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1703",
+    "orig_id": "1703",
+    "name": "مروحة مزدوجة للسيارة",
+    "sku": "1703",
+    "price": 200.0,
+    "cost": 200.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "200 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات السيارات",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1504/3WT0f0mpLymJDn48N8IzZlsCTgb0GpkP9M1Lg1Ft.jpg",
+      "https://jammaleg.com/uploads/products_images/1504/70795.jpg",
+      "https://jammaleg.com/uploads/products_images/1504/90191.jpg",
+      "https://jammaleg.com/uploads/products_images/1504/4375.jpg",
+      "https://jammaleg.com/uploads/products_images/1504/39892.jpg",
+      "https://jammaleg.com/uploads/products_images/1504/66881.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 200.0,
+      "source_url": "https://jammaleg.com/product/detils/1703",
+      "jammaleg_id": "1703",
+      "category_raw": "مستلزمات السيارات",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1702",
+    "orig_id": "1702",
+    "name": "كبة فرم يدوية",
+    "sku": "1702",
+    "price": 160.0,
+    "cost": 160.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "160 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1503/SKY9Vt1rXjQTdFEdTYS1Xt1oN5N6T9jK40HU6F9v.jpg",
+      "https://jammaleg.com/uploads/products_images/1503/17710.jpg",
+      "https://jammaleg.com/uploads/products_images/1503/63831.jpg",
+      "https://jammaleg.com/uploads/products_images/1503/74081.jpg",
+      "https://jammaleg.com/uploads/products_images/1503/21302.jpg",
+      "https://jammaleg.com/uploads/products_images/1503/89418.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 160.0,
+      "source_url": "https://jammaleg.com/product/detils/1702",
+      "jammaleg_id": "1702",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1701",
+    "orig_id": "1701",
+    "name": "ماكينة حلاقة V-953",
+    "sku": "1701",
+    "price": 350.0,
+    "cost": 350.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "350 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1502/qlAn3pZYzEm4ZvLIn09YvnzDTmlfkRg17I9rLk1A.jpg",
+      "https://jammaleg.com/uploads/products_images/1502/57098.jpg",
+      "https://jammaleg.com/uploads/products_images/1502/82145.jpg",
+      "https://jammaleg.com/uploads/products_images/1502/54297.jpg",
+      "https://jammaleg.com/uploads/products_images/1502/39881.jpg",
+      "https://jammaleg.com/uploads/products_images/1502/6949.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 350.0,
+      "source_url": "https://jammaleg.com/product/detils/1701",
+      "jammaleg_id": "1701",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1700",
+    "orig_id": "1700",
+    "name": "ماكينة حلاقة Km-639",
+    "sku": "1700",
+    "price": 350.0,
+    "cost": 350.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "350 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1501/G6jwcvgeQvTR2DuFuyed7DUkkJ1amjsW1iXK05M9.jpg",
+      "https://jammaleg.com/uploads/products_images/1501/72276.jpg",
+      "https://jammaleg.com/uploads/products_images/1501/29439.jpg",
+      "https://jammaleg.com/uploads/products_images/1501/22819.jpg",
+      "https://jammaleg.com/uploads/products_images/1501/58795.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 350.0,
+      "source_url": "https://jammaleg.com/product/detils/1700",
+      "jammaleg_id": "1700",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1698",
+    "orig_id": "1698",
+    "name": "راديو joc الديچيتال",
+    "sku": "1698",
+    "price": 250.0,
+    "cost": 250.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "250 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1499/9foaTaa92hFHkS9ct1sgy8dIdIwUtRbCxTeof7Um.jpg",
+      "https://jammaleg.com/uploads/products_images/1499/99715.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 250.0,
+      "source_url": "https://jammaleg.com/product/detils/1698",
+      "jammaleg_id": "1698",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1697",
+    "orig_id": "1697",
+    "name": "كشاف چركن",
+    "sku": "1697",
+    "price": 165.0,
+    "cost": 165.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "165 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1498/yn1U3YkzmiQMbl6NFfp1oyolbK5ETOO82tZWcf5s.jpg",
+      "https://jammaleg.com/uploads/products_images/1498/83225.jpg",
+      "https://jammaleg.com/uploads/products_images/1498/46113.jpg",
+      "https://jammaleg.com/uploads/products_images/1498/15802.jpg",
+      "https://jammaleg.com/uploads/products_images/1498/67813.jpg",
+      "https://jammaleg.com/uploads/products_images/1498/92960.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 165.0,
+      "source_url": "https://jammaleg.com/product/detils/1697",
+      "jammaleg_id": "1697",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1696",
+    "orig_id": "1696",
+    "name": "كوره كاس العالم",
+    "sku": "1696",
+    "price": 200.0,
+    "cost": 200.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "200 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1497/2TjQA4F0QMWj94zi4YSYpHDAgcFtQLqZ1aEGjbEu.jpg",
+      "https://jammaleg.com/uploads/products_images/1497/44943.jpg",
+      "https://jammaleg.com/uploads/products_images/1497/76309.jpg",
+      "https://jammaleg.com/uploads/products_images/1497/76450.jpg",
+      "https://jammaleg.com/uploads/products_images/1497/69083.jpg",
+      "https://jammaleg.com/uploads/products_images/1497/45948.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 200.0,
+      "source_url": "https://jammaleg.com/product/detils/1696",
+      "jammaleg_id": "1696",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1695",
+    "orig_id": "1695",
+    "name": "كرستالة أزالة الشعر",
+    "sku": "1695",
+    "price": 70.0,
+    "cost": 70.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "70 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1496/ZIWlM1LIL7IOVlTtUodCLm9oNDONLzKTQ97i1NMg.jpg",
+      "https://jammaleg.com/uploads/products_images/1496/37615.jpg",
+      "https://jammaleg.com/uploads/products_images/1496/45588.jpg",
+      "https://jammaleg.com/uploads/products_images/1496/48296.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 70.0,
+      "source_url": "https://jammaleg.com/product/detils/1695",
+      "jammaleg_id": "1695",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1694",
+    "orig_id": "1694",
+    "name": "غالق أكياس حراري",
+    "sku": "1694",
+    "price": 70.0,
+    "cost": 70.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "70 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1495/bm4p7K8r6kL6mxiQACjjvqzy4734wz8N2zAv29bu.jpg",
+      "https://jammaleg.com/uploads/products_images/1495/77723.jpg",
+      "https://jammaleg.com/uploads/products_images/1495/59040.jpg",
+      "https://jammaleg.com/uploads/products_images/1495/74123.jpg",
+      "https://jammaleg.com/uploads/products_images/1495/87485.jpg",
+      "https://jammaleg.com/uploads/products_images/1495/18358.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 70.0,
+      "source_url": "https://jammaleg.com/product/detils/1694",
+      "jammaleg_id": "1694",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1693",
+    "orig_id": "1693",
+    "name": "ملمع أسنان لوما سمايل",
+    "sku": "1693",
+    "price": 60.0,
+    "cost": 60.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "60 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1494/GI9qt6Scsp1KDS1V2S7Zfo4mA33eMssuERfUAcL5.jpg",
+      "https://jammaleg.com/uploads/products_images/1494/21735.jpg",
+      "https://jammaleg.com/uploads/products_images/1494/22235.jpg",
+      "https://jammaleg.com/uploads/products_images/1494/75851.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 60.0,
+      "source_url": "https://jammaleg.com/product/detils/1693",
+      "jammaleg_id": "1693",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1688",
+    "orig_id": "1688",
+    "name": "طائرة هيليكوبتر",
+    "sku": "1688",
+    "price": 170.0,
+    "cost": 170.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "170 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1489/cfKFA7cI8eG1WRIhVDv3gEewNZnxFDLKXvkDq1ux.jpg",
+      "https://jammaleg.com/uploads/products_images/1489/61559.jpg",
+      "https://jammaleg.com/uploads/products_images/1489/18023.jpg",
+      "https://jammaleg.com/uploads/products_images/1489/10546.jpg",
+      "https://jammaleg.com/uploads/products_images/1489/28145.jpg",
+      "https://jammaleg.com/uploads/products_images/1489/35326.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 170.0,
+      "source_url": "https://jammaleg.com/product/detils/1688",
+      "jammaleg_id": "1688",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1687",
+    "orig_id": "1687",
+    "name": "قطار المتحـولون",
+    "sku": "1687",
+    "price": 290.0,
+    "cost": 290.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "290 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1488/rQajWttEbRue5uHmSzdmtL8Hzs3Lj9tPqcXhmMXu.jpg",
+      "https://jammaleg.com/uploads/products_images/1488/39343.jpg",
+      "https://jammaleg.com/uploads/products_images/1488/34348.jpg",
+      "https://jammaleg.com/uploads/products_images/1488/79954.jpg",
+      "https://jammaleg.com/uploads/products_images/1488/70474.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 290.0,
+      "source_url": "https://jammaleg.com/product/detils/1687",
+      "jammaleg_id": "1687",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1685",
+    "orig_id": "1685",
+    "name": "جهاز رد تطبيق السيارات",
+    "sku": "1685",
+    "price": 200.0,
+    "cost": 200.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "200 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1486/hgSLiJqFjDig3MbvFLPhyrIQn2PGIO6OytMmCoxa.jpg",
+      "https://jammaleg.com/uploads/products_images/1486/35760.jpg",
+      "https://jammaleg.com/uploads/products_images/1486/25694.jpg",
+      "https://jammaleg.com/uploads/products_images/1486/88242.jpg",
+      "https://jammaleg.com/uploads/products_images/1486/93391.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 200.0,
+      "source_url": "https://jammaleg.com/product/detils/1685",
+      "jammaleg_id": "1685",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1684",
+    "orig_id": "1684",
+    "name": "ماكينه حلاقه  vgr-071",
+    "sku": "1684",
+    "price": 380.0,
+    "cost": 380.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "380 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1485/N7UscaOih09QX2vfdE9Mbi5kblzWXWKMZjifR9nC.jpg",
+      "https://jammaleg.com/uploads/products_images/1485/68017.jpg",
+      "https://jammaleg.com/uploads/products_images/1485/49630.jpg",
+      "https://jammaleg.com/uploads/products_images/1485/67058.jpg",
+      "https://jammaleg.com/uploads/products_images/1485/78665.jpg",
+      "https://jammaleg.com/uploads/products_images/1485/97318.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 380.0,
+      "source_url": "https://jammaleg.com/product/detils/1684",
+      "jammaleg_id": "1684",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1683",
+    "orig_id": "1683",
+    "name": "اللاصق(فليكس تاب)",
+    "sku": "1683",
+    "price": 100.0,
+    "cost": 100.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "100 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1484/UwE7MlvHQI2k4tRLfEisvg1rj58wjO053daELAlU.jpg",
+      "https://jammaleg.com/uploads/products_images/1484/34657.jpg",
+      "https://jammaleg.com/uploads/products_images/1484/42042.jpg",
+      "https://jammaleg.com/uploads/products_images/1484/30839.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 100.0,
+      "source_url": "https://jammaleg.com/product/detils/1683",
+      "jammaleg_id": "1683",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1682",
+    "orig_id": "1682",
+    "name": "ماكينة حلاقة Vgr-290",
+    "sku": "1682",
+    "price": 400.0,
+    "cost": 400.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "400 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1483/CkLY1GjMpxj4jsdlXO294uLYDoSeRU43n2Rzy76n.jpg",
+      "https://jammaleg.com/uploads/products_images/1483/45753.jpg",
+      "https://jammaleg.com/uploads/products_images/1483/42603.jpg",
+      "https://jammaleg.com/uploads/products_images/1483/91319.jpg",
+      "https://jammaleg.com/uploads/products_images/1483/13683.jpg",
+      "https://jammaleg.com/uploads/products_images/1483/4209.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 400.0,
+      "source_url": "https://jammaleg.com/product/detils/1682",
+      "jammaleg_id": "1682",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1681",
+    "orig_id": "1681",
+    "name": "مكواة شعر Kemei 328",
+    "sku": "1681",
+    "price": 215.0,
+    "cost": 215.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "215 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1482/drOEjA8SgxT1nyGxVy8KPKzD6fh4OQCUmBQJmbfq.jpg",
+      "https://jammaleg.com/uploads/products_images/1482/61056.jpg",
+      "https://jammaleg.com/uploads/products_images/1482/58474.jpg",
+      "https://jammaleg.com/uploads/products_images/1482/5958.jpg",
+      "https://jammaleg.com/uploads/products_images/1482/23443.jpg",
+      "https://jammaleg.com/uploads/products_images/1482/15632.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 215.0,
+      "source_url": "https://jammaleg.com/product/detils/1681",
+      "jammaleg_id": "1681",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1679",
+    "orig_id": "1679",
+    "name": "مزيل خدوش وصدأ",
+    "sku": "1679",
+    "price": 110.0,
+    "cost": 110.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "110 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1480/mMLQu0hn2RRk9R71SWf2AO1l8QCQJ93Os7VCpygb.jpg",
+      "https://jammaleg.com/uploads/products_images/1480/98033.jpg",
+      "https://jammaleg.com/uploads/products_images/1480/60018.jpg",
+      "https://jammaleg.com/uploads/products_images/1480/73264.jpg",
+      "https://jammaleg.com/uploads/products_images/1480/37551.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 110.0,
+      "source_url": "https://jammaleg.com/product/detils/1679",
+      "jammaleg_id": "1679",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1677",
+    "orig_id": "1677",
+    "name": "مروحه اليد المحوله",
+    "sku": "1677",
+    "price": 150.0,
+    "cost": 150.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "150 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1478/qJ22VC9JTvc2FJw66Wef7llhRjHnVvmHLlXqI2L5.jpg",
+      "https://jammaleg.com/uploads/products_images/1478/83301.jpg",
+      "https://jammaleg.com/uploads/products_images/1478/10851.jpg",
+      "https://jammaleg.com/uploads/products_images/1478/21422.jpg",
+      "https://jammaleg.com/uploads/products_images/1478/12840.jpg",
+      "https://jammaleg.com/uploads/products_images/1478/29602.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 150.0,
+      "source_url": "https://jammaleg.com/product/detils/1677",
+      "jammaleg_id": "1677",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1676",
+    "orig_id": "1676",
+    "name": "اللمه الجاز",
+    "sku": "1676",
+    "price": 135.0,
+    "cost": 135.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "135 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1477/miACuMcl7IxyswDsTS26Sks70q2fDBo07DC8XIIu.jpg",
+      "https://jammaleg.com/uploads/products_images/1477/71674.jpg",
+      "https://jammaleg.com/uploads/products_images/1477/25002.jpg",
+      "https://jammaleg.com/uploads/products_images/1477/79669.jpg",
+      "https://jammaleg.com/uploads/products_images/1477/20440.jpg",
+      "https://jammaleg.com/uploads/products_images/1477/36879.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 135.0,
+      "source_url": "https://jammaleg.com/product/detils/1676",
+      "jammaleg_id": "1676",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1675",
+    "orig_id": "1675",
+    "name": "مسدس تحمير الطعام وولاعة 2*...",
+    "sku": "1675",
+    "price": 290.0,
+    "cost": 290.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "290 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1476/npe5BYrolepOCZZCDJ90161k3czLimqlVjg3fMYf.jpg",
+      "https://jammaleg.com/uploads/products_images/1476/71192.jpg",
+      "https://jammaleg.com/uploads/products_images/1476/91804.jpg",
+      "https://jammaleg.com/uploads/products_images/1476/61317.jpg",
+      "https://jammaleg.com/uploads/products_images/1476/23868.jpg",
+      "https://jammaleg.com/uploads/products_images/1476/26753.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 290.0,
+      "source_url": "https://jammaleg.com/product/detils/1675",
+      "jammaleg_id": "1675",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1674",
+    "orig_id": "1674",
+    "name": "ولاعة كهربائية",
+    "sku": "1674",
+    "price": 110.0,
+    "cost": 110.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "110 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1475/rDGc1unbodW6MbB5dwjB6OdpB11c4i9QHXllDKmP.jpg",
+      "https://jammaleg.com/uploads/products_images/1475/30236.jpg",
+      "https://jammaleg.com/uploads/products_images/1475/97783.jpg",
+      "https://jammaleg.com/uploads/products_images/1475/17247.jpg",
+      "https://jammaleg.com/uploads/products_images/1475/77529.jpg",
+      "https://jammaleg.com/uploads/products_images/1475/68821.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 110.0,
+      "source_url": "https://jammaleg.com/product/detils/1674",
+      "jammaleg_id": "1674",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1673",
+    "orig_id": "1673",
+    "name": "العروسه الطائرة للأطفال",
+    "sku": "1673",
+    "price": 150.0,
+    "cost": 150.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "150 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1474/l17mo1hihomRDfjj0oQNaFm5GX2yywBYvq4wCFfO.jpg",
+      "https://jammaleg.com/uploads/products_images/1474/63106.jpg",
+      "https://jammaleg.com/uploads/products_images/1474/10905.jpg",
+      "https://jammaleg.com/uploads/products_images/1474/55608.jpg",
+      "https://jammaleg.com/uploads/products_images/1474/45310.jpg",
+      "https://jammaleg.com/uploads/products_images/1474/57172.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 150.0,
+      "source_url": "https://jammaleg.com/product/detils/1673",
+      "jammaleg_id": "1673",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1672",
+    "orig_id": "1672",
+    "name": "فرشه الشعر سوكاني sk1008",
+    "sku": "1672",
+    "price": 230.0,
+    "cost": 230.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "230 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1473/UIFxlO5Fz9clMUop44x2TOAbZbwzePpQUnRYyeTn.jpg",
+      "https://jammaleg.com/uploads/products_images/1473/90749.jpg",
+      "https://jammaleg.com/uploads/products_images/1473/51637.jpg",
+      "https://jammaleg.com/uploads/products_images/1473/68013.jpg",
+      "https://jammaleg.com/uploads/products_images/1473/50664.jpg",
+      "https://jammaleg.com/uploads/products_images/1473/62167.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 230.0,
+      "source_url": "https://jammaleg.com/product/detils/1672",
+      "jammaleg_id": "1672",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1671",
+    "orig_id": "1671",
+    "name": "مسدس  رشاش المياه 4 في 1",
+    "sku": "1671",
+    "price": 130.0,
+    "cost": 130.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "130 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1472/3NhgxbLxzWS1p61JrZp68L21ncAfnp14PVQ1RgvM.jpg",
+      "https://jammaleg.com/uploads/products_images/1472/95844.jpg",
+      "https://jammaleg.com/uploads/products_images/1472/21211.jpg",
+      "https://jammaleg.com/uploads/products_images/1472/82650.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 130.0,
+      "source_url": "https://jammaleg.com/product/detils/1671",
+      "jammaleg_id": "1671",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1668",
+    "orig_id": "1668",
+    "name": "عرض استشوار ريبروان ومكواه...",
+    "sku": "1668",
+    "price": 400.0,
+    "cost": 400.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "400 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1469/s2hr4NRTw3rCwdhDujKvI6MrCXfA7BYNh5toFV8v.jpg",
+      "https://jammaleg.com/uploads/products_images/1469/95887.jpg",
+      "https://jammaleg.com/uploads/products_images/1469/47278.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 400.0,
+      "source_url": "https://jammaleg.com/product/detils/1668",
+      "jammaleg_id": "1668",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1662",
+    "orig_id": "1662",
+    "name": "مسدس البابلز",
+    "sku": "1662",
+    "price": 170.0,
+    "cost": 170.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "170 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1463/co99nkX0TJ3k2IM0HeZKaS3O5TTWCz2UztDafZkK.jpg",
+      "https://jammaleg.com/uploads/products_images/1463/43084.jpg",
+      "https://jammaleg.com/uploads/products_images/1463/26065.jpg",
+      "https://jammaleg.com/uploads/products_images/1463/88682.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 170.0,
+      "source_url": "https://jammaleg.com/product/detils/1662",
+      "jammaleg_id": "1662",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1655",
+    "orig_id": "1655",
+    "name": "ماكينة الحلاقة Kemei KM-191...",
+    "sku": "1655",
+    "price": 460.0,
+    "cost": 460.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "460 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "المنزل والمطبخ",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1456/kObg3QgxMuCycrO8HvwKKpAGgU9g6GX8yyFjAm5A.jpg",
+      "https://jammaleg.com/uploads/products_images/1456/76128.jpg",
+      "https://jammaleg.com/uploads/products_images/1456/3209.jpg",
+      "https://jammaleg.com/uploads/products_images/1456/29427.jpg",
+      "https://jammaleg.com/uploads/products_images/1456/32929.jpg",
+      "https://jammaleg.com/uploads/products_images/1456/3442.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 460.0,
+      "source_url": "https://jammaleg.com/product/detils/1655",
+      "jammaleg_id": "1655",
+      "category_raw": "المنزل والمطبخ",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1653",
+    "orig_id": "1653",
+    "name": "فرشه شعر one step",
+    "sku": "1653",
+    "price": 270.0,
+    "cost": 270.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "270 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1454/5Mvv2YQ2PqomcMiwiEBpY3e6V8aKaVOrcJYz97FE.jpg",
+      "https://jammaleg.com/uploads/products_images/1454/40523.jpg",
+      "https://jammaleg.com/uploads/products_images/1454/55030.jpg",
+      "https://jammaleg.com/uploads/products_images/1454/46693.jpg",
+      "https://jammaleg.com/uploads/products_images/1454/76176.jpg",
+      "https://jammaleg.com/uploads/products_images/1454/92927.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 270.0,
+      "source_url": "https://jammaleg.com/product/detils/1653",
+      "jammaleg_id": "1653",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1649",
+    "orig_id": "1649",
+    "name": "قاعدة غسالة - حامل رفع",
+    "sku": "1649",
+    "price": 190.0,
+    "cost": 190.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "190 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1450/rhZg2st6HWwBlP88ho6l5OfqA6orNI454urkkT8a.jpg",
+      "https://jammaleg.com/uploads/products_images/1450/82180.jpg",
+      "https://jammaleg.com/uploads/products_images/1450/28494.jpg",
+      "https://jammaleg.com/uploads/products_images/1450/35979.jpg",
+      "https://jammaleg.com/uploads/products_images/1450/91768.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 190.0,
+      "source_url": "https://jammaleg.com/product/detils/1649",
+      "jammaleg_id": "1649",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1648",
+    "orig_id": "1648",
+    "name": "كرسي رحلات قابل للطي",
+    "sku": "1648",
+    "price": 220.0,
+    "cost": 220.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "220 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 5,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1449/8lNdaf4g9CSWPzeiJQD9AdaHzqdCLOrNOLNERiVx.jpg",
+      "https://jammaleg.com/uploads/products_images/1449/83500.jpg",
+      "https://jammaleg.com/uploads/products_images/1449/22126.jpg",
+      "https://jammaleg.com/uploads/products_images/1449/57094.jpg",
+      "https://jammaleg.com/uploads/products_images/1449/98879.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 220.0,
+      "source_url": "https://jammaleg.com/product/detils/1648",
+      "jammaleg_id": "1648",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1646",
+    "orig_id": "1646",
+    "name": "لانش بوكس حافظ للحرارة – 4...",
+    "sku": "1646",
+    "price": 220.0,
+    "cost": 220.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "220 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1447/wgk57p2SDNkrJYQ4eUk9h8mEQrnFFnTYsWadg2DS.jpg",
+      "https://jammaleg.com/uploads/products_images/1447/46871.jpg",
+      "https://jammaleg.com/uploads/products_images/1447/78939.jpg",
+      "https://jammaleg.com/uploads/products_images/1447/29075.jpg",
+      "https://jammaleg.com/uploads/products_images/1447/63907.jpg",
+      "https://jammaleg.com/uploads/products_images/1447/95119.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 220.0,
+      "source_url": "https://jammaleg.com/product/detils/1646",
+      "jammaleg_id": "1646",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1645",
+    "orig_id": "1645",
+    "name": "الميزان الديچيتال الذكي لقي...",
+    "sku": "1645",
+    "price": 280.0,
+    "cost": 280.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "280 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1446/QDogMlNGL1cUl7eWmMhCLCSXyyUcgK1kWODlCu2C.jpg",
+      "https://jammaleg.com/uploads/products_images/1446/66168.jpg",
+      "https://jammaleg.com/uploads/products_images/1446/8461.jpg",
+      "https://jammaleg.com/uploads/products_images/1446/85477.jpg",
+      "https://jammaleg.com/uploads/products_images/1446/40836.jpg",
+      "https://jammaleg.com/uploads/products_images/1446/28662.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 280.0,
+      "source_url": "https://jammaleg.com/product/detils/1645",
+      "jammaleg_id": "1645",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1644",
+    "orig_id": "1644",
+    "name": "جهاز ازاله الشعر للوجه فلاو...",
+    "sku": "1644",
+    "price": 125.0,
+    "cost": 125.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "125 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1445/vpWBJWtNS6IN9hRIQcKONNdT2XOjIsNGZt9oLBHp.jpg",
+      "https://jammaleg.com/uploads/products_images/1445/99261.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 125.0,
+      "source_url": "https://jammaleg.com/product/detils/1644",
+      "jammaleg_id": "1644",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1643",
+    "orig_id": "1643",
+    "name": "مطحنة أستانليس",
+    "sku": "1643",
+    "price": 235.0,
+    "cost": 235.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "235 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 50,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1444/jp0IXvI2hNpGU88mFxucsYb7XMcgcFLtHlg1e2bX.jpg",
+      "https://jammaleg.com/uploads/products_images/1444/85331.jpg",
+      "https://jammaleg.com/uploads/products_images/1444/86453.jpg",
+      "https://jammaleg.com/uploads/products_images/1444/16233.jpg",
+      "https://jammaleg.com/uploads/products_images/1444/55308.jpg",
+      "https://jammaleg.com/uploads/products_images/1444/59318.jpg"
+    ],
+    "sizes": [],
+    "extra": {
+      "colors": [],
+      "variants_detailed": [],
+      "source_commission_original": 0.0,
+      "orig_suggested": 235.0,
+      "source_url": "https://jammaleg.com/product/detils/1643",
+      "jammaleg_id": "1643",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Mixatak"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1595",
+    "orig_id": "1595",
+    "name": "كوتشي اديداس رصاصي كود H414",
+    "sku": "1595",
+    "price": 330.0,
+    "cost": 330.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "330 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "أحذية",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1396/l6CuhEHUP5ThyNXKQMJsVu9kUdh0BvEzH6EKLqoe.png",
+      "https://jammaleg.com/uploads/products_images/1396/64880.jpg",
+      "https://jammaleg.com/uploads/products_images/1396/49582.png",
+      "https://jammaleg.com/uploads/products_images/1396/21856.png"
+    ],
+    "sizes": [
+      "41",
+      "42",
+      "43",
+      "44",
+      "45"
+    ],
+    "extra": {
+      "colors": [
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "41",
+          "color": "رصاصى",
+          "stock": 100
+        },
+        {
+          "size": "42",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "43",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "44",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "45",
+          "color": "",
+          "stock": 50
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 330.0,
+      "source_url": "https://jammaleg.com/product/detils/1595",
+      "jammaleg_id": "1595",
+      "category_raw": "أحذية",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1594",
+    "orig_id": "1594",
+    "name": "كوتشي كاجوال رياضي كود A26",
+    "sku": "1594",
+    "price": 330.0,
+    "cost": 330.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "330 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "أحذية",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1395/WRUiG1n1grinWojQnw2otyyjsQq9hUh5VhWAVrkq.jpg",
+      "https://jammaleg.com/uploads/products_images/1395/68737.jpg",
+      "https://jammaleg.com/uploads/products_images/1395/66016.png",
+      "https://jammaleg.com/uploads/products_images/1395/18085.png",
+      "https://jammaleg.com/uploads/products_images/1395/9729.png",
+      "https://jammaleg.com/uploads/products_images/1395/25041.png",
+      "https://jammaleg.com/uploads/products_images/1395/13753.jpg",
+      "https://jammaleg.com/uploads/products_images/1395/51584.png"
+    ],
+    "sizes": [
+      "41",
+      "42",
+      "43",
+      "44",
+      "45"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "رصاصي*سماوي"
+      ],
+      "variants_detailed": [
+        {
+          "size": "41",
+          "color": "اسود",
+          "stock": 100
+        },
+        {
+          "size": "42",
+          "color": "رصاصي*سماوي",
+          "stock": 50
+        },
+        {
+          "size": "43",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "44",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "45",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "41",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "42",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "43",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "44",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "45",
+          "color": "",
+          "stock": 5
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 330.0,
+      "source_url": "https://jammaleg.com/product/detils/1594",
+      "jammaleg_id": "1594",
+      "category_raw": "أحذية",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  },
+  {
+    "id": "jammaleg-1593",
+    "orig_id": "1593",
+    "name": "كوتشى رجالي رياضى كود A12",
+    "sku": "1593",
+    "price": 300.0,
+    "cost": 300.0,
+    "old_price": 0,
+    "discount": 0,
+    "price_text": "300 جنيه",
+    "commission": 0.0,
+    "currency": "جنيه",
+    "category": "مستلزمات عامة",
+    "subcategory": "",
+    "country": "مصر",
+    "stock": 100,
+    "images": [
+      "https://jammaleg.com/uploads/products_images/1394/TvnQMnBRihaZyNDXv1iddKa4V9DgMAiVfMdWEg71.png",
+      "https://jammaleg.com/uploads/products_images/1394/59046.jpg",
+      "https://jammaleg.com/uploads/products_images/1394/51102.png",
+      "https://jammaleg.com/uploads/products_images/1394/85120.png",
+      "https://jammaleg.com/uploads/products_images/1394/84214.png"
+    ],
+    "sizes": [
+      "41",
+      "42",
+      "43",
+      "44",
+      "45"
+    ],
+    "extra": {
+      "colors": [
+        "اسود",
+        "رصاصى"
+      ],
+      "variants_detailed": [
+        {
+          "size": "41",
+          "color": "اسود",
+          "stock": 5
+        },
+        {
+          "size": "42",
+          "color": "رصاصى",
+          "stock": 50
+        },
+        {
+          "size": "43",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "44",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "41",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "42",
+          "color": "",
+          "stock": 50
+        },
+        {
+          "size": "43",
+          "color": "",
+          "stock": 5
+        },
+        {
+          "size": "44",
+          "color": "",
+          "stock": 100
+        },
+        {
+          "size": "45",
+          "color": "",
+          "stock": 50
+        }
+      ],
+      "source_commission_original": 0.0,
+      "orig_suggested": 300.0,
+      "source_url": "https://jammaleg.com/product/detils/1593",
+      "jammaleg_id": "1593",
+      "category_raw": "مستلزمات عامة",
+      "seller": "Valuefy"
+    },
+    "added_at": "2026-11-08",
+    "desc": ""
+  }
+]
