@@ -12,7 +12,7 @@ on:
       files:
         description: 'مسارات الملفات المطلوب رفعها (مسافات بينها)'
         required: false
-        default: 'config.php'
+        default: 'config.php dashboard/cart.php dashboard/layout.php dashboard/marketer.php store.php assets/ui.js'
 
 permissions:
   contents: write
