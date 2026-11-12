@@ -1,7 +1,12 @@
 {
- "at": "2026-11-12T12:29:25+00:00",
+ "at": "2026-11-12T12:30:53+00:00",
  "files_requested": [
-  "config.php"
+  "config.php",
+  "dashboard/cart.php",
+  "dashboard/layout.php",
+  "dashboard/marketer.php",
+  "store.php",
+  "assets/ui.js"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -12,6 +17,41 @@
    "local_size": 414306,
    "remote_size": 414306,
    "remote_md5": "03dde2a8a24859e1d84184565f556886"
+  },
+  {
+   "file": "dashboard/cart.php",
+   "local_md5": "59d24ca3a3e5be94c5773c67c20a314f",
+   "local_size": 16775,
+   "remote_size": 16775,
+   "remote_md5": "59d24ca3a3e5be94c5773c67c20a314f"
+  },
+  {
+   "file": "dashboard/layout.php",
+   "local_md5": "e7cebaebe7fe4500f4e674702c121755",
+   "local_size": 39156,
+   "remote_size": 39156,
+   "remote_md5": "e7cebaebe7fe4500f4e674702c121755"
+  },
+  {
+   "file": "dashboard/marketer.php",
+   "local_md5": "72a33635888094abd6ff29cc8da59033",
+   "local_size": 124835,
+   "remote_size": 124835,
+   "remote_md5": "72a33635888094abd6ff29cc8da59033"
+  },
+  {
+   "file": "store.php",
+   "local_md5": "cc6e343e76f286c65b28fbbd71dc392c",
+   "local_size": 31782,
+   "remote_size": 31782,
+   "remote_md5": "cc6e343e76f286c65b28fbbd71dc392c"
+  },
+  {
+   "file": "assets/ui.js",
+   "local_md5": "def864707676a0943ef4812e52ca5048",
+   "local_size": 98507,
+   "remote_size": 98507,
+   "remote_md5": "def864707676a0943ef4812e52ca5048"
   }
  ],
  "unverified": [],
@@ -21,7 +61,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|232681",
+   "status": "200|230867",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -61,5 +101,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-12T12:29:34+00:00"
+ "checked_at": "2026-11-12T12:31:20+00:00"
 }
