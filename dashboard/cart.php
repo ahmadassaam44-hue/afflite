@@ -77,6 +77,10 @@ foreach ($norm_cart as &$nc) {
     $nc['img']      = $nc['img'] ?: ($nc_line['product']['images'][0] ?? '');
     $nc['unavailable'] = false;
     if ($nc_ex !== null) $nc['extra_comm'] = $nc_ex;
+    // ✅ العمولة اللي بتتسجل فعلاً (بعملة المنتج وبالجنيه) — من السيرفر مش من فرق السعر
+    $nc['comm_unit']      = (float)($nc_line['unit_comm'] ?? 0);
+    $nc['comm_unit_egp']  = (float)($nc_line['unit_comm_egp'] ?? 0);
+    $nc['currency']       = (string)($nc_line['currency'] ?? '');
 }
 unset($nc);
 $_SESSION['cart'] = $norm_cart;
@@ -116,6 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add'])) {
             'img' => ($nl['product']['images'][0] ?? ''),
             'ref' => active_ref($_POST['ref'] ?? ''),
             'qty' => $nl['qty'],
+            'comm_unit' => (float)($nl['unit_comm'] ?? 0),
+            'comm_unit_egp' => (float)($nl['unit_comm_egp'] ?? 0),
+            'currency' => (string)($nl['currency'] ?? ''),
             'unavailable' => false
         ];
         $add_price = $nl['unit_price'];
@@ -214,7 +221,9 @@ $currencies = array_fill_keys(wf_ui_currencies($cart), true);
   if ($cart_can_set_comm && !$c_no_markup):
       $c_extra  = max(0, (float)($c['extra_comm'] ?? 0));
       $c_base   = (float)($c['base'] ?? $c['price']);
-      $c_profit = round(max(0, ((float)$c['price'] - $c_base) * (int)$c['qty']), 2);
+      // العمولة = الرقم اللي المسوق كتبه (مش فرق السعر بعد التقريب) × الكمية — بالجنيه كمان
+      $c_profit     = round((float)($c['comm_unit'] ?? max(0, (float)$c['price'] - $c_base)) * (int)$c['qty'], 2);
+      $c_profit_egp = round((float)($c['comm_unit_egp'] ?? $c_profit) * (int)$c['qty'], 2);
 ?>
   <form method="post" class="cart-line-comm" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
     <?php echo csrf_field(); ?>
@@ -226,7 +235,7 @@ $currencies = array_fill_keys(wf_ui_currencies($cart), true);
            style="width:100px" aria-label="عمولتك المضافة للقطعة">
     <span class="mut" style="font-size:12px"><?php echo esc(wf_ui_currency($c)); ?></span>
     <button type="submit" class="btn sm outline">حفظ</button>
-    <span class="mut" style="font-size:12px">ربحك من السطر: <b style="color:var(--success)">+<?php echo number_format($c_profit, 2); ?></b> <?php echo esc(wf_ui_currency($c)); ?></span>
+    <span class="mut" style="font-size:12px">ربحك من السطر: <b style="color:var(--success)">+<?php echo number_format($c_profit, 2); ?></b> <?php echo esc(wf_ui_currency($c)); ?><?php if (!wf_is_egp_currency(wf_ui_currency($c)) && $c_profit_egp > 0): ?> <span style="color:var(--success)">(≈ <?php echo number_format($c_profit_egp, 2); ?> ج.م في رصيدك)</span><?php endif; ?></span>
   </form>
 <?php endif; ?>
 </div>

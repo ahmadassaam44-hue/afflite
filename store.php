@@ -68,9 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $is_owner && $store_code !== '') {
                     'added_at'   => $prods[$pkey]['added_at'] ?? date('c'),
                 ];
                 $_SESSION['aff_custom_comm'][$store_code . '#' . $pkey] = $new_comm;
+                $save_row = find_product_by_id($ppid, $ppl);
+                $save_cur = $save_row ? wf_ui_currency($save_row) : 'ج.م';
                 $save_msg = wf_is_digital_plat($ppl)
                     ? '✅ تم حفظ المنتج — سعر ثابت من غير عمولة مضافة.'
-                    : '✅ تم تحديث عمولتك للمنتج إلى +' . number_format($new_comm, 0) . ' ج.م';
+                    : '✅ تم تحديث عمولتك للمنتج إلى +' . number_format($new_comm, 0) . ' ' . $save_cur
+                        . (!wf_is_egp_currency($save_cur) ? ' (≈ ' . number_format(wf_comm_to_egp($new_comm, $save_cur), 2) . ' ج.م في رصيدك)' : '');
             }
             marketer_store_save($store_code, ['products' => $prods]);
         }

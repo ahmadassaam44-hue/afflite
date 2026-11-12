@@ -454,6 +454,40 @@ function wf_is_egp_currency($currency) {
     }
     return false;
 }
+// ============================================================================
+//  تحويل عمولة المسوق للجنيه (رصيد المسوق ومحفظته بالجنيه دايماً)
+//  أسعار منتجات الخليج بتتعرض وتتحصّل بعملة الدولة (د.إ / ر.س / د.أ / ر.ع)، لكن رصيد
+//  المسوق بالجنيه — فعمولته على منتج خليجي لازم تتحوّل قبل ما تتسجل، وإلا 50 د.إ
+//  كانت بتتسجل 50 ج.م (خطأ ~15 ضعف). الأسعار مثبتة مقابل الدولار، ومعامل الجنيه من
+//  COMM_FX_USD_EGP (افتراضي = DIGITAL_USD_EGP) وقابل للتعديل من غير كود.
+if (!defined('COMM_FX_USD_EGP')) define('COMM_FX_USD_EGP', (float)DIGITAL_USD_EGP);
+function wf_comm_fx_rates() {
+    static $rates = null;
+    if ($rates === null) {
+        $usd = (float)COMM_FX_USD_EGP > 0 ? (float)COMM_FX_USD_EGP : 56.0;
+        $rates = [
+            '' => 1.0, 'ج.م' => 1.0, 'جنيه' => 1.0, 'جنيه مصري' => 1.0, 'EGP' => 1.0, 'LE' => 1.0, 'E£' => 1.0,
+            'د.إ' => $usd / 3.6725, 'AED' => $usd / 3.6725, 'درهم' => $usd / 3.6725, 'درهم إماراتي' => $usd / 3.6725,
+            'ر.س' => $usd / 3.75, 'SAR' => $usd / 3.75, 'ريال' => $usd / 3.75, 'ريال سعودي' => $usd / 3.75,
+            'د.أ' => $usd / 0.709, 'JOD' => $usd / 0.709, 'دينار' => $usd / 0.709, 'دينار أردني' => $usd / 0.709,
+            'ر.ع' => $usd / 0.3845, 'OMR' => $usd / 0.3845, 'ريال عماني' => $usd / 0.3845,
+        ];
+    }
+    return $rates;
+}
+// سعر صرف عملة المنتج مقابل الجنيه (1 عملة = كام جنيه) — المجهول بيتعامل كجنيه
+function wf_comm_fx_rate($currency) {
+    $c = trim((string)$currency);
+    $rates = wf_comm_fx_rates();
+    return isset($rates[$c]) ? (float)$rates[$c] : 1.0;
+}
+// تحويل مبلغ بعملة المنتج للجنيه (المصدر الوحيد لتحويل العمولات)
+function wf_comm_to_egp($amount, $currency) {
+    $amount = (float)$amount;
+    if ($amount == 0.0) return 0.0;
+    if (wf_is_egp_currency($currency)) return round($amount, 2);
+    return round($amount * wf_comm_fx_rate($currency), 2);
+}
 // المنتجات الرقمية وخدمات السوشيال ميديا خارج خصم الكمية (سعرها ثابت وتنفيذها آلي)
 // وكمان أي منتج سعره مش بالجنيه: الخصم مبلغ ثابت بالجنيه (LP_BUNDLE_DISCOUNT) والموقع
 // ما بيحوّلش عملات، فتطبيقه على سعر بالريال/الدرهم يبقى خصم أكبر بكتير من المقصود.
@@ -547,7 +581,11 @@ function server_order_line($pid, $plat, $qty = 1, $requested_price = null, $ref 
     if ($sale < $min_sale) $sale = $min_sale;
     $markup = round(max(0, $sale - $base), 2);
 
-    $unit_comm = product_commission_unit($p, $plat, $sale, $ref);
+    $cur_line = wf_product_currency($p, $plat);
+    // العمولة الإضافية اللي المسوق حددها = اللي بيتحسب، والتقريب مش بيزوّدها
+    $intended = ($mk_extra > 0) ? $mk_extra : null;
+    $unit_comm = product_commission_unit($p, $plat, $sale, $ref, $intended);
+    $unit_comm_egp = wf_comm_to_egp($unit_comm, $cur_line);
 
     return [
         'product'    => $p,
@@ -556,15 +594,20 @@ function server_order_line($pid, $plat, $qty = 1, $requested_price = null, $ref 
         'name'       => aff_clean((string)($p['name'] ?? ''), true),
         'base_price' => $base,
         'unit_price' => $sale,
+        'currency'   => $cur_line,
         'min_sale'   => $min_sale,
         'max_sale'   => $max_sale,
         'markup'     => $markup,
+        'mk_extra'   => round($mk_extra, 2),
         'qty'        => $qty,
         'total'      => round($sale * $qty, 2),
         'unit_comm'  => $unit_comm,
         'commission' => round($unit_comm * $qty, 2),
+        'unit_comm_egp'  => $unit_comm_egp,
+        'commission_egp' => round($unit_comm_egp * $qty, 2),
         // فرق سعر الاتفاق مع العميل — بيتحسب عمولة المسوق بالكامل
         'agreed_diff'     => round(max(0, $sale - $base) * $qty, 2),
+        'agreed_diff_egp' => round(wf_comm_to_egp(max(0, $sale - $base), $cur_line) * $qty, 2),
         'honor_requested' => (bool)$honor_requested,
     ];
 }
@@ -4309,13 +4352,19 @@ function store_price_from_saved($p, $plat, $saved_price) {
 // العمولة الأساسية صفر لكل المنصات — المسوق يربح فقط العمولة التي يضيفها بنفسه فوق السعر الأساسي.
 // الاستثناء: المنتجات اليدوية ليها عمولة ثابتة لكل قطعة يحددها الأدمن (مصرية/بالجنيه، مخزنة في
 // extra.manual_commission) بتتدفع للمسوق على كل قطعة من غير ما سعر العميل يتغير، وفوقها العمولة الإضافية.
-function product_commission_unit($p, $plat, $unit_price = null, $ref = '') {
+// $intended_extra: العمولة الإضافية اللي المسوق كتبها بنفسه (لو معروفة). ساعتها العمولة
+// بتتسجل بالرقم اللي كتبه بالظبط، مش بفرق السعر بعد تقريب السعر لأقرب 5 (اللي كان بيخلي
+// 47 تتحسب 50، و45.5 تتحسب 50) — وبحد أقصى الفرق اللي اتحصّل فعلاً من العميل.
+function product_commission_unit($p, $plat, $unit_price = null, $ref = '', $intended_extra = null) {
     if ($ref !== '' && ($mk = find_marketer_by_code($ref))) {
         if (($mk['status'] ?? 'approved') === 'suspended') return 0.0;
     }
     $list = store_price($p, $plat);
     $sale = ($unit_price !== null && (float)$unit_price > 0) ? (float)$unit_price : $list;
     $markup = ($sale > $list) ? max(0.0, round($sale - $list, 2)) : 0.0;
+    if ($intended_extra !== null && is_numeric($intended_extra) && (float)$intended_extra > 0) {
+        $markup = min($markup, round((float)$intended_extra, 2));
+    }
     if ((string)$plat === 'manual') {
         $ex = isset($p['extra']) && is_array($p['extra']) ? $p['extra'] : [];
         $fixed = round((float)($ex['manual_commission'] ?? 0), 2);
@@ -4325,6 +4374,13 @@ function product_commission_unit($p, $plat, $unit_price = null, $ref = '') {
         return $markup;
     }
     return 0.0;
+}
+// نفس العمولة لكن بالجنيه (اللي بتتسجل في رصيد المسوق) — للمنتجات المصرية نفس الرقم،
+// وللخليجية بتتحوّل بسعر الصرف (د.إ/ر.س/د.أ/ر.ع ⇒ ج.م).
+function product_commission_egp($p, $plat, $unit_price = null, $ref = '', $intended_extra = null) {
+    $comm = product_commission_unit($p, $plat, $unit_price, $ref, $intended_extra);
+    if ($comm <= 0) return 0.0;
+    return wf_comm_to_egp($comm, wf_product_currency($p, $plat));
 }
 function credit_affiliate_amount($ref, $amount, $order_idx = null, $reason = 'عمولة أوردر جديد') {
     $ref = active_ref($ref);
@@ -4356,12 +4412,16 @@ function credit_affiliate_order($ref, $p, $plat, $qty, $unit_price = null, $expl
     else {
         $unit_price = max(0, round((float)$unit_price, 2));
     }
-    $sale_comm = product_commission_unit($p, $plat, $unit_price, $ref);
-    $m_earn = round($sale_comm * $qty, 2);
+    // العمولة بالجنيه: الرقم اللي المسوق حدده بنفسه (من غير زيادة التقريب) + العمولة الثابتة
+    // للمنتجات اليدوية، ومحوّلة للجنيه لو المنتج بعملة خليجية — رصيد المسوق بالجنيه دايماً.
+    $cur_line = wf_product_currency($p, $plat);
+    $sale_comm_egp = product_commission_egp($p, $plat, $unit_price, $ref, $line['mk_extra'] ?? null);
+    $m_earn = round($sale_comm_egp * $qty, 2);
     $reason = 'عمولة أوردر جديد';
     if (!empty($line['honor_requested'])) {
         // المسوق طلب لعميل بسعر متفق عليه: الفرق بين السعر الأصلي والسعر المتفق عليه عمولة المسوق
-        $m_earn = round(max($m_earn, (float)($line['agreed_diff'] ?? 0)), 2);
+        $agreed_egp = isset($line['agreed_diff_egp']) ? (float)$line['agreed_diff_egp'] : wf_comm_to_egp((float)($line['agreed_diff'] ?? 0), $cur_line);
+        $m_earn = round(max($m_earn, $agreed_egp), 2);
         $reason = 'عمولة أوردر — فرق سعر الاتفاق مع العميل';
     }
     $order_idx = $GLOBALS['_WF_ORDER_IDX'] ?? null;
@@ -5116,9 +5176,9 @@ function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $de
 
               <?php if ($eo_mk_code !== ''): ?>
               <div class="eo-field" id="eoMkExtraWrap">
-                <label for="eoMkExtraInput"><svg class=wf-ico aria-hidden=true focusable="false"><use href=#icon-wallet></use></svg> عمولتك الإضافية على كل قطعة (ج.م) — اختيارية</label>
+                <label for="eoMkExtraInput"><svg class=wf-ico aria-hidden=true focusable="false"><use href=#icon-wallet></use></svg> عمولتك الإضافية على كل قطعة (<span data-eo-currency>ج.م</span>) — اختيارية</label>
                 <input type="number" id="eoMkExtraInput" name="mk_extra" min="0" max="<?php echo (float)MAX_MARKUP_AMOUNT; ?>" step="1" value="0" inputmode="decimal" placeholder="0" oninput="eoRecalc()" onchange="eoRecalc()">
-                <p class="field-hint" style="margin:4px 0 0;font-size:12px">بتتحسب فوق سعر القطعة — العميل بيدفعها ضمن الإجمالي، وانت بتكسبها عمولة على كودك <b dir="ltr"><?php echo esc($eo_mk_code); ?></b> (الحد الأقصى <?php echo (float)MAX_MARKUP_AMOUNT; ?> ج.م).</p>
+                <p class="field-hint" style="margin:4px 0 0;font-size:12px">بتتحسب فوق سعر القطعة بعملة المنتج اللي فوق — العميل بيدفعها ضمن الإجمالي، وانت بتكسبها عمولة على كودك <b dir="ltr"><?php echo esc($eo_mk_code); ?></b> (الحد الأقصى <?php echo (float)MAX_MARKUP_AMOUNT; ?>). ولو المنتج بعملة خليجية (د.إ/ر.س/د.أ/ر.ع) عمولتك بتتحول للجنيه في رصيدك بسعر الصرف.</p>
               </div>
               <?php endif; ?>
 

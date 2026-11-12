@@ -416,8 +416,14 @@ function pcard($p, $plat = '') {
     if ($cu_w && !wf_is_digital_plat($plat)) {
         // الرقمي والسوشيال ميديا: مافيشش عمولة مضافة — الكارت مايعرضش «عمولتك»
         $u_comm = round((float)$extra_c, 2);
+        // العمولة بعملة المنتج، ومعاها مقابلها بالجنيه لو المنتج مش مصري (رصيد المسوق بالجنيه)
+        $u_cur  = wf_ui_currency($p);
+        $u_comm_egp = function_exists('wf_comm_to_egp') ? wf_comm_to_egp($u_comm, $u_cur) : $u_comm;
+        $u_comm_txt = $u_comm > 0
+            ? '+' . wf_ui_money($u_comm) . ' ' . esc($u_cur) . (wf_is_egp_currency($u_cur) ? '' : ' (≈ ' . wf_ui_money($u_comm_egp) . ' ج.م)')
+            : '0 ' . esc($u_cur) . ' (أضف عمولتك)';
         $lp_href = '../landing.php?id=' . urlencode((string)$p['id']) . ($ref_cur ? '&ref=' . urlencode($ref_cur) : '') . ($u_comm > 0 ? '&comm=' . $u_comm : '');
-        echo '<div data-ui="u-1f8c4581 d6w d6x d15 d6y d1u do dc d6z dh d1o d1p"><span>عمولتك: ' . ($u_comm > 0 ? '+' . wf_ui_money($u_comm) . ' ج.م' : '0 ج.م (أضف عمولتك)') . '</span><a href="' . esc($lp_href) . '" target="_blank" data-ui="u-afc29f7f d1d d70 do">صفحة الهبوط</a></div>';
+        echo '<div data-ui="u-1f8c4581 d6w d6x d15 d6y d1u do dc d6z dh d1o d1p"><span>عمولتك: ' . $u_comm_txt . '</span><a href="' . esc($lp_href) . '" target="_blank" data-ui="u-afc29f7f d1d d70 do">صفحة الهبوط</a></div>';
     }
     echo '<div class="pcard-footer"><div class="pcard-price">' . number_format((float)$price) . ' <small>' . esc(wf_ui_currency($p)) . '</small></div><a href="' . esc($link) . '" class="pcard-cart" aria-label="عرض التفاصيل والطلب">اطلب الآن</a></div>';
     echo '</article>';
