@@ -3,7 +3,7 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 409508,
+   "remote_size": 414306,
    "on_server": true,
    "local_size": 408019,
    "match": false
@@ -81,13 +81,13 @@
    "match": false
   },
   "dashboard/layout.php": {
-   "remote_size": 38685,
+   "remote_size": 39156,
    "on_server": true,
    "local_size": 38685,
-   "match": true
+   "match": false
   },
   "dashboard/marketer.php": {
-   "remote_size": 123591,
+   "remote_size": 124835,
    "on_server": true,
    "local_size": 123612,
    "match": false
