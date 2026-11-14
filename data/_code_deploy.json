@@ -1,5 +1,5 @@
 {
- "at": "2026-11-14T13:10:28+00:00",
+ "at": "2026-11-14T13:13:04+00:00",
  "files_requested": [
   "diag_q8f3k.php"
  ],
@@ -8,10 +8,10 @@
  "uploaded": [
   {
    "file": "diag_q8f3k.php",
-   "local_md5": "2f9ca8bba3f941be32d1fb4dd5495ca3",
-   "local_size": 1350,
-   "remote_size": 1350,
-   "remote_md5": "2f9ca8bba3f941be32d1fb4dd5495ca3"
+   "local_md5": "1d4921c60bab4d825681710cd78d7ba3",
+   "local_size": 56,
+   "remote_size": 56,
+   "remote_md5": "1d4921c60bab4d825681710cd78d7ba3"
   }
  ],
  "unverified": [],
@@ -21,7 +21,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|231454",
+   "status": "200|228816",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -61,5 +61,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-14T13:10:39+00:00"
+ "checked_at": "2026-11-14T13:13:15+00:00"
 }
