@@ -14,6 +14,7 @@ on:
         required: false
         default: 'config.php'
 
+# trigger-bump
 permissions:
   contents: write
 
