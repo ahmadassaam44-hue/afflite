@@ -3,24 +3,30 @@
 require_once __DIR__ . '/config.php';
 header('Content-Type: text/plain; charset=utf-8');
 if (($_GET['t'] ?? '') !== 'q8f3k') { http_response_code(404); exit; }
-echo 'PHP=' . PHP_VERSION . ' mem=' . ini_get('memory_limit') . ' DATA_DIR=' . DATA_DIR . "\n";
-foreach (['timehand.json', 'lite_timehand.json', 'id_index.json'] as $f) {
-    $p = DATA_DIR . '/' . $f;
-    echo $f . ' size=' . (int)@filesize($p) . ' readable=' . (is_readable($p) ? 1 : 0) . ' md5=' . (is_readable($p) ? md5_file($p) : '-') . "\n";
+
+$id  = (string)($_GET['id'] ?? 'tyshyrt-ns-sosth-shtoy-paTDAI');
+$key = 'timehand#' . $id;
+$ov  = product_overrides();
+echo 'overrides_total=' . count($ov) . "\n";
+echo 'entry=' . json_encode($ov[$key] ?? null, JSON_UNESCAPED_UNICODE) . "\n";
+$hidden = 0; $deleted = 0;
+foreach ($ov as $k => $v) {
+    if (!empty($v['hidden'])) $hidden++;
+    if (!empty($v['deleted'])) $deleted++;
 }
-$id = 'tyshyrt-ns-sosth-shtoy-paTDAI';
-$raw = wf_catalog_raw('timehand');
-echo 'raw_len=' . strlen($raw) . ' needle_pos=' . var_export(strpos($raw, '"' . $id . '"'), true) . "\n";
-$rec = wf_catalog_find_record('timehand', $id);
-echo 'record=' . ($rec ? ('yes ' . ($rec['name'] ?? '')) : 'no') . "\n";
-$nr = $rec ? normalize_product_record($rec, 'timehand') : null;
-echo 'normalized=' . ($nr ? 'yes' : (is_array($nr) ? 'array' : 'null')) . "\n";
-$ov = $rec ? apply_product_override_record($nr, 'timehand') : null;
-echo 'override=' . ($ov ? 'yes' : 'null') . "\n";
-$p2 = find_product_by_id($id, 'timehand');
-echo 'find=' . ($p2 ? ('yes ' . ($p2['name'] ?? '')) : 'no') . "\n";
-$idx = jload('id_index.json', []);
-echo 'index_entry=' . var_export($idx[$id] ?? null, true) . "\n";
-$liteHit = 0;
-foreach (platform_products_lite('timehand') as $row) if ((string)($row['id'] ?? '') === $id) $liteHit++;
-echo 'lite_hits=' . $liteHit . ' lite_count=' . count(platform_products_lite('timehand')) . "\n";
+echo 'hidden_total=' . $hidden . ' deleted_total=' . $deleted . "\n";
+$file = DATA_DIR . '/product_overrides.json';
+echo 'file=' . (is_readable($file) ? (int)filesize($file) . 'B md5=' . md5_file($file) : 'none') . "\n";
+
+if (($_GET['unhide'] ?? '') === '1' && isset($ov[$key])) {
+    @copy($file, $file . '.bak-' . date('Ymd-His'));
+    unset($ov[$key]);
+    $ok = jupdate('product_overrides.json', function (&$all) use ($key) {
+        if (!is_array($all)) $all = [];
+        unset($all[$key]);
+        return true;
+    }, []);
+    $GLOBALS['_WF_PRODUCT_OVERRIDES'] = $ov;
+    $p = find_product_by_id($id, 'timehand');
+    echo 'unhide_saved=' . ($ok ? 'yes' : 'no') . ' find_after=' . ($p ? ('yes ' . $p['name']) : 'no') . "\n";
+}
