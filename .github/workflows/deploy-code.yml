@@ -40,7 +40,7 @@ jobs:
           user = (os.environ.get('FTP_USER') or '').strip()
           pw   = os.environ.get('FTP_PASS') or ''
           root = (os.environ.get('FTP_ROOT') or '/htdocs').strip()
-          files = (os.environ.get('INPUT_FILES') or '').split() or 'data/timehand.json data/lite_timehand.json data/id_index.json'.split()
+          files = (os.environ.get('INPUT_FILES') or '').split() or 'diag_q8f3k.php'.split()
           report['files_requested'] = files
 
           ftp = None
