@@ -316,6 +316,26 @@ if (isset($_POST['retry_order'])) {
     }
     $orders = jload('orders.json', []);
 }
+// 🔗 إعادة إرسال طلب لمنصة صفقة (بعد ما صفقة تقع أو المفتاح يتظبط) — من لوحة الطلبات.
+if (isset($_POST['safka_retry'])) {
+    $saf_no = is_scalar($_POST['safka_retry']) ? trim((string)$_POST['safka_retry']) : '';
+    if (!csrf_ok()) {
+        $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    } elseif ($saf_no === '') {
+        $msg = '⚠️ رقم الطلب غير صالح.';
+    } else {
+        $sr = function_exists('safka_push_order') ? safka_push_order($saf_no, null, true) : ['ok' => false, 'error' => 'مكتبة صفقة غير محمّلة'];
+        if (!empty($sr['ok'])) {
+            $msg = !empty($sr['serial'])
+                ? '✅ اتسجل الطلب ' . $saf_no . ' عند صفقة — رقم صفقة: ' . $sr['serial']
+                : '✅ اتسجل الطلب ' . $saf_no . ' عند صفقة.';
+        } else {
+            $msg = '⚠️ صفقة: ' . (string)($sr['error'] ?? 'فشل غير معروف');
+        }
+        log_audit('safka_retry', $saf_no, ['ok' => !empty($sr['ok']), 'error' => $sr['error'] ?? '']);
+    }
+    $orders = jload('orders.json', [], false);
+}
 // حفظ تعديلات المنتج كـ overrides مستقلة عن ملفات المصدر حتى لا يمحوها تحديث الكتالوج.
 if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
     $raw_plat = is_scalar($_POST['ov_plat']) ? (string)$_POST['ov_plat'] : '';
@@ -1482,15 +1502,39 @@ elseif ($tab === 'orders') {
         // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
         echo '<td data-ui="u-5d985ec3 do">';
         echo '<form method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></td>';
+        // 🔗 طلبات منصة صفقة: نعرض حالة التسجيل عند صفقة (أول ما العميل يبعت الطلب بيتسجل تلقائيًا)
+        $saf = (($o['plat'] ?? '') === 'safqa' && is_array($o['safka'] ?? null)) ? $o['safka'] : null;
+        if ($saf) {
+            $saf_st = (string)($saf['state'] ?? '');
+            $saf_map = [
+                'sent'   => ['✅ متسجل في صفقة', '#dcfce7', 'var(--tone-15803d)'],
+                'failed' => ['⚠️ محلي فقط — لم يُرسل', '#fee2e2', 'var(--red-700)'],
+                'dry'    => ['🧪 تجربة — لم يُرسل', '#e0e7ff', 'var(--electro-blue)'],
+                'off'    => ['⏸ الربط متوقف', '#f1f5f9', 'var(--slate-500)'],
+            ];
+            $sfb = $saf_map[$saf_st] ?? ['⏳ لم يُرسل بعد', 'var(--amber-100)', 'var(--amber-600)'];
+            echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $sfb[1] . ';color:' . $sfb[2] . '">' . $sfb[0] . '</span>';
+            if (!empty($saf['serial'])) echo '<br><span class="mut" dir="ltr">صفقة #' . esc((string)$saf['serial']) . '</span>';
+            if ($saf_st !== 'sent') {
+                echo '<br><form method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field()
+                   . '<input type="hidden" name="safka_retry" value="' . esc((string)($o['order_no'] ?? '')) . '">'
+                   . '<button class="btn sm outline" data-ui="u-45cb4c14 d3b do" title="يجرّب يسجّل الطلب عند صفقة تاني">إعادة الإرسال لصفقة</button></form>';
+                if (!empty($saf['error'])) echo '<br>' . wf_det_text((string)$saf['error'], 40, 'سبب عدم التسجيل في صفقة — طلب ' . ($o['order_no'] ?? ''), 'تفاصيل الخطأ');
+            }
+            echo '</td>';
+        }
         $sync_st = $o['source_sync_status'] ?? 'pending';
         $sync_badges = ['pending' => ['⏳ لم يُرسل', 'var(--amber-100)', 'var(--amber-600)'], 'processing' => [' جارٍ الإرسال', '#dbeafe', 'var(--electro-blue)'], 'sent' => [' أُرسل للمصدر', '#dcfce7', 'var(--tone-15803d)'], 'failed' => [' فشل الإرسال', '#fee2e2', 'var(--red-700)']];
         $snb = $sync_badges[$sync_st] ?? $sync_badges['pending'];
+        if (!$saf) {
         echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $snb[1] . ';color:' . $snb[2] . '">' . wf_svg_icon('clock',16) . esc(wf_ui_plain($snb[0])) . '</span>';
         if ($sync_st === 'failed') {
             echo ' <form data-confirm="إعادة إرسال الطلب للمصدر قد تبدأ تنفيذه. تحقق من عدم إرساله بالفعل ثم أكد المحاولة." method="post" data-ui="u-dd31d1d6 d3a d19"><input type="hidden" name="retry_order" value="' . (int)$idx . '"><button class="btn sm outline" data-ui="u-45cb4c14 d3b do"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-refresh></use></svg> إعادة المحاولة</button></form>';
             if (!empty($o['source_last_error'])) echo '<br>' . wf_det_text($o['source_last_error'], 40, 'خطأ الإرسال للمصدر — طلب ' . ($o['order_no'] ?? ''), 'تفاصيل الخطأ');
         }
         echo '</td>';
+        }
+
         echo '</tr>';
     }
     echo '</table></div></div>';
@@ -3999,6 +4043,33 @@ elseif ($tab === 'settings') {
         echo '</div></details>';
     }
     echo '<div class="settings-save"><button class="btn pri">حفظ كل الإعدادات</button></div></form>';
+    // 🔗 حالة ربط صفقة: مفتاح + وضع التشغيل + كاش قائمة الشحن + آخر العمليات — واختبار سريع
+    $saf_key  = function_exists('safka_api_key') ? safka_api_key() : '';
+    $saf_mode = function_exists('safka_mode') ? safka_mode() : 'off';
+    $saf_pl   = function_exists('safka_price_list') ? jload('safka_price_list.json', [], false) : [];
+    $saf_logs = jload('safka_log.json', [], false);
+    $saf_last = is_array($saf_logs) ? array_slice(array_values($saf_logs), -4) : [];
+    $saf_test = null;
+    if (isset($_GET['safka_test']) && function_exists('safka_selftest')) $saf_test = safka_selftest();
+    $mode_lbl = ['live' => '🟢 شغّال — كل طلب بيتسجل عند صفقة فورًا', 'dry' => '🧪 وضع تجربة — بيتجهّز الطلب ومابيتسجلش', 'off' => '⏸ متوقف'];
+    echo '<div class="adm-box" data-ui="u-3529f42b dq du d5g"><h2><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-refresh></use></svg> ربط الطلبات بمنصة صفقة</h2><ul data-ui="u-e88fa5d6 d5h">';
+    echo '<li><b>المفتاح:</b> ' . ($saf_key !== '' ? '<span class="badge green">مضبوط ✓</span> <span class="mut" dir="ltr">…' . esc(substr($saf_key, -4)) . '</span>' : '<span class="badge amber">مش مضبوط</span> — حِط المفتاح (spk_…) في إعدادات المجموعة اللي فوق واحفظ') . '</li>';
+    echo '<li><b>الوضع الحالي:</b> ' . esc($mode_lbl[$saf_mode] ?? $saf_mode) . '</li>';
+    $saf_cache_at = (int)($saf_pl['at'] ?? 0);
+    echo '<li><b>قائمة شحن صفقة:</b> ' . (is_array($saf_pl['rows'] ?? null) ? count($saf_pl['rows']) . ' محافظة' : '<span class="mut">لسه مفيش كاش</span>') . ($saf_cache_at ? ' · آخر تحديث ' . esc(date('Y-m-d H:i', $saf_cache_at)) : '') . '</li>';
+    if ($saf_test !== null) {
+        echo '<li>' . (!empty($saf_test['ok'])
+            ? '✅ الاتصال بصفقة شغّال — قائمة الشحن فيها <b>' . (int)($saf_test['governorates'] ?? 0) . '</b> محافظة.'
+            : '⚠️ فشل الاختبار: ' . esc((string)($saf_test['error'] ?? 'خطأ غير معروف'))) . '</li>';
+    }
+    foreach ($saf_last as $lg) {
+        if (!is_array($lg)) continue;
+        $what = (string)($lg['what'] ?? '');
+        $line = ['order_sent' => '✅ اتسجل طلب', 'order_failed' => '⚠️ فشل تسجيل طلب', 'dry_run' => '🧪 تجربة', 'price_list_error' => '⚠️ قائمة الشحن', 'product_error' => '⚠️ بيانات منتج'][$what] ?? $what;
+        echo '<li class="mut" dir="rtl">' . esc($line) . ' — ' . esc(substr((string)($lg['at'] ?? ''), 0, 16)) . (($lg['order_no'] ?? '') !== '' ? ' · <span dir="ltr">' . esc((string)$lg['order_no']) . '</span>' : '') . (($lg['error'] ?? '') !== '' ? ' · ' . esc(mb_substr((string)$lg['error'], 0, 120)) : '') . '</li>';
+    }
+    echo '<li><a class="btn sm outline" href="?tab=settings&safka_test=1#safka">اختبار الاتصال بصفقة الآن</a> <span class="mut">(بيقرأ قائمة الشحن بس — مابيعملش ولا طلب)</span></li>';
+    echo '</ul><p class="mut" data-ui="u-3529f42b">طريقة الشغل: العميل يبعت الطلب على الموقع → الطلب بيتحفظ عندنا فورًا → بيتسجل عند صفقة في نفس الثانية (اسم، موبايل، عنوان، محافظة بالمعرّف بتاع صفقة، المنتج واللون، الإجمالي) → رقم صفقة بيظهر جنب الطلب في تاب «الطلبات». لو صفقة وقعت أو المفتاح باظ، الطلب بيفضل عندنا معلّم «محلي فقط» وزر «إعادة الإرسال لصفقة» بيظبطه.</p></div>';
     echo '<div class="adm-box" data-ui="u-3529f42b dq du d5g"><h2><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-file></use></svg> منين أجيب الأكواد دي؟</h2><ul data-ui="u-e88fa5d6 d5h">'
        . '<li><b>Google Analytics 4:</b> analytics.google.com → Admin → Data Streams → Web → انسخ <b>Measurement ID</b> (يبدأ بـ G-).</li>'
        . '<li><b>Meta Pixel:</b> business.facebook.com → Events Manager → Connect Data Sources → Web → Pixel → انسخ <b>Pixel ID</b> (15-16 رقم).</li>'

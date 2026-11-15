@@ -8,12 +8,15 @@ if (!defined('WF_DISABLED_PLATFORMS')) define('WF_DISABLED_PLATFORMS', ['shopmar
 // تحميل الأسرار من ملف منفصل (مستبعد من Git) — مع قيم احتياطية للطوارئ فقط
 // ============================================================================
 if (file_exists(__DIR__ . '/secrets.php')) require_once __DIR__ . '/secrets.php';
+// مفتاح صفقة بيتكتب على الاستضافة من GitHub Secrets وقت الرفع (مش بيتخزن في Git)
+if (file_exists(__DIR__ . '/safka_key.php')) require_once __DIR__ . '/safka_key.php';
 if (!defined('ADMIN_PASS'))    define('ADMIN_PASS', 'CHANGE_ME_NOW_' . bin2hex(random_bytes(6)));
 if (!defined('HEVO_API_KEY'))  define('HEVO_API_KEY', '');
 if (!defined('SB_SERVICE'))    define('SB_SERVICE', '');
 // إرسال الإيميلات عن طريق Supabase Edge Function (send-mail). المفتاح السري في secrets.php بس
 if (!defined('MAIL_FN_URL'))    define('MAIL_FN_URL', 'https://hbhuxhphlpgwqynstytw.supabase.co/functions/v1/send-mail');
 if (!defined('MAIL_FN_SECRET')) define('MAIL_FN_SECRET', '');
+require_once __DIR__ . '/safka_order_lib.php';
 // تسجيل الدخول بجوجل: يتفعل (true) بعد ما تتضبط بيانات جوجل في Supabase (GitHub Secrets)
 if (!defined('GOOGLE_LOGIN_ON')) define('GOOGLE_LOGIN_ON', false);
 
@@ -695,6 +698,11 @@ function site_settings_schema() {
             'commission_shopmart_pct' => ['نسبة عمولة Shopmart % (اتركها فارغة لاستخدام العمولة الثابتة لكل منتج)', 'text'],
             // الرقمي والسوشيال ميديا اتشالوا من نسب العمولة: سعرهم = سعر المصدر (شوف DIGITAL_USD_EGP)
             'commission_ledger_pct' => ['نسبة العمولة الاحتياطية % (اتركها فارغة لاستخدام العمولة الثابتة لكل منتج)', 'text'],
+        ],
+        'ربط الطلبات بمنصة صفقة (Safka)' => [
+            'safqa_api_key'    => ['مفتاح API صفقة (spk_...) — من صفقة: التكاملات ← مفاتيح API', 'password'],
+            'safqa_auto_order' => ['تسجيل الطلبات في صفقة تلقائيًا: 1 = شغّال (افتراضي) · 0 = مقفول · dry = تجربة بدون إرسال', 'text'],
+            'safqa_page_name'  => ['اسم الصفحة اللي بيظهر جوه طلبات صفقة (افتراضي: ' . 'وفرنهالك' . ')', 'text'],
         ],
         'الرقمي والسوشيال ميديا (بلا عمولة)' => [
             'usd_egp'            => ['سعر الدولار اللي بيتحسب به المنتج الرقمي (ج.م لكل دولار) — تركه فاضي = 56', 'text'],

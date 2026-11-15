@@ -4,6 +4,7 @@
 
 # الأسرار
 secrets.php
+safka_key.php
 config.local.php
 .env
 *.env

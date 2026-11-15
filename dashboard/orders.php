@@ -191,6 +191,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['id'])) {
                     . ($m_earn > 0 ? ' — عمولة معلقة: ' . number_format($m_earn, 2) . ' ج.م' : '');
             }
             $admin_report[] = '🌐 مصدر الزيارة: ' . ($new_order['src'] !== '' ? $new_order['src'] : 'غير محدد');
+
+            // 🔗 تسجيل الطلب عند صفقة فورًا (منتج صفقة) — الطلب محفوظ عندنا الأول، وإرسال صفقة
+            // مابيكسرش الطلب لو وقع: بيتعلّم «محلي فقط» ويتعاد إرساله من تاب الطلبات.
+            if ($plat === 'safqa' && function_exists('safka_push_order') && safka_can_push()) {
+                try {
+                    $safka_res = safka_push_order($ord_no);
+                    if (empty($safka_res['ok']) && !empty($safka_res['error'])) {
+                        $admin_report[] = '⚠️ صفقة: ' . $safka_res['error'];
+                    } elseif (!empty($safka_res['serial'])) {
+                        $admin_report[] = '✅ متسجل في صفقة برقم: ' . $safka_res['serial'];
+                    }
+                } catch (Throwable $e) {
+                    $admin_report[] = '⚠️ صفقة: ' . $e->getMessage();
+                }
+            }
             if (function_exists('wf_order_notify_queue')) wf_order_notify_queue('admin', implode("\n", $admin_report), 'dashboard/admin.php?tab=orders');
             if ($ref && ($mk2 = find_marketer_by_code($ref))) {
                 if (function_exists('wf_order_notify_queue')) wf_order_notify_queue($mk2['email'], '💰 عملية بيع برابطك: ' . $ord_name . ' — عمولة معلقة +' . number_format($m_earn, 2) . ' ج.م', 'dashboard/marketer.php');

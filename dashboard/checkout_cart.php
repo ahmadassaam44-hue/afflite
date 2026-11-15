@@ -108,6 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['name'])) {
             return true;
         }, []);
 
+        // 🔗 سطر منتج صفقة بيتسجل عند صفقة فورًا (كل سطر طلب مستقل عند صفقة)
+        if ($pl === 'safqa' && function_exists('safka_push_order') && safka_can_push()) {
+            try { safka_push_order((string)$new_order['order_no']); } catch (Throwable $e) { }
+        }
+
         if ($ref && ($mk2 = find_marketer_by_code($ref))) {
             notify($mk2['email'], '💰 عملية بيع برابطك: ' . mb_substr($new_order['pname'], 0, 40)
                    . ' — عمولة معلقة +' . number_format($m_earn, 2) . ' ج.م', 'dashboard/marketer.php');
