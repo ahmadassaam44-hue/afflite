@@ -1,17 +1,49 @@
 {
- "at": "2026-11-14T13:14:22+00:00",
+ "at": "2026-11-15T17:48:53+00:00",
  "files_requested": [
-  "config.php"
+  "config.php",
+  "safka_order_lib.php",
+  "dashboard/orders.php",
+  "dashboard/checkout_cart.php",
+  "dashboard/admin.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
  "uploaded": [
   {
    "file": "config.php",
-   "local_md5": "03dde2a8a24859e1d84184565f556886",
-   "local_size": 414306,
-   "remote_size": 414306,
-   "remote_md5": "03dde2a8a24859e1d84184565f556886"
+   "local_md5": "117f54b334e3b23e41b59cc857bbee8f",
+   "local_size": 415142,
+   "remote_size": 415142,
+   "remote_md5": "117f54b334e3b23e41b59cc857bbee8f"
+  },
+  {
+   "file": "safka_order_lib.php",
+   "local_md5": "daa14ad9bb5fb3fe4925963d35978790",
+   "local_size": 20942,
+   "remote_size": 20942,
+   "remote_md5": "daa14ad9bb5fb3fe4925963d35978790"
+  },
+  {
+   "file": "dashboard/orders.php",
+   "local_md5": "2a894eb84a0e6069bac48769db92f196",
+   "local_size": 33707,
+   "remote_size": 33707,
+   "remote_md5": "2a894eb84a0e6069bac48769db92f196"
+  },
+  {
+   "file": "dashboard/checkout_cart.php",
+   "local_md5": "f9473d2aec176f94e8a77f52964c5898",
+   "local_size": 15038,
+   "remote_size": 15038,
+   "remote_md5": "f9473d2aec176f94e8a77f52964c5898"
+  },
+  {
+   "file": "dashboard/admin.php",
+   "local_md5": "92fe9e994594f95d00e43fe77cc6699d",
+   "local_size": 350203,
+   "remote_size": 350203,
+   "remote_md5": "92fe9e994594f95d00e43fe77cc6699d"
   }
  ],
  "unverified": [],
@@ -21,7 +53,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|227049",
+   "status": "200|226698",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -61,5 +93,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-14T13:14:37+00:00"
+ "checked_at": "2026-11-15T17:49:16+00:00"
 }
