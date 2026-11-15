@@ -745,6 +745,11 @@ if (!function_exists('wf_order_details_rows')) {
     /** صفوف التفاصيل الكاملة للطلب (تُستخدم في ديالوج «تفاصيل الطلب» بالأدمن ولوحة المسوق وصفحة العميل). */
     function wf_order_details_rows($o, $with_money = false) {
         $o = is_array($o) ? $o : [];
+        // 🔒 ربط صفقة: بيانات صفقة (رقم صفقة/حالة التسجيل/سبب الخطأ) للإدارة بس —
+        // الديالوج ده بيظهر للمسوق وللعميل كمان، فبنشيل أي مفتاح بيبدأ بـ safka قبل الرندر.
+        foreach (array_keys($o) as $wf_k) {
+            if (stripos((string)$wf_k, 'safka') === 0) unset($o[$wf_k]);
+        }
         $rows = [];
         $push = function ($l, $v) use (&$rows) { $v = trim((string)$v); if ($v !== '') $rows[] = [$l, $v]; };
         $push('رقم الطلب', (string)($o['order_no'] ?? ''));

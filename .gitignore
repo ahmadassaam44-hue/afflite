@@ -29,6 +29,11 @@ data/fraud_alerts.json
 data/audit_logs.json
 data/marketer_clicks.json
 data/views.json
+# بيانات ربط صفقة (فيها أسماء وأرقام عملاء في سجل التشخيص) — للسيرفر بس
+data/safka_log.json
+data/safka_price_list.json
+data/safka_products.json
+data/safka_meta.json
 data/amazon_links.json
 data/noon_codes.json
 data/customer_requests.json

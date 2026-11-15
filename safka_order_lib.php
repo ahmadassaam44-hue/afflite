@@ -382,14 +382,18 @@ function safka_push_order($order_no, $order = null, $force = false) {
         $out['status'] = (string)($d['status'] ?? '');
     }
     safka_save_state($order_no, $out + ['at' => date('c')]);
-    safka_log([
+    $log_row = [
         'what'     => $res['ok'] ? 'order_sent' : 'order_failed',
         'order_no' => $order_no,
         'serial'   => $out['serial'] ?? '',
         'error'    => $out['error'],
-        'payload'  => $payload,
-        'response' => is_array($res['body']) ? $res['body'] : mb_substr((string)$res['body'], 0, 800),
-    ]);
+    ];
+    // الـ payload بيتسجل في حالات الفشل بس (وبنسخة مخفي عنها بيانات العميل) عشان التشخيص
+    if (!$res['ok']) {
+        $log_row['payload'] = $payload;
+        $log_row['response'] = is_array($res['body']) ? $res['body'] : mb_substr((string)$res['body'], 0, 800);
+    }
+    safka_log($log_row);
     return $out;
 }
 
@@ -417,8 +421,20 @@ function safka_save_state($order_no, $state) {
     return (bool)$ok;
 }
 
-// سجل تشخيص محدود (آخر 200 عملية) — data/safka_log.json
+// إخفاء بيانات العميل جوه السجل: بنسيب شكل الطلب للتشخيص من غير الاسم والتليفون كامل
+function safka_redact_payload($payload) {
+    if (!is_array($payload)) return $payload;
+    $p = $payload;
+    if (isset($p['client_name']))   $p['client_name']   = mb_substr((string)$p['client_name'], 0, 2) . '***';
+    if (isset($p['client_phone1'])) $p['client_phone1'] = '****' . substr((string)$p['client_phone1'], -3);
+    if (isset($p['client_phone2'])) $p['client_phone2'] = '****';
+    if (isset($p['client_address'])) $p['client_address'] = mb_substr((string)$p['client_address'], 0, 12) . '…';
+    return $p;
+}
+
+// سجل تشخيص محدود (آخر 200 عملية) — data/safka_log.json — للإدارة فقط (المجلد محمي بالكامل)
 function safka_log($entry) {
+    if (is_array($entry) && array_key_exists('payload', $entry)) $entry['payload'] = safka_redact_payload($entry['payload']);
     if (!is_array($entry)) return;
     $entry['at'] = date('c');
     jupdate('safka_log.json', function (&$log) use ($entry) {
