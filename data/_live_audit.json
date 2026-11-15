@@ -1,5 +1,5 @@
 {
- "at": "2026-11-15T06:53:52+00:00",
+ "at": "2026-11-15T19:17:22+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -51,6 +51,8 @@
   "register.php",
   "reset.php",
   "robots.txt",
+  "safka_key.php",
+  "safka_order_lib.php",
   "secrets.php",
   "sections.php",
   "sitemap.php",
@@ -93,11 +95,11 @@
    "same_as_git": true
   },
   "landing.php": {
-   "remote_size": 24956,
-   "remote_md5": "e185db3a28eff700cfcc7bd526bbf633",
+   "remote_size": 25543,
+   "remote_md5": "69c9364e63d6f41555be38d98e652499",
    "local_size": 24956,
    "local_md5": "e185db3a28eff700cfcc7bd526bbf633",
-   "same_as_git": true
+   "same_as_git": false
   },
   ".htaccess": {
    "remote_size": 5818,
@@ -122,9 +124,9 @@
   },
   "data/catalog_counts.json": {
    "remote_size": 846,
-   "remote_md5": "3ce5a8dee0c1c66ccee3dc7e887faf1e",
+   "remote_md5": "2ad7b3515f147cc982595f73a0ddce08",
    "local_size": 846,
-   "local_md5": "3ce5a8dee0c1c66ccee3dc7e887faf1e",
+   "local_md5": "2ad7b3515f147cc982595f73a0ddce08",
    "same_as_git": true
   }
  },
