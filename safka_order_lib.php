@@ -68,7 +68,16 @@ function safka_http($method, $path, $payload = null, $timeout = 15) {
         $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err = (string)curl_error($ch);
         curl_close($ch);
-        if ($raw === false) return ['ok' => false, 'status' => 0, 'body' => null, 'error' => 'تعذّر الاتصال بصفقة: ' . $err];
+        if ($raw === false) {
+            // بعض الاستضافات المشتركة عندها مشكلة في شهادة SSL جوه cURL — بنعيد المحاولة
+            // عن طريق stream (بيستخدم مخزن الشهادات بتاع النظام) قبل ما نستسلم.
+            $retry = safka_http_stream($url, $method, $headers, $json, $timeout);
+            if ($retry['ok'] || $retry['status'] > 0) {
+                safka_log(['what' => 'curl_ssl_fallback', 'path' => $path, 'curl_error' => mb_substr($err, 0, 120)]);
+                return $retry;
+            }
+            return ['ok' => false, 'status' => 0, 'body' => null, 'error' => 'تعذّر الاتصال بصفقة: ' . $err];
+        }
     } else {
         $ctx = stream_context_create(['http' => [
             'method'        => $method,
@@ -91,6 +100,34 @@ function safka_http($method, $path, $payload = null, $timeout = 15) {
             if (!empty($body['errors'][0]['msg'])) $error = (string)$body['errors'][0]['msg'];
             elseif (!empty($body['message'])) $error = (string)$body['message'];
             elseif (!empty($body['error'])) $error = is_array($body['error']) ? json_encode($body['error'], JSON_UNESCAPED_UNICODE) : (string)$body['error'];
+        }
+        if ($error === '') $error = 'صفقة ردّت بكود ' . $status;
+    }
+    return ['ok' => $ok, 'status' => $status, 'body' => $body, 'error' => $error];
+}
+
+// نداء عبر stream (بديل cURL) — بيرجّع نفس شكل الرد
+function safka_http_stream($url, $method, $headers, $json, $timeout) {
+    if (!ini_get('allow_url_fopen')) return ['ok' => false, 'status' => 0, 'body' => null, 'error' => 'allow_url_fopen مقفول'];
+    $ctx = stream_context_create(['http' => [
+        'method'        => $method,
+        'header'        => implode("\r\n", $headers),
+        'content'       => $method === 'POST' ? (string)$json : '',
+        'timeout'       => max(5, (int)$timeout),
+        'ignore_errors' => true,
+    ]]);
+    $raw = @file_get_contents($url, false, $ctx);
+    $status = 0;
+    if (!empty($http_response_header[0]) && preg_match('/\s(\d{3})\s/', (string)$http_response_header[0], $m)) $status = (int)$m[1];
+    if ($raw === false) return ['ok' => false, 'status' => 0, 'body' => null, 'error' => 'تعذّر الاتصال بصفقة'];
+    $body = json_decode((string)$raw, true);
+    if (!is_array($body)) $body = (string)$raw;
+    $ok = $status >= 200 && $status < 300;
+    $error = '';
+    if (!$ok) {
+        if (is_array($body)) {
+            if (!empty($body['errors'][0]['msg'])) $error = (string)$body['errors'][0]['msg'];
+            elseif (!empty($body['message'])) $error = (string)$body['message'];
         }
         if ($error === '') $error = 'صفقة ردّت بكود ' . $status;
     }

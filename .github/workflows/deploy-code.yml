@@ -168,10 +168,20 @@ jobs:
           ftp.set_pasv(True)
           try: ftp.cwd('/htdocs')
           except Exception: pass
-          import io as _io
-          ftp.storbinary('STOR safka_key.php', _io.BytesIO(body.encode('utf-8')))
+          import io as _io, hashlib, json, datetime
+          data = body.encode('utf-8')
+          ftp.storbinary('STOR safka_key.php', _io.BytesIO(data))
+          # تأكيد إن الملف على السيرفر مطابق (من غير ما نطبع المفتاح نفسه)
+          buf = bytearray()
+          ftp.retrbinary('RETR safka_key.php', buf.extend)
           ftp.quit()
-          print('✅ اتكتب safka_key.php على الاستضافة (مفتاح صفقة)')
+          same = hashlib.md5(bytes(buf)).hexdigest() == hashlib.md5(data).hexdigest()
+          rep = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
+                 'written': bool(same), 'key_len': len(key), 'prefix_ok': key.startswith('spk_')}
+          import os as _os
+          _os.makedirs('data', exist_ok=True)
+          json.dump(rep, open('data/_safka_key.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+          print('✅ safka_key.php على الاستضافة — مطابق:', same, '| طول المفتاح:', len(key), '| يبدأ بـ spk_:', key.startswith('spk_'))
           PY
 
       - name: فحص الموقع الحقيقي (بعد تخطي فحص الجافاسكريبت)
@@ -230,6 +240,7 @@ jobs:
         if: always()
         run: |
           if [ ! -f data/_code_deploy.json ]; then echo '{"status":"no_report"}' > data/_code_deploy.json; fi
+          if [ -f data/_safka_key.json ]; then git add data/_safka_key.json; fi
           git config user.name 'deploy-bot'
           git config user.email 'deploy-bot@users.noreply.github.com'
           git add data/_code_deploy.json
