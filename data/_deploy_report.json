@@ -3,7 +3,7 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 414306,
+   "remote_size": 415867,
    "on_server": true,
    "local_size": 408019,
    "match": false
@@ -75,7 +75,7 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 343183,
+   "remote_size": 350203,
    "on_server": true,
    "local_size": 343209,
    "match": false
