@@ -1,5 +1,12 @@
 <?php $PUBLIC_PAGE = true; $NO_SIDEBAR = true; $GLOBALS['WF_PRODUCT_DETAIL'] = true; $GLOBALS['WF_PUBLIC_CHROME'] = true; require 'layout.php';
 $id = trim((string)($_GET['id'] ?? ''));
+// 🔒 إخفاء المنصة: رابط المنتج بيتحوّل لنسخة نضيفة من غير &plat= (المنصة بتتحل من السيرفر)
+if (!empty($_GET['plat']) && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !is_admin_user()) {
+    $clean_qs = $_GET; unset($clean_qs['plat']);
+    $clean_qs['id'] = $id;
+    header('Location: product.php' . ($clean_qs ? ('?' . http_build_query($clean_qs)) : ''), true, 302);
+    exit;
+}
 $plat = resolve_plat($id, $_GET['plat'] ?? '');
 $ref = active_ref($_GET['ref'] ?? '');
 $found = find_product_by_id($id, $plat);

@@ -203,7 +203,7 @@ $currencies = array_fill_keys(wf_ui_currencies($cart), true);
 <article class="cart-line">
 <?php if ($c['img']): ?><img src="<?php echo esc(asset_url($c['img'])); ?>" alt="<?php echo esc($c['pname']); ?>" width="72" height="72" data-ui="u-af50c98c d5o d5p d5q d4u dt d24"><?php endif; ?>
 <div data-ui="u-efaf3a8d d2i d5r">
-  <a href="product.php?id=<?php echo urlencode($c['id']); ?>&plat=<?php echo urlencode($c['plat'] ?? ''); ?><?php echo !empty($c['ref']) ? '&ref=' . urlencode($c['ref']) : ''; ?>" data-ui="u-3f77f76d dc d5s d2k"><?php echo esc(mb_substr($c['pname'], 0, 60)); ?></a>
+  <a href="product.php?id=<?php echo urlencode($c['id']); ?><?php echo !empty($c['ref']) ? '&ref=' . urlencode($c['ref']) : ''; ?>" data-ui="u-3f77f76d dc d5s d2k"><?php echo esc(mb_substr($c['pname'], 0, 60)); ?></a>
   <?php if (order_variant_label($c) !== ''): ?><div class="mut" data-ui="u-46c5a79e d5t d4x">المواصفات: <?php echo esc(order_variant_label($c)); ?></div><?php endif; ?>
   <div data-ui="u-c8d75059 d49 d5s dh d1p d1q dj">
     <span data-ui="u-03327588 dv d5u"><?php echo number_format($c['price'], 2); ?> <?php echo esc(wf_ui_currency($c)); ?></span>

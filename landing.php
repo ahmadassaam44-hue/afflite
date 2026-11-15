@@ -14,6 +14,14 @@ if ($id !== '' && !empty($_GET['plat'])) {
     $_SESSION['lp_last_plat_' . $id] = trim((string)$_GET['plat']);
 }
 $ref = active_ref($_GET['ref'] ?? '');
+// 🔒 إخفاء المنصة: أي رابط فيه &plat= بيتحوّل لرابط نضيف — المنصة بتتحل من السيرفر
+// (id_index + الهينت المحفوظ في السيشن)، فالعميل/المسوق مابيشوفش اسم المنصة في العنوان.
+if (!empty($_GET['plat']) && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && !is_admin_user()) {
+    $clean_qs = $_GET; unset($clean_qs['plat']);
+    $clean_qs['id'] = $id;
+    header('Location: landing.php' . ($clean_qs ? ('?' . http_build_query($clean_qs)) : ''), true, 302);
+    exit;
+}
 
 $p = find_product_by_id($id, $plat_hint);
 // بديل محدود جدًا (٦ منتجات كحد أقصى) لو الرابط قديم/المنتج اتشال — من غير ما نحمّل الكتالوج كله.

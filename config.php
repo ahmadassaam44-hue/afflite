@@ -913,10 +913,19 @@ function social_plat($name) {
     return 'أخرى';
 }
 $PLATFORM_NAMES = ['manual' => 'منتجات يدوية', 'g2g' => '🎮 رقمي', 'social' => '📣 سوشيال ميديا', 'm5zoon' => 'M5zoon', 'vendoor' => 'Vendoor', 'safqa' => 'Safqa', 'timehand' => 'Time Hand', 'angazny' => 'Angazny', 'shopmart' => 'Shopmart', 'mnfean' => 'Mnfean'];
+// 🔒 أسماء المنصات اللي بنجيب منها المنتجات (Time Hand / Vendoor / Safqa / Shopmart …)
+// للإدارة بس. للمسوق والعميل بنرجّع اسم محايد، عشان مصدر المنتج مايبانش لأي حد بره لوحة الأدمن.
 function platform_name($plat, $remote = []) {
     global $PLATFORM_NAMES;
+    if (!function_exists('is_admin_user') || !is_admin_user()) {
+        return (string)$plat === 'manual' ? 'منتجات يدوية' : 'منتج';
+    }
     if (isset($remote[$plat]['name'])) return $remote[$plat]['name'];
     return $PLATFORM_NAMES[$plat] ?? $plat;
+}
+// نسخة للروابط: بترجّع plat للادمن بس — لأي حد تاني بترجّع فاضي عشان الرابط يفضل نضيف
+function wf_plat_param($plat) {
+    return (function_exists('is_admin_user') && is_admin_user()) ? (string)$plat : '';
 }
 // تقريب سعر البيع لأقرب رقم صحيح ينتهي بـ 5 أو 0 (لأعلى): 57 → 60 و 22 → 25
 // الأسعار الصغيرة (أقل من 10 ج.م — مثل أسعار خدمات السوشيال لكل 1000) تبقى كما هي بدون تقريب.

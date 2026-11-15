@@ -68,7 +68,7 @@ $w_cur_all = [];
     if ($wbase <= 0) $wbase = $wprice;
     $wcur   = function_exists('wf_ui_currency') ? wf_ui_currency($wp) : 'ج.م';
     $w_cur_all[$wcur] = true;
-    $wlink  = 'product.php?id=' . urlencode($wi['id']) . '&plat=' . urlencode($wpl) . (!empty($user['ref_code']) ? '&ref=' . urlencode($user['ref_code']) : '');
+    $wlink  = 'product.php?id=' . urlencode($wi['id']) . (!empty($user['ref_code']) ? '&ref=' . urlencode($user['ref_code']) : '');
     $wcolors = function_exists('clean_product_colors') ? array_slice(clean_product_colors($wp), 0, 15) : [];
     $wsizes  = function_exists('clean_product_sizes') ? array_slice(clean_product_sizes($wp), 0, 20) : [];
     $eo_w = ['id' => $wi['id'], 'plat' => $wpl, 'name' => $wname, 'price' => $wprice, 'base_price' => $wbase,

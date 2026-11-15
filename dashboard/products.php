@@ -59,8 +59,10 @@ $items = array_slice($all, ($page - 1) * $per, $per);
 $cats = categories_by_mode($ptype, $country);
 
 $qs = function ($o = []) use ($plat, $country, $cat, $col, $q, $ptype) {
+    // 🔒 اسم المنصة مابيدخلش في أي رابط بيشوفه المسوق/العميل (بيتبعت للأدمن بس)
+    $wf_pl_qs = function_exists('wf_plat_param') ? wf_plat_param($o['p'] ?? $plat) : '';
     return '?ptype=' . urlencode($o['ptype'] ?? $ptype)
-        . '&plat=' . urlencode($o['p'] ?? $plat)
+        . ($wf_pl_qs !== '' ? '&plat=' . urlencode($wf_pl_qs) : '')
         . '&country=' . urlencode($o['c'] ?? $country)
         . '&cat=' . urlencode($o['g'] ?? $cat)
         . '&col=' . urlencode($o['col'] ?? $col)
@@ -116,7 +118,13 @@ echo wf_catalog_toolbar([
     'meta' => $total ? 'عرض ' . number_format(($page - 1) * $per + 1) . '–' . number_format(min($total, $page * $per)) . ' من ' . number_format($total) . ' منتج' : 'لا توجد منتجات مطابقة',
     'clear_url' => ($q !== '' || ($cat !== 'all' && $cat !== '') || $col !== '' || $country !== 'مصر' || $ptype !== 'physical') ? '?ptype=physical&country=' . urlencode($country) . '&cat=all' : '',
 ]);
-echo '<form class="search" method="get" data-ui="u-9db13808 dh d1s d1p dj"><input type="hidden" name="ptype" value="' . esc($ptype) . '"><input type="hidden" name="plat" value="' . esc($plat) . '"><input type="hidden" name="country" value="' . esc($country) . '"><input type="hidden" name="cat" value="' . esc($cat) . '"><input type="hidden" name="col" value="' . esc($col) . '"><input name="q" value="' . esc($q) . '" placeholder="بحث بالاسم..." data-ui="u-6be42c14 d2i d9q"><button class="btn"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-search></use></svg> بحث</button><button type="button" onclick="window.wfOpenVisualSearch && window.wfOpenVisualSearch()" class="btn outline" data-ui="u-e456f13a d3e d1p di"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-camera></use></svg> بحث بالصورة</button><a href="support.php?ctx=customer" class="btn outline" data-ui="u-133ba71c d3e d1p di d2l">اطلب منتج غير موجود</a></form>';
+$wf_pl_hidden = function_exists('wf_plat_param') ? wf_plat_param($plat) : '';
+$wf_hidden_inputs = '<input type="hidden" name="ptype" value="' . esc($ptype) . '">'
+    . ($wf_pl_hidden !== '' ? '<input type="hidden" name="plat" value="' . esc($wf_pl_hidden) . '">' : '')
+    . '<input type="hidden" name="country" value="' . esc($country) . '">'
+    . '<input type="hidden" name="cat" value="' . esc($cat) . '">'
+    . '<input type="hidden" name="col" value="' . esc($col) . '">';
+echo '<form class="search" method="get" data-ui="u-9db13808 dh d1s d1p dj">' . $wf_hidden_inputs . '<input name="q" value="' . esc($q) . '" placeholder="بحث بالاسم..." data-ui="u-6be42c14 d2i d9q"><button class="btn"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-search></use></svg> بحث</button><button type="button" onclick="window.wfOpenVisualSearch && window.wfOpenVisualSearch()" class="btn outline" data-ui="u-e456f13a d3e d1p di"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-camera></use></svg> بحث بالصورة</button><a href="support.php?ctx=customer" class="btn outline" data-ui="u-133ba71c d3e d1p di d2l">اطلب منتج غير موجود</a></form>';
 echo '<p class="mut">' . ($ptype === 'digital' ? 'رقمي — تسليم فوري بدون شحن' : ($ptype === 'social' ? 'سوشيال — تنفيذ رقمي بدون شحن' : 'منتجات — شحن وعنوان')) . '</p><br>';
 echo '<div class="grid">';
 foreach ($items as $p) pcard($p, $p['_plat']);
