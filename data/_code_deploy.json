@@ -1,11 +1,12 @@
 {
- "at": "2026-11-15T17:50:26+00:00",
+ "at": "2026-11-15T17:51:36+00:00",
  "files_requested": [
   "config.php",
   "safka_order_lib.php",
   "dashboard/orders.php",
   "dashboard/checkout_cart.php",
-  "dashboard/admin.php"
+  "dashboard/admin.php",
+  "diag_sfk1.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -44,6 +45,13 @@
    "local_size": 350203,
    "remote_size": 350203,
    "remote_md5": "92fe9e994594f95d00e43fe77cc6699d"
+  },
+  {
+   "file": "diag_sfk1.php",
+   "local_md5": "7ad0f593ba59251e33af0f9d7508931e",
+   "local_size": 1857,
+   "remote_size": 1857,
+   "remote_md5": "7ad0f593ba59251e33af0f9d7508931e"
   }
  ],
  "unverified": [],
@@ -53,7 +61,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|226711",
+   "status": "200|228578",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -93,5 +101,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-15T17:50:56+00:00"
+ "checked_at": "2026-11-15T17:52:07+00:00"
 }
