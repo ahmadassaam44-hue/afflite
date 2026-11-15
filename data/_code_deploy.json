@@ -1,22 +1,28 @@
 {
- "at": "2026-11-15T18:04:08+00:00",
+ "at": "2026-11-15T18:33:07+00:00",
  "files_requested": [
   "config.php",
   "safka_order_lib.php",
   "ui-components.php",
+  "landing.php",
+  "affiliate-register.php",
   "dashboard/orders.php",
   "dashboard/checkout_cart.php",
-  "dashboard/admin.php"
+  "dashboard/admin.php",
+  "dashboard/product.php",
+  "dashboard/products.php",
+  "dashboard/cart.php",
+  "dashboard/wishlist.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
  "uploaded": [
   {
    "file": "config.php",
-   "local_md5": "117f54b334e3b23e41b59cc857bbee8f",
-   "local_size": 415142,
-   "remote_size": 415142,
-   "remote_md5": "117f54b334e3b23e41b59cc857bbee8f"
+   "local_md5": "6926a6cdc2c97aba99700200d0132836",
+   "local_size": 415867,
+   "remote_size": 415867,
+   "remote_md5": "6926a6cdc2c97aba99700200d0132836"
   },
   {
    "file": "safka_order_lib.php",
@@ -31,6 +37,20 @@
    "local_size": 57827,
    "remote_size": 57827,
    "remote_md5": "2de43f612a2f896f8d080349c6ac2b61"
+  },
+  {
+   "file": "landing.php",
+   "local_md5": "69c9364e63d6f41555be38d98e652499",
+   "local_size": 25543,
+   "remote_size": 25543,
+   "remote_md5": "69c9364e63d6f41555be38d98e652499"
+  },
+  {
+   "file": "affiliate-register.php",
+   "local_md5": "d722704f9ce599d68b8adc781856066c",
+   "local_size": 13277,
+   "remote_size": 13277,
+   "remote_md5": "d722704f9ce599d68b8adc781856066c"
   },
   {
    "file": "dashboard/orders.php",
@@ -52,6 +72,34 @@
    "local_size": 350203,
    "remote_size": 350203,
    "remote_md5": "92fe9e994594f95d00e43fe77cc6699d"
+  },
+  {
+   "file": "dashboard/product.php",
+   "local_md5": "0d4642a03b5e65a979cd503de16f1a59",
+   "local_size": 57407,
+   "remote_size": 57407,
+   "remote_md5": "0d4642a03b5e65a979cd503de16f1a59"
+  },
+  {
+   "file": "dashboard/products.php",
+   "local_md5": "a569d83eae8f54051ed6bc171e73d78d",
+   "local_size": 8086,
+   "remote_size": 8086,
+   "remote_md5": "a569d83eae8f54051ed6bc171e73d78d"
+  },
+  {
+   "file": "dashboard/cart.php",
+   "local_md5": "b8e16bede90b6879b3c6765f61892e8b",
+   "local_size": 16727,
+   "remote_size": 16727,
+   "remote_md5": "b8e16bede90b6879b3c6765f61892e8b"
+  },
+  {
+   "file": "dashboard/wishlist.php",
+   "local_md5": "4a00647cb7f68970f489f7c046728a10",
+   "local_size": 6969,
+   "remote_size": 6969,
+   "remote_md5": "4a00647cb7f68970f489f7c046728a10"
   }
  ],
  "unverified": [],
@@ -61,7 +109,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|228361",
+   "status": "200|227397",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -101,5 +149,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-15T18:04:36+00:00"
+ "checked_at": "2026-11-15T18:33:48+00:00"
 }
