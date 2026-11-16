@@ -1,5 +1,5 @@
 {
- "at": "2026-11-16T16:38:09+00:00",
+ "at": "2026-11-16T16:40:07+00:00",
  "files_requested": [
   "config.php",
   "safka_order_lib.php",
@@ -12,8 +12,7 @@
   "dashboard/product.php",
   "dashboard/products.php",
   "dashboard/cart.php",
-  "dashboard/wishlist.php",
-  "diag_sfk3.php"
+  "dashboard/wishlist.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -27,10 +26,10 @@
   },
   {
    "file": "safka_order_lib.php",
-   "local_md5": "944088a55abc8033b3f218991b12df62",
-   "local_size": 24104,
-   "remote_size": 24104,
-   "remote_md5": "944088a55abc8033b3f218991b12df62"
+   "local_md5": "54ef206c223c0758d353c6c8f491621f",
+   "local_size": 25305,
+   "remote_size": 25305,
+   "remote_md5": "54ef206c223c0758d353c6c8f491621f"
   },
   {
    "file": "ui-components.php",
@@ -69,10 +68,10 @@
   },
   {
    "file": "dashboard/admin.php",
-   "local_md5": "5707ca00f301830894db32370c9e2456",
-   "local_size": 350431,
-   "remote_size": 350431,
-   "remote_md5": "5707ca00f301830894db32370c9e2456"
+   "local_md5": "bd8da03cc3b66cb5cf415658b6dbb4d4",
+   "local_size": 350571,
+   "remote_size": 350571,
+   "remote_md5": "bd8da03cc3b66cb5cf415658b6dbb4d4"
   },
   {
    "file": "dashboard/product.php",
@@ -101,13 +100,6 @@
    "local_size": 6969,
    "remote_size": 6969,
    "remote_md5": "4a00647cb7f68970f489f7c046728a10"
-  },
-  {
-   "file": "diag_sfk3.php",
-   "local_md5": "b8903cbe95947000a6421fa0705c2cf0",
-   "local_size": 2197,
-   "remote_size": 2197,
-   "remote_md5": "b8903cbe95947000a6421fa0705c2cf0"
   }
  ],
  "unverified": [],
@@ -117,7 +109,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|226153",
+   "status": "200|229139",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -157,5 +149,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-16T16:38:48+00:00"
+ "checked_at": "2026-11-16T16:40:56+00:00"
 }
