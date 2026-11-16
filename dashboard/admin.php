@@ -1509,13 +1509,14 @@ elseif ($tab === 'orders') {
             $saf_map = [
                 'sent'   => ['✅ متسجل في صفقة', '#dcfce7', 'var(--tone-15803d)'],
                 'failed' => ['⚠️ محلي فقط — لم يُرسل', '#fee2e2', 'var(--red-700)'],
+                'duplicate' => ['✅ موجود بالفعل في صفقة', '#dcfce7', 'var(--tone-15803d)'],
                 'dry'    => ['🧪 تجربة — لم يُرسل', '#e0e7ff', 'var(--electro-blue)'],
                 'off'    => ['⏸ الربط متوقف', '#f1f5f9', 'var(--slate-500)'],
             ];
             $sfb = $saf_map[$saf_st] ?? ['⏳ لم يُرسل بعد', 'var(--amber-100)', 'var(--amber-600)'];
             echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $sfb[1] . ';color:' . $sfb[2] . '">' . $sfb[0] . '</span>';
             if (!empty($saf['serial'])) echo '<br><span class="mut" dir="ltr">صفقة #' . esc((string)$saf['serial']) . '</span>';
-            if ($saf_st !== 'sent') {
+            if (!in_array($saf_st, ['sent', 'duplicate'], true)) {
                 echo '<br><form method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field()
                    . '<input type="hidden" name="safka_retry" value="' . esc((string)($o['order_no'] ?? '')) . '">'
                    . '<button class="btn sm outline" data-ui="u-45cb4c14 d3b do" title="يجرّب يسجّل الطلب عند صفقة تاني">إعادة الإرسال لصفقة</button></form>';

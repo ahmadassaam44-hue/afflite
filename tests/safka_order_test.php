@@ -117,4 +117,8 @@ $GLOBALS['ST']['safqa_auto_order'] = '0';
 t('mode = off', safka_mode() === 'off');
 t('can_push = false', safka_can_push() === false);
 
+// 10) كشف رسالة التكرار من صفقة («في طلب زي ده موجود»)
+t('رسالة التكرار بتتكشف', safka_is_duplicate_error('في طلب زي ده موجود') === true);
+t('رسالة عادية مش تكرار', safka_is_duplicate_error('رقم الهاتف الأول غير صحيح') === false);
+
 echo "\nالنتيجة: $ok ناجح / $bad فاشل\n";

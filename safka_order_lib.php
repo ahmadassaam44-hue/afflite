@@ -333,7 +333,7 @@ function safka_push_order($order_no, $order = null, $force = false) {
         return ['ok' => false, 'state' => 'skipped', 'error' => 'الطلب مش من منصة صفقة'];
     }
     if (!$force && !safka_can_push()) return ['ok' => false, 'state' => 'off', 'error' => 'الربط متوقف'];
-    if (!$force && (($order['safka']['state'] ?? '') === 'sent')) {
+    if (!$force && in_array((string)($order['safka']['state'] ?? ''), ['sent', 'duplicate'], true)) {
         return ['ok' => true, 'state' => 'sent', 'serial' => (string)($order['safka']['serial'] ?? ''), 'error' => ''];
     }
 
@@ -358,6 +358,16 @@ function safka_push_order($order_no, $order = null, $force = false) {
     }
 
     $res = safka_http('POST', '/orders', $payload, 20);
+
+    // صفقة بترفض تكرار نفس الطلب: «في طلب زي ده موجود» — يعني الطلب متسجل عندها فعلًا،
+    // فمش فشل ومش محتاج إعادة إرسال (وده بيمنع تكرار الطلب مرتين لو العميل بعت تاني).
+    if (!$res['ok'] && safka_is_duplicate_error($res['error'])) {
+        $out = ['ok' => true, 'state' => 'duplicate', 'error' => 'الطلب موجود بالفعل عند صفقة (صفقة رفضت تسجيل نسخة تانية)', 'payload' => $payload];
+        safka_save_state($order_no, $out + ['at' => date('c')]);
+        safka_log(['what' => 'order_duplicate', 'order_no' => $order_no, 'serial' => '', 'error' => $out['error']]);
+        return $out;
+    }
+
     // لو صفقة رفضت معرّف المحافظة: نجرّب الرقم بدل الـ _id ونسجّل اللي بيشتغل
     if (!$res['ok'] && $gov_key === 'id' && !empty($gov['number'])) {
         $payload2 = $payload;
@@ -390,6 +400,16 @@ function safka_push_order($order_no, $order = null, $force = false) {
     }
     safka_log($log_row);
     return $out;
+}
+
+// هل رسالة صفقة معناها «الطلب متسجل بالفعل»؟
+function safka_is_duplicate_error($msg) {
+    $m = trim((string)$msg);
+    if ($m === '') return false;
+    foreach (['زي ده موجود', 'موجود بالفعل', 'مكرر', 'already exist', 'duplicate'] as $needle) {
+        if (mb_stripos($m, $needle) !== false) return true;
+    }
+    return false;
 }
 
 // تحديث حالة الربط جوه سجل الطلب (orders.json) — بيتنادى بعد الحفظ مباشرة
