@@ -294,33 +294,28 @@ function safka_pick_property($prod, $order) {
 // ---------------------------------------------------------------------------
 //  بناء الطلب وإرساله
 // ---------------------------------------------------------------------------
-function safka_build_payload($order, $gov_row, $city_row, $prop_id) {
-    $page_name = function_exists('site_setting') ? trim((string)site_setting('safqa_page_name', '')) : '';
-    if ($page_name === '') $page_name = BRAND;
-    $address = trim((string)($order['address'] ?? ''));
-    $gov_label = (string)($gov_row['label'] ?? '');
-    if ($gov_label !== '' && mb_stripos($address, $gov_label) === false) {
-        $address = trim($address . ' - ' . $gov_label, ' -');
-    }
+function safka_build_payload($order, $gov_row, $city_row = null, $prop_id = '') {
+    // 📋 المطلوب من المالك: البيانات الأساسية بس تتسجل عند صفقة —
+    // الاسم + الموبايل + الموبايل البديل (لو موجود) + العنوان + الملاحظات.
+    // مفيش صفحات (page_name / page_id) ولا عمولة ولا مدينة ولا أي تفاصيل إضافية.
+    // اللي فاضل بعد كده هو الحد الأدنى اللي صفقة بترفض إنشاء الطلب من غيره:
+    // المحافظة (معرّف من قائمة شحن صفقة) + المنتج/الكمية/الخاصية + الإجمالي (للتحصيل).
     $payload = [
-        'client_name'          => mb_substr(trim((string)($order['cname'] ?? '')), 0, 100),
-        'client_phone1'        => preg_replace('/\D+/', '', (string)($order['cphone'] ?? '')),
-        'client_address'       => mb_substr($address, 0, 300),
-        'shipping_governorate' => (string)($gov_row['id'] ?? ''),
-        'commission'           => round((float)($order['m_earn'] ?? 0), 2),
-        'total'                => (string)round((float)($order['total'] ?? 0), 2),
-        'items'                => [[
-            'qty'      => (string)max(1, (int)($order['qty'] ?? 1)),
-            'product'  => (string)($order['id'] ?? ''),
-            'property' => (string)$prop_id,
-        ]],
-        'page_name'            => mb_substr($page_name, 0, 60),
+        'client_name'    => mb_substr(trim((string)($order['cname'] ?? '')), 0, 100),
+        'client_phone1'  => preg_replace('/\D+/', '', (string)($order['cphone'] ?? '')),
+        'client_address' => mb_substr(trim((string)($order['address'] ?? '')), 0, 300),
     ];
     $phone2 = preg_replace('/\D+/', '', (string)($order['cphone2'] ?? ''));
     if ($phone2 !== '') $payload['client_phone2'] = $phone2;
-    if ($city_row && !empty($city_row['id'])) $payload['city'] = (string)$city_row['id'];
     $notes = trim((string)($order['notes'] ?? ''));
     if ($notes !== '') $payload['note'] = mb_substr($notes, 0, 300);
+    $payload['shipping_governorate'] = (string)($gov_row['id'] ?? '');
+    $payload['items'] = [[
+        'qty'      => (string)max(1, (int)($order['qty'] ?? 1)),
+        'product'  => (string)($order['id'] ?? ''),
+        'property' => (string)$prop_id,
+    ]];
+    $payload['total'] = (string)round((float)($order['total'] ?? 0), 2);
     return $payload;
 }
 

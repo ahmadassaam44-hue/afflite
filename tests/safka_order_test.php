@@ -86,14 +86,15 @@ t('اسم العميل', ($pl['client_name'] ?? '') === 'أحمد محمد');
 t('الموبايل أرقام بس', ($pl['client_phone1'] ?? '') === '01012345678');
 t('هاتف بديل', ($pl['client_phone2'] ?? '') === '01198765432');
 t('معرّف المحافظة من صفقة', ($pl['shipping_governorate'] ?? '') === 'gov_cairo');
-t('معرّف المدينة', ($pl['city'] ?? '') === '337');
+t('مفيش مدينة (تفاصيل إضافية)', !isset($pl['city']));
 t('الكمية نص', ($pl['items'][0]['qty'] ?? '') === '2');
 t('المنتج', ($pl['items'][0]['product'] ?? '') === 'prod1');
 t('الخاصية', ($pl['items'][0]['property'] ?? '') === 'prop_black');
 t('الإجمالي نص', ($pl['total'] ?? '') === '700');
-t('العمولة', ($pl['commission'] ?? null) === 50.0);
-t('اسم الصفحة', ($pl['page_name'] ?? '') === 'وفرنهالك');
-t('العنوان فيه المحافظة', strpos((string)($pl['client_address'] ?? ''), 'القاهرة') !== false, (string)($pl['client_address'] ?? ''));
+t('مفيش عمولة', !isset($pl['commission']));
+t('مفيش صفحات (page_name)', !isset($pl['page_name']) && !isset($pl['page_id']));
+t('العنوان زي ما العميل كتبه', (string)($pl['client_address'] ?? '') === 'شارع 9 - عمارة 12', (string)($pl['client_address'] ?? ''));
+t('مفاتيح الطلب = الأساسية بس + الحد الأدنى', array_values(array_intersect(array_keys($pl), ['client_name','client_phone1','client_phone2','client_address','note','shipping_governorate','items','total'])) === array_keys($pl), implode(',', array_keys($pl)));
 t('ملاحظة', ($pl['note'] ?? '') === 'اتصل قبل التسليم');
 
 // 6) الحالة اتسجلت في الطلب
