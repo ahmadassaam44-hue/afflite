@@ -1,5 +1,5 @@
 {
- "at": "2026-11-15T18:37:52+00:00",
+ "at": "2026-11-16T12:43:19+00:00",
  "files_requested": [
   "config.php",
   "safka_order_lib.php",
@@ -19,17 +19,17 @@
  "uploaded": [
   {
    "file": "config.php",
-   "local_md5": "6926a6cdc2c97aba99700200d0132836",
-   "local_size": 415867,
-   "remote_size": 415867,
-   "remote_md5": "6926a6cdc2c97aba99700200d0132836"
+   "local_md5": "f43cf7ef3f18f4458e1093ff048837d9",
+   "local_size": 415708,
+   "remote_size": 415708,
+   "remote_md5": "f43cf7ef3f18f4458e1093ff048837d9"
   },
   {
    "file": "safka_order_lib.php",
-   "local_md5": "b64f72ebde250d52424eb740089116eb",
-   "local_size": 24098,
-   "remote_size": 24098,
-   "remote_md5": "b64f72ebde250d52424eb740089116eb"
+   "local_md5": "944088a55abc8033b3f218991b12df62",
+   "local_size": 24104,
+   "remote_size": 24104,
+   "remote_md5": "944088a55abc8033b3f218991b12df62"
   },
   {
    "file": "ui-components.php",
@@ -68,10 +68,10 @@
   },
   {
    "file": "dashboard/admin.php",
-   "local_md5": "92fe9e994594f95d00e43fe77cc6699d",
-   "local_size": 350203,
-   "remote_size": 350203,
-   "remote_md5": "92fe9e994594f95d00e43fe77cc6699d"
+   "local_md5": "5707ca00f301830894db32370c9e2456",
+   "local_size": 350431,
+   "remote_size": 350431,
+   "remote_md5": "5707ca00f301830894db32370c9e2456"
   },
   {
    "file": "dashboard/product.php",
@@ -109,7 +109,7 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|227748",
+   "status": "200|228135",
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -149,5 +149,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-15T18:38:29+00:00"
+ "checked_at": "2026-11-16T12:43:58+00:00"
 }
