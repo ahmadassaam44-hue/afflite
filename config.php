@@ -681,6 +681,10 @@ function hero_product_slides() {
 }
 function site_settings_schema() {
     return [
+        'حالة الموقع (إغلاق مؤقت)' => [
+            'site_closed'      => ['إغلاق الموقع للزوار؟ 1 = مقفول (صفحة إغلاق) · 0 أو فراغ = مفتوح. الأدمن بيكمل شغله عادي في الحالتين', 'text'],
+            'site_closed_note' => ['رسالة اختيارية تظهر في صفحة الإغلاق (مثال: في مشكلة في الشبكة، هنرجع قريبًا)', 'textarea'],
+        ],
         'الدفع الإلكتروني (السوشيال والرقمي)' => [
             'pay_instapay'  => ['عنوان انستا باي (مثال: name@instapay)', 'text'],
             'pay_vodafone'  => ['رقم فودافون كاش', 'text'],
@@ -6966,3 +6970,71 @@ function wf_impersonation_banner_state($dash_pre = null) {
 remember_login();
 
 
+// ============================================================================
+// 🚧 الإغلاق المؤقت: الزوار بيشوفوا صفحة إغلاق (503)، والأدمن بيكمل شغله عادي.
+// ⚠️ لازم يفضل في آخر الملف: أي نداء لـ site_setting()/jload() قبل تحميل
+//    supabase_docs.php بيوقع الموقع (docs_is_remote غير معرّفة) — زي ما حصل مرة.
+// ============================================================================
+function wf_site_closed() {
+    $v = strtolower(trim((string)site_setting('site_closed', '0')));
+    return in_array($v, ['1', 'on', 'yes', 'true', 'closed', 'مقفول'], true);
+}
+function wf_site_closed_note() { return trim((string)site_setting('site_closed_note', '')); }
+
+function wf_closure_page() {
+    $brand  = defined('BRAND') ? (string)BRAND : 'المتجر';
+    $phone  = trim((string)site_setting('phone', '01202954952'));
+    if ($phone === '') $phone = '01202954952';
+    $digits = preg_replace('/\D+/', '', $phone);
+    $note   = wf_site_closed_note();
+    if (!headers_sent()) {
+        http_response_code(503);
+        header('Retry-After: 3600');
+        header('Content-Type: text/html; charset=utf-8');
+        header('Cache-Control: no-store, max-age=0, must-revalidate');
+        header('X-Robots-Tag: noindex');
+    }
+    echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
+       . '<meta name="viewport" content="width=device-width,initial-scale=1">'
+       . '<meta name="robots" content="noindex">'
+       . '<title>' . esc($brand) . ' — الموقع مغلق مؤقتًا</title>'
+       . '<style>'
+       . '*{box-sizing:border-box}'
+       . 'body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;'
+       . 'font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;'
+       . 'background:linear-gradient(160deg,#0f172a 0%,#1e293b 55%,#0b1220 100%);color:#e2e8f0}'
+       . '.box{width:100%;max-width:520px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);'
+       . 'border-radius:20px;padding:34px 26px;text-align:center}'
+       . '.ic{width:74px;height:74px;margin:0 auto 18px;display:grid;place-items:center;border-radius:50%;'
+       . 'background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.35);font-size:34px}'
+       . 'h1{font-size:22px;margin:0 0 10px;color:#f8fafc}'
+       . 'p{margin:0 0 8px;line-height:1.85;font-size:15px;color:#cbd5e1}'
+       . '.note{margin:16px 0;padding:12px 14px;border-radius:12px;background:rgba(250,204,21,.12);'
+       . 'border:1px solid rgba(250,204,21,.3);color:#fde68a;font-size:14px}'
+       . '.brand{font-weight:900;color:#38bdf8}'
+       . '.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}'
+       . 'a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:800;font-size:14px;'
+       . 'padding:12px 18px;border-radius:12px;border:1px solid rgba(255,255,255,.18);color:#e2e8f0}'
+       . 'a.wa{background:#16a34a;border-color:#16a34a;color:#fff}'
+       . 'small{display:block;margin-top:20px;font-size:12px;color:#94a3b8}'
+       . '</style></head><body data-wf-closure="1"><div class="box">'
+       . '<div class="ic">🚧</div>'
+       . '<h1>الموقع مغلق مؤقتًا</h1>'
+       . '<p>إحنا بنعمل صيانة سريعة في <span class="brand">' . esc($brand) . '</span>، وهنرجع نستقبل طلباتك في أقرب وقت إن شاء الله.</p>'
+       . ($note !== '' ? '<div class="note">' . esc($note) . '</div>' : '')
+       . '<p>لو عندك طلب مستعجل أو استفسار عن أوردر قديم، اتواصل معانا مباشرة:</p>'
+       . '<div class="row">'
+       . ($digits !== '' ? '<a href="tel:' . esc($digits) . '" dir="ltr">📞 ' . esc($phone) . '</a>' : '')
+       . ($digits !== '' ? '<a class="wa" href="https://wa.me/2' . esc(ltrim($digits, '0')) . '?text=' . urlencode('السلام عليكم، عندي استفسار عن ' . $brand) . '" target="_blank" rel="noopener">واتساب</a>' : '')
+       . '</div>'
+       . '<small>الموقع راجع قريب جدًا — شكرًا لصبرك 🤍</small>'
+       . '</div></body></html>';
+    exit;
+}
+
+if (PHP_SAPI !== 'cli' && !defined('WF_NO_CLOSURE') && wf_site_closed()) {
+    $wf_self = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    // صفحات لازمة عشان الأدمن يقدر يدخل ويدير الموقع وهو مقفول
+    $wf_closure_allow = in_array($wf_self, ['login.php', 'logout.php', 'google_start.php', 'google_callback.php', 'admin.php'], true);
+    if (!$wf_closure_allow && !is_admin_user()) wf_closure_page();
+}
