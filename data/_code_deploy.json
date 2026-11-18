@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T01:44:59+00:00",
+ "at": "2026-11-18T01:46:22+00:00",
  "files_requested": [
   "config.php",
   "safka_order_lib.php",
@@ -109,8 +109,8 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|227406",
-   "time_s": null,
+   "status": "200|225835|2.976266",
+   "time_s": 2.976266,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -118,8 +118,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167",
-   "time_s": null,
+   "status": "200|10167|0.973137",
+   "time_s": 0.973137,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -127,8 +127,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218",
-   "time_s": null,
+   "status": "200|50218|0.921352",
+   "time_s": 0.921352,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
@@ -136,8 +136,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0",
-   "time_s": null,
+   "status": "302|0|0.478766",
+   "time_s": 0.478766,
    "title": null,
    "php_error": false,
    "head": "",
@@ -145,8 +145,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "200|67146",
-   "time_s": null,
+   "status": "200|67146|0.858412",
+   "time_s": 0.858412,
    "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -154,8 +154,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0",
-   "time_s": null,
+   "status": "302|0|0.516320",
+   "time_s": 0.51632,
    "title": null,
    "php_error": false,
    "head": "",
@@ -163,5 +163,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T01:45:47+00:00"
+ "checked_at": "2026-11-18T01:47:04+00:00"
 }
