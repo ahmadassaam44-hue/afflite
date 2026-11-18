@@ -324,3 +324,9 @@ img,video,iframe,canvas{max-inline-size:100%}
 .user-menu .impersonate-form .btn{inline-size:100%;justify-content:center}
 @media print{.impersonate-bar{display:none!important}}
 
+
+/* 🧭 قائمة الإدارة: مجموعة «الإعدادات وأدوات النظام» قابلة للطي */
+.side details.side-more > summary.side-sec-title { list-style: none; display: flex; align-items: center; justify-content: space-between; }
+.side details.side-more > summary.side-sec-title::-webkit-details-marker { display: none; }
+.side details.side-more > summary.side-sec-title:hover { color: var(--ink); }
+.side details.side-more[open] > summary.side-sec-title { margin-bottom: 2px; }

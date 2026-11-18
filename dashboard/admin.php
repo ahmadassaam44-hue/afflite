@@ -336,6 +336,27 @@ if (isset($_POST['safka_retry'])) {
     }
     $orders = jload('orders.json', [], false);
 }
+// 🔄 تحديث جماعي لكل طلبات صفقة اللي لسه مش متسجلة — عملية واحدة + كتابة واحدة للملف (بدل طلب طلب).
+if (isset($_POST['safka_bulk'])) {
+    if (!csrf_ok()) {
+        $msg = 'انتهت صلاحية النموذج. حدّث الصفحة وحاول مرة أخرى.';
+    } elseif (!function_exists('safka_bulk_push')) {
+        $msg = '⚠️ مكتبة صفقة غير محمّلة.';
+    } else {
+        $bulk_limit = max(1, min(40, (int)($_POST['bulk_limit'] ?? 15)));
+        $bk = safka_bulk_push(['limit' => $bulk_limit, 'budget' => 22]);
+        if (empty($bk['ok'])) {
+            $msg = '⚠️ ' . (string)($bk['error'] ?? 'تعذر التحديث الجماعي');
+        } else {
+            $msg = '🔄 ' . (string)($bk['message'] ?? 'تم') . ($bk['remaining'] > 0 ? ' — دوس تاني لحد ما يخلص' : '');
+        }
+        $GLOBALS['_ADM_SAFKA_BULK'] = $bk;
+        log_audit('safka_bulk_push', 'orders', ['done' => $bk['done'] ?? 0, 'sent' => $bk['sent'] ?? 0,
+            'duplicate' => $bk['duplicate'] ?? 0, 'failed' => $bk['failed'] ?? 0, 'remaining' => $bk['remaining'] ?? 0]);
+    }
+    $orders = jload('orders.json', [], false);
+}
+
 // حفظ تعديلات المنتج كـ overrides مستقلة عن ملفات المصدر حتى لا يمحوها تحديث الكتالوج.
 if (isset($_POST['ov_plat'], $_POST['ov_id'], $_POST['ov_action'])) {
     $raw_plat = is_scalar($_POST['ov_plat']) ? (string)$_POST['ov_plat'] : '';
@@ -916,7 +937,11 @@ echo '</nav></details>';
 // 1. TAB: OVERVIEW (نظرة عامة شاملة)
 // =========================================================================
 if ($tab === 'overview') {
-    echo '<section class="card"><h2>تحتاج مراجعتك</h2><div class="action-queue"><a class="btn outline" href="?tab=orders&status=pending">' . wf_svg_icon('orders') . 'طلبات جديدة (' . (int)$pending . ')</a>' . '<a class="btn outline" href="?tab=commissions">' . wf_svg_icon('wallet') . 'مراجعة السحوبات</a><a class="btn outline" href="?tab=requests">' . wf_svg_icon('camera') . 'طلبات توفير منتج (' . count($open_prod_reqs) . ')</a></div></section>';
+    $ov_saf_pend = 0;
+    foreach ($orders as $__o) { if ((string)($__o['plat'] ?? '') === 'safqa' && !in_array((string)($__o['safka']['state'] ?? ''), ['sent', 'duplicate'], true) && trim((string)($__o['order_no'] ?? '')) !== '') $ov_saf_pend++; }
+    echo '<section class="card"><h2>تحتاج مراجعتك</h2><div class="action-queue">'
+        . ($ov_saf_pend > 0 ? '<a class="btn outline" href="?tab=orders" style="border-color:var(--amber-400);color:var(--amber-700)">🔄 طلبات لسه مش متسجلة في صفقة (' . $ov_saf_pend . ')</a>' : '')
+        . '<a class="btn outline" href="?tab=orders&status=pending">' . wf_svg_icon('orders') . 'طلبات جديدة (' . (int)$pending . ')</a>' . '<a class="btn outline" href="?tab=commissions">' . wf_svg_icon('wallet') . 'مراجعة السحوبات</a><a class="btn outline" href="?tab=requests">' . wf_svg_icon('camera') . 'طلبات توفير منتج (' . count($open_prod_reqs) . ')</a></div></section>';
     // آخر الأخطاء الفادحة المسجّلة تلقائيًا (تساعد في معرفة سبب «تعذر تحميل الصفحة مؤقتًا»)
     $wf_err_rows = jload('wf_errors.json', []);
     if (is_array($wf_err_rows) && $wf_err_rows) {
@@ -1423,6 +1448,44 @@ elseif ($tab === 'orders') {
     }
     echo '</div>';
 
+    // 🔗 صفقة: التحديث الجماعي — عملية واحدة وكتابة واحدة بدل ما نحدّث كل طلب لوحده
+    $saf_pending_nos = [];
+    foreach ($orders as $o) {
+        if ((string)($o['plat'] ?? '') !== 'safqa') continue;
+        if (trim((string)($o['order_no'] ?? '')) === '') continue;
+        if (in_array((string)($o['safka']['state'] ?? ''), ['sent', 'duplicate'], true)) continue;
+        $saf_pending_nos[] = (string)$o['order_no'];
+    }
+    $bk_last = $GLOBALS['_ADM_SAFKA_BULK'] ?? null;
+    if ($saf_pending_nos || $bk_last) {
+        $bk_map = ['sent' => ['✅ اتسجل', '#dcfce7', 'var(--tone-15803d)'], 'duplicate' => ['♻️ موجود بالفعل', '#dcfce7', 'var(--tone-15803d)'], 'dry' => ['🧪 تجربة', '#e0e7ff', 'var(--electro-blue)'], 'off' => ['⏸ متوقف', '#f1f5f9', 'var(--slate-500)'], 'failed' => ['⚠️ فشل', '#fee2e2', 'var(--red-700)']];
+        echo '<div class="card" style="margin-bottom:14px"><h2 style="font-size:16px">🔄 تسجيل الطلبات في صفقة (دفعة واحدة)</h2>';
+        echo '<p class="mut" style="margin:6px 0 10px">' . (count($saf_pending_nos) > 0
+                ? 'فيه <b>' . count($saf_pending_nos) . '</b> طلب لسه مش متسجل عند صفقة. الزرار بيبعتهم <b>في عملية واحدة</b> وبيحفظ ملف الطلبات <b>مرة واحدة</b> في الآخر — أسرع بكتير من تحديث كل طلب لوحده.'
+                : 'كل طلبات صفقة متسجلة ✅ — مفيش حاجة محتاجة تحديث.') . '</p>';
+        if (count($saf_pending_nos) > 0) {
+            echo '<form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' . csrf_field()
+               . '<input type="hidden" name="safka_bulk" value="1">'
+               . '<label style="font-size:13px;font-weight:800">عدد الطلبات في المرة: '
+               . '<select name="bulk_limit" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">'
+               . '<option value="10">10</option><option value="15" selected>15</option><option value="25">25</option><option value="40">40</option></select></label>'
+               . '<button class="btn pri" type="submit">🔄 تحديث الكل الآن</button>'
+               . '<span class="mut" style="font-size:12px">مابيتكررش: اللي متسجل بالفعل بيتخطى تلقائيًا.</span></form>';
+        }
+        if ($bk_last && !empty($bk_last['rows'])) {
+            echo '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800;font-size:13px">📋 نتائج وأسباب آخر تحديث (' . count($bk_last['rows']) . ' طلب)</summary>';
+            echo '<table class="data-table" style="margin-top:8px"><tr><th>الطلب</th><th>النتيجة</th><th>السبب / رقم صفقة</th></tr>';
+            foreach ($bk_last['rows'] as $brow) {
+                $bb = $bk_map[(string)$brow['state']] ?? ['—', '#f1f5f9', 'var(--slate-500)'];
+                echo '<tr><td dir="ltr"><b>' . esc((string)$brow['order_no']) . '</b></td>'
+                   . '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $bb[1] . ';color:' . $bb[2] . '">' . $bb[0] . '</span></td>'
+                   . '<td>' . esc((string)$brow['reason']) . (!empty($brow['serial']) ? ' <span class="mut" dir="ltr">(صفقة #' . esc((string)$brow['serial']) . ')</span>' : '') . '</td></tr>';
+            }
+            echo '</table></details>';
+        }
+        echo '</div>';
+    }
+
     // ===== تعديل كامل لطلب محدد (?tab=orders&edit=ORD-...) — كل التفاصيل بما فيها العمولة =====
     $adm_edit_no = trim((string)($_GET['edit'] ?? ''));
     $adm_edit_o = null;
@@ -1477,7 +1540,7 @@ elseif ($tab === 'orders') {
         . '<button type="submit" class="btn sm" style="color:#b91c1c">🗑 حذف المحدد نهائيًا</button>'
         . '<span class="mut" style="font-size:12px">الحذف النهائي للطلبات التست/المكررة/الغلط بس — الطلب بيتمسح من الإدارة والمسوق والعميل وعمولته المفعّلة بتتسحب، ونسخة أمان بتتأرشف عند الإدارة.</span>'
         . '</form>';
-    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>تحديد</th><th>#</th><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>المسوق</th><th>الحالة</th><th>ملاحظة الإدارة</th><th>حالة الإرسال للمصدر</th></tr>';
+    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>تحديد</th><th>#</th><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>المسوق</th><th>الحالة والتسجيل في المصدر</th></tr>';
     foreach ($rev_orders as $idx => $o) {
         // قيمة الحذف: رقم الطلب، وللصفوف القديمة اللي من غير رقم طلب بنستخدم الفهرس + تاريخ الطلب كهوية آمنة
         $del_val = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('idx|' . (int)$idx . '|' . (string)($o['at'] ?? ''));
@@ -1498,10 +1561,10 @@ elseif ($tab === 'orders') {
            . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a>'
            . '<form method="post" data-confirm="حذف الطلب ' . esc($del_lbl) . ' نهائيًا من النظام؟ هيتمسح من قوائم الإدارة والمسوق والعميل ومش هيرجع، وأي عمولة لسه مفعّلة هتتسحب من المسوق (زي الإلغاء). للإلغاء العادي غيّر الحالة بدل الحذف." style="margin-top:6px">' . csrf_field()
            . '<input type="hidden" name="adm_order_action" value="delete"><input type="hidden" name="adm_order_no" value="' . esc($del_val) . '">'
-           . '<button class="btn sm" style="color:#b91c1c;border-color:#fecaca" title="حذف الطلب نهائيًا من النظام">🗑 حذف نهائي</button></form></td>';
+           . '<button class="btn sm" style="color:#b91c1c;border-color:#fecaca" title="حذف الطلب نهائيًا من النظام">🗑 حذف نهائي</button></form>';
         // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
-        echo '<td data-ui="u-5d985ec3 do">';
-        echo '<form method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></td>';
+        echo '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--slate-500)">📝 ملاحظة الإدارة</summary>'
+           . '<form method="post" data-ui="u-67647882 d19" style="margin-top:6px"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></details>';
         // 🔗 طلبات منصة صفقة: نعرض حالة التسجيل عند صفقة (أول ما العميل يبعت الطلب بيتسجل تلقائيًا)
         $saf = (($o['plat'] ?? '') === 'safqa' && is_array($o['safka'] ?? null)) ? $o['safka'] : null;
         if ($saf) {
@@ -1514,27 +1577,29 @@ elseif ($tab === 'orders') {
                 'off'    => ['⏸ الربط متوقف', '#f1f5f9', 'var(--slate-500)'],
             ];
             $sfb = $saf_map[$saf_st] ?? ['⏳ لم يُرسل بعد', 'var(--amber-100)', 'var(--amber-600)'];
-            echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $sfb[1] . ';color:' . $sfb[2] . '">' . $sfb[0] . '</span>';
+            echo '<div style="margin-top:6px"><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $sfb[1] . ';color:' . $sfb[2] . '">' . $sfb[0] . '</span>';
             if (!empty($saf['serial'])) echo '<br><span class="mut" dir="ltr">صفقة #' . esc((string)$saf['serial']) . '</span>';
             if (!in_array($saf_st, ['sent', 'duplicate'], true)) {
                 echo '<br><form method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field()
                    . '<input type="hidden" name="safka_retry" value="' . esc((string)($o['order_no'] ?? '')) . '">'
                    . '<button class="btn sm outline" data-ui="u-45cb4c14 d3b do" title="يجرّب يسجّل الطلب عند صفقة تاني">إعادة الإرسال لصفقة</button></form>';
-                if (!empty($saf['error'])) echo '<br>' . wf_det_text((string)$saf['error'], 40, 'سبب عدم التسجيل في صفقة — طلب ' . ($o['order_no'] ?? ''), 'تفاصيل الخطأ');
+                if (!empty($saf['reason'])) echo '<br><span class="mut" style="font-size:12px">' . esc((string)$saf['reason']) . '</span>';
+                elseif (!empty($saf['error'])) echo '<br>' . wf_det_text((string)$saf['error'], 40, 'سبب عدم التسجيل في صفقة — طلب ' . ($o['order_no'] ?? ''), 'تفاصيل الخطأ');
             }
-            echo '</td>';
+            echo '</div>';
         }
         $sync_st = $o['source_sync_status'] ?? 'pending';
         $sync_badges = ['pending' => ['⏳ لم يُرسل', 'var(--amber-100)', 'var(--amber-600)'], 'processing' => [' جارٍ الإرسال', '#dbeafe', 'var(--electro-blue)'], 'sent' => [' أُرسل للمصدر', '#dcfce7', 'var(--tone-15803d)'], 'failed' => [' فشل الإرسال', '#fee2e2', 'var(--red-700)']];
         $snb = $sync_badges[$sync_st] ?? $sync_badges['pending'];
         if (!$saf) {
-        echo '<td><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $snb[1] . ';color:' . $snb[2] . '">' . wf_svg_icon('clock',16) . esc(wf_ui_plain($snb[0])) . '</span>';
+        echo '<div style="margin-top:6px"><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $snb[1] . ';color:' . $snb[2] . '">' . wf_svg_icon('clock',16) . esc(wf_ui_plain($snb[0])) . '</span>';
         if ($sync_st === 'failed') {
             echo ' <form data-confirm="إعادة إرسال الطلب للمصدر قد تبدأ تنفيذه. تحقق من عدم إرساله بالفعل ثم أكد المحاولة." method="post" data-ui="u-dd31d1d6 d3a d19"><input type="hidden" name="retry_order" value="' . (int)$idx . '"><button class="btn sm outline" data-ui="u-45cb4c14 d3b do"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-refresh></use></svg> إعادة المحاولة</button></form>';
             if (!empty($o['source_last_error'])) echo '<br>' . wf_det_text($o['source_last_error'], 40, 'خطأ الإرسال للمصدر — طلب ' . ($o['order_no'] ?? ''), 'تفاصيل الخطأ');
         }
-        echo '</td>';
+        echo '</div>';
         }
+        echo '</td>';
 
         echo '</tr>';
     }

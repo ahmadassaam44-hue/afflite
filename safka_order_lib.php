@@ -386,6 +386,7 @@ function safka_push_order($order_no, $order = null, $force = false) {
         $out['id']     = (string)($d['_id'] ?? '');
         $out['status'] = (string)($d['status'] ?? '');
     }
+    $out['reason'] = safka_state_reason($out['state'], (string)($out['error'] ?? ''));
     safka_save_state($order_no, $out + ['at' => date('c')]);
     $log_row = [
         'what'     => $res['ok'] ? 'order_sent' : 'order_failed',
@@ -416,6 +417,15 @@ function safka_is_duplicate_error($msg) {
 function safka_save_state($order_no, $state) {
     $order_no = trim((string)$order_no);
     if ($order_no === '') return false;
+    // في التحديث الجماعي: بنجمّع الحالات في الذاكرة ونكتب orders.json مرة واحدة في الآخر
+    // (بدل ما نكتب الملف الكبير 0.6 ثانية لكل طلب لوحده)
+    if (!empty($GLOBALS['_SAFKA_BATCH'])) {
+        $state['error'] = mb_substr((string)($state['error'] ?? ''), 0, 300);
+        unset($state['payload'], $state['response']);
+        $state['at'] = date('c');
+        $GLOBALS['_SAFKA_BATCH_RESULTS'][$order_no] = $state;
+        return true;
+    }
     $state['error'] = mb_substr((string)($state['error'] ?? ''), 0, 300);
     unset($state['payload'], $state['response']);
     $ok = jupdate('orders.json', function (&$orders) use ($order_no, $state) {
@@ -451,6 +461,7 @@ function safka_redact_payload($payload) {
 function safka_log($entry) {
     if (is_array($entry) && array_key_exists('payload', $entry)) $entry['payload'] = safka_redact_payload($entry['payload']);
     if (!is_array($entry)) return;
+    if (!empty($GLOBALS['_SAFKA_BATCH'])) { $GLOBALS['_SAFKA_BATCH_LOGS'][] = $entry; return; }
     $entry['at'] = date('c');
     jupdate('safka_log.json', function (&$log) use ($entry) {
         if (!is_array($log)) $log = [];
@@ -458,6 +469,104 @@ function safka_log($entry) {
         if (count($log) > 200) $log = array_slice($log, -200);
         return true;
     }, []);
+}
+
+// 🔄 تحديث جماعي: بيبعت كل الطلبات اللي لسه مش متسجلة عند صفقة في عملية واحدة،
+// وبيكتب orders.json مرة واحدة بس في الآخر (بدل كتابة الملف لكل طلب لوحده = بطء + خطر تعارض).
+// $opts: limit (أقصى عدد طلبات في المرة) · budget (أقصى ثواني) · force (يعيد اللي فشل قبل كده)
+function safka_bulk_push($opts = []) {
+    $limit  = max(1, (int)($opts['limit'] ?? 15));
+    $budget = max(3, (int)($opts['budget'] ?? 20));
+    $t0 = microtime(true);
+
+    $orders = jload('orders.json', [], false);
+    if (!is_array($orders)) $orders = [];
+    $cands = [];
+    foreach ($orders as $o) {
+        if ((string)($o['plat'] ?? '') !== 'safqa') continue;
+        if (trim((string)($o['order_no'] ?? '')) === '') continue;
+        if (in_array((string)($o['safka']['state'] ?? ''), ['sent', 'duplicate'], true)) continue;
+        $cands[] = $o;
+    }
+    $pending = count($cands);
+    $out = ['ok' => true, 'pending' => $pending, 'sent' => 0, 'duplicate' => 0, 'failed' => 0,
+            'dry' => 0, 'done' => 0, 'remaining' => $pending, 'rows' => [], 'error' => ''];
+    if ($pending === 0) { $out['message'] = 'كل الطلبات متسجلة عند صفقة ✅'; return $out; }
+    if (!safka_can_push()) { $out['ok'] = false; $out['error'] = 'الربط بصفقة متوقف — فعّله من الإعدادات الأول'; return $out; }
+
+    $GLOBALS['_SAFKA_BATCH'] = true;
+    $GLOBALS['_SAFKA_BATCH_RESULTS'] = [];
+    $GLOBALS['_SAFKA_BATCH_LOGS'] = [];
+
+    foreach ($cands as $o) {
+        if ($out['done'] >= $limit) break;
+        if ((microtime(true) - $t0) > $budget) break;
+        // force = false: بيحترم وضع التجربة/الإيقاف ومابيعيدش اللي اتسجل
+        $r = safka_push_order((string)$o['order_no'], $o, false);
+        $st = (string)($r['state'] ?? 'failed');
+        if ($st === 'sent')          $out['sent']++;
+        elseif ($st === 'duplicate') $out['duplicate']++;
+        elseif ($st === 'dry')       $out['dry']++;
+        elseif ($st === 'off')       { $out['ok'] = false; $out['error'] = 'الربط بصفقة متوقف'; break; }
+        else                         $out['failed']++;
+        $out['rows'][] = [
+            'order_no' => (string)$o['order_no'],
+            'state'    => $st,
+            'serial'   => (string)($r['serial'] ?? ''),
+            'reason'   => safka_state_reason($st, (string)($r['error'] ?? '')),
+        ];
+        $out['done']++;
+    }
+
+    $collected = (array)($GLOBALS['_SAFKA_BATCH_RESULTS'] ?? []);
+    $GLOBALS['_SAFKA_BATCH'] = false;
+    $GLOBALS['_SAFKA_BATCH_RESULTS'] = [];
+
+    // كتابة واحدة لكل الحالات + سبب مقروء محفوظ مع كل طلب
+    if ($collected) {
+        $now = date('c');
+        $reasons = [];
+        foreach ($out['rows'] as $row) $reasons[$row['order_no']] = $row['reason'];
+        jupdate('orders.json', function (&$all) use ($collected, $reasons, $now) {
+            $n = 0;
+            foreach ($all as &$o) {
+                $no = (string)($o['order_no'] ?? '');
+                if (!isset($collected[$no])) continue;
+                $st = $collected[$no];
+                unset($st['payload'], $st['response']);
+                $st['at'] = $now;
+                $st['bulk'] = 1;
+                $st['reason'] = (string)($reasons[$no] ?? '');
+                $o['safka'] = $st;
+                $o['safka_state'] = (string)($st['state'] ?? '');
+                if (!empty($st['serial'])) $o['safka_serial'] = (string)$st['serial'];
+                $n++;
+            }
+            unset($o);
+            return $n > 0;
+        }, []);
+        if (isset($GLOBALS['_JMEM']['orders.json'])) $GLOBALS['_JMEM']['orders.json'] = null;
+    }
+
+    $out['remaining'] = max(0, $pending - $out['done']);
+    $out['message'] = 'اتحدث ' . $out['done'] . ' طلب: ✅ ' . $out['sent'] . ' اتسجل · ♻️ ' . $out['duplicate']
+                    . ' موجود بالفعل · ⚠️ ' . $out['failed'] . ' فشل · ⏳ ' . $out['remaining'] . ' متبقي';
+    safka_log(['what' => 'bulk_push', 'done' => $out['done'], 'sent' => $out['sent'],
+               'duplicate' => $out['duplicate'], 'failed' => $out['failed'], 'remaining' => $out['remaining']]);
+    return $out;
+}
+
+// سبب مقروء لحالة التسجيل عند صفقة (بيتخزن مع الطلب ويظهر للأدمن)
+function safka_state_reason($state, $error = '') {
+    $error = trim((string)$error);
+    switch ((string)$state) {
+        case 'sent':      return 'اتسجل عند صفقة بنجاح';
+        case 'duplicate': return 'صفقة رفضت تسجيل نسخة تانية — الطلب موجود عندها بالفعل';
+        case 'dry':       return 'وضع تجربة — لسه ماتبعتش لصفقة';
+        case 'off':       return 'الربط بصفقة متوقف';
+        case 'failed':    return $error !== '' ? ('صفقة رفضت الطلب: ' . $error) : 'فشل غير معروف';
+        default:          return $error !== '' ? $error : 'لسه ماتبعتش';
+    }
 }
 
 // فحص سريع للاتصال (بيستخدمه زر الاختبار في الإعدادات) — من غير إنشاء أي طلب

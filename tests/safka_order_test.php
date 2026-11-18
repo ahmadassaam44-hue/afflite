@@ -12,6 +12,7 @@ $GLOBALS['FILES'] = [];
 function site_setting($k, $d = '') { return $GLOBALS['ST'][$k] ?? $d; }
 function jload($f, $d = [], $memo = true) { return $GLOBALS['FILES'][$f] ?? $d; }
 function jupdate($f, $fn, $d = []) {
+    $GLOBALS['WRITES'][$f] = (int)($GLOBALS['WRITES'][$f] ?? 0) + 1;
     $cur = $GLOBALS['FILES'][$f] ?? $d;
     $fn($cur);
     $GLOBALS['FILES'][$f] = $cur;
@@ -120,5 +121,27 @@ t('can_push = false', safka_can_push() === false);
 // 10) كشف رسالة التكرار من صفقة («في طلب زي ده موجود»)
 t('رسالة التكرار بتتكشف', safka_is_duplicate_error('في طلب زي ده موجود') === true);
 t('رسالة عادية مش تكرار', safka_is_duplicate_error('رقم الهاتف الأول غير صحيح') === false);
+
+// 11) التحديث الجماعي: بيقرا كل الطلبات مرة واحدة ومابيكتبش الملف لكل طلب
+// كل الطلبات متسجلة بالفعل → مفيش أي إرسال ولا كتابة
+$GLOBALS['FILES']['orders.json'] = [
+    ['order_no' => 'B1', 'plat' => 'safqa', 'id' => 'p', 'city' => 'القاهرة', 'total' => 300, 'qty' => 1, 'safka' => ['state' => 'sent', 'serial' => 'sk-aaa']],
+    ['order_no' => 'B2', 'plat' => 'safqa', 'id' => 'p', 'city' => 'الجيزة', 'total' => 200, 'qty' => 1, 'safka' => ['state' => 'duplicate']],
+    ['order_no' => 'B3', 'plat' => 'timehand', 'id' => 'p', 'city' => 'القاهرة', 'total' => 100, 'qty' => 1],
+];
+$bk0 = safka_bulk_push(['limit' => 5, 'budget' => 5]);
+t('دفعة: مفيش طلبات محتاجة تحديث', ($bk0['pending'] ?? -1) === 0 && empty($bk0['rows']), json_encode($bk0, JSON_UNESCAPED_UNICODE));
+
+$GLOBALS['WRITES'] = [];
+// فيه طلب مش متسجل + الربط متوقف → رسالة واضحة ومفيش تعليق
+$GLOBALS['FILES']['orders.json'][] = ['order_no' => 'B4', 'plat' => 'safqa', 'id' => 'p', 'city' => 'القاهرة', 'total' => 150, 'qty' => 1];
+$bk1 = safka_bulk_push(['limit' => 5, 'budget' => 5]);
+t('دفعة: الربط متوقف → مابيبعتش', empty($bk1['ok']) && ($bk1['pending'] ?? 0) === 1 && stripos((string)($bk1['error'] ?? ''), 'متوقف') !== false, json_encode($bk1, JSON_UNESCAPED_UNICODE));
+t('دفعة: كتب orders.json مرة واحدة بس', ($GLOBALS['WRITES']['orders.json'] ?? 0) === 0, (string)($GLOBALS['WRITES']['orders.json'] ?? 0));
+
+// أسباب مقروءة لكل حالة (بتتخزن مع الطلب وتظهر للأدمن)
+t('سبب: اتسجل', safka_state_reason('sent') === 'اتسجل عند صفقة بنجاح');
+t('سبب: مكرر', mb_stripos(safka_state_reason('duplicate'), 'موجود') !== false);
+t('سبب: فشل بيوضح رسالة صفقة', mb_stripos(safka_state_reason('failed', 'رقم الهاتف غير صحيح'), 'رقم الهاتف غير صحيح') !== false);
 
 echo "\nالنتيجة: $ok ناجح / $bad فاشل\n";

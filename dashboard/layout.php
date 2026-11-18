@@ -131,14 +131,48 @@ function layout_top($title, $active = 'home') {
         echo '<div class="side-brand"><a href="' . $pre . 'index.php">' . wf_svg_icon('store', 24) . '<span class="logo-txt">' . esc(BRAND) . '</span></a><button type="button" class="side-close-btn" data-drawer-close aria-label="إغلاق القائمة">' . wf_svg_icon('close') . '</button></div>';
         echo '<nav aria-label="وجهات لوحة التحكم">';
         if ($role === 'admin') {
-            echo '<p class="side-sec-title">الإدارة والمتابعة</p>';
+            // 🧭 القائمة مرتبة في مجموعات قصيرة بدل 16 رابط ورا بعض — الأساسي فوق والمتقدم مطوي
             $pend_counts = wf_admin_pending_counts();
             $pend_map = ['orders' => 'orders', 'marketers' => 'marketers', 'commissions' => 'commissions', 'requests' => 'requests', 'chats' => 'chats'];
-            foreach (['overview'=>['chart','نظرة عامة'], 'orders'=>['orders','الطلبات'], 'products'=>['box','المنتجات'], 'users'=>['users','المستخدمون'], 'marketers'=>['megaphone','المسوّقون'], 'commissions'=>['wallet','العمولات والسحب'], 'payments'=>['bank','مراجعة المدفوعات'], 'requests'=>['camera','طلبات توفير المنتجات'], 'amazon'=>['cart','أفلييت أمازون'], 'jumia'=>['store','أفلييت جوميا'], 'noon'=>['megaphone','أفلييت نون'], 'chats'=>['chat','المحادثات'], 'notifications'=>['bell','الإشعارات'], 'fraud'=>['shield','تنبيهات المراجعة'], 'audit'=>['file','سجل الإجراءات'], 'settings'=>['settings','الإعدادات']] as $k => $pair) {
+            $adm_link = function ($k, $pair) use ($active, $cur_admin_tab, $dash_pre, $pend_counts, $pend_map) {
                 $is_on = $active === 'admin' && $cur_admin_tab === $k;
                 $pend_n = (int)($pend_counts[$pend_map[$k] ?? ''] ?? 0);
-                echo '<a href="' . $dash_pre . 'admin.php?tab=' . esc($k) . '" title="' . esc($pair[1]) . '"' . ($is_on ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon($pair[0]) . '<span class="t">' . esc($pair[1]) . '</span>' . ($pend_n > 0 ? '<span class="notification-count side-count" aria-label="' . $pend_n . ' جديد">' . $pend_n . '</span>' : '') . '</a>';
+                return '<a href="' . $dash_pre . 'admin.php?tab=' . esc($k) . '" title="' . esc($pair[1]) . '"' . ($is_on ? ' class="on" aria-current="page"' : '') . '>' . wf_svg_icon($pair[0]) . '<span class="t">' . esc($pair[1]) . '</span>' . ($pend_n > 0 ? '<span class="notification-count side-count" aria-label="' . $pend_n . ' جديد">' . $pend_n . '</span>' : '') . '</a>';
+            };
+            $adm_groups = [
+                'الشغل اليومي' => [
+                    'overview'    => ['chart', 'نظرة عامة'],
+                    'orders'      => ['orders', 'الطلبات'],
+                    'products'    => ['box', 'المنتجات'],
+                    'payments'    => ['bank', 'مراجعة المدفوعات'],
+                ],
+                'الناس والفلوس' => [
+                    'users'       => ['users', 'المستخدمون'],
+                    'marketers'   => ['megaphone', 'المسوّقون'],
+                    'commissions' => ['wallet', 'العمولات والسحب'],
+                    'requests'    => ['camera', 'طلبات توفير المنتجات'],
+                    'chats'       => ['chat', 'المحادثات'],
+                ],
+                'أفلييت المنصات' => [
+                    'amazon'      => ['cart', 'أفلييت أمازون'],
+                    'jumia'       => ['store', 'أفلييت جوميا'],
+                    'noon'        => ['megaphone', 'أفلييت نون'],
+                ],
+            ];
+            $adm_more = [
+                'notifications' => ['bell', 'الإشعارات'],
+                'fraud'         => ['shield', 'تنبيهات المراجعة'],
+                'audit'         => ['file', 'سجل الإجراءات'],
+                'settings'      => ['settings', 'الإعدادات'],
+            ];
+            foreach ($adm_groups as $grp_title => $grp) {
+                echo '<p class="side-sec-title">' . esc($grp_title) . '</p>';
+                foreach ($grp as $k => $pair) echo $adm_link($k, $pair);
             }
+            $more_on = in_array($cur_admin_tab, array_keys($adm_more), true) && $active === 'admin';
+            echo '<details class="side-more"' . ($more_on ? ' open' : '') . '><summary class="side-sec-title" style="cursor:pointer;list-style:none">الإعدادات وأدوات النظام ' . ($more_on ? '▴' : '▾') . '</summary>';
+            foreach ($adm_more as $k => $pair) echo $adm_link($k, $pair);
+            echo '</details>';
         } elseif ($role === 'marketer') {
             // Store tools follow the marketing/store section, before account tools.
             echo '<p class="side-sec-title">التسويق والمتجر</p>';
