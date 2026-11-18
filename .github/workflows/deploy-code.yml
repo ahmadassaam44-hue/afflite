@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-11T20:05Z — معالجة رد «الطلب موجود بالفعل» من صفقة
+# trigger-bump: 2026-11-11T20:35Z — قياس أداء الاستضافة + زمن استجابة الصفحات
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -31,7 +31,7 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
-          INPUT_FILES: ${{ github.event.inputs.files || 'config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php' }}
+          INPUT_FILES: ${{ github.event.inputs.files || 'config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php diag_perf7.php' }}
         run: |
           python3 - <<'PY'
           import os, json, ftplib, hashlib, datetime, socket, time
@@ -218,13 +218,15 @@ jobs:
 
           rep['challenge'] = 'solved' if re.fullmatch(r'[0-9a-f]{16,64}', cookie or '') else 'not_bypassed'
           live = {}
-          for path in ['/', '/login.php', '/dashboard/cart.php', '/dashboard/checkout_cart.php', '/hello.html']:
+          for path in ['/', '/login.php', '/dashboard/cart.php', '/dashboard/checkout_cart.php', '/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI', '/dashboard/products.php']:
               args = (['-b', '__test=' + cookie] if cookie else []) + ['-w', '\n@@%{http_code}|%{size_download}']
               body = curl(args, BASE + path)
               body, _, meta = body.rpartition('\n@@')
               title = re.search(r'(?is)<title[^>]*>(.*?)</title>', body)
+              meta_parts = meta.strip().split('|')
               live[path] = {
                   'status': meta.strip(),
+                  'time_s': float(meta_parts[2]) if len(meta_parts) > 2 else None,
                   'title': (title.group(1).strip()[:120] if title else None),
                   'php_error': bool(re.search(r'(?i)(fatal error|parse error|uncaught|Warning:.*on line)', body)),
                   'head': ' '.join(body.split())[:220],
