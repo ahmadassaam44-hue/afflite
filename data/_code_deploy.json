@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T02:33:51+00:00",
+ "at": "2026-11-18T10:54:04+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -14,7 +14,8 @@
   "dashboard/product.php",
   "dashboard/products.php",
   "dashboard/cart.php",
-  "dashboard/wishlist.php"
+  "dashboard/wishlist.php",
+  "diag_closed1.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -35,10 +36,10 @@
   },
   {
    "file": "config.php",
-   "local_md5": "f43cf7ef3f18f4458e1093ff048837d9",
-   "local_size": 415708,
-   "remote_size": 415708,
-   "remote_md5": "f43cf7ef3f18f4458e1093ff048837d9"
+   "local_md5": "f56c5757810b1bbc58548763107c7543",
+   "local_size": 421157,
+   "remote_size": 421157,
+   "remote_md5": "f56c5757810b1bbc58548763107c7543"
   },
   {
    "file": "safka_order_lib.php",
@@ -84,10 +85,10 @@
   },
   {
    "file": "dashboard/admin.php",
-   "local_md5": "6a38433616d02cee528c068ec3cb5b5a",
-   "local_size": 389804,
-   "remote_size": 389804,
-   "remote_md5": "6a38433616d02cee528c068ec3cb5b5a"
+   "local_md5": "3740e648e33da69cac6b6ee0be0b2db0",
+   "local_size": 392304,
+   "remote_size": 392304,
+   "remote_md5": "3740e648e33da69cac6b6ee0be0b2db0"
   },
   {
    "file": "dashboard/product.php",
@@ -116,6 +117,13 @@
    "local_size": 6969,
    "remote_size": 6969,
    "remote_md5": "4a00647cb7f68970f489f7c046728a10"
+  },
+  {
+   "file": "diag_closed1.php",
+   "local_md5": "86b53e1d96dcdb535e26894acc415ceb",
+   "local_size": 694,
+   "remote_size": 694,
+   "remote_md5": "86b53e1d96dcdb535e26894acc415ceb"
   }
  ],
  "unverified": [],
@@ -125,59 +133,59 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|228372|3.794590",
-   "time_s": 3.79459,
-   "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
+   "status": "500|1113|0.515903",
+   "time_s": 0.515903,
+   "title": "تعذر تحميل الصفحة",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>تعذر تحميل الصفحة</title><style>body{margin:0;background:#f8fafc;color:#0f172",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.599583",
-   "time_s": 0.599583,
-   "title": "تسجيل الدخول | وفرنهالك",
+   "status": "500|1113|0.392850",
+   "time_s": 0.39285,
+   "title": "تعذر تحميل الصفحة",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>تعذر تحميل الصفحة</title><style>body{margin:0;background:#f8fafc;color:#0f172",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.755346",
-   "time_s": 0.755346,
-   "title": "سلة التسوق | وفرنهالك",
+   "status": "500|1119|0.370327",
+   "time_s": 0.370327,
+   "title": "تعذر تحميل الصفحة",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>تعذر تحميل الصفحة</title><style>body{margin:0;background:#f8fafc;color:#0f172",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.649762",
-   "time_s": 0.649762,
-   "title": null,
+   "status": "500|1119|0.477912",
+   "time_s": 0.477912,
+   "title": "تعذر تحميل الصفحة",
    "php_error": false,
-   "head": "",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>تعذر تحميل الصفحة</title><style>body{margin:0;background:#f8fafc;color:#0f172",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "200|67146|1.105782",
-   "time_s": 1.105782,
-   "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
+   "status": "500|1113|0.494833",
+   "time_s": 0.494833,
+   "title": "تعذر تحميل الصفحة",
    "php_error": false,
-   "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>تعذر تحميل الصفحة</title><style>body{margin:0;background:#f8fafc;color:#0f172",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.575181",
-   "time_s": 0.575181,
-   "title": null,
+   "status": "500|1119|0.455090",
+   "time_s": 0.45509,
+   "title": "تعذر تحميل الصفحة",
    "php_error": false,
-   "head": "",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>تعذر تحميل الصفحة</title><style>body{margin:0;background:#f8fafc;color:#0f172",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T02:34:46+00:00"
+ "checked_at": "2026-11-18T10:54:48+00:00"
 }
