@@ -6982,14 +6982,11 @@ function wf_site_closed() {
 function wf_site_closed_note() { return trim((string)site_setting('site_closed_note', '')); }
 
 function wf_closure_page() {
-    $brand  = defined('BRAND') ? (string)BRAND : 'المتجر';
-    $phone  = trim((string)site_setting('phone', '01202954952'));
-    if ($phone === '') $phone = '01202954952';
-    $digits = preg_replace('/\D+/', '', $phone);
-    $note   = wf_site_closed_note();
+    $brand = defined('BRAND') ? (string)BRAND : 'المتجر';
+    $note  = wf_site_closed_note();
     if (!headers_sent()) {
-        http_response_code(503);
-        header('Retry-After: 3600');
+        http_response_code(502);
+        header('Retry-After: 600');
         header('Content-Type: text/html; charset=utf-8');
         header('Cache-Control: no-store, max-age=0, must-revalidate');
         header('X-Robots-Tag: noindex');
@@ -6997,37 +6994,40 @@ function wf_closure_page() {
     echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
        . '<meta name="viewport" content="width=device-width,initial-scale=1">'
        . '<meta name="robots" content="noindex">'
-       . '<title>' . esc($brand) . ' — الموقع مغلق مؤقتًا</title>'
+       . '<title>502 — ' . esc($brand) . '</title>'
        . '<style>'
        . '*{box-sizing:border-box}'
        . 'body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;'
        . 'font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;'
-       . 'background:linear-gradient(160deg,#0f172a 0%,#1e293b 55%,#0b1220 100%);color:#e2e8f0}'
-       . '.box{width:100%;max-width:520px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);'
-       . 'border-radius:20px;padding:34px 26px;text-align:center}'
-       . '.ic{width:74px;height:74px;margin:0 auto 18px;display:grid;place-items:center;border-radius:50%;'
-       . 'background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.35);font-size:34px}'
+       . 'background:radial-gradient(1200px 600px at 50% -10%,#1e293b 0%,#0b1220 55%,#070b14 100%);color:#e2e8f0}'
+       . '.box{width:100%;max-width:520px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);'
+       . 'border-radius:22px;padding:34px 26px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.35)}'
+       . '.code{font-size:78px;line-height:1;font-weight:900;letter-spacing:-3px;'
+       . 'background:linear-gradient(180deg,#f87171,#b91c1c);-webkit-background-clip:text;background-clip:text;'
+       . 'color:transparent;margin-bottom:6px}'
+       . '.tag{display:inline-block;font-size:12px;font-weight:800;padding:5px 12px;border-radius:999px;'
+       . 'background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.35);color:#fca5a5;margin-bottom:16px}'
        . 'h1{font-size:22px;margin:0 0 10px;color:#f8fafc}'
        . 'p{margin:0 0 8px;line-height:1.85;font-size:15px;color:#cbd5e1}'
-       . '.note{margin:16px 0;padding:12px 14px;border-radius:12px;background:rgba(250,204,21,.12);'
-       . 'border:1px solid rgba(250,204,21,.3);color:#fde68a;font-size:14px}'
+       . '.note{margin:16px 0;padding:12px 14px;border-radius:12px;background:rgba(250,204,21,.1);'
+       . 'border:1px solid rgba(250,204,21,.28);color:#fde68a;font-size:14px}'
        . '.brand{font-weight:900;color:#38bdf8}'
-       . '.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:18px}'
-       . 'a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:800;font-size:14px;'
-       . 'padding:12px 18px;border-radius:12px;border:1px solid rgba(255,255,255,.18);color:#e2e8f0}'
-       . 'a.wa{background:#16a34a;border-color:#16a34a;color:#fff}'
-       . 'small{display:block;margin-top:20px;font-size:12px;color:#94a3b8}'
+       . '.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}'
+       . 'button,a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:800;font-size:14px;'
+       . 'padding:12px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.18);color:#e2e8f0;'
+       . 'background:rgba(255,255,255,.06);cursor:pointer;font-family:inherit}'
+       . 'button{background:#0ea5e9;border-color:#0ea5e9;color:#fff}'
+       . 'button:hover{background:#0284c7}'
+       . 'small{display:block;margin-top:20px;font-size:12px;color:#8fa1b8}'
        . '</style></head><body data-wf-closure="1"><div class="box">'
-       . '<div class="ic">🚧</div>'
-       . '<h1>الموقع مغلق مؤقتًا</h1>'
-       . '<p>إحنا بنعمل صيانة سريعة في <span class="brand">' . esc($brand) . '</span>، وهنرجع نستقبل طلباتك في أقرب وقت إن شاء الله.</p>'
+       . '<div class="code">502</div>'
+       . '<div class="tag">الموقع وقع مؤقتًا</div>'
+       . '<h1>السيرفر مش قادر يفتح الصفحة دلوقتي</h1>'
+       . '<p>حصل عطل مؤقت في السيرفر بتاع <span class="brand">' . esc($brand) . '</span>، والصفحة مش متاحة حاليًا.</p>'
+       . '<p>إحنا شغالين على رجوعه بأسرع وقت — جرّب تحدّث الصفحة بعد شوية.</p>'
        . ($note !== '' ? '<div class="note">' . esc($note) . '</div>' : '')
-       . '<p>لو عندك طلب مستعجل أو استفسار عن أوردر قديم، اتواصل معانا مباشرة:</p>'
-       . '<div class="row">'
-       . ($digits !== '' ? '<a href="tel:' . esc($digits) . '" dir="ltr">📞 ' . esc($phone) . '</a>' : '')
-       . ($digits !== '' ? '<a class="wa" href="https://wa.me/20' . esc(ltrim($digits, '0')) . '?text=' . urlencode('السلام عليكم، عندي استفسار عن ' . $brand) . '" target="_blank" rel="noopener">واتساب</a>' : '')
-       . '</div>'
-       . '<small>الموقع راجع قريب جدًا — شكرًا لصبرك 🤍</small>'
+       . '<div class="row"><button type="button" onclick="location.reload()">🔄 حاول تاني</button></div>'
+       . '<small>بنعتذر عن الإزعاج — شكرًا لصبرك 🤍</small>'
        . '</div></body></html>';
     exit;
 }
