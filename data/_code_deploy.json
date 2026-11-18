@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T11:07:55+00:00",
+ "at": "2026-11-18T11:10:55+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -14,7 +14,8 @@
   "dashboard/product.php",
   "dashboard/products.php",
   "dashboard/cart.php",
-  "dashboard/wishlist.php"
+  "dashboard/wishlist.php",
+  ".htaccess"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -35,10 +36,10 @@
   },
   {
    "file": "config.php",
-   "local_md5": "95dd47a2ec9172a745c45e581777c51f",
-   "local_size": 422708,
-   "remote_size": 422708,
-   "remote_md5": "95dd47a2ec9172a745c45e581777c51f"
+   "local_md5": "7f1b508b2c7c847cc6f741ebbfb0427e",
+   "local_size": 423372,
+   "remote_size": 423372,
+   "remote_md5": "7f1b508b2c7c847cc6f741ebbfb0427e"
   },
   {
    "file": "safka_order_lib.php",
@@ -116,17 +117,30 @@
    "local_size": 6969,
    "remote_size": 6969,
    "remote_md5": "4a00647cb7f68970f489f7c046728a10"
+  },
+  {
+   "file": ".htaccess",
+   "local_md5": "7027ade05b0367a3309201ad0a053228",
+   "local_size": 6202,
+   "remote_size": 6202,
+   "remote_md5": "7027ade05b0367a3309201ad0a053228"
   }
  ],
  "unverified": [],
  "failed": [],
  "status": "ok",
  "raw_status": "HTTP/1.1 200 OK",
+ "home_headers": {
+  "cache-control": "no-cache",
+  "pragma": null,
+  "expires": "Thu, 01 Jan 1970 00:00:01 GMT",
+  "server": "openresty"
+ },
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "502|2584|0.866510",
-   "time_s": 0.86651,
+   "status": "502|2584|0.763658",
+   "time_s": 0.763658,
    "title": "502 — وفرنهالك",
    "php_error": false,
    "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
@@ -134,8 +148,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|1.013024",
-   "time_s": 1.013024,
+   "status": "200|10167|0.800547",
+   "time_s": 0.800547,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -143,8 +157,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "502|2584|0.489038",
-   "time_s": 0.489038,
+   "status": "502|2584|0.595350",
+   "time_s": 0.59535,
    "title": "502 — وفرنهالك",
    "php_error": false,
    "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
@@ -152,8 +166,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "502|2584|0.465085",
-   "time_s": 0.465085,
+   "status": "502|2584|0.575772",
+   "time_s": 0.575772,
    "title": "502 — وفرنهالك",
    "php_error": false,
    "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
@@ -161,8 +175,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "502|2584|0.466789",
-   "time_s": 0.466789,
+   "status": "502|2584|0.858331",
+   "time_s": 0.858331,
    "title": "502 — وفرنهالك",
    "php_error": false,
    "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
@@ -170,8 +184,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "502|2584|0.541264",
-   "time_s": 0.541264,
+   "status": "502|2584|0.620074",
+   "time_s": 0.620074,
    "title": "502 — وفرنهالك",
    "php_error": false,
    "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
@@ -179,5 +193,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T11:08:36+00:00"
+ "checked_at": "2026-11-18T11:11:49+00:00"
 }
