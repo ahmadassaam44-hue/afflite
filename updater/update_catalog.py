@@ -292,7 +292,7 @@ def update_hevo():
     for it in social:
         sid = str((it.get('extra') or {}).get('service_id', ''))
         if sid and sid != '6489' and sid not in seen and it.get('stock', 1) != 0:
-            it['stock'] = 0; it['unavailable_since'] = TODAY; dropped += 1
+            it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; dropped += 1
     jsave('social.json', social)
     summary['social'] = {'total': len(social), 'updated': updated, 'added': added, 'unavailable': dropped}
     log('Hevo done', summary['social'])
@@ -426,7 +426,7 @@ def update_g2g():
             if live:
                 it['stock'] = sum(int(v.get('stock') or 0) for v in live)
             else:
-                it['stock'] = 0; it['unavailable_since'] = TODAY
+                it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_out'] = True
             it['sizes'] = [v.get('label') or v.get('size') for v in vs if v.get('stock', 1) != 0][:40] or it.get('sizes', [])
     # ---- إصلاح أوفلاين لكل المنتجات: الأسعار المخزّنة/المكتوبة تتطابق مع سعر المصدر
     # (بيشتغل حتى لو G2G محجوب عن سيرفرات GitHub لأن السعر بيتحسب من الدولار المخزّن)
@@ -877,7 +877,7 @@ def update_safqa():
             ex = it.setdefault('extra', {}); ex['source_commission_original'] = comm; ex['note'] = note; ex['suggested'] = sugg; ex['stock_rows'] = stock_rows; ex['variants_detailed'] = variants
             if media: ex['media_links'] = media; it['files'] = media
             if active: it.pop('unavailable_since', None)
-            elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; drop += 1
+            elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; it['src_out'] = True; drop += 1
         else:
             if not active or price <= 0: continue
             it = {'id': fid, 'name': f.get('name') or '', 'sku': f.get('barcode') or '', 'price': price, 'price_text': price_text(price, 'جنيه'),
@@ -888,7 +888,7 @@ def update_safqa():
             record_price('safqa#' + fid, price, 0); cur.append(it); add += 1
     for it in cur:
         if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
-            it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+            it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; drop += 1
     jsave('safqa.json', cur)
     summary['safqa'] = {'total': len(cur), 'updated': upd, 'added': add, 'unavailable': drop}
     log('Safqa done', summary['safqa'])
@@ -974,7 +974,7 @@ def update_vendoor():
             it['stock'] = f['stock']; it['name'] = f['name'] or it.get('name')
             ex = it.setdefault('extra', {}); ex['source_commission_original'] = f['commission']; ex['purchasing'] = f['purchasing']; ex['minimum'] = f['min']; ex['maximum'] = f['max']; ex['price_min'] = f['min']; ex['price_max'] = f['max']
             if f['stock'] > 0: it.pop('unavailable_since', None)
-            elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; drop += 1
+            elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; it['src_out'] = True; drop += 1
         else:
             if price <= 0: continue
             d = vendoor_detail(op, pid) if details < 40 else {}; details += 1
@@ -988,7 +988,7 @@ def update_vendoor():
             time.sleep(0.3)
     for it in cur:
         if str(it.get('id')) not in fresh and it.get('stock', 1) != 0:
-            it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+            it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; drop += 1
     jsave('vendoor.json', cur)
     summary['vendoor'] = {'total': len(cur), 'updated': upd, 'added': add, 'unavailable': drop}
     log('Vendoor done', summary['vendoor'])
@@ -1142,7 +1142,7 @@ def update_m5zoon():
         if f['image'] and not it.get('images'): it['images'] = [f['image']]
     for it in cur:
         if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
-            it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+            it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; drop += 1
     # إصلاح ذاتي: صفوف قديمة اتخزنت بمصر رغم إن عملتها خليجية (زي 5549 بالدرهم) —
     # دي بتخلي صفحة الطلب تعرض محافظات مصر لمنتج إماراتي، فبنصلّح الدولة من بيانات الصف نفسه.
     country_fixed = 0
@@ -1224,7 +1224,10 @@ def update_angazny():
             it['currency'] = 'جنيه'; it['price_text'] = price_text(price, 'جنيه')
             if not it.get('images') and f['image'] and len(f['image']) > 10 and not f['image'].rstrip('/').endswith('angazny.com'):
                 it['images'] = [f['image']]
-            it.pop('unavailable_since', None) if f['stock'] > 0 else it.setdefault('unavailable_since', TODAY)
+            if f['stock'] > 0:
+                it.pop('unavailable_since', None)
+            else:
+                it.setdefault('unavailable_since', TODAY); it['src_out'] = True
             ex = it.setdefault('extra', {}); ex['source_commission_original'] = commission
         else:
             d = angazny_detail(op, pid) if details < 70 else {}; details += 1
@@ -1240,10 +1243,10 @@ def update_angazny():
             record_price('angazny#' + pid, price, 0); cur.append(it); by_id[pid] = it; add += 1
         ex['orig_suggested'] = f['suggested']; ex['card_badge'] = str(int(commission))
         if f['stock'] > 0: it.pop('unavailable_since', None)
-        elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; drop += 1
+        elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; it['src_out'] = True; drop += 1
     for it in cur:
         if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
-            it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+            it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; drop += 1
     jsave('angazny.json', cur)
     summary['angazny'] = {'total': len(cur), 'fetched': len(fresh), 'updated': upd, 'added': add, 'unavailable': drop, 'details': details}
     log('Angazny done', summary['angazny'])
@@ -1444,10 +1447,10 @@ def update_timehand():
                   'stock': f['stock'], 'sizes': sizes, 'rank': 0, 'country': 'مصر', 'added_at': TODAY, 'extra': ex}
             record_price('timehand#' + pid, price, 0); cur.append(it); by_id[pid] = it; add += 1
         if f['stock'] > 0: it.pop('unavailable_since', None)
-        elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; drop += 1
+        elif not it.get('unavailable_since'): it['unavailable_since'] = TODAY; it['src_out'] = True; drop += 1
     for it in cur:
         if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
-            it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+            it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; drop += 1
     jsave('timehand.json', cur)
     summary['timehand'] = {'total': len(cur), 'fetched': len(fresh), 'updated': upd, 'added': add, 'unavailable': drop, 'details': details, 'cat_fixed': cat_fix}
     log('Timehand done', summary['timehand'])
@@ -1959,10 +1962,10 @@ def update_shopmart():
             cur.append(f); by_id[pid] = f; add += 1
         if f['stock'] > 0: by_id[pid].pop('unavailable_since', None)
         elif not by_id[pid].get('unavailable_since'):
-            by_id[pid]['unavailable_since'] = TODAY; drop += 1
+            by_id[pid]['unavailable_since'] = TODAY; by_id[pid]['src_out'] = True; drop += 1
     for it in cur:
         if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
-            it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+            it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; drop += 1
     jsave('shopmart.json', cur)
     summary['shopmart'] = {'total': len(cur), 'fetched': len(fresh), 'updated': upd, 'added': add, 'unavailable': drop, 'pages': pages}
     log('Shopmart done', summary['shopmart'])
@@ -2011,7 +2014,7 @@ def update_json_sources():
                 record_price(f'{plat}#{fid}', npr, 0); cur.append(f); add += 1
         for it in cur:
             if str(it.get('id')) not in seen and it.get('stock', 1) != 0:
-                it['stock'] = 0; it['unavailable_since'] = TODAY; drop += 1
+                it['stock'] = 0; it['unavailable_since'] = TODAY; it['src_gone'] = True; drop += 1
         jsave(f'{plat}.json', cur)
         summary[plat] = {'total': len(cur), 'updated': upd, 'added': add, 'unavailable': drop}
         log(plat, summary[plat])
@@ -2256,6 +2259,126 @@ def build_catalog_counts(cezma_index_signature='', cezma_rows=None):
     }
 
 
+# ---------------------------------------------------------------- حذف المنتجات النافدة/المقفولة من المصدر
+PURGE_PLATS = ['vendoor', 'safqa', 'timehand', 'angazny', 'm5zoon', 'shopmart', 'g2g', 'social', 'mnfean']
+_DEAD_TRUE_KEYS = ('closed', 'is_closed', 'disabled', 'blocked', 'is_blocked', 'out_of_stock', 'sold_out', 'is_sold_out')
+_DEAD_FALSE_KEYS = ('available', 'availability', 'is_available', 'in_stock')
+_DEAD_STATUSES = ('closed', 'sold_out', 'soldout', 'inactive', 'unavailable', 'out_of_stock', 'disabled', 'stopped')
+
+
+def _pnum(v):
+    try:
+        return float(str(v).strip())
+    except Exception:
+        return None
+
+
+def _variant_dead(v):
+    """المقاس/العرض نافد؟ (بس لو فيه معلومة مخزون حقيقية)"""
+    if not isinstance(v, dict):
+        return False
+    for k in ('stock', 'qty', 'quantity'):
+        if k in v:
+            n = _pnum(v[k])
+            if n is not None:
+                return n <= 0
+    for k in ('sold_out', 'is_sold_out'):
+        if v.get(k) is True:
+            return True
+    if v.get('available') is False:
+        return True
+    return False
+
+
+def purge_unavailable_products():
+    """بيحذف نهائيًا المنتجات اللي المصدر قال إنها نافدة أو مقفولة.
+    قواعد الأمان:
+      • المتوقع نافد صريح (src_out) بيتحذف دايمًا.
+      • المنتج اللي مش موجود في آخر سحب بيتحذف بس لو السحب كامل (تغطية ≥ 80%)،
+        عشان لو السحب وقع في النص ما نمسحش منتجات سليمة.
+      • لو الحذف هيطلع أكتر من 70% من منصة، بنوقف الحذف للمنصة دي ونسجّل تحذير.
+    """
+    report = {}
+    try:
+        archive = jload('purge_archive.json', []) or []
+    except Exception:
+        archive = []
+    if not isinstance(archive, list):
+        archive = []
+    for plat in PURGE_PLATS:
+        name = plat + '.json'
+        rows = jload(name, None)
+        if not isinstance(rows, list) or not rows:
+            continue
+        total = len(rows)
+        seen = sum(1 for it in rows if isinstance(it, dict) and not it.get('src_gone'))
+        coverage = (seen / total) if total else 0.0
+        kept, removed, var_removed = [], [], 0
+        for it in rows:
+            if not isinstance(it, dict):
+                kept.append(it)
+                continue
+            dead = ''
+            if any(it.get(k) is True for k in _DEAD_TRUE_KEYS) or any(it.get(k) is False for k in _DEAD_FALSE_KEYS):
+                dead = 'flags'
+            st = it.get('status')
+            if not dead and isinstance(st, str) and st.strip().lower() in _DEAD_STATUSES:
+                dead = 'status'
+            if not dead and it.get('src_out') is True:
+                dead = 'source_out'
+            if not dead and coverage >= 0.8:
+                if it.get('src_gone') is True:
+                    dead = 'not_in_source'
+                elif it.get('unavailable_since'):
+                    dead = 'unavailable'
+                else:
+                    n = _pnum(it.get('stock'))
+                    if n is not None and n <= 0:
+                        dead = 'stock_zero'
+            if dead:
+                removed.append((dead, it))
+                continue
+            # شيل المقاسات/العروض النافدة، ولو كله نافد → المنتج نفسه يتحذف
+            ex = it.get('extra')
+            if isinstance(ex, dict):
+                all_dead = False
+                for key in ('variants_detailed', 'variants', 'offers'):
+                    vs = ex.get(key)
+                    if not isinstance(vs, list) or not vs:
+                        continue
+                    alive = [v for v in vs if not _variant_dead(v)]
+                    if len(alive) != len(vs):
+                        var_removed += len(vs) - len(alive)
+                        if alive:
+                            ex[key] = alive
+                        else:
+                            all_dead = True
+                            break
+                if all_dead:
+                    removed.append(('all_variants_dead', it))
+                    continue
+            kept.append(it)
+        if removed and (len(removed) / max(1, total)) > 0.7:
+            report[plat] = {'skipped': 'too_many', 'total': total, 'would_remove': len(removed), 'coverage': round(coverage, 3)}
+            log(f'⚠️ {plat}: {len(removed)}/{total} هيتحذفوا — نسبة عالية، الحذف اتوقف للمراجعة')
+            continue
+        if not removed and not var_removed:
+            report[plat] = {'total': total, 'removed': 0, 'coverage': round(coverage, 3)}
+            continue
+        for why, it in removed:
+            archive.append({'at': NOW, 'plat': plat, 'id': str(it.get('id') or ''), 'name': str(it.get('name') or '')[:120], 'why': why})
+        jsave(name, kept)
+        reasons = {}
+        for why, _it in removed:
+            reasons[why] = reasons.get(why, 0) + 1
+        report[plat] = {'total': total, 'kept': len(kept), 'removed': len(removed), 'reasons': reasons,
+                        'variants_removed': var_removed, 'coverage': round(coverage, 3)}
+        log(f'🧹 {plat}: اتحذف {len(removed)} من {total} | مقاسات {var_removed} | {reasons}')
+    jsave('purge_archive.json', archive[-4000:])
+    jsave('purge_report.json', {'at': NOW, 'platforms': report})
+    return report
+
+
 # ---------------------------------------------------------------- Open production: normalized virtual stock; source inventory never limits sales.
 def force_open_production():
     open_qty = 999999
@@ -2264,6 +2387,9 @@ def force_open_production():
         if not isinstance(item, dict): return
         item['stock'] = open_qty
         item.pop('unavailable_since', None)
+        # الأعلام دي بتتقرأ في purge_unavailable_products قبل الخطوة دي — بنشيلها بعد ما نخلص
+        item.pop('src_out', None)
+        item.pop('src_gone', None)
         ex = item.get('extra')
         if not isinstance(ex, dict): return
         for key in ('variants_detailed', 'variants', 'offers'):
@@ -3742,8 +3868,13 @@ if __name__ == '__main__':
     normalize_physical_commissions()
     remove_blocked_products()
     repair_product_categories()
-    rebuild_lite()
+    try:
+        summary['purged_unavailable'] = purge_unavailable_products()
+    except Exception as _pe:
+        log('❌ purge unavailable failed:', str(_pe)[:200])
+        summary['purged_unavailable'] = {'error': str(_pe)[:200]}
     force_open_production()
+    rebuild_lite()
     _cezma_index_signature = ''
     _cezma_index_rows = None
     try:
