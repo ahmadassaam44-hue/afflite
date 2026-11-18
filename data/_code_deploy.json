@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T11:13:53+00:00",
+ "at": "2026-11-18T11:16:41+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -15,8 +15,7 @@
   "dashboard/products.php",
   "dashboard/cart.php",
   "dashboard/wishlist.php",
-  ".htaccess",
-  "diag_open_site.php"
+  ".htaccess"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -125,13 +124,6 @@
    "local_size": 6202,
    "remote_size": 6202,
    "remote_md5": "7027ade05b0367a3309201ad0a053228"
-  },
-  {
-   "file": "diag_open_site.php",
-   "local_md5": "9e91c45763953da884dfbaf582fa4f2d",
-   "local_size": 784,
-   "remote_size": 784,
-   "remote_md5": "9e91c45763953da884dfbaf582fa4f2d"
   }
  ],
  "unverified": [],
@@ -147,17 +139,17 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "502|2584|1.232767",
-   "time_s": 1.232767,
-   "title": "502 — وفرنهالك",
+   "status": "200|228979|3.032938",
+   "time_s": 3.032938,
+   "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.638633",
-   "time_s": 0.638633,
+   "status": "200|10167|0.661670",
+   "time_s": 0.66167,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -165,41 +157,41 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "502|2584|0.608443",
-   "time_s": 0.608443,
-   "title": "502 — وفرنهالك",
+   "status": "200|50218|0.842925",
+   "time_s": 0.842925,
+   "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "502|2584|0.603300",
-   "time_s": 0.6033,
-   "title": "502 — وفرنهالك",
+   "status": "302|0|0.639487",
+   "time_s": 0.639487,
+   "title": null,
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
+   "head": "",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "502|2584|0.639937",
-   "time_s": 0.639937,
-   "title": "502 — وفرنهالك",
+   "status": "200|67146|0.995698",
+   "time_s": 0.995698,
+   "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
+   "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "502|2584|0.672772",
-   "time_s": 0.672772,
-   "title": "502 — وفرنهالك",
+   "status": "302|0|0.690002",
+   "time_s": 0.690002,
+   "title": null,
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
+   "head": "",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T11:14:54+00:00"
+ "checked_at": "2026-11-18T11:17:40+00:00"
 }
