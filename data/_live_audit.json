@@ -1,5 +1,5 @@
 {
- "at": "2026-11-17T21:15:50+00:00",
+ "at": "2026-11-18T07:58:28+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -109,11 +109,11 @@
    "same_as_git": true
   },
   "assets/style.css": {
-   "remote_size": 160662,
-   "remote_md5": "231cfa935b723ae232790f8399750715",
+   "remote_size": 161171,
+   "remote_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0",
    "local_size": 160662,
    "local_md5": "231cfa935b723ae232790f8399750715",
-   "same_as_git": true
+   "same_as_git": false
   },
   "assets/icon-512.png": {
    "remote_size": 8286,
@@ -124,9 +124,9 @@
   },
   "data/catalog_counts.json": {
    "remote_size": 861,
-   "remote_md5": "e9142aa66dfea8e720a4f5c6e3997459",
+   "remote_md5": "f033144f99525e55654a9bca94f79fe1",
    "local_size": 861,
-   "local_md5": "e9142aa66dfea8e720a4f5c6e3997459",
+   "local_md5": "f033144f99525e55654a9bca94f79fe1",
    "same_as_git": true
   }
  },
