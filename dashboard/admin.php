@@ -199,6 +199,118 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
         $msg = 'تم تحديث حالة الطلب بنجاح ✅' . (($st_reason_q !== '' && in_array($new_key, ['cancelled', 'no_answer', 'returned'], true)) ? ' — وحُفظ السبب وهيظهر للمسوق والعميل' : '') . (isset($msg_extra) ? '<br>' . $msg_extra : '');
     }
 }
+// 🔁 تغيير حالة عدة طلبات مرة واحدة + سبب واحد للكل (بكتابة واحدة للملف بدل طلب طلب)
+// نفس منطق العمولات بتاع الطلب الواحد: تحرير عند التسليم، سحب عند الإلغاء/الإرجاع/عدم الرد.
+if (isset($_POST['bulk_status']) && isset($_POST['bulk_order_nos']) && is_array($_POST['bulk_order_nos'])) {
+    if (!csrf_ok()) {
+        $msg = '⛔ انتهت صلاحية النموذج — حدّث الصفحة وحاول تاني';
+    } else {
+        $bk_new    = status_key((string)$_POST['bulk_status']);
+        $bk_reason = mb_substr(trim((string)($_POST['bulk_status_reason'] ?? '')), 0, 300);
+        $bk_all    = jload('orders.json', []);
+        if (!is_array($bk_all)) $bk_all = [];
+
+        // تحويل القيم المحددة (رقم الطلب أو idx|الفهرس|التاريخ) لفهارس
+        $bk_targets = [];
+        foreach ((array)$_POST['bulk_order_nos'] as $bk_pv) {
+            $bk_pv = (string)$bk_pv;
+            if (strpos($bk_pv, 'idx|') === 0) {
+                $bk_pp = explode('|', $bk_pv);
+                $bk_i  = (int)($bk_pp[1] ?? -1);
+                if (isset($bk_all[$bk_i])) $bk_targets[$bk_i] = $bk_all[$bk_i];
+                continue;
+            }
+            foreach ($bk_all as $bk_k => $bk_o) {
+                if ((string)($bk_o['order_no'] ?? '') === $bk_pv) { $bk_targets[$bk_k] = $bk_o; break; }
+            }
+        }
+
+        if (!$bk_targets) {
+            $msg = '⚠️ مفيش طلبات محددة — علّم على الطلبات الأول.';
+        } else {
+            $bk_changed = 0; $bk_same = 0; $bk_rel = 0.0; $bk_rev = 0.0;
+            $bk_notifs = []; $bk_rels = [];
+            foreach ($bk_targets as $bk_i => $bk_o) {
+                $bk_old = status_key($bk_o['status'] ?? 'pending');
+                if ($bk_old === $bk_new) { $bk_same++; continue; }
+                $bk_ref  = (string)($bk_o['ref'] ?? '');
+                $bk_ern  = (float)($bk_o['m_earn'] ?? 0);
+                $bk_mail = '';
+                if ($bk_ref !== '' && ($bk_mk = find_marketer_by_code($bk_ref))) $bk_mail = (string)($bk_mk['email'] ?? '');
+
+                if ($bk_mail !== '' && $bk_ern > 0) {
+                    if (status_releases_commission($bk_new) && !status_releases_commission($bk_old)) {
+                        commission_release($bk_mail, $bk_ern, $bk_i, 'تأكيد تسليم الأوردر (دفعة واحدة)');
+                        team_commission_release_for_order($bk_i, 'تأكيد تسليم الأوردر (دفعة واحدة)');
+                        $bk_rel += $bk_ern;
+                    } elseif (status_reverses_commission($bk_new) && !status_reverses_commission($bk_old)) {
+                        commission_reverse($bk_mail, $bk_ern, $bk_i, status_label($bk_new));
+                        team_commission_reverse_for_order($bk_i, status_label($bk_new));
+                        $bk_rev += $bk_ern;
+                    } elseif (status_releases_commission($bk_old) && !status_releases_commission($bk_new)) {
+                        commission_reverse($bk_mail, $bk_ern, $bk_i, 'تراجع عن التسليم: ' . status_label($bk_new));
+                        team_commission_reverse_for_order($bk_i, 'تراجع عن التسليم: ' . status_label($bk_new));
+                        $bk_rev += $bk_ern;
+                    }
+                }
+
+                // إشعارات العميل والمسوق — بتتجمّع وتتكتب مرة واحدة في الآخر
+                $bk_lbl = status_label($bk_new);
+                $bk_sfx = ($bk_reason !== '' && in_array($bk_new, ['cancelled', 'no_answer', 'returned'], true)) ? ' — السبب: ' . $bk_reason : '';
+                if (!empty($bk_o['user']) && strpos((string)$bk_o['user'], 'guest:') !== 0) {
+                    $bk_notifs[] = ['for' => strtolower((string)$bk_o['user']), 'text' => '📦 حالة طلبك أصبحت: ' . $bk_lbl . $bk_sfx, 'link' => 'dashboard/orders.php'];
+                }
+                if ($bk_mail !== '') {
+                    $bk_notifs[] = ['for' => strtolower($bk_mail), 'text' => '📦 حالة أوردر من لينكك: ' . $bk_lbl . $bk_sfx, 'link' => 'dashboard/marketer.php'];
+                }
+                $bk_rels[(string)($bk_o['order_no'] ?? ('#' . $bk_i))] = $bk_lbl;
+                $bk_changed++;
+            }
+
+            if ($bk_changed > 0) {
+                // كتابة واحدة لكل الحالات + حفظ السبب على كل طلب
+                jupdate('orders.json', function (&$os) use ($bk_targets, $bk_new, $bk_reason) {
+                    $n = 0;
+                    foreach ($bk_targets as $ti => $_) {
+                        if (!isset($os[$ti])) continue;
+                        if (status_key($os[$ti]['status'] ?? 'pending') === $bk_new) continue;
+                        $os[$ti]['status']     = $bk_new;
+                        $os[$ti]['status_at']  = date('c');
+                        $os[$ti]['comm_state'] = status_releases_commission($bk_new) ? 'confirmed'
+                                               : (status_reverses_commission($bk_new) ? 'reversed' : 'pending');
+                        if ($bk_reason !== '' && in_array($bk_new, ['cancelled', 'no_answer'], true)) $os[$ti]['cancel_reason'] = 'الإدارة: ' . $bk_reason;
+                        if ($bk_reason !== '' && $bk_new === 'returned') $os[$ti]['return_reason'] = 'الإدارة: ' . $bk_reason;
+                        $os[$ti]['status_updated_by'] = 'admin_bulk';
+                        $n++;
+                    }
+                    return $n > 0;
+                }, []);
+
+                if ($bk_notifs) {
+                    foreach ($bk_notifs as &$bk_n) { $bk_n['at'] = date('c'); $bk_n['read'] = false; }
+                    unset($bk_n);
+                    jupdate('notifications.json', function (&$nn) use ($bk_notifs) {
+                        if (!is_array($nn)) $nn = [];
+                        foreach ($bk_notifs as $row) $nn[] = $row;
+                        if (count($nn) > 500) $nn = array_slice($nn, -500);
+                        return true;
+                    }, []);
+                }
+
+                log_audit('order_status_bulk', '-', ['to' => $bk_new, 'count' => $bk_changed,
+                    'reason' => $bk_reason, 'released' => $bk_rel, 'reversed' => $bk_rev]);
+            }
+
+            $msg = '✅ اتحدثت حالة <b>' . $bk_changed . '</b> طلب لـ «' . esc(status_label($bk_new)) . '» في عملية واحدة'
+                 . ($bk_same > 0 ? ' — <span class="mut">' . $bk_same . ' كانوا بنفس الحالة واتخطوا</span>' : '')
+                 . ($bk_reason !== '' ? ' — السبب اتحفظ: «' . esc($bk_reason) . '» (بيظهر للمسوق والعميل)' : '')
+                 . ($bk_rel > 0 ? '<br>✅ اتحررت عمولة ' . number_format($bk_rel, 2) . ' ج.م' : '')
+                 . ($bk_rev > 0 ? '<br>↩️ اتسحبت عمولة ' . number_format($bk_rev, 2) . ' ج.م' : '');
+        }
+        $orders = jload('orders.json', [], false);
+    }
+}
+
 // ملاحظة الإدارة على الطلب (سجل ملاحظات بتتراكم على الطلب نفسه)
 if (isset($_POST['order_note_idx'])) {
     $ni = (int)$_POST['order_note_idx'];
@@ -1459,7 +1571,7 @@ elseif ($tab === 'orders') {
     $bk_last = $GLOBALS['_ADM_SAFKA_BULK'] ?? null;
     if ($saf_pending_nos || $bk_last) {
         $bk_map = ['sent' => ['✅ اتسجل', '#dcfce7', 'var(--tone-15803d)'], 'duplicate' => ['♻️ موجود بالفعل', '#dcfce7', 'var(--tone-15803d)'], 'dry' => ['🧪 تجربة', '#e0e7ff', 'var(--electro-blue)'], 'off' => ['⏸ متوقف', '#f1f5f9', 'var(--slate-500)'], 'failed' => ['⚠️ فشل', '#fee2e2', 'var(--red-700)']];
-        echo '<div class="card" style="margin-bottom:14px"><h2 style="font-size:16px">🔄 تسجيل الطلبات في صفقة (دفعة واحدة)</h2>';
+        echo '<details class="card" style="margin-bottom:14px"' . ($bk_last ? ' open' : '') . '><summary style="cursor:pointer;font-weight:900;font-size:15px">🔗 صفقة: تسجيل الطلبات دفعة واحدة' . (count($saf_pending_nos) > 0 ? ' <span class="adm-badge-cnt">' . count($saf_pending_nos) . '</span>' : ' ✅') . '</summary>';
         echo '<p class="mut" style="margin:6px 0 10px">' . (count($saf_pending_nos) > 0
                 ? 'فيه <b>' . count($saf_pending_nos) . '</b> طلب لسه مش متسجل عند صفقة. الزرار بيبعتهم <b>في عملية واحدة</b> وبيحفظ ملف الطلبات <b>مرة واحدة</b> في الآخر — أسرع بكتير من تحديث كل طلب لوحده.'
                 : 'كل طلبات صفقة متسجلة ✅ — مفيش حاجة محتاجة تحديث.') . '</p>';
@@ -1483,7 +1595,7 @@ elseif ($tab === 'orders') {
             }
             echo '</table></details>';
         }
-        echo '</div>';
+        echo '</details>';
     }
 
     // ===== تعديل كامل لطلب محدد (?tab=orders&edit=ORD-...) — كل التفاصيل بما فيها العمولة =====
@@ -1534,6 +1646,26 @@ elseif ($tab === 'orders') {
            . '<button class="btn sm" style="background:#b91c1c;border-color:#b91c1c;color:#fff">🗑 حذف الطلب نهائيًا</button>'
            . '</form></div>';
     }
+    // 🔁 شريط «تغيير حالة المحدد» — غير الحالة (والسبب) لعشرات الطلبات مرة واحدة، وبكتابة واحدة للملف
+    echo '<form id="ordBulkStatus" method="post" data-confirm="تغيير حالة الطلبات المحددة؟ العمولات هتتظبط تلقائيًا (تحرير عند التسليم وسحب عند الإلغاء/الإرجاع)." style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 4px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px">' . csrf_field()
+        . '<b style="font-size:13px">🔁 تغيير حالة المحدد:</b>'
+        . '<select name="bulk_status" required style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-weight:700">'
+        . '<option value="">— اختار الحالة —</option>';
+    foreach ($statuses as $bk_opt) {
+        echo '<option value="' . esc($bk_opt) . '">' . esc(wf_ui_plain(status_label($bk_opt))) . '</option>';
+    }
+    echo '</select>'
+        . '<input name="bulk_status_reason" maxlength="300" placeholder="السبب (للإلغاء/الإرجاع/عدم الرد) — يظهر للمسوق والعميل" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;min-width:260px">'
+        . '<button class="btn pri sm" type="submit">💾 تطبيق على المحدد</button>'
+        . '<span class="mut" style="font-size:12px">علّم على الطلبات من مربع «تحديد» في الجدول، أو استخدم «تحديد كل المعروض» تحت.</span>'
+        . '</form>'
+        . '<script>(function(){var f=document.getElementById("ordBulkStatus");if(!f)return;'
+        . 'f.addEventListener("submit",function(){'
+        . 'f.querySelectorAll("input[name=\'bulk_order_nos\']").forEach(function(x){x.remove()});'
+        . 'document.querySelectorAll(".ord-pick").forEach(function(c){if(c.checked){var h=document.createElement("input");h.type="hidden";h.name="bulk_order_nos[]";h.value=c.value;f.appendChild(h)}});'
+        . 'if(!f.querySelector("input[name=\'bulk_order_nos\']")){window.wfToast&&window.wfToast("حدد طلب واحد على الأقل من مربعات التحديد","error")}'
+        . '},true);})();</script>';
+
     echo '<form id="ordBulkForm" method="post" data-confirm="حذف كل الطلبات المحددة نهائيًا من النظام؟ الحذف النهائي مابيرجعش، وأي عمولة لسه مفعّلة هتتسحب من مسوقها (زي الإلغاء). للإلغاء العادي استخدم تغيير الحالة بدل الحذف." style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">' . csrf_field()
         . '<input type="hidden" name="bulk_delete_orders" value="1">'
         . '<label style="display:inline-flex;gap:6px;align-items:center;margin:0"><input type="checkbox" onchange="document.querySelectorAll(\'.ord-pick\').forEach(function(c){c.checked=this.checked;},this)"> تحديد كل المعروض</label>'
@@ -1563,6 +1695,11 @@ elseif ($tab === 'orders') {
            . '<input type="hidden" name="adm_order_action" value="delete"><input type="hidden" name="adm_order_no" value="' . esc($del_val) . '">'
            . '<button class="btn sm" style="color:#b91c1c;border-color:#fecaca" title="حذف الطلب نهائيًا من النظام">🗑 حذف نهائي</button></form>';
         // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
+        // 🧾 سبب الإلغاء/الإرجاع/عدم الرد — ظاهر في الصف نفسه (مش مستخبي في الديالوج)
+        $o_reason = trim((string)($o['cancel_reason'] ?? $o['return_reason'] ?? ''));
+        if ($o_reason !== '') {
+            echo '<div style="margin-top:6px;font-size:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:5px 8px;color:#9a3412"><b>سبب:</b> ' . esc(mb_substr($o_reason, 0, 80)) . '</div>';
+        }
         echo '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--slate-500)">📝 ملاحظة الإدارة</summary>'
            . '<form method="post" data-ui="u-67647882 d19" style="margin-top:6px"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></details>';
         // 🔗 طلبات منصة صفقة: نعرض حالة التسجيل عند صفقة (أول ما العميل يبعت الطلب بيتسجل تلقائيًا)
