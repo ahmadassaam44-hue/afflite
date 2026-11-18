@@ -75,13 +75,13 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 350571,
+   "remote_size": 389804,
    "on_server": true,
    "local_size": 343209,
    "match": false
   },
   "dashboard/layout.php": {
-   "remote_size": 39156,
+   "remote_size": 40690,
    "on_server": true,
    "local_size": 38685,
    "match": false
@@ -93,10 +93,10 @@
    "match": false
   },
   "assets/style.css": {
-   "remote_size": 160662,
+   "remote_size": 161171,
    "on_server": true,
    "local_size": 160662,
-   "match": true
+   "match": false
   }
  }
 }
