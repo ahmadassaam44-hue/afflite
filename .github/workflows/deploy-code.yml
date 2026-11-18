@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-11T20:35Z — قياس أداء الاستضافة + زمن استجابة الصفحات
+# trigger-bump: 2026-11-11T21:00Z — شيل ملف قياس الأداء + إعادة محاولة فحص الموقع
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -31,7 +31,7 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
-          INPUT_FILES: ${{ github.event.inputs.files || 'config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php diag_perf7.php' }}
+          INPUT_FILES: ${{ github.event.inputs.files || 'config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php' }}
         run: |
           python3 - <<'PY'
           import os, json, ftplib, hashlib, datetime, socket, time
@@ -188,15 +188,20 @@ jobs:
       - name: فحص الموقع الحقيقي (بعد تخطي فحص الجافاسكريبت)
         run: |
           python3 - <<'PY'
-          import json, re, subprocess, datetime
+          import json, re, subprocess, datetime, time
 
           rep = json.load(open('data/_code_deploy.json', encoding='utf-8'))
           UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
           BASE = 'https://wafirinhalk.ct.ws'
 
           def curl(args, url):
-              p = subprocess.run(['curl', '-sS', '--max-time', '30', '-A', UA] + args + [url],
-                                 capture_output=True, text=True)
+              # إعادة محاولة: الاستضافة بترفض أحيانًا طلبات جاية من IP المخدم (تحت 000)
+              for attempt in range(3):
+                  p = subprocess.run(['curl', '-sS', '--max-time', '30', '-A', UA] + args + [url],
+                                     capture_output=True, text=True)
+                  if (p.stdout or '').strip():
+                      return p.stdout
+                  time.sleep(3 + attempt * 4)
               return p.stdout or ''
 
           home = curl(['-D', '/tmp/h.txt'], BASE + '/')
