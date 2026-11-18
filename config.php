@@ -7032,9 +7032,35 @@ function wf_closure_page() {
     exit;
 }
 
+// ⚠️ لا تحرّك الشيك ده لفوق: لازم يبقى في آخر الملف بعد تحميل كل الملفات والدوال
+// (أي استدعاء لـ jload/site_setting قبل supabase_docs.php بيكسر كل الصفحات).
 if (PHP_SAPI !== 'cli' && !defined('WF_NO_CLOSURE') && wf_site_closed()) {
-    $wf_self = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $wf_script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $wf_self   = basename($wf_script);
+    $wf_dir    = trim(str_replace('\\', '/', dirname($wf_script)), '/');
     // صفحات لازمة عشان الأدمن يقدر يدخل ويدير الموقع وهو مقفول
     $wf_closure_allow = in_array($wf_self, ['login.php', 'logout.php', 'google_start.php', 'google_callback.php', 'admin.php'], true);
-    if (!$wf_closure_allow && !is_admin_user()) wf_closure_page();
+    // صفحات المتجر العامة — بتتقفل للزوار والأدمن مع بعض (الرئيسية أهمها)
+    $wf_storefront_files = [
+        'index.php', 'landing.php', 'register.php', 'affiliate-register.php',
+        'product.php', 'products.php', 'cart.php', 'checkout_cart.php', 'checkout.php',
+        'wishlist.php', 'quick_order.php', 'order_success.php', 'track_order.php',
+        'order_track.php', 'support.php',
+        'store.php', 'digital.php', 'social.php', 'sections.php', 'pages.php',
+        'affiliate-program.php', 'affiliate_programs.php', 'amz.php', 'jmi.php',
+    ];
+    $wf_is_storefront = in_array($wf_self, $wf_storefront_files, true)
+        && ($wf_dir === '' || $wf_dir === 'dashboard');
+    $wf_admin_in = is_admin_user();
+    // معاينة الأدمن للمتجر وهو مقفول: ضيف ?wf_preview=1 مرة واحدة (بتفضل ساعة)
+    if ($wf_admin_in && isset($_GET['wf_preview'])) {
+        if (!headers_sent()) {
+            $wf_secure = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off');
+            setcookie('wf_preview', '1', time() + 3600, '/', '', $wf_secure, true);
+        }
+        $wf_is_storefront = false;
+    } elseif ($wf_admin_in && ($_COOKIE['wf_preview'] ?? '') === '1') {
+        $wf_is_storefront = false;
+    }
+    if (!$wf_closure_allow && ($wf_is_storefront || !$wf_admin_in)) wf_closure_page();
 }
