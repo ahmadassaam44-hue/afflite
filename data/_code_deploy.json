@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T10:56:57+00:00",
+ "at": "2026-11-18T10:58:45+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -15,7 +15,7 @@
   "dashboard/products.php",
   "dashboard/cart.php",
   "dashboard/wishlist.php",
-  "diag_err9.php"
+  "diag_closed1.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -36,10 +36,10 @@
   },
   {
    "file": "config.php",
-   "local_md5": "f43cf7ef3f18f4458e1093ff048837d9",
-   "local_size": 415708,
-   "remote_size": 415708,
-   "remote_md5": "f43cf7ef3f18f4458e1093ff048837d9"
+   "local_md5": "977a3e9c751e5e7d530e7c4bb512328c",
+   "local_size": 420946,
+   "remote_size": 420946,
+   "remote_md5": "977a3e9c751e5e7d530e7c4bb512328c"
   },
   {
    "file": "safka_order_lib.php",
@@ -119,11 +119,11 @@
    "remote_md5": "4a00647cb7f68970f489f7c046728a10"
   },
   {
-   "file": "diag_err9.php",
-   "local_md5": "a69af8d64685995243c89adaed561097",
-   "local_size": 767,
-   "remote_size": 767,
-   "remote_md5": "a69af8d64685995243c89adaed561097"
+   "file": "diag_closed1.php",
+   "local_md5": "86b53e1d96dcdb535e26894acc415ceb",
+   "local_size": 694,
+   "remote_size": 694,
+   "remote_md5": "86b53e1d96dcdb535e26894acc415ceb"
   }
  ],
  "unverified": [],
@@ -133,8 +133,8 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|228241|2.926057",
-   "time_s": 2.926057,
+   "status": "200|227401|2.078694",
+   "time_s": 2.078694,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -142,8 +142,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.478062",
-   "time_s": 0.478062,
+   "status": "200|10167|0.445560",
+   "time_s": 0.44556,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -151,8 +151,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.641478",
-   "time_s": 0.641478,
+   "status": "200|50218|0.671516",
+   "time_s": 0.671516,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
@@ -160,8 +160,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.526007",
-   "time_s": 0.526007,
+   "status": "302|0|0.483180",
+   "time_s": 0.48318,
    "title": null,
    "php_error": false,
    "head": "",
@@ -169,8 +169,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "200|67146|0.810180",
-   "time_s": 0.81018,
+   "status": "200|67146|0.799101",
+   "time_s": 0.799101,
    "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -178,8 +178,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.591491",
-   "time_s": 0.591491,
+   "status": "302|0|0.534310",
+   "time_s": 0.53431,
    "title": null,
    "php_error": false,
    "head": "",
@@ -187,5 +187,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T10:57:41+00:00"
+ "checked_at": "2026-11-18T10:59:30+00:00"
 }
