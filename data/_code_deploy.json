@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T11:04:43+00:00",
+ "at": "2026-11-18T11:07:55+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -35,10 +35,10 @@
   },
   {
    "file": "config.php",
-   "local_md5": "2ef4d10f3bc7593d8774b7d3a1aa8ce3",
-   "local_size": 422686,
-   "remote_size": 422686,
-   "remote_md5": "2ef4d10f3bc7593d8774b7d3a1aa8ce3"
+   "local_md5": "95dd47a2ec9172a745c45e581777c51f",
+   "local_size": 422708,
+   "remote_size": 422708,
+   "remote_md5": "95dd47a2ec9172a745c45e581777c51f"
   },
   {
    "file": "safka_order_lib.php",
@@ -125,17 +125,17 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "503|2464|0.812698",
-   "time_s": 0.812698,
-   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
+   "status": "502|2584|0.866510",
+   "time_s": 0.86651,
+   "title": "502 — وفرنهالك",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.645188",
-   "time_s": 0.645188,
+   "status": "200|10167|1.013024",
+   "time_s": 1.013024,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -143,41 +143,41 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "503|2464|0.677224",
-   "time_s": 0.677224,
-   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
+   "status": "502|2584|0.489038",
+   "time_s": 0.489038,
+   "title": "502 — وفرنهالك",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "503|2464|0.544551",
-   "time_s": 0.544551,
-   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
+   "status": "502|2584|0.465085",
+   "time_s": 0.465085,
+   "title": "502 — وفرنهالك",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "503|2464|0.595621",
-   "time_s": 0.595621,
-   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
+   "status": "502|2584|0.466789",
+   "time_s": 0.466789,
+   "title": "502 — وفرنهالك",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "503|2464|0.672851",
-   "time_s": 0.672851,
-   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
+   "status": "502|2584|0.541264",
+   "time_s": 0.541264,
+   "title": "502 — وفرنهالك",
    "php_error": false,
-   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>502 — وفرنهالك</title><style>*{box-sizi",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T11:05:32+00:00"
+ "checked_at": "2026-11-18T11:08:36+00:00"
 }
