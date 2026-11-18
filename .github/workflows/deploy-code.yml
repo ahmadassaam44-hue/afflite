@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-18T16:45Z — تنظيف نهائي للملفات المؤقتة
+# trigger-bump: 2026-11-18T17:05Z — فحص لاندنج بمنتج موجود
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -232,7 +232,7 @@ jobs:
 
           rep['challenge'] = 'solved' if re.fullmatch(r'[0-9a-f]{16,64}', cookie or '') else 'not_bypassed'
           live = {}
-          for path in ['/', '/login.php', '/dashboard/cart.php', '/dashboard/checkout_cart.php', '/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI', '/dashboard/products.php']:
+          for path in ['/', '/login.php', '/dashboard/cart.php', '/dashboard/checkout_cart.php', '/landing.php?id=soyt-shyrt-aokland-DcpHNY', '/dashboard/products.php']:
               args = (['-b', '__test=' + cookie] if cookie else []) + ['-w', '\n@@%{http_code}|%{size_download}|%{time_total}']
               body = curl(args, BASE + path)
               body, _, meta = body.rpartition('\n@@')
