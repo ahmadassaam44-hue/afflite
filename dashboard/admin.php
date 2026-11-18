@@ -711,6 +711,24 @@ if (isset($_POST['safka_retry'])) {
     }
     $orders = jload('orders.json', [], false);
 }
+// 🚧 قفل/فتح الموقع للزوار (ضغطة واحدة) — الأدمن بيكمل شغل عادي في الحالتين.
+if (isset($_POST['site_toggle_closed'])) {
+    if (!csrf_ok()) {
+        $msg = '⛔ انتهت صلاحية الجلسة — حدّث الصفحة وحاول تاني';
+    } else {
+        $want_closed = ((string)$_POST['site_toggle_closed'] === '1') ? '1' : '0';
+        jupdate('settings.json', function (&$st) use ($want_closed) {
+            if (!is_array($st)) $st = [];
+            $st['site_closed'] = $want_closed;
+            return true;
+        }, []);
+        log_audit('site_toggle_closed', $want_closed, ['by' => admin_actor()]);
+        $msg = $want_closed === '1'
+            ? '🚧 الموقع اتقفل للزوار — أي حد يدخل هيشوف صفحة الإغلاق، وإنت بتكمل عادي.'
+            : '✅ الموقع رجع مفتوح للزوار.';
+    }
+}
+
 // 🔄 تحديث جماعي لكل طلبات صفقة اللي لسه مش متسجلة — عملية واحدة + كتابة واحدة للملف (بدل طلب طلب).
 if (isset($_POST['safka_bulk'])) {
     if (!csrf_ok()) {
@@ -4622,6 +4640,18 @@ elseif ($tab === 'settings') {
         $GLOBALS['_st_cache'] = null;
     }
     $st = jload('settings.json', []); if (!is_array($st)) $st = [];
+    // 🚧 حالة الموقع + زرار قفل/فتح واحد
+    // نقراها من الملف مباشرة (مش من الكاش) عشان تظهر صح بعد الضغط على الزرار
+    $wf_closed_now = in_array(strtolower(trim((string)($st['site_closed'] ?? '0'))), ['1', 'on', 'yes', 'true', 'closed', 'مقفول'], true);
+    echo '<div class="adm-box" style="border:1px solid ' . ($wf_closed_now ? '#fecaca' : '#bbf7d0') . ';background:' . ($wf_closed_now ? '#fef2f2' : '#f0fdf4') . '">'
+       . '<h2 style="font-size:16px">' . ($wf_closed_now ? '🚧 الموقع مقفول للزوار' : '✅ الموقع مفتوح للزوار') . '</h2>'
+       . '<p class="mut" style="margin:6px 0 10px">' . ($wf_closed_now
+            ? 'أي زائر بيدخل دلوقتي بيشوف صفحة إغلاق برقم التواصل. إنت كأدمن شغال عادي (اللوحة والطلبات والمنتجات كلها متاحة).'
+            : 'اضغط الزرار لو عايز تقفل المتجر مؤقتًا (مثلًا وقت مشكلة في الشبكة) — الأدمن بيكمل شغل عادي.') . '</p>'
+       . '<form method="post" style="display:inline">' . csrf_field()
+       . '<input type="hidden" name="site_toggle_closed" value="' . ($wf_closed_now ? '0' : '1') . '">'
+       . '<button class="btn ' . ($wf_closed_now ? 'pri' : '') . ' sm" type="submit">' . ($wf_closed_now ? '✅ افتح الموقع للزوار' : '🚧 اقفل الموقع مؤقتًا') . '</button>'
+       . '</form></div>';
     echo '<div class="adm-box"><h2><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-settings></use></svg> إعدادات المتجر والنظام</h2><table class="data-table rtable" data-ui-table="pending" aria-busy="true">';
     echo '<tr><td data-ui="u-6f21dd9e dc d5c">اسم المتجر</td><td>' . esc(BRAND) . '</td></tr>';
     echo '<tr><td data-ui="u-00703584 dc">إصدار النظام</td><td>' . esc(SITE_VER) . '</td></tr>';
