@@ -140,6 +140,13 @@ if (isset($_POST['pay_confirm_idx'])) {
 }
 if (isset($_POST['order_idx'], $_POST['new_status'])) {
     $i = (int)$_POST['order_idx'];
+    // بنحدد الطلب برقمه (order_no) لو موجود — عشان لو صف اتشال من الجدول الفهارس بتتزحزح
+    $adm_no_hint = trim((string)($_POST['order_no'] ?? ''));
+    if ($adm_no_hint !== '') {
+        foreach ((array)jload('orders.json', [], false) as $hint_k => $hint_row) {
+            if ((string)($hint_row['order_no'] ?? '') === $adm_no_hint) { $i = (int)$hint_k; break; }
+        }
+    }
     $new_key  = status_key($_POST['new_status']);
     $old_orders = jload('orders.json', []);
     $old_key  = status_key($old_orders[$i]['status'] ?? 'pending');
@@ -337,9 +344,23 @@ if (isset($_POST['bulk_status']) && isset($_POST['bulk_order_nos']) && is_array(
 // ملاحظة الإدارة على الطلب (سجل ملاحظات بتتراكم على الطلب نفسه)
 if (isset($_POST['order_note_idx'])) {
     $ni = (int)$_POST['order_note_idx'];
+    $note_no_hint = trim((string)($_POST['order_note_no'] ?? ''));
+    if ($note_no_hint !== '') {
+        foreach ((array)jload('orders.json', [], false) as $nh_k => $nh_row) {
+            if ((string)($nh_row['order_no'] ?? '') === $note_no_hint) { $ni = (int)$nh_k; break; }
+        }
+    }
     $ntext = mb_substr(trim((string)($_POST['order_note_text'] ?? '')), 0, 500);
+    $note_ajax = !empty($_POST['ajax']);
+    $note_json = function ($arr) use ($note_ajax) {
+        if (!$note_ajax) return false;
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($arr, JSON_UNESCAPED_UNICODE);
+        exit;
+    };
     if ($ntext === '') {
         $msg = 'اكتب نص الملاحظة الأول.';
+        $note_json(['ok' => false, 'error' => 'اكتب نص الملاحظة الأول.']);
     } else {
         $saved_note = false;
         $saved_ref = '';
@@ -356,6 +377,7 @@ if (isset($_POST['order_note_idx'])) {
         }, []);
         if ($saved_note) {
             $msg = 'تم حفظ ملاحظة الإدارة ✅';
+            $note_json(['ok' => true, 'at' => date('H:i'), 'note' => esc($ntext)]);
             log_audit('order_note', '#' . $ni, ['len' => mb_strlen($ntext)]);
             // الملاحظة توصل للمسوق صاحب الطلب في شات الدعم بتاعه + إشعار — مش بس تتخزن على الطلب
             $mk_note = ($saved_ref !== '') ? find_marketer_by_code($saved_ref) : null;
@@ -370,6 +392,7 @@ if (isset($_POST['order_note_idx'])) {
             }
         } else {
             $msg = '⚠️ تعذر حفظ الملاحظة (الطلب غير موجود).';
+            $note_json(['ok' => false, 'error' => 'الطلب مش موجود — حدّث الصفحة']);
         }
     }
     $orders = jload('orders.json', []);
@@ -387,6 +410,16 @@ if (isset($_POST['adm_order_action'], $_POST['adm_order_no']) && (string)$_POST[
     } else {
         $adm_del_res = wf_admin_delete_orders([(string)$_POST['adm_order_no']], (string)($_POST['delete_reason'] ?? ''));
         $msg = !empty($adm_del_res['ok']) ? (string)$adm_del_res['msg'] : ('⚠️ ' . (string)($adm_del_res['msg'] ?? 'تعذر حذف الطلب'));
+        // زرار الحذف في الصف: بيرد JSON عشان الصف يتشال من الجدول من غير إعادة تحميل
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'ok'      => !empty($adm_del_res['ok']),
+                'message' => trim(strip_tags((string)$msg)),
+                'error'   => empty($adm_del_res['ok']) ? trim(strip_tags((string)$msg)) : '',
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
     }
     $orders = jload('orders.json', []);
 }
@@ -1700,7 +1733,7 @@ elseif ($tab === 'orders') {
         // قيمة الحذف: رقم الطلب، وللصفوف القديمة اللي من غير رقم طلب بنستخدم الفهرس + تاريخ الطلب كهوية آمنة
         $del_val = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('idx|' . (int)$idx . '|' . (string)($o['at'] ?? ''));
         $del_lbl = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('#' . ((int)$idx + 1));
-        echo '<tr>';
+        echo '<tr id="ordRow' . (int)$idx . '">';
         echo '<td><input type="checkbox" class="ord-pick" form="ordBulkForm" name="bulk_order_nos[]" value="' . esc($del_val) . '" aria-label="تحديد الطلب للحذف الجماعي"></td>';
         echo '<td><b>#' . ($idx + 1) . '</b><br><span class="mut" dir="ltr">' . esc($o['order_no'] ?? '') . '</span></td>';
         echo '<td dir="ltr">' . esc(substr($o['at'] ?? '', 0, 16)) . '</td>';
@@ -1712,21 +1745,26 @@ elseif ($tab === 'orders') {
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
         echo '<td><form class="ord-status-form" data-ord-idx="' . (int)$idx . '" method="post" data-ui="u-67647882 d19">' . csrf_field()
            . '<input type="hidden" name="order_idx" value="' . (int)$idx . '">'
+           . '<input type="hidden" name="order_no" value="' . esc((string)($o['order_no'] ?? '')) . '">'
            . '<input name="status_reason" maxlength="300" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-bottom:6px">'
            . '<select name="new_status" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
         echo '</select><button class="btn pri sm" style="margin-top:6px" type="submit" title="يحفظ الحالة والسبب مرة واحدة — من غير إعادة تحميل الصفحة">💾 حفظ</button>'
            . '<span class="ord-saved" id="ordSaved' . (int)$idx . '" style="display:none;font-size:12px;font-weight:800;color:var(--tone-15803d);margin-inline-start:6px"></span></form>'
            . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a>'
-           . '<form method="post" data-confirm="حذف الطلب ' . esc($del_lbl) . ' نهائيًا من النظام؟ هيتمسح من قوائم الإدارة والمسوق والعميل ومش هيرجع، وأي عمولة لسه مفعّلة هتتسحب من المسوق (زي الإلغاء). للإلغاء العادي غيّر الحالة بدل الحذف." style="margin-top:6px">' . csrf_field()
+           . '<form class="ord-del-form" data-ord-row="ordRow' . (int)$idx . '" data-ord-label="' . esc($del_lbl) . '" method="post" style="margin-top:6px">' . csrf_field()
            . '<input type="hidden" name="adm_order_action" value="delete"><input type="hidden" name="adm_order_no" value="' . esc($del_val) . '">'
-           . '<button class="btn sm" style="color:#b91c1c;border-color:#fecaca" title="حذف الطلب نهائيًا من النظام">🗑 حذف نهائي</button></form>';
+           . '<button class="btn sm" type="submit" style="color:#b91c1c;border-color:#fecaca" title="حذف الطلب نهائيًا من النظام">🗑 حذف نهائي</button></form>';
         // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
         // 🧾 سبب الإلغاء/الإرجاع/عدم الرد — ظاهر في الصف نفسه (مش مستخبي في الديالوج)
         $o_reason = trim((string)($o['cancel_reason'] ?? $o['return_reason'] ?? ''));
         echo '<div id="ordReason' . (int)$idx . '" style="margin-top:6px;font-size:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:5px 8px;color:#9a3412' . ($o_reason !== '' ? '' : ';display:none') . '">' . ($o_reason !== '' ? '<b>سبب:</b> ' . esc(mb_substr($o_reason, 0, 80)) : '') . '</div>';
         echo '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--slate-500)">📝 ملاحظة الإدارة</summary>'
-           . '<form method="post" data-ui="u-67647882 d19" style="margin-top:6px"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></details>';
+           . '<form class="ord-note-form" data-ord-idx="' . (int)$idx . '" method="post" data-ui="u-67647882 d19" style="margin-top:6px">' . csrf_field()
+           . '<input type="hidden" name="order_note_idx" value="' . (int)$idx . '">'
+           . '<input type="hidden" name="order_note_no" value="' . esc((string)($o['order_no'] ?? '')) . '">'
+           . '<input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h" type="submit">حفظ</button>'
+           . '<span class="note-saved" id="noteSaved' . (int)$idx . '" style="display:none;font-size:12px;font-weight:800;color:var(--tone-15803d);margin-inline-start:6px"></span></form></details>';
         // 🔗 طلبات منصة صفقة: نعرض حالة التسجيل عند صفقة (أول ما العميل يبعت الطلب بيتسجل تلقائيًا)
         $saf = (($o['plat'] ?? '') === 'safqa' && is_array($o['safka'] ?? null)) ? $o['safka'] : null;
         if ($saf) {
@@ -1799,6 +1837,62 @@ elseif ($tab === 'orders') {
         . '}'
         . '})'
         . '.catch(function(){btn.disabled=false;btn.innerHTML=old;if(window.wfToast){window.wfToast("تعذر الاتصال بالسيرفر — الحالة ماتغيرتش","error")}else{alert("تعذر الاتصال بالسيرفر")}});'
+        . '},true);'
+        . '});'
+
+        // 📝 ملاحظة الإدارة: حفظ فوري بدون إعادة تحميل
+        . 'document.querySelectorAll("form.ord-note-form").forEach(function(f){'
+        . 'f.addEventListener("submit",function(ev){'
+        . 'ev.preventDefault();ev.stopPropagation();'
+        . 'var btn=f.querySelector("button[type=submit]"),idx=f.getAttribute("data-ord-idx");'
+        . 'var inp=f.querySelector("input[name=order_note_text]");'
+        . 'if(!btn||btn.disabled)return;'
+        . 'if(!inp||!inp.value.trim()){if(window.wfToast){window.wfToast("اكتب نص الملاحظة الأول","error")}return}'
+        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳";'
+        . 'var body=new FormData(f);body.set("ajax","1");'
+        . 'fetch(window.location.pathname+"?tab=orders",{method:"POST",body:body,credentials:"same-origin"})'
+        . '.then(function(r){return r.text()})'
+        . '.then(function(txt){var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
+        . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
+        . 'if(!res)throw new Error("bad");return res})'
+        . '.then(function(res){'
+        . 'btn.disabled=false;btn.innerHTML=old;'
+        . 'if(res.ok){'
+        . 'if(inp)inp.value="";'
+        . 'var sp=document.getElementById("noteSaved"+idx);'
+        . 'if(sp){sp.style.display="inline-block";sp.textContent="✅ اتحفظ "+res.at;}'
+        . 'if(window.wfToast)window.wfToast("اتحفظت الملاحظة (ووصلت للمسوق في الشات والإشعارات)","ok");'
+        . '}else{if(window.wfToast)window.wfToast(res.error||"تعذر حفظ الملاحظة","error")}'
+        . '})'
+        . '.catch(function(){btn.disabled=false;btn.innerHTML=old;if(window.wfToast)window.wfToast("تعذر الاتصال — الملاحظة ماتحفظتش","error")});'
+        . '},true);'
+        . '});'
+
+        // 🗑 حذف نهائي: تأكيد واحد ثم حذف في الخلفية وشيل الصف من الجدول
+        . 'document.querySelectorAll("form.ord-del-form").forEach(function(f){'
+        . 'f.addEventListener("submit",function(ev){'
+        . 'ev.preventDefault();ev.stopPropagation();'
+        . 'var btn=f.querySelector("button[type=submit]"),rowId=f.getAttribute("data-ord-row"),lbl=f.getAttribute("data-ord-label");'
+        . 'if(!btn||btn.disabled)return;'
+        . 'var go=function(){'
+        . 'btn.disabled=true;var old=btn.innerHTML;btn.innerHTML="⏳";'
+        . 'var body=new FormData(f);body.set("ajax","1");'
+        . 'fetch(window.location.pathname+"?tab=orders",{method:"POST",body:body,credentials:"same-origin"})'
+        . '.then(function(r){return r.text()})'
+        . '.then(function(txt){var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
+        . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
+        . 'if(!res)throw new Error("bad");return res})'
+        . '.then(function(res){'
+        . 'if(res.ok){'
+        . 'var row=document.getElementById(rowId);'
+        . 'if(row){row.style.transition="opacity .25s";row.style.opacity="0";setTimeout(function(){row.parentNode&&row.parentNode.removeChild(row)},260)}'
+        . 'if(window.wfToast)window.wfToast(res.message||"اتحذف الطلب نهائيًا","ok");'
+        . '}else{btn.disabled=false;btn.innerHTML=old;if(window.wfToast)window.wfToast(res.error||"تعذر حذف الطلب","error")}'
+        . '})'
+        . '.catch(function(){btn.disabled=false;btn.innerHTML=old;if(window.wfToast)window.wfToast("تعذر الاتصال — الطلب ماتحذفش","error")});'
+        . '};'
+        . 'var q="حذف الطلب "+lbl+" نهائيًا؟ هيتمسح من الإدارة والمسوق والعميل ومش هيرجع، وأي عمولة لسه مفعّلة هتتسحب.";'
+        . 'if(window.wfConfirm){window.wfConfirm(q,go)}else if(window.confirm(q)){go()}'
         . '},true);'
         . '});'
         . '})();</script>';
