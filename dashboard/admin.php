@@ -331,6 +331,23 @@ if (isset($_POST['bulk_status']) && isset($_POST['bulk_order_nos']) && is_array(
                     'reason' => $bk_reason, 'released' => $bk_rel, 'reversed' => $bk_rev]);
             }
 
+            if (!empty($_POST['ajax'])) {
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'ok'           => true,
+                    'changed'      => $bk_changed,
+                    'same'         => $bk_same,
+                    'status_key'   => $bk_new,
+                    'status_label' => status_label($bk_new),
+                    'reason_txt'   => esc($bk_reason),
+                    'reason'       => ($bk_reason !== '' && in_array($bk_new, ['cancelled', 'no_answer', 'returned'], true)),
+                    'comm_txt'     => trim(($bk_rel > 0 ? 'اتحررت عمولة ' . number_format($bk_rel, 2) . ' ج.م ' : '')
+                                        . ($bk_rev > 0 ? 'واتسحبت عمولة ' . number_format($bk_rev, 2) . ' ج.م' : '')),
+                    'picked'       => array_values(array_map('strval', (array)$_POST['bulk_order_nos'])),
+                    'at'           => date('H:i'),
+                ], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
             $msg = '✅ اتحدثت حالة <b>' . $bk_changed . '</b> طلب لـ «' . esc(status_label($bk_new)) . '» في عملية واحدة'
                  . ($bk_same > 0 ? ' — <span class="mut">' . $bk_same . ' كانوا بنفس الحالة واتخطوا</span>' : '')
                  . ($bk_reason !== '' ? ' — السبب اتحفظ: «' . esc($bk_reason) . '» (بيظهر للمسوق والعميل)' : '')
@@ -432,6 +449,16 @@ if (isset($_POST['bulk_delete_orders'])) {
     } else {
         $adm_bulk_del_res = wf_admin_delete_orders($bulk_order_nos, (string)($_POST['delete_reason'] ?? ''));
         $msg = !empty($adm_bulk_del_res['ok']) ? (string)$adm_bulk_del_res['msg'] : ('⚠️ ' . (string)($adm_bulk_del_res['msg'] ?? 'تعذر حذف الطلبات'));
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'ok'      => !empty($adm_bulk_del_res['ok']),
+                'message' => trim(strip_tags((string)$msg)),
+                'error'   => empty($adm_bulk_del_res['ok']) ? trim(strip_tags((string)$msg)) : '',
+                'picked'  => array_values(array_map('strval', $bulk_order_nos)),
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
     }
     $orders = jload('orders.json', []);
 }
@@ -519,6 +546,24 @@ if (isset($_POST['safka_bulk'])) {
             $msg = '🔄 ' . (string)($bk['message'] ?? 'تم') . ($bk['remaining'] > 0 ? ' — دوس تاني لحد ما يخلص' : '');
         }
         $GLOBALS['_ADM_SAFKA_BULK'] = $bk;
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'ok'        => !empty($bk['ok']),
+                'message'   => (string)($bk['message'] ?? 'تم'),
+                'error'     => (string)($bk['error'] ?? ''),
+                'sent'      => (int)($bk['sent'] ?? 0),
+                'duplicate' => (int)($bk['duplicate'] ?? 0),
+                'failed'    => (int)($bk['failed'] ?? 0),
+                'remaining' => (int)($bk['remaining'] ?? 0),
+                'pending'   => (int)($bk['pending'] ?? 0),
+                'rows'      => array_map(function ($r) {
+                    return ['order_no' => (string)($r['order_no'] ?? ''), 'state' => (string)($r['state'] ?? ''),
+                            'serial' => (string)($r['serial'] ?? ''), 'reason' => (string)($r['reason'] ?? '')];
+                }, (array)($bk['rows'] ?? [])),
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         log_audit('safka_bulk_push', 'orders', ['done' => $bk['done'] ?? 0, 'sent' => $bk['sent'] ?? 0,
             'duplicate' => $bk['duplicate'] ?? 0, 'failed' => $bk['failed'] ?? 0, 'remaining' => $bk['remaining'] ?? 0]);
     }
@@ -1628,11 +1673,11 @@ elseif ($tab === 'orders') {
     if ($saf_pending_nos || $bk_last) {
         $bk_map = ['sent' => ['✅ اتسجل', '#dcfce7', 'var(--tone-15803d)'], 'duplicate' => ['♻️ موجود بالفعل', '#dcfce7', 'var(--tone-15803d)'], 'dry' => ['🧪 تجربة', '#e0e7ff', 'var(--electro-blue)'], 'off' => ['⏸ متوقف', '#f1f5f9', 'var(--slate-500)'], 'failed' => ['⚠️ فشل', '#fee2e2', 'var(--red-700)']];
         echo '<details class="card" style="margin-bottom:14px"' . ($bk_last ? ' open' : '') . '><summary style="cursor:pointer;font-weight:900;font-size:15px">🔗 صفقة: تسجيل الطلبات دفعة واحدة' . (count($saf_pending_nos) > 0 ? ' <span class="adm-badge-cnt">' . count($saf_pending_nos) . '</span>' : ' ✅') . '</summary>';
-        echo '<p class="mut" style="margin:6px 0 10px">' . (count($saf_pending_nos) > 0
+        echo '<p class="mut" id="safBulkSummary" data-pending="' . count($saf_pending_nos) . '" style="margin:6px 0 10px">' . (count($saf_pending_nos) > 0
                 ? 'فيه <b>' . count($saf_pending_nos) . '</b> طلب لسه مش متسجل عند صفقة. الزرار بيبعتهم <b>في عملية واحدة</b> وبيحفظ ملف الطلبات <b>مرة واحدة</b> في الآخر — أسرع بكتير من تحديث كل طلب لوحده.'
                 : 'كل طلبات صفقة متسجلة ✅ — مفيش حاجة محتاجة تحديث.') . '</p>';
         if (count($saf_pending_nos) > 0) {
-            echo '<form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' . csrf_field()
+            echo '<form class="saf-bulk-form" method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' . csrf_field()
                . '<input type="hidden" name="safka_bulk" value="1">'
                . '<label style="font-size:13px;font-weight:800">عدد الطلبات في المرة: '
                . '<select name="bulk_limit" style="padding:6px 10px;border-radius:8px;border:1px solid var(--line)">'
@@ -1640,8 +1685,9 @@ elseif ($tab === 'orders') {
                . '<button class="btn pri" type="submit">🔄 تحديث الكل الآن</button>'
                . '<span class="mut" style="font-size:12px">مابيتكررش: اللي متسجل بالفعل بيتخطى تلقائيًا.</span></form>';
         }
+        echo '<div id="safBulkResults"></div>';
         if ($bk_last && !empty($bk_last['rows'])) {
-            echo '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:800;font-size:13px">📋 نتائج وأسباب آخر تحديث (' . count($bk_last['rows']) . ' طلب)</summary>';
+            echo '<details style="margin-top:10px" open><summary style="cursor:pointer;font-weight:800;font-size:13px">📋 نتائج وأسباب آخر تحديث (' . count($bk_last['rows']) . ' طلب)</summary>';
             echo '<table class="data-table" style="margin-top:8px"><tr><th>الطلب</th><th>النتيجة</th><th>السبب / رقم صفقة</th></tr>';
             foreach ($bk_last['rows'] as $brow) {
                 $bb = $bk_map[(string)$brow['state']] ?? ['—', '#f1f5f9', 'var(--slate-500)'];
@@ -1733,7 +1779,7 @@ elseif ($tab === 'orders') {
         // قيمة الحذف: رقم الطلب، وللصفوف القديمة اللي من غير رقم طلب بنستخدم الفهرس + تاريخ الطلب كهوية آمنة
         $del_val = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('idx|' . (int)$idx . '|' . (string)($o['at'] ?? ''));
         $del_lbl = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('#' . ((int)$idx + 1));
-        echo '<tr id="ordRow' . (int)$idx . '">';
+        echo '<tr id="ordRow' . (int)$idx . '" data-order-no="' . esc((string)($o['order_no'] ?? '')) . '" data-idx="' . (int)$idx . '">';
         echo '<td><input type="checkbox" class="ord-pick" form="ordBulkForm" name="bulk_order_nos[]" value="' . esc($del_val) . '" aria-label="تحديد الطلب للحذف الجماعي"></td>';
         echo '<td><b>#' . ($idx + 1) . '</b><br><span class="mut" dir="ltr">' . esc($o['order_no'] ?? '') . '</span></td>';
         echo '<td dir="ltr">' . esc(substr($o['at'] ?? '', 0, 16)) . '</td>';
@@ -1777,10 +1823,10 @@ elseif ($tab === 'orders') {
                 'off'    => ['⏸ الربط متوقف', '#f1f5f9', 'var(--slate-500)'],
             ];
             $sfb = $saf_map[$saf_st] ?? ['⏳ لم يُرسل بعد', 'var(--amber-100)', 'var(--amber-600)'];
-            echo '<div style="margin-top:6px"><span style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $sfb[1] . ';color:' . $sfb[2] . '">' . $sfb[0] . '</span>';
+            echo '<div id="safWrap' . (int)$idx . '" style="margin-top:6px"><span class="saf-badge" style="padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:' . $sfb[1] . ';color:' . $sfb[2] . '">' . $sfb[0] . '</span>';
             if (!empty($saf['serial'])) echo '<br><span class="mut" dir="ltr">صفقة #' . esc((string)$saf['serial']) . '</span>';
             if (!in_array($saf_st, ['sent', 'duplicate'], true)) {
-                echo '<br><form method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field()
+                echo '<br><form class="saf-retry-form" method="post" data-ui="u-dd31d1d6 d3a d19">' . csrf_field()
                    . '<input type="hidden" name="safka_retry" value="' . esc((string)($o['order_no'] ?? '')) . '">'
                    . '<button class="btn sm outline" data-ui="u-45cb4c14 d3b do" title="يجرّب يسجّل الطلب عند صفقة تاني">إعادة الإرسال لصفقة</button></form>';
                 if (!empty($saf['reason'])) echo '<br><span class="mut" style="font-size:12px">' . esc((string)$saf['reason']) . '</span>';
@@ -1895,6 +1941,100 @@ elseif ($tab === 'orders') {
         . 'if(window.wfConfirm){window.wfConfirm(q,go)}else if(window.confirm(q)){go()}'
         . '},true);'
         . '});'
+
+        // ===== أدوات مساعدة للردود =====
+        . 'function wfAdmJson(url,body){'
+        . 'return fetch(url,{method:"POST",body:body,credentials:"same-origin"})'
+        . '.then(function(r){return r.text()})'
+        . '.then(function(txt){var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
+        . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
+        . 'if(!res)throw new Error("bad");return res});}'
+        . 'function wfAdmToast(t,k){if(window.wfToast){window.wfToast(t,k||"ok")}}'
+        . 'function wfAdmFadeRow(tr){if(!tr)return;tr.style.transition="opacity .25s";tr.style.opacity="0";'
+        . 'setTimeout(function(){tr.parentNode&&tr.parentNode.removeChild(tr)},260);}'
+        . 'function wfAdmPickedRows(){var out=[];document.querySelectorAll(".ord-pick").forEach(function(c){if(c.checked)out.push(c)});return out;}'
+
+        // ===== 🗑 الحذف الجماعي بدون إعادة تحميل =====
+        . 'var bd=document.getElementById("ordBulkForm");'
+        . 'if(bd){'
+        . 'bd.addEventListener("submit",function(ev){'
+        . 'ev.preventDefault();ev.stopPropagation();'
+        . 'var picks=wfAdmPickedRows();'
+        . 'if(!picks.length){wfAdmToast("حدد طلب واحد على الأقل","error");return}'
+        . 'var go=function(){'
+        . 'var btn=bd.querySelector("button[type=submit]");if(!btn||btn.disabled)return;'
+        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳";'
+        . 'var body=new FormData(bd);body.set("ajax","1");'
+        . 'wfAdmJson(window.location.pathname+"?tab=orders",body).then(function(res){'
+        . 'btn.disabled=false;btn.innerHTML=old;'
+        . 'if(res.ok){picks.forEach(function(c){wfAdmFadeRow(c.closest("tr"))});wfAdmToast(res.message||"اتحذفوا نهائيًا")}'
+        . 'else{wfAdmToast(res.error||"تعذر الحذف","error")}'
+        . '}).catch(function(){btn.disabled=false;btn.innerHTML=old;wfAdmToast("تعذر الاتصال — ماتحذفش حاجة","error")});};'
+        . 'var q="حذف "+picks.length+" طلب نهائيًا؟ هيتمسحوا من الإدارة والمسوق والعميل ومش هيرجعوا، وأي عمولة مفعّلة هتتسحب.";'
+        . 'if(window.wfConfirm){window.wfConfirm(q,go)}else if(window.confirm(q)){go()}'
+        . '},true);}'
+
+        // ===== 🔁 تغيير حالة المحدد بدون إعادة تحميل =====
+        . 'var bs=document.getElementById("ordBulkStatus");'
+        . 'if(bs){'
+        . 'bs.addEventListener("submit",function(ev){'
+        . 'ev.preventDefault();ev.stopPropagation();'
+        . 'var sel=bs.querySelector("select[name=bulk_status]");'
+        . 'var picks=wfAdmPickedRows();'
+        . 'if(!sel||!sel.value){wfAdmToast("اختار الحالة الأول","error");return}'
+        . 'if(!picks.length){wfAdmToast("حدد طلب واحد على الأقل من مربعات التحديد","error");return}'
+        . 'var btn=bs.querySelector("button[type=submit]");if(!btn||btn.disabled)return;'
+        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳";'
+        . 'var body=new FormData(bs);body.set("ajax","1");'
+        . 'wfAdmJson(window.location.pathname+"?tab=orders",body).then(function(res){'
+        . 'btn.disabled=false;btn.innerHTML=old;'
+        . 'if(res.ok){'
+        . 'picks.forEach(function(c){'
+        . 'var tr=c.closest("tr");if(!tr)return;'
+        . 'var s2=tr.querySelector("select[name=new_status]");if(s2)s2.value=res.status_key;'
+        . 'var idx=tr.getAttribute("data-idx");'
+        . 'var sp=document.getElementById("ordSaved"+idx);'
+        . 'if(sp){sp.style.display="inline-block";sp.textContent="✅ اتحفظ "+res.at;}'
+        . 'var rs=document.getElementById("ordReason"+idx);'
+        . 'if(rs){if(res.reason&&res.reason_txt){rs.style.display="block";rs.innerHTML="<b>سبب:</b> "+res.reason_txt;}else{rs.style.display="none";rs.innerHTML="";}}'
+        . '});'
+        . 'var t="اتحدثت حالة "+res.changed+" طلب لـ «"+res.status_label+"»";if(res.comm_txt)t+=" — "+res.comm_txt;wfAdmToast(t);'
+        . '}else{wfAdmToast(res.error||"تعذر التحديث","error")}'
+        . '}).catch(function(){btn.disabled=false;btn.innerHTML=old;wfAdmToast("تعذر الاتصال — الحالة ماتغيرتش","error")});'
+        . '},true);}'
+
+        // ===== 🔗 صفقة: تسجيل الدفعة بدون إعادة تحميل =====
+        . 'var sb=document.querySelector("form.saf-bulk-form");'
+        . 'if(sb){'
+        . 'sb.addEventListener("submit",function(ev){'
+        . 'ev.preventDefault();ev.stopPropagation();'
+        . 'var btn=sb.querySelector("button[type=submit]");if(!btn||btn.disabled)return;'
+        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳ بيبعت";'
+        . 'var body=new FormData(sb);body.set("ajax","1");'
+        . 'wfAdmJson(window.location.pathname+"?tab=orders",body).then(function(res){'
+        . 'btn.disabled=false;btn.innerHTML=old;'
+        . 'if(!res.ok&&!res.rows.length){wfAdmToast(res.error||"تعذر التحديث","error");return}'
+        . 'var sm=document.getElementById("safBulkSummary");'
+        . 'if(sm)sm.innerHTML=res.message||"";'
+        . 'var bm={sent:["✅ متسجل في صفقة","#dcfce7","var(--tone-15803d)"],duplicate:["✅ موجود بالفعل في صفقة","#dcfce7","var(--tone-15803d)"],dry:["🧪 تجربة — لم يُرسل","#e0e7ff","var(--electro-blue)"],off:["⏸ الربط متوقف","#f1f5f9","var(--slate-500)"],failed:["⚠️ محلي فقط — لم يُرسل","#fee2e2","var(--red-700)"]};'
+        . '(res.rows||[]).forEach(function(r){'
+        . 'var tr=document.querySelector(\'tr[data-order-no="\'+r.order_no+\'"]\');if(!tr)return;'
+        . 'var wrap=tr.querySelector("[id^=safWrap]");if(!wrap)return;'
+        . 'var b=bm[r.state]||["⏳ لم يُرسل","var(--amber-100)","var(--amber-600)"];'
+        . 'wrap.innerHTML="<span class=\'saf-badge\' style=\'padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:"+b[1]+";color:"+b[2]+"\'>"+b[0]+"</span>"'
+        . '+(r.serial?"<br><span class=\'mut\' dir=\'ltr\'>صفقة #"+r.serial+"</span>":"")'
+        . '+(r.reason?"<br><span class=\'mut\' style=\'font-size:12px\'>"+r.reason+"</span>":"");'
+        . '});'
+        . 'var box=document.getElementById("safBulkResults");'
+        . 'if(box&&(res.rows||[]).length){'
+        . 'var h="<details open style=\'margin-top:10px\'><summary style=\'cursor:pointer;font-weight:800;font-size:13px\'>📋 نتائج وأسباب آخر تحديث ("+res.rows.length+" طلب)</summary><table class=\'data-table\' style=\'margin-top:8px\'><tr><th>الطلب</th><th>النتيجة</th><th>السبب / رقم صفقة</th></tr>";'
+        . 'res.rows.forEach(function(r){var b=bm[r.state]||["—","#f1f5f9","var(--slate-500)"];'
+        . 'h+="<tr><td dir=\'ltr\'><b>"+r.order_no+"</b></td><td><span style=\'padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:"+b[1]+";color:"+b[2]+"\'>"+b[0]+"</span></td><td>"+r.reason+(r.serial?" <span class=\'mut\' dir=\'ltr\'>(صفقة #"+r.serial+")</span>":"")+"</td></tr>"});'
+        . 'box.innerHTML=h+"</table></details>";'
+        . '}'
+        . 'wfAdmToast(res.message||"تم");'
+        . '}).catch(function(){btn.disabled=false;btn.innerHTML=old;wfAdmToast("تعذر الاتصال بالسيرفر","error")});'
+        . '},true);}'
         . '})();</script>';
 }
 
