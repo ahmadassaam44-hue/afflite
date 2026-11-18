@@ -7025,7 +7025,7 @@ function wf_closure_page() {
        . '<p>لو عندك طلب مستعجل أو استفسار عن أوردر قديم، اتواصل معانا مباشرة:</p>'
        . '<div class="row">'
        . ($digits !== '' ? '<a href="tel:' . esc($digits) . '" dir="ltr">📞 ' . esc($phone) . '</a>' : '')
-       . ($digits !== '' ? '<a class="wa" href="https://wa.me/2' . esc(ltrim($digits, '0')) . '?text=' . urlencode('السلام عليكم، عندي استفسار عن ' . $brand) . '" target="_blank" rel="noopener">واتساب</a>' : '')
+       . ($digits !== '' ? '<a class="wa" href="https://wa.me/20' . esc(ltrim($digits, '0')) . '?text=' . urlencode('السلام عليكم، عندي استفسار عن ' . $brand) . '" target="_blank" rel="noopener">واتساب</a>' : '')
        . '</div>'
        . '<small>الموقع راجع قريب جدًا — شكرًا لصبرك 🤍</small>'
        . '</div></body></html>';
