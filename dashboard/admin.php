@@ -229,6 +229,186 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
         }
     }
 }
+// 💾 حفظ الصفحة كلها مرة واحدة: حالات + أسباب + ملاحظات + حذف — طلب واحد وكتابة واحدة للملف.
+if (isset($_POST['orders_batch'])) {
+    $ob_ajax = !empty($_POST['ajax']);
+    $ob_resp = ['ok' => true, 'changed' => 0, 'notes' => 0, 'deleted' => 0, 'errors' => [], 'msg' => '',
+                'at' => date('H:i'), 'changed_keys' => [], 'note_keys' => [], 'deleted_keys' => []];
+    $ob_payload = json_decode((string)$_POST['orders_batch'], true);
+    if (!csrf_ok()) {
+        $ob_resp['ok'] = false;
+        $ob_resp['errors'][] = 'انتهت صلاحية الجلسة — حدّث الصفحة وحاول تاني';
+    } elseif (!is_array($ob_payload)) {
+        $ob_resp['ok'] = false;
+        $ob_resp['errors'][] = 'بيانات غير صالحة';
+    } else {
+        $ob_all = jload('orders.json', []);
+        if (!is_array($ob_all)) $ob_all = [];
+        $ob_find = function ($key) use ($ob_all) {
+            $key = (string)$key;
+            if ($key === '') return -1;
+            if (strpos($key, 'idx|') === 0) {
+                $pp = explode('|', $key);
+                $ii = (int)($pp[1] ?? -1);
+                return isset($ob_all[$ii]) ? $ii : -1;
+            }
+            foreach ($ob_all as $k => $row) if ((string)($row['order_no'] ?? '') === $key) return (int)$k;
+            return -1;
+        };
+
+        // ===== 1) الحالات والأسباب (نفس منطق دورة حياة العمولة) =====
+        $ob_updates = []; $ob_notifs = []; $ob_rel = 0.0; $ob_rev = 0.0;
+        foreach ((array)($ob_payload['changes'] ?? []) as $ob_ch) {
+            if (!is_array($ob_ch)) continue;
+            $ob_i = $ob_find($ob_ch['key'] ?? '');
+            if ($ob_i < 0) { $ob_resp['errors'][] = 'طلب مش موجود: ' . (string)($ob_ch['key'] ?? ''); continue; }
+            $ob_o    = $ob_all[$ob_i];
+            $ob_new  = status_key((string)($ob_ch['status'] ?? ''));
+            $ob_rsn  = mb_substr(trim((string)($ob_ch['reason'] ?? '')), 0, 300);
+            $ob_old  = status_key($ob_o['status'] ?? 'pending');
+            $ob_move = ($ob_old !== $ob_new);
+            $ob_reason_ok = in_array($ob_new, ['cancelled', 'no_answer', 'returned'], true);
+            if (!$ob_move && !($ob_rsn !== '' && $ob_reason_ok)) continue;
+
+            $ob_ref  = (string)($ob_o['ref'] ?? '');
+            $ob_ern  = (float)($ob_o['m_earn'] ?? 0);
+            $ob_mail = '';
+            if ($ob_ref !== '' && ($ob_mk = find_marketer_by_code($ob_ref))) $ob_mail = (string)($ob_mk['email'] ?? '');
+
+            if ($ob_move && $ob_mail !== '' && $ob_ern > 0) {
+                if (status_releases_commission($ob_new) && !status_releases_commission($ob_old)) {
+                    commission_release($ob_mail, $ob_ern, $ob_i, 'تأكيد تسليم الأوردر');
+                    team_commission_release_for_order($ob_i, 'تأكيد تسليم الأوردر');
+                    $ob_rel += $ob_ern;
+                } elseif (status_reverses_commission($ob_new) && !status_reverses_commission($ob_old)) {
+                    commission_reverse($ob_mail, $ob_ern, $ob_i, status_label($ob_new));
+                    team_commission_reverse_for_order($ob_i, status_label($ob_new));
+                    $ob_rev += $ob_ern;
+                } elseif (status_releases_commission($ob_old) && !status_releases_commission($ob_new)) {
+                    commission_reverse($ob_mail, $ob_ern, $ob_i, 'تراجع عن التسليم: ' . status_label($ob_new));
+                    team_commission_reverse_for_order($ob_i, 'تراجع عن التسليم: ' . status_label($ob_new));
+                    $ob_rev += $ob_ern;
+                }
+            }
+
+            if ($ob_move) {
+                $ob_lbl = status_label($ob_new);
+                $ob_sfx = ($ob_rsn !== '' && in_array($ob_new, ['cancelled', 'no_answer', 'returned'], true)) ? ' — السبب: ' . $ob_rsn : '';
+                if (!empty($ob_o['user']) && strpos((string)$ob_o['user'], 'guest:') !== 0) {
+                    $ob_notifs[] = ['for' => strtolower((string)$ob_o['user']), 'text' => '📦 حالة طلبك أصبحت: ' . $ob_lbl . $ob_sfx, 'link' => 'dashboard/orders.php'];
+                }
+                if ($ob_mail !== '') {
+                    $ob_notifs[] = ['for' => strtolower($ob_mail), 'text' => '📦 حالة أوردر من لينكك: ' . $ob_lbl . $ob_sfx, 'link' => 'dashboard/marketer.php'];
+                }
+            }
+
+            $ob_updates[$ob_i] = ['status' => $ob_new, 'reason' => $ob_rsn, 'moved' => $ob_move];
+            $ob_resp['changed']++;
+            $ob_resp['changed_keys'][] = (string)($ob_ch['key'] ?? '');
+        }
+
+        // ===== 2) ملاحظات الإدارة =====
+        $ob_notes = [];
+        foreach ((array)($ob_payload['notes'] ?? []) as $ob_nt) {
+            if (!is_array($ob_nt)) continue;
+            $ob_txt = mb_substr(trim((string)($ob_nt['text'] ?? '')), 0, 500);
+            if ($ob_txt === '') continue;
+            $ob_i = $ob_find($ob_nt['key'] ?? '');
+            if ($ob_i < 0) { $ob_resp['errors'][] = 'طلب مش موجود للملاحظة: ' . (string)($ob_nt['key'] ?? ''); continue; }
+            $ob_notes[$ob_i] = $ob_txt;
+            $ob_resp['notes']++;
+            $ob_resp['note_keys'][] = (string)($ob_nt['key'] ?? '');
+            // الملاحظة توصل للمسوق صاحب الطلب في الدعم + الإشعار
+            $ob_nref  = (string)($ob_all[$ob_i]['ref'] ?? '');
+            $ob_nono  = (string)($ob_all[$ob_i]['order_no'] ?? '');
+            $ob_nmk   = ($ob_nref !== '') ? find_marketer_by_code($ob_nref) : null;
+            if (!$ob_nmk && $ob_nref !== '' && strpos($ob_nref, '@') !== false && function_exists('find_user')) $ob_nmk = find_user($ob_nref);
+            if ($ob_nmk) {
+                $ob_nmail = strtolower(trim((string)($ob_nmk['email'] ?? '')));
+                if ($ob_nmail !== '') {
+                    $ob_nmsg = '📝 ملاحظة إدارة على الطلب ' . $ob_nono . ': ' . $ob_txt;
+                    if (function_exists('wf_support_admin_message')) wf_support_admin_message($ob_nmail, $ob_nmsg);
+                    $ob_notifs[] = ['for' => $ob_nmail, 'text' => $ob_nmsg, 'link' => 'dashboard/support.php?ctx=marketer'];
+                }
+            }
+        }
+
+        // ===== كتابة واحدة لكل التغييرات =====
+        if ($ob_updates || $ob_notes) {
+            jupdate('orders.json', function (&$os) use ($ob_updates, $ob_notes) {
+                $n = 0;
+                foreach ($ob_updates as $ui => $u) {
+                    if (!isset($os[$ui])) continue;
+                    if ($u['moved']) {
+                        $os[$ui]['status']     = $u['status'];
+                        $os[$ui]['status_at']  = date('c');
+                        $os[$ui]['comm_state'] = status_releases_commission($u['status']) ? 'confirmed'
+                                               : (status_reverses_commission($u['status']) ? 'reversed' : 'pending');
+                        $os[$ui]['status_updated_by'] = 'admin';
+                    }
+                    if ($u['reason'] !== '' && in_array($u['status'], ['cancelled', 'no_answer'], true)) $os[$ui]['cancel_reason'] = 'الإدارة: ' . $u['reason'];
+                    if ($u['reason'] !== '' && $u['status'] === 'returned') $os[$ui]['return_reason'] = 'الإدارة: ' . $u['reason'];
+                    $n++;
+                }
+                foreach ($ob_notes as $ni => $ntxt) {
+                    if (!isset($os[$ni])) continue;
+                    if (!isset($os[$ni]['admin_notes']) || !is_array($os[$ni]['admin_notes'])) $os[$ni]['admin_notes'] = [];
+                    $os[$ni]['admin_notes'][] = ['note' => $ntxt, 'by' => admin_actor(), 'at' => date('c')];
+                    $os[$ni]['admin_note'] = $ntxt;
+                    $n++;
+                }
+                return $n > 0;
+            }, []);
+        }
+
+        // إشعارات مجمّعة في كتابة واحدة
+        if ($ob_notifs) {
+            foreach ($ob_notifs as &$ob_n) { $ob_n['at'] = date('c'); $ob_n['read'] = false; }
+            unset($ob_n);
+            jupdate('notifications.json', function (&$nn) use ($ob_notifs) {
+                if (!is_array($nn)) $nn = [];
+                foreach ($ob_notifs as $row) $nn[] = $row;
+                if (count($nn) > 500) $nn = array_slice($nn, -500);
+                return true;
+            }, []);
+        }
+
+        // ===== 3) الحذف النهائي (في الآخر عشان الفهارس تفضل صحيحة) =====
+        $ob_dels = array_values(array_filter(array_map('strval', (array)($ob_payload['deletes'] ?? []))));
+        if ($ob_dels) {
+            $ob_dr = wf_admin_delete_orders($ob_dels, '');
+            if (!empty($ob_dr['ok'])) {
+                $ob_resp['deleted'] = count($ob_dels);
+                $ob_resp['deleted_keys'] = $ob_dels;
+            } else {
+                $ob_resp['errors'][] = trim(strip_tags((string)($ob_dr['msg'] ?? 'تعذر الحذف')));
+            }
+        }
+
+        if ($ob_resp['changed'] || $ob_resp['notes'] || $ob_resp['deleted']) {
+            log_audit('orders_batch_save', '-', ['changed' => $ob_resp['changed'], 'notes' => $ob_resp['notes'],
+                'deleted' => $ob_resp['deleted'], 'released' => $ob_rel, 'reversed' => $ob_rev]);
+            $ob_bits = [];
+            if ($ob_resp['changed']) $ob_bits[] = $ob_resp['changed'] . ' حالة اتحدثت';
+            if ($ob_resp['notes'])   $ob_bits[] = $ob_resp['notes'] . ' ملاحظة اتحفظت';
+            if ($ob_resp['deleted']) $ob_bits[] = $ob_resp['deleted'] . ' طلب اتحذف نهائيًا';
+            $ob_resp['msg'] = '✅ ' . implode(' · ', $ob_bits)
+                . ($ob_rel > 0 ? ' · اتحررت عمولة ' . number_format($ob_rel, 2) . ' ج.م' : '')
+                . ($ob_rev > 0 ? ' · اتسحبت عمولة ' . number_format($ob_rev, 2) . ' ج.م' : '');
+            if ($ob_resp['errors']) $ob_resp['msg'] .= ' — ⚠️ ' . count($ob_resp['errors']) . ' مشكلة';
+        } else {
+            $ob_resp['msg'] = 'مفيش تغييرات تتحفظ';
+        }
+    }
+    if ($ob_ajax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode($ob_resp, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $msg = (string)$ob_resp['msg'];
+    $orders = jload('orders.json', [], false);
+}
+
 // 🔁 تغيير حالة عدة طلبات مرة واحدة + سبب واحد للكل (بكتابة واحدة للملف بدل طلب طلب)
 // نفس منطق العمولات بتاع الطلب الواحد: تحرير عند التسليم، سحب عند الإلغاء/الإرجاع/عدم الرد.
 if (isset($_POST['bulk_status']) && isset($_POST['bulk_order_nos']) && is_array($_POST['bulk_order_nos'])) {
@@ -1748,39 +1928,26 @@ elseif ($tab === 'orders') {
            . '<button class="btn sm" style="background:#b91c1c;border-color:#b91c1c;color:#fff">🗑 حذف الطلب نهائيًا</button>'
            . '</form></div>';
     }
-    // 🔁 شريط «تغيير حالة المحدد» — غير الحالة (والسبب) لعشرات الطلبات مرة واحدة، وبكتابة واحدة للملف
-    echo '<form id="ordBulkStatus" method="post" data-confirm="تغيير حالة الطلبات المحددة؟ العمولات هتتظبط تلقائيًا (تحرير عند التسليم وسحب عند الإلغاء/الإرجاع)." style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 4px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px">' . csrf_field()
-        . '<b style="font-size:13px">🔁 تغيير حالة المحدد:</b>'
-        . '<select name="bulk_status" required style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-weight:700">'
-        . '<option value="">— اختار الحالة —</option>';
-    foreach ($statuses as $bk_opt) {
-        echo '<option value="' . esc($bk_opt) . '">' . esc(wf_ui_plain(status_label($bk_opt))) . '</option>';
-    }
-    echo '</select>'
-        . '<input name="bulk_status_reason" maxlength="300" placeholder="السبب (للإلغاء/الإرجاع/عدم الرد) — يظهر للمسوق والعميل" style="padding:7px 10px;border:1px solid var(--line);border-radius:8px;min-width:260px">'
-        . '<button class="btn pri sm" type="submit">💾 تطبيق على المحدد</button>'
-        . '<span class="mut" style="font-size:12px">علّم على الطلبات من مربع «تحديد» في الجدول، أو استخدم «تحديد كل المعروض» تحت.</span>'
-        . '</form>'
-        . '<script>(function(){var f=document.getElementById("ordBulkStatus");if(!f)return;'
-        . 'f.addEventListener("submit",function(){'
-        . 'f.querySelectorAll("input[name=\'bulk_order_nos\']").forEach(function(x){x.remove()});'
-        . 'document.querySelectorAll(".ord-pick").forEach(function(c){if(c.checked){var h=document.createElement("input");h.type="hidden";h.name="bulk_order_nos[]";h.value=c.value;f.appendChild(h)}});'
-        . 'if(!f.querySelector("input[name=\'bulk_order_nos\']")){window.wfToast&&window.wfToast("حدد طلب واحد على الأقل من مربعات التحديد","error")}'
-        . '},true);})();</script>';
+    // 💾 حفظ واحد للصفحة كلها: أي تغيير في الحالة أو السبب أو ملاحظة + أي تحديد للحذف
+    // بيتجمّع كله في طلب واحد وكتابة واحدة لملف الطلبات لما تدوس «حفظ التغييرات».
+    echo '<div id="ordSaveBar" style="position:sticky;top:8px;z-index:6;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#eef6ff;border:1px solid #bfdbfe;border-radius:14px;padding:10px 12px;margin:8px 0 10px">'
+       . '<b style="font-size:14px">💾 حفظ الصفحة</b>'
+       . '<span id="ordDirty" class="mut" style="font-size:12px">مفيش تغييرات لسه</span>'
+       . '<button type="button" id="ordSaveAll" class="btn pri sm" disabled>حفظ التغييرات</button>'
+       . '<button type="button" id="ordReset" class="btn outline sm" disabled>تراجع</button>'
+       . '<label style="display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:800;margin:0">'
+       . '<input type="checkbox" id="ordPickAll"> تحديد كل المعروض للحذف</label>'
+       . '<span class="mut" style="font-size:12px">غيّر الحالة أو اكتب سبب/ملاحظة أو علّم على حذف — كله بيتحفظ بالزرار ده مرة واحدة.</span>'
+       . '<span id="ordSaveMsg" style="font-size:12px;font-weight:800"></span>'
+       . '</div>';
 
-    echo '<form id="ordBulkForm" method="post" data-confirm="حذف كل الطلبات المحددة نهائيًا من النظام؟ الحذف النهائي مابيرجعش، وأي عمولة لسه مفعّلة هتتسحب من مسوقها (زي الإلغاء). للإلغاء العادي استخدم تغيير الحالة بدل الحذف." style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0">' . csrf_field()
-        . '<input type="hidden" name="bulk_delete_orders" value="1">'
-        . '<label style="display:inline-flex;gap:6px;align-items:center;margin:0"><input type="checkbox" onchange="document.querySelectorAll(\'.ord-pick\').forEach(function(c){c.checked=this.checked;},this)"> تحديد كل المعروض</label>'
-        . '<button type="submit" class="btn sm" style="color:#b91c1c">🗑 حذف المحدد نهائيًا</button>'
-        . '<span class="mut" style="font-size:12px">الحذف النهائي للطلبات التست/المكررة/الغلط بس — الطلب بيتمسح من الإدارة والمسوق والعميل وعمولته المفعّلة بتتسحب، ونسخة أمان بتتأرشف عند الإدارة.</span>'
-        . '</form>';
-    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>تحديد</th><th>#</th><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>المسوق</th><th>الحالة والتسجيل في المصدر</th></tr>';
+    echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" id="ordersTable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>حذف</th><th>#</th><th>التاريخ</th><th>المنتج</th><th>العميل</th><th>الإجمالي</th><th>المسوق</th><th>الحالة / السبب / ملاحظة</th></tr>';
     foreach ($rev_orders as $idx => $o) {
         // قيمة الحذف: رقم الطلب، وللصفوف القديمة اللي من غير رقم طلب بنستخدم الفهرس + تاريخ الطلب كهوية آمنة
         $del_val = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('idx|' . (int)$idx . '|' . (string)($o['at'] ?? ''));
         $del_lbl = trim((string)($o['order_no'] ?? '')) !== '' ? (string)$o['order_no'] : ('#' . ((int)$idx + 1));
-        echo '<tr id="ordRow' . (int)$idx . '" data-order-no="' . esc((string)($o['order_no'] ?? '')) . '" data-idx="' . (int)$idx . '">';
-        echo '<td><input type="checkbox" class="ord-pick" form="ordBulkForm" name="bulk_order_nos[]" value="' . esc($del_val) . '" aria-label="تحديد الطلب للحذف الجماعي"></td>';
+        echo '<tr id="ordRow' . (int)$idx . '" data-key="' . esc($del_val) . '" data-order-no="' . esc((string)($o['order_no'] ?? '')) . '" data-idx="' . (int)$idx . '" data-orig="' . esc(status_key($o['status'] ?? '')) . '">';
+        echo '<td><input type="checkbox" class="ord-pick" value="' . esc($del_val) . '" aria-label="تحديد الطلب للحذف"></td>';
         echo '<td><b>#' . ($idx + 1) . '</b><br><span class="mut" dir="ltr">' . esc($o['order_no'] ?? '') . '</span></td>';
         echo '<td dir="ltr">' . esc(substr($o['at'] ?? '', 0, 16)) . '</td>';
         // كل التفاصيل (العميل والهاتف والعنوان والكمية والسعر والشحن والعمولة والملاحظات) في الديالوج الكبير — الجدول فضل بسيط
@@ -1789,28 +1956,17 @@ elseif ($tab === 'orders') {
         echo '<td><b data-ui="u-8bf4bd79 d2k">' . number_format((float)($o['total'] ?? 0),2) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         $mk_row = ((string)($o['ref'] ?? '') !== '') ? find_marketer_by_code((string)$o['ref']) : null;
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
-        echo '<td><form class="ord-status-form" data-ord-idx="' . (int)$idx . '" method="post" data-ui="u-67647882 d19">' . csrf_field()
-           . '<input type="hidden" name="order_idx" value="' . (int)$idx . '">'
-           . '<input type="hidden" name="order_no" value="' . esc((string)($o['order_no'] ?? '')) . '">'
-           . '<input name="status_reason" maxlength="300" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-bottom:6px">'
-           . '<select name="new_status" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
+        echo '<td>'
+           . '<select class="ord-status" name="status" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
-        echo '</select><button class="btn pri sm" style="margin-top:6px" type="submit" title="يحفظ الحالة والسبب مرة واحدة — من غير إعادة تحميل الصفحة">💾 حفظ</button>'
-           . '<span class="ord-saved" id="ordSaved' . (int)$idx . '" style="display:none;font-size:12px;font-weight:800;color:var(--tone-15803d);margin-inline-start:6px"></span></form>'
-           . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a>'
-           . '<form class="ord-del-form" data-ord-row="ordRow' . (int)$idx . '" data-ord-label="' . esc($del_lbl) . '" method="post" style="margin-top:6px">' . csrf_field()
-           . '<input type="hidden" name="adm_order_action" value="delete"><input type="hidden" name="adm_order_no" value="' . esc($del_val) . '">'
-           . '<button class="btn sm" type="submit" style="color:#b91c1c;border-color:#fecaca" title="حذف الطلب نهائيًا من النظام">🗑 حذف نهائي</button></form>';
-        // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
-        // 🧾 سبب الإلغاء/الإرجاع/عدم الرد — ظاهر في الصف نفسه (مش مستخبي في الديالوج)
-        $o_reason = trim((string)($o['cancel_reason'] ?? $o['return_reason'] ?? ''));
-        echo '<div id="ordReason' . (int)$idx . '" style="margin-top:6px;font-size:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:5px 8px;color:#9a3412' . ($o_reason !== '' ? '' : ';display:none') . '">' . ($o_reason !== '' ? '<b>سبب:</b> ' . esc(mb_substr($o_reason, 0, 80)) : '') . '</div>';
-        echo '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--slate-500)">📝 ملاحظة الإدارة</summary>'
-           . '<form class="ord-note-form" data-ord-idx="' . (int)$idx . '" method="post" data-ui="u-67647882 d19" style="margin-top:6px">' . csrf_field()
-           . '<input type="hidden" name="order_note_idx" value="' . (int)$idx . '">'
-           . '<input type="hidden" name="order_note_no" value="' . esc((string)($o['order_no'] ?? '')) . '">'
-           . '<input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h" type="submit">حفظ</button>'
-           . '<span class="note-saved" id="noteSaved' . (int)$idx . '" style="display:none;font-size:12px;font-weight:800;color:var(--tone-15803d);margin-inline-start:6px"></span></form></details>';
+        echo '</select>'
+           . '<input class="ord-reason" maxlength="300" data-orig="" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-top:6px;width:170px">'
+           . '<div id="ordReason' . (int)$idx . '" style="margin-top:6px;font-size:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:5px 8px;color:#9a3412' . (trim((string)($o['cancel_reason'] ?? $o['return_reason'] ?? '')) !== '' ? '' : ';display:none') . '">' . (trim((string)($o['cancel_reason'] ?? $o['return_reason'] ?? '')) !== '' ? '<b>سبب:</b> ' . esc(mb_substr((string)($o['cancel_reason'] ?? $o['return_reason']), 0, 80)) : '') . '</div>'
+           . '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--slate-500)">📝 ملاحظة الإدارة</summary>'
+           . '<input class="ord-note" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px;margin-top:6px"></details>'
+           . '<div style="margin-top:6px"><a class="btn sm outline" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a>'
+           . '<span class="ord-saved" id="ordSaved' . (int)$idx . '" style="display:none;font-size:12px;font-weight:800;color:var(--tone-15803d);margin-inline-start:6px"></span></div>'
+           . '<div class="ord-delflag" id="ordDelFlag' . (int)$idx . '" style="display:none;margin-top:6px;font-size:12px;font-weight:800;color:#b91c1c">🗑 هيتحذف نهائيًا لما تدوس «حفظ التغييرات»</div>';
         // 🔗 طلبات منصة صفقة: نعرض حالة التسجيل عند صفقة (أول ما العميل يبعت الطلب بيتسجل تلقائيًا)
         $saf = (($o['plat'] ?? '') === 'safqa' && is_array($o['safka'] ?? null)) ? $o['safka'] : null;
         if ($saf) {
@@ -1851,179 +2007,123 @@ elseif ($tab === 'orders') {
     }
     echo '</table></div></div>';
 
-    // 💾 زرار «حفظ» في صف الطلب: يبعت الحالة + السبب مرة واحدة وبيرجّع JSON —
-    // مفيش إعادة تحميل للصفحة ولا سكرول بيروح، والصف بيتحدّث في مكانه.
+    // 💾 زرار واحد للصفحة: بيجمع كل اللي اتغيّر (حالة/سبب/ملاحظة/تحديد حذف) ويحفظه في طلب واحد.
     echo '<script>(function(){'
-        . 'document.querySelectorAll("form.ord-status-form").forEach(function(f){'
-        . 'f.addEventListener("submit",function(ev){'
-        . 'ev.preventDefault();ev.stopPropagation();'
-        . 'var btn=f.querySelector("button[type=submit]"),idx=f.getAttribute("data-ord-idx");'
-        . 'if(!btn||btn.disabled)return;'
-        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳ بيحفظ";'
-        . 'var body=new FormData(f);body.set("ajax","1");'
-        . 'fetch(window.location.pathname+"?tab=orders",{method:"POST",body:body,credentials:"same-origin"})'
-        . '.then(function(r){return r.text()})'
-        . '.then(function(txt){'
-        . 'var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
-        . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
-        . 'if(!res){throw new Error("رد غير متوقع من السيرفر")}'
-        . 'return res;'
-        . '})'
-        . '.then(function(res){'
-        . 'btn.disabled=false;btn.innerHTML=old;'
-        . 'if(res&&res.ok){'
-        . 'var sp=document.getElementById("ordSaved"+idx);'
-        . 'if(sp){sp.style.display="inline-block";sp.textContent="✅ اتحفظ "+res.at;}'
-        . 'var rs=document.getElementById("ordReason"+idx);'
-        . 'if(rs){if(res.reason&&res.reason_txt){rs.style.display="block";rs.innerHTML="<b>سبب:</b> "+res.reason_txt;}else{rs.style.display="none";rs.innerHTML="";}}'
-        . 'var t="اتحدثت الحالة لـ «"+res.status_label+"»";if(res.comm_txt)t+=" — "+res.comm_txt;'
-        . 'if(window.wfToast){window.wfToast(t,"ok")}'
-        . '}else{'
-        . 'var e=(res&&res.error)||"تعذر تحديث الحالة";if(window.wfToast){window.wfToast(e,"error")}else{alert(e)}'
+        . 'var saveBtn=document.getElementById("ordSaveAll"),resetBtn=document.getElementById("ordReset"),'
+        . 'dirtyEl=document.getElementById("ordDirty"),msgEl=document.getElementById("ordSaveMsg"),pickAll=document.getElementById("ordPickAll");'
+        . 'if(!saveBtn)return;'
+        . 'function rows(){return Array.prototype.slice.call(document.querySelectorAll("#ordersTable tr[data-key]"))}'
+        . 'function collect(){'
+        . 'var changes=[],notes=[],deletes=[];'
+        . 'rows().forEach(function(tr){'
+        . 'var key=tr.getAttribute("data-key"),orig=tr.getAttribute("data-orig")||"";'
+        . 'var sel=tr.querySelector(".ord-status"),rsn=tr.querySelector(".ord-reason"),nt=tr.querySelector(".ord-note"),pk=tr.querySelector(".ord-pick");'
+        . 'var sVal=sel?sel.value:orig,rVal=rsn?rsn.value.trim():"",nVal=nt?nt.value.trim():"";'
+        . 'var dfl=document.getElementById("ordDelFlag"+tr.getAttribute("data-idx"));'
+        . 'var picked=!!(pk&&pk.checked);'
+        . 'if(dfl)dfl.style.display=picked?"block":"none";'
+        . 'var rOk=["cancelled","no_answer","returned"].indexOf(sVal)>=0;'
+        . 'if(sVal!==orig||(rVal!==""&&rOk))changes.push({key:key,status:sVal,reason:rVal});'
+        . 'if(nVal!=="")notes.push({key:key,text:nVal});'
+        . 'if(picked)deletes.push(key);'
+        . '});'
+        . 'return {changes:changes,notes:notes,deletes:deletes};'
         . '}'
-        . '})'
-        . '.catch(function(){btn.disabled=false;btn.innerHTML=old;if(window.wfToast){window.wfToast("تعذر الاتصال بالسيرفر — الحالة ماتغيرتش","error")}else{alert("تعذر الاتصال بالسيرفر")}});'
-        . '},true);'
+        . 'function refresh(){'
+        . 'var c=collect(),n=c.changes.length+c.notes.length+c.deletes.length;'
+        . 'if(dirtyEl)dirtyEl.textContent=n?("فيه "+n+" تغيير لسه ماتحفظش"):"مفيش تغييرات لسه";'
+        . 'saveBtn.disabled=!n;if(resetBtn)resetBtn.disabled=!n;'
+        . 'if(dirtyEl)dirtyEl.style.color=n?"#b45309":"";'
+        . '}'
+        . 'document.addEventListener("change",function(e){if(e.target.closest&&e.target.closest("#ordersTable"))refresh()},true);'
+        . 'document.addEventListener("input",function(e){if(e.target.closest&&e.target.closest("#ordersTable"))refresh()},true);'
+        . 'if(pickAll)pickAll.addEventListener("change",function(){'
+        . 'document.querySelectorAll("#ordersTable .ord-pick").forEach(function(c){c.checked=pickAll.checked});refresh();'
         . '});'
-
-        // 📝 ملاحظة الإدارة: حفظ فوري بدون إعادة تحميل
-        . 'document.querySelectorAll("form.ord-note-form").forEach(function(f){'
-        . 'f.addEventListener("submit",function(ev){'
-        . 'ev.preventDefault();ev.stopPropagation();'
-        . 'var btn=f.querySelector("button[type=submit]"),idx=f.getAttribute("data-ord-idx");'
-        . 'var inp=f.querySelector("input[name=order_note_text]");'
-        . 'if(!btn||btn.disabled)return;'
-        . 'if(!inp||!inp.value.trim()){if(window.wfToast){window.wfToast("اكتب نص الملاحظة الأول","error")}return}'
-        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳";'
-        . 'var body=new FormData(f);body.set("ajax","1");'
-        . 'fetch(window.location.pathname+"?tab=orders",{method:"POST",body:body,credentials:"same-origin"})'
-        . '.then(function(r){return r.text()})'
-        . '.then(function(txt){var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
-        . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
-        . 'if(!res)throw new Error("bad");return res})'
-        . '.then(function(res){'
-        . 'btn.disabled=false;btn.innerHTML=old;'
-        . 'if(res.ok){'
-        . 'if(inp)inp.value="";'
-        . 'var sp=document.getElementById("noteSaved"+idx);'
-        . 'if(sp){sp.style.display="inline-block";sp.textContent="✅ اتحفظ "+res.at;}'
-        . 'if(window.wfToast)window.wfToast("اتحفظت الملاحظة (ووصلت للمسوق في الشات والإشعارات)","ok");'
-        . '}else{if(window.wfToast)window.wfToast(res.error||"تعذر حفظ الملاحظة","error")}'
-        . '})'
-        . '.catch(function(){btn.disabled=false;btn.innerHTML=old;if(window.wfToast)window.wfToast("تعذر الاتصال — الملاحظة ماتحفظتش","error")});'
-        . '},true);'
+        . 'if(resetBtn)resetBtn.addEventListener("click",function(){'
+        . 'var q="ترجع كل التغييرات اللي عملتها من غير حفظ؟";'
+        . 'if(window.wfConfirm){window.wfConfirm(q,function(){location.reload()})}else if(window.confirm(q)){location.reload()}'
         . '});'
-
-        // 🗑 حذف نهائي: تأكيد واحد ثم حذف في الخلفية وشيل الصف من الجدول
-        . 'document.querySelectorAll("form.ord-del-form").forEach(function(f){'
-        . 'f.addEventListener("submit",function(ev){'
-        . 'ev.preventDefault();ev.stopPropagation();'
-        . 'var btn=f.querySelector("button[type=submit]"),rowId=f.getAttribute("data-ord-row"),lbl=f.getAttribute("data-ord-label");'
-        . 'if(!btn||btn.disabled)return;'
+        . 'function toast(t,k){if(window.wfToast){window.wfToast(t,k||"ok")}else if(msgEl){msgEl.textContent=t}}'
+        . 'saveBtn.addEventListener("click",function(){'
+        . 'var payload=collect();'
+        . 'if(!payload.changes.length&&!payload.notes.length&&!payload.deletes.length){toast("مفيش تغييرات تتحفظ","error");return}'
+        . 'var q=[];'
+        . 'if(payload.changes.length)q.push(payload.changes.length+" تغيير حالة");'
+        . 'if(payload.notes.length)q.push(payload.notes.length+" ملاحظة");'
+        . 'if(payload.deletes.length)q.push("حذف "+payload.deletes.length+" طلب نهائيًا");'
         . 'var go=function(){'
-        . 'btn.disabled=true;var old=btn.innerHTML;btn.innerHTML="⏳";'
-        . 'var body=new FormData(f);body.set("ajax","1");'
+        . 'saveBtn.disabled=true;var old=saveBtn.innerHTML;saveBtn.innerHTML="⏳ بيحفظ...";'
+        . 'var body=new FormData();body.set("orders_batch",JSON.stringify(payload));body.set("ajax","1");'
+        . 'var bs=document.getElementById("wfSessionBootstrap");'
+        . 'var tok=window.WF_CSRF||(bs&&bs.getAttribute("data-csrf"))||"";if(tok)body.set("csrf_token",tok);'
         . 'fetch(window.location.pathname+"?tab=orders",{method:"POST",body:body,credentials:"same-origin"})'
         . '.then(function(r){return r.text()})'
         . '.then(function(txt){var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
         . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
         . 'if(!res)throw new Error("bad");return res})'
         . '.then(function(res){'
-        . 'if(res.ok){'
-        . 'var row=document.getElementById(rowId);'
-        . 'if(row){row.style.transition="opacity .25s";row.style.opacity="0";setTimeout(function(){row.parentNode&&row.parentNode.removeChild(row)},260)}'
-        . 'if(window.wfToast)window.wfToast(res.message||"اتحذف الطلب نهائيًا","ok");'
-        . '}else{btn.disabled=false;btn.innerHTML=old;if(window.wfToast)window.wfToast(res.error||"تعذر حذف الطلب","error")}'
+        . 'saveBtn.disabled=false;saveBtn.innerHTML=old;'
+        . 'if(!res.ok){toast((res.errors&&res.errors[0])||"تعذر الحفظ","error");refresh();return}'
+        . '(res.changed_keys||[]).forEach(function(k){'
+        . 'var tr=document.querySelector("tr[data-key=\\""+k+"\\"]");if(!tr)return;'
+        . 'var sel=tr.querySelector(".ord-status"),rsn=tr.querySelector(".ord-reason"),idx=tr.getAttribute("data-idx");'
+        . 'if(sel)tr.setAttribute("data-orig",sel.value);'
+        . 'if(rsn)rsn.value="";'
+        . 'var saved=document.getElementById("ordSaved"+idx);'
+        . 'if(saved){saved.style.display="inline-block";saved.textContent="✅ اتحفظ "+res.at;}'
+        . 'var rd=document.getElementById("ordReason"+idx);'
+        . 'var s2=sel?sel.value:"";'
+        . 'if(rd&&["cancelled","no_answer","returned"].indexOf(s2)>=0){rd.style.display="block";}'
+        . '});'
+        . '(res.note_keys||[]).forEach(function(k){'
+        . 'var tr=document.querySelector("tr[data-key=\\""+k+"\\"]");if(!tr)return;'
+        . 'var nt=tr.querySelector(".ord-note"),idx=tr.getAttribute("data-idx");if(nt)nt.value="";'
+        . 'var saved=document.getElementById("ordSaved"+idx);'
+        . 'if(saved){saved.style.display="inline-block";saved.textContent="✅ اتحفظ "+res.at;}'
+        . '});'
+        . '(res.deleted_keys||[]).forEach(function(k){'
+        . 'var tr=document.querySelector("tr[data-key=\\""+k+"\\"]");if(!tr)return;'
+        . 'tr.style.transition="opacity .25s";tr.style.opacity="0";'
+        . 'setTimeout(function(){tr.parentNode&&tr.parentNode.removeChild(tr)},260);'
+        . '});'
+        . 'if(pickAll)pickAll.checked=false;'
+        . 'toast(res.msg||"اتحفظ",(res.errors&&res.errors.length)?"error":"ok");'
+        . 'refresh();'
         . '})'
-        . '.catch(function(){btn.disabled=false;btn.innerHTML=old;if(window.wfToast)window.wfToast("تعذر الاتصال — الطلب ماتحذفش","error")});'
+        . '.catch(function(){saveBtn.disabled=false;saveBtn.innerHTML=old;toast("تعذر الاتصال — ماتحفظش حاجة","error")});'
         . '};'
-        . 'var q="حذف الطلب "+lbl+" نهائيًا؟ هيتمسح من الإدارة والمسوق والعميل ومش هيرجع، وأي عمولة لسه مفعّلة هتتسحب.";'
-        . 'if(window.wfConfirm){window.wfConfirm(q,go)}else if(window.confirm(q)){go()}'
-        . '},true);'
+        . 'if(window.wfConfirm){window.wfConfirm("حفظ التغييرات: "+q.join(" + ")+"؟",go)}else{go()}'
         . '});'
+        . 'refresh();'
+        . '})();</script>';
 
-        // ===== أدوات مساعدة للردود =====
-        . 'function wfAdmJson(url,body){'
-        . 'return fetch(url,{method:"POST",body:body,credentials:"same-origin"})'
-        . '.then(function(r){return r.text()})'
-        . '.then(function(txt){var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
-        . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
-        . 'if(!res)throw new Error("bad");return res});}'
-        . 'function wfAdmToast(t,k){if(window.wfToast){window.wfToast(t,k||"ok")}}'
-        . 'function wfAdmFadeRow(tr){if(!tr)return;tr.style.transition="opacity .25s";tr.style.opacity="0";'
-        . 'setTimeout(function(){tr.parentNode&&tr.parentNode.removeChild(tr)},260);}'
-        . 'function wfAdmPickedRows(){var out=[];document.querySelectorAll(".ord-pick").forEach(function(c){if(c.checked)out.push(c)});return out;}'
-
-        // ===== 🗑 الحذف الجماعي بدون إعادة تحميل =====
-        . 'var bd=document.getElementById("ordBulkForm");'
-        . 'if(bd){'
-        . 'bd.addEventListener("submit",function(ev){'
-        . 'ev.preventDefault();ev.stopPropagation();'
-        . 'var picks=wfAdmPickedRows();'
-        . 'if(!picks.length){wfAdmToast("حدد طلب واحد على الأقل","error");return}'
-        . 'var go=function(){'
-        . 'var btn=bd.querySelector("button[type=submit]");if(!btn||btn.disabled)return;'
-        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳";'
-        . 'var body=new FormData(bd);body.set("ajax","1");'
-        . 'wfAdmJson(window.location.pathname+"?tab=orders",body).then(function(res){'
-        . 'btn.disabled=false;btn.innerHTML=old;'
-        . 'if(res.ok){picks.forEach(function(c){wfAdmFadeRow(c.closest("tr"))});wfAdmToast(res.message||"اتحذفوا نهائيًا")}'
-        . 'else{wfAdmToast(res.error||"تعذر الحذف","error")}'
-        . '}).catch(function(){btn.disabled=false;btn.innerHTML=old;wfAdmToast("تعذر الاتصال — ماتحذفش حاجة","error")});};'
-        . 'var q="حذف "+picks.length+" طلب نهائيًا؟ هيتمسحوا من الإدارة والمسوق والعميل ومش هيرجعوا، وأي عمولة مفعّلة هتتسحب.";'
-        . 'if(window.wfConfirm){window.wfConfirm(q,go)}else if(window.confirm(q)){go()}'
-        . '},true);}'
-
-        // ===== 🔁 تغيير حالة المحدد بدون إعادة تحميل =====
-        . 'var bs=document.getElementById("ordBulkStatus");'
-        . 'if(bs){'
-        . 'bs.addEventListener("submit",function(ev){'
-        . 'ev.preventDefault();ev.stopPropagation();'
-        . 'var sel=bs.querySelector("select[name=bulk_status]");'
-        . 'var picks=wfAdmPickedRows();'
-        . 'if(!sel||!sel.value){wfAdmToast("اختار الحالة الأول","error");return}'
-        . 'if(!picks.length){wfAdmToast("حدد طلب واحد على الأقل من مربعات التحديد","error");return}'
-        . 'var btn=bs.querySelector("button[type=submit]");if(!btn||btn.disabled)return;'
-        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳";'
-        . 'var body=new FormData(bs);body.set("ajax","1");'
-        . 'wfAdmJson(window.location.pathname+"?tab=orders",body).then(function(res){'
-        . 'btn.disabled=false;btn.innerHTML=old;'
-        . 'if(res.ok){'
-        . 'picks.forEach(function(c){'
-        . 'var tr=c.closest("tr");if(!tr)return;'
-        . 'var s2=tr.querySelector("select[name=new_status]");if(s2)s2.value=res.status_key;'
-        . 'var idx=tr.getAttribute("data-idx");'
-        . 'var sp=document.getElementById("ordSaved"+idx);'
-        . 'if(sp){sp.style.display="inline-block";sp.textContent="✅ اتحفظ "+res.at;}'
-        . 'var rs=document.getElementById("ordReason"+idx);'
-        . 'if(rs){if(res.reason&&res.reason_txt){rs.style.display="block";rs.innerHTML="<b>سبب:</b> "+res.reason_txt;}else{rs.style.display="none";rs.innerHTML="";}}'
-        . '});'
-        . 'var t="اتحدثت حالة "+res.changed+" طلب لـ «"+res.status_label+"»";if(res.comm_txt)t+=" — "+res.comm_txt;wfAdmToast(t);'
-        . '}else{wfAdmToast(res.error||"تعذر التحديث","error")}'
-        . '}).catch(function(){btn.disabled=false;btn.innerHTML=old;wfAdmToast("تعذر الاتصال — الحالة ماتغيرتش","error")});'
-        . '},true);}'
-
-        // ===== 🔗 صفقة: تسجيل الدفعة بدون إعادة تحميل =====
-        . 'var sb=document.querySelector("form.saf-bulk-form");'
-        . 'if(sb){'
+    // 🔗 صندوق صفقة: نفس الفكرة — دفعة واحدة من غير إعادة تحميل
+    echo '<script>(function(){'
+        . 'var sb=document.querySelector("form.saf-bulk-form");if(!sb)return;'
+        . 'function toast(t,k){if(window.wfToast){window.wfToast(t,k||"ok")}}'
         . 'sb.addEventListener("submit",function(ev){'
         . 'ev.preventDefault();ev.stopPropagation();'
         . 'var btn=sb.querySelector("button[type=submit]");if(!btn||btn.disabled)return;'
-        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳ بيبعت";'
+        . 'var oldHtml=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳ بيبعت...";'
         . 'var body=new FormData(sb);body.set("ajax","1");'
-        . 'wfAdmJson(window.location.pathname+"?tab=orders",body).then(function(res){'
-        . 'btn.disabled=false;btn.innerHTML=old;'
-        . 'if(!res.ok&&!res.rows.length){wfAdmToast(res.error||"تعذر التحديث","error");return}'
-        . 'var sm=document.getElementById("safBulkSummary");'
-        . 'if(sm)sm.innerHTML=res.message||"";'
+        . 'fetch(window.location.pathname+"?tab=orders",{method:"POST",body:body,credentials:"same-origin"})'
+        . '.then(function(r){return r.text()})'
+        . '.then(function(txt){var res=null,i0=txt.indexOf("{"),i1=txt.lastIndexOf("}");'
+        . 'if(i0>=0&&i1>i0){try{res=JSON.parse(txt.slice(i0,i1+1))}catch(e){res=null}}'
+        . 'if(!res)throw new Error("bad");return res})'
+        . '.then(function(res){'
+        . 'btn.disabled=false;btn.innerHTML=oldHtml;'
+        . 'var sm=document.getElementById("safBulkSummary");if(sm&&res.message)sm.innerHTML=res.message;'
         . 'var bm={sent:["✅ متسجل في صفقة","#dcfce7","var(--tone-15803d)"],duplicate:["✅ موجود بالفعل في صفقة","#dcfce7","var(--tone-15803d)"],dry:["🧪 تجربة — لم يُرسل","#e0e7ff","var(--electro-blue)"],off:["⏸ الربط متوقف","#f1f5f9","var(--slate-500)"],failed:["⚠️ محلي فقط — لم يُرسل","#fee2e2","var(--red-700)"]};'
         . '(res.rows||[]).forEach(function(r){'
-        . 'var tr=document.querySelector(\'tr[data-order-no="\'+r.order_no+\'"]\');if(!tr)return;'
+        . 'var tr=document.querySelector("tr[data-order-no=\""+r.order_no+"\"]");if(!tr)return;'
         . 'var wrap=tr.querySelector("[id^=safWrap]");if(!wrap)return;'
         . 'var b=bm[r.state]||["⏳ لم يُرسل","var(--amber-100)","var(--amber-600)"];'
-        . 'wrap.innerHTML="<span class=\'saf-badge\' style=\'padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:"+b[1]+";color:"+b[2]+"\'>"+b[0]+"</span>"'
-        . '+(r.serial?"<br><span class=\'mut\' dir=\'ltr\'>صفقة #"+r.serial+"</span>":"")'
-        . '+(r.reason?"<br><span class=\'mut\' style=\'font-size:12px\'>"+r.reason+"</span>":"");'
+        . 'var h="<span class=\'saf-badge\' style=\'padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:"+b[1]+";color:"+b[2]+"\'>"+b[0]+"</span>";'
+        . 'if(r.serial)h+="<br><span class=\'mut\' dir=\'ltr\'>صفقة #"+r.serial+"</span>";'
+        . 'if(r.reason)h+="<br><span class=\'mut\' style=\'font-size:12px\'>"+r.reason+"</span>";'
+        . 'wrap.innerHTML=h;'
         . '});'
         . 'var box=document.getElementById("safBulkResults");'
         . 'if(box&&(res.rows||[]).length){'
@@ -2032,10 +2132,12 @@ elseif ($tab === 'orders') {
         . 'h+="<tr><td dir=\'ltr\'><b>"+r.order_no+"</b></td><td><span style=\'padding:3px 9px;border-radius:99px;font-size:12px;font-weight:800;background:"+b[1]+";color:"+b[2]+"\'>"+b[0]+"</span></td><td>"+r.reason+(r.serial?" <span class=\'mut\' dir=\'ltr\'>(صفقة #"+r.serial+")</span>":"")+"</td></tr>"});'
         . 'box.innerHTML=h+"</table></details>";'
         . '}'
-        . 'wfAdmToast(res.message||"تم");'
-        . '}).catch(function(){btn.disabled=false;btn.innerHTML=old;wfAdmToast("تعذر الاتصال بالسيرفر","error")});'
-        . '},true);}'
+        . 'toast(res.message||res.error||"تم",(res.ok?"ok":"error"));'
+        . '})'
+        . '.catch(function(){btn.disabled=false;btn.innerHTML=oldHtml;toast("تعذر الاتصال بالسيرفر","error")});'
+        . '},true);'
         . '})();</script>';
+
 }
 
 // =========================================================================
