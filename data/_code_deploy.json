@@ -1,6 +1,8 @@
 {
- "at": "2026-11-18T01:46:22+00:00",
+ "at": "2026-11-18T01:53:11+00:00",
  "files_requested": [
+  "assets/style.css",
+  "dashboard/layout.php",
   "config.php",
   "safka_order_lib.php",
   "ui-components.php",
@@ -18,6 +20,20 @@
  "connection": "ok",
  "uploaded": [
   {
+   "file": "assets/style.css",
+   "local_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0",
+   "local_size": 161171,
+   "remote_size": 161171,
+   "remote_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0"
+  },
+  {
+   "file": "dashboard/layout.php",
+   "local_md5": "5b1d93f33162bb143fc7a51bd967c4d1",
+   "local_size": 40690,
+   "remote_size": 40690,
+   "remote_md5": "5b1d93f33162bb143fc7a51bd967c4d1"
+  },
+  {
    "file": "config.php",
    "local_md5": "f43cf7ef3f18f4458e1093ff048837d9",
    "local_size": 415708,
@@ -26,10 +42,10 @@
   },
   {
    "file": "safka_order_lib.php",
-   "local_md5": "54ef206c223c0758d353c6c8f491621f",
-   "local_size": 25305,
-   "remote_size": 25305,
-   "remote_md5": "54ef206c223c0758d353c6c8f491621f"
+   "local_md5": "5b3bf9b2af8567487a84182886a82b17",
+   "local_size": 31254,
+   "remote_size": 31254,
+   "remote_md5": "5b3bf9b2af8567487a84182886a82b17"
   },
   {
    "file": "ui-components.php",
@@ -68,10 +84,10 @@
   },
   {
    "file": "dashboard/admin.php",
-   "local_md5": "bd8da03cc3b66cb5cf415658b6dbb4d4",
-   "local_size": 350571,
-   "remote_size": 350571,
-   "remote_md5": "bd8da03cc3b66cb5cf415658b6dbb4d4"
+   "local_md5": "944f84de9f5844ff4b9651a50a7e1715",
+   "local_size": 356264,
+   "remote_size": 356264,
+   "remote_md5": "944f84de9f5844ff4b9651a50a7e1715"
   },
   {
    "file": "dashboard/product.php",
@@ -109,8 +125,8 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|225835|2.976266",
-   "time_s": 2.976266,
+   "status": "200|228829|2.501765",
+   "time_s": 2.501765,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -118,8 +134,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.973137",
-   "time_s": 0.973137,
+   "status": "200|10167|0.627500",
+   "time_s": 0.6275,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -127,8 +143,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.921352",
-   "time_s": 0.921352,
+   "status": "200|50218|0.878651",
+   "time_s": 0.878651,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
@@ -136,8 +152,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.478766",
-   "time_s": 0.478766,
+   "status": "302|0|0.604133",
+   "time_s": 0.604133,
    "title": null,
    "php_error": false,
    "head": "",
@@ -145,8 +161,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "200|67146|0.858412",
-   "time_s": 0.858412,
+   "status": "200|67146|0.956297",
+   "time_s": 0.956297,
    "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -154,8 +170,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.516320",
-   "time_s": 0.51632,
+   "status": "302|0|0.616999",
+   "time_s": 0.616999,
    "title": null,
    "php_error": false,
    "head": "",
@@ -163,5 +179,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T01:47:04+00:00"
+ "checked_at": "2026-11-18T01:54:06+00:00"
 }
