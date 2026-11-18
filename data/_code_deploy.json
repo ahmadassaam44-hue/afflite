@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T02:03:52+00:00",
+ "at": "2026-11-18T02:07:05+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -84,10 +84,10 @@
   },
   {
    "file": "dashboard/admin.php",
-   "local_md5": "61ba702fb8045a32a485e624cb03b9b4",
-   "local_size": 370295,
-   "remote_size": 370295,
-   "remote_md5": "61ba702fb8045a32a485e624cb03b9b4"
+   "local_md5": "6ae823a521f180db48a2b28369c91c05",
+   "local_size": 376453,
+   "remote_size": 376453,
+   "remote_md5": "6ae823a521f180db48a2b28369c91c05"
   },
   {
    "file": "dashboard/product.php",
@@ -125,8 +125,8 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|229895|2.647863",
-   "time_s": 2.647863,
+   "status": "200|227348|2.596287",
+   "time_s": 2.596287,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -134,8 +134,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.702274",
-   "time_s": 0.702274,
+   "status": "200|10167|0.503519",
+   "time_s": 0.503519,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -143,8 +143,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.820681",
-   "time_s": 0.820681,
+   "status": "200|50218|0.994388",
+   "time_s": 0.994388,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
@@ -152,8 +152,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.608735",
-   "time_s": 0.608735,
+   "status": "302|0|0.893888",
+   "time_s": 0.893888,
    "title": null,
    "php_error": false,
    "head": "",
@@ -161,8 +161,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "200|67146|0.943628",
-   "time_s": 0.943628,
+   "status": "200|67146|0.770407",
+   "time_s": 0.770407,
    "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -170,8 +170,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.659729",
-   "time_s": 0.659729,
+   "status": "302|0|0.636928",
+   "time_s": 0.636928,
    "title": null,
    "php_error": false,
    "head": "",
@@ -179,5 +179,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T02:04:47+00:00"
+ "checked_at": "2026-11-18T02:07:54+00:00"
 }
