@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T10:58:45+00:00",
+ "at": "2026-11-18T11:00:24+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -14,8 +14,7 @@
   "dashboard/product.php",
   "dashboard/products.php",
   "dashboard/cart.php",
-  "dashboard/wishlist.php",
-  "diag_closed1.php"
+  "dashboard/wishlist.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -117,13 +116,6 @@
    "local_size": 6969,
    "remote_size": 6969,
    "remote_md5": "4a00647cb7f68970f489f7c046728a10"
-  },
-  {
-   "file": "diag_closed1.php",
-   "local_md5": "86b53e1d96dcdb535e26894acc415ceb",
-   "local_size": 694,
-   "remote_size": 694,
-   "remote_md5": "86b53e1d96dcdb535e26894acc415ceb"
   }
  ],
  "unverified": [],
@@ -133,17 +125,17 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|227401|2.078694",
-   "time_s": 2.078694,
-   "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
+   "status": "503|2464|0.727978",
+   "time_s": 0.727978,
+   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.445560",
-   "time_s": 0.44556,
+   "status": "200|10167|0.604168",
+   "time_s": 0.604168,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -151,41 +143,41 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.671516",
-   "time_s": 0.671516,
-   "title": "سلة التسوق | وفرنهالك",
+   "status": "503|2464|0.476094",
+   "time_s": 0.476094,
+   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.483180",
-   "time_s": 0.48318,
-   "title": null,
+   "status": "503|2464|0.559629",
+   "time_s": 0.559629,
+   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
    "php_error": false,
-   "head": "",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "200|67146|0.799101",
-   "time_s": 0.799101,
-   "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
+   "status": "503|2464|0.533905",
+   "time_s": 0.533905,
+   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
    "php_error": false,
-   "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.534310",
-   "time_s": 0.53431,
-   "title": null,
+   "status": "503|2464|0.490680",
+   "time_s": 0.49068,
+   "title": "وفرنهالك — الموقع مغلق مؤقتًا",
    "php_error": false,
-   "head": "",
+   "head": "<!DOCTYPE html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>وفرنهالك — الموقع مغلق مؤقتًا</title><s",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T10:59:30+00:00"
+ "checked_at": "2026-11-18T11:01:07+00:00"
 }
