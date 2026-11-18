@@ -143,6 +143,13 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
     $new_key  = status_key($_POST['new_status']);
     $old_orders = jload('orders.json', []);
     $old_key  = status_key($old_orders[$i]['status'] ?? 'pending');
+    $adm_ajax = !empty($_POST['ajax']);   // زرار «حفظ» في صف الطلب: بيرد JSON من غير إعادة تحميل
+
+    if (!isset($old_orders[$i]) && $adm_ajax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'error' => 'الطلب مش موجود — حدّث الصفحة وحاول تاني'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     if (isset($old_orders[$i])) {
         // ===== دورة حياة العمولة: تحرير عند التسليم / عكس عند الإلغاء أو الإرجاع =====
@@ -197,6 +204,22 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
             'order_idx' => $i, 'from' => $old_key, 'to' => $new_key, 'commission' => $o_ern
         ]);
         $msg = 'تم تحديث حالة الطلب بنجاح ✅' . (($st_reason_q !== '' && in_array($new_key, ['cancelled', 'no_answer', 'returned'], true)) ? ' — وحُفظ السبب وهيظهر للمسوق والعميل' : '') . (isset($msg_extra) ? '<br>' . $msg_extra : '');
+
+        // رد للزرار: الحالة الجديدة + السبب + نتيجة العمولة — الصفحة مابتتعملش reload
+        if ($adm_ajax) {
+            $comm_txt = isset($msg_extra) ? trim(preg_replace('/^[^\p{L}\p{N}]+/u', '', strip_tags((string)$msg_extra))) : '';
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'ok'           => true,
+                'status_key'   => $new_key,
+                'status_label' => status_label($new_key),
+                'comm_txt'     => $comm_txt,
+                'reason'       => ($st_reason_q !== '' && in_array($new_key, ['cancelled', 'no_answer', 'returned'], true)),
+                'reason_txt'   => esc($st_reason_q),
+                'at'           => date('H:i'),
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
     }
 }
 // 🔁 تغيير حالة عدة طلبات مرة واحدة + سبب واحد للكل (بكتابة واحدة للملف بدل طلب طلب)
@@ -1687,9 +1710,13 @@ elseif ($tab === 'orders') {
         echo '<td><b data-ui="u-8bf4bd79 d2k">' . number_format((float)($o['total'] ?? 0),2) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
         $mk_row = ((string)($o['ref'] ?? '') !== '') ? find_marketer_by_code((string)$o['ref']) : null;
         echo '<td>' . ($mk_row ? '<b>' . esc((string)($mk_row['name'] ?? '')) . '</b><br>' : '') . '<span dir="ltr" class="mut">' . esc($o['ref'] ?: '—') . '</span></td>';
-        echo '<td><form data-confirm="تغيير حالة الطلب قد يؤكد أو يعكس عمولاته بحسب منطق النظام الحالي. هل تريد حفظ الحالة المختارة؟" method="post" data-ui="u-67647882 d19"><input type="hidden" name="order_idx" value="' . (int)$idx . '"><input name="status_reason" maxlength="300" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-bottom:6px"><select name="new_status" onchange="wfRequestConfirmSubmit(this.form)" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
+        echo '<td><form class="ord-status-form" data-ord-idx="' . (int)$idx . '" method="post" data-ui="u-67647882 d19">' . csrf_field()
+           . '<input type="hidden" name="order_idx" value="' . (int)$idx . '">'
+           . '<input name="status_reason" maxlength="300" placeholder="سبب الإلغاء/الإرجاع (يظهر للمسوق)" style="margin-bottom:6px">'
+           . '<select name="new_status" data-ui="u-3173ae86 d39 d1u dt d1v do dm">';
         foreach ($statuses as $sk) echo '<option value="' . esc($sk) . '"' . (status_key($o['status'] ?? '') === $sk ? ' selected' : '') . '>' . esc(status_label($sk)) . '</option>';
-        echo '</select><button class="btn sm outline" style="margin-top:6px" title="يحفظ السبب المكتوب مع الحالة الحالية — حتى من غير ما تغيّر الحالة">💾 حفظ السبب</button></form>'
+        echo '</select><button class="btn pri sm" style="margin-top:6px" type="submit" title="يحفظ الحالة والسبب مرة واحدة — من غير إعادة تحميل الصفحة">💾 حفظ</button>'
+           . '<span class="ord-saved" id="ordSaved' . (int)$idx . '" style="display:none;font-size:12px;font-weight:800;color:var(--tone-15803d);margin-inline-start:6px"></span></form>'
            . '<a class="btn sm outline" style="margin-top:6px" href="?tab=orders&edit=' . urlencode((string)($o['order_no'] ?? '')) . '" title="تعديل كل تفاصيل الطلب بما فيها العمولة">تعديل كامل</a>'
            . '<form method="post" data-confirm="حذف الطلب ' . esc($del_lbl) . ' نهائيًا من النظام؟ هيتمسح من قوائم الإدارة والمسوق والعميل ومش هيرجع، وأي عمولة لسه مفعّلة هتتسحب من المسوق (زي الإلغاء). للإلغاء العادي غيّر الحالة بدل الحذف." style="margin-top:6px">' . csrf_field()
            . '<input type="hidden" name="adm_order_action" value="delete"><input type="hidden" name="adm_order_no" value="' . esc($del_val) . '">'
@@ -1697,9 +1724,7 @@ elseif ($tab === 'orders') {
         // الملاحظات المكتوبة بتظهر في ديالوج «تفاصيل إضافية» — الخلية فيها فورم الإضافة فقط
         // 🧾 سبب الإلغاء/الإرجاع/عدم الرد — ظاهر في الصف نفسه (مش مستخبي في الديالوج)
         $o_reason = trim((string)($o['cancel_reason'] ?? $o['return_reason'] ?? ''));
-        if ($o_reason !== '') {
-            echo '<div style="margin-top:6px;font-size:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:5px 8px;color:#9a3412"><b>سبب:</b> ' . esc(mb_substr($o_reason, 0, 80)) . '</div>';
-        }
+        echo '<div id="ordReason' . (int)$idx . '" style="margin-top:6px;font-size:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:5px 8px;color:#9a3412' . ($o_reason !== '' ? '' : ';display:none') . '">' . ($o_reason !== '' ? '<b>سبب:</b> ' . esc(mb_substr($o_reason, 0, 80)) : '') . '</div>';
         echo '<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--slate-500)">📝 ملاحظة الإدارة</summary>'
            . '<form method="post" data-ui="u-67647882 d19" style="margin-top:6px"><input type="hidden" name="order_note_idx" value="' . (int)$idx . '"><input name="order_note_text" maxlength="500" placeholder="اكتب ملاحظة..." data-ui="u-a2e2dc8d d3l d3m do dt d2w" style="width:150px"> <button class="btn sm" data-ui="u-03ebc769 do d3h">حفظ</button></form></details>';
         // 🔗 طلبات منصة صفقة: نعرض حالة التسجيل عند صفقة (أول ما العميل يبعت الطلب بيتسجل تلقائيًا)
@@ -1741,6 +1766,36 @@ elseif ($tab === 'orders') {
         echo '</tr>';
     }
     echo '</table></div></div>';
+
+    // 💾 زرار «حفظ» في صف الطلب: يبعت الحالة + السبب مرة واحدة وبيرجّع JSON —
+    // مفيش إعادة تحميل للصفحة ولا سكرول بيروح، والصف بيتحدّث في مكانه.
+    echo '<script>(function(){'
+        . 'document.querySelectorAll("form.ord-status-form").forEach(function(f){'
+        . 'f.addEventListener("submit",function(ev){'
+        . 'ev.preventDefault();ev.stopPropagation();'
+        . 'var btn=f.querySelector("button[type=submit]"),idx=f.getAttribute("data-ord-idx");'
+        . 'if(!btn||btn.disabled)return;'
+        . 'var old=btn.innerHTML;btn.disabled=true;btn.innerHTML="⏳ بيحفظ";'
+        . 'var body=new FormData(f);body.set("ajax","1");'
+        . 'fetch(window.location.pathname+"?tab=orders",{method:"POST",body:body,credentials:"same-origin"})'
+        . '.then(function(r){return r.json()})'
+        . '.then(function(res){'
+        . 'btn.disabled=false;btn.innerHTML=old;'
+        . 'if(res&&res.ok){'
+        . 'var sp=document.getElementById("ordSaved"+idx);'
+        . 'if(sp){sp.style.display="inline-block";sp.textContent="✅ اتحفظ "+res.at;}'
+        . 'var rs=document.getElementById("ordReason"+idx);'
+        . 'if(rs){if(res.reason&&res.reason_txt){rs.style.display="block";rs.innerHTML="<b>سبب:</b> "+res.reason_txt;}else{rs.style.display="none";rs.innerHTML="";}}'
+        . 'var t="اتحدثت الحالة لـ «"+res.status_label+"»";if(res.comm_txt)t+=" — "+res.comm_txt;'
+        . 'if(window.wfToast){window.wfToast(t,"ok")}'
+        . '}else{'
+        . 'var e=(res&&res.error)||"تعذر تحديث الحالة";if(window.wfToast){window.wfToast(e,"error")}else{alert(e)}'
+        . '}'
+        . '})'
+        . '.catch(function(){btn.disabled=false;btn.innerHTML=old;if(window.wfToast){window.wfToast("تعذر الاتصال بالسيرفر — الحالة ماتغيرتش","error")}else{alert("تعذر الاتصال بالسيرفر")}});'
+        . '},true);'
+        . '});'
+        . '})();</script>';
 }
 
 // =========================================================================
