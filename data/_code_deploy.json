@@ -1,5 +1,5 @@
 {
- "at": "2026-11-18T01:39:42+00:00",
+ "at": "2026-11-18T01:44:59+00:00",
  "files_requested": [
   "config.php",
   "safka_order_lib.php",
@@ -12,8 +12,7 @@
   "dashboard/product.php",
   "dashboard/products.php",
   "dashboard/cart.php",
-  "dashboard/wishlist.php",
-  "diag_perf7.php"
+  "dashboard/wishlist.php"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
@@ -101,50 +100,43 @@
    "local_size": 6969,
    "remote_size": 6969,
    "remote_md5": "4a00647cb7f68970f489f7c046728a10"
-  },
-  {
-   "file": "diag_perf7.php",
-   "local_md5": "72a682357dadc697e55b78327410e3d5",
-   "local_size": 1352,
-   "remote_size": 1352,
-   "remote_md5": "72a682357dadc697e55b78327410e3d5"
   }
  ],
  "unverified": [],
  "failed": [],
  "status": "ok",
- "raw_status": "",
- "challenge": "not_bypassed",
+ "raw_status": "HTTP/1.1 200 OK",
+ "challenge": "solved",
  "live": {
   "/": {
-   "status": "000|0",
+   "status": "200|227406",
    "time_s": null,
-   "title": null,
+   "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
-   "head": "",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "000|0",
+   "status": "200|10167",
    "time_s": null,
-   "title": null,
+   "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
-   "head": "",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "000|0",
+   "status": "200|50218",
    "time_s": null,
-   "title": null,
+   "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
-   "head": "",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "000|0",
+   "status": "302|0",
    "time_s": null,
    "title": null,
    "php_error": false,
@@ -153,16 +145,16 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=tyshyrt-ns-sosth-shtoy-paTDAI": {
-   "status": "000|0",
+   "status": "200|67146",
    "time_s": null,
-   "title": null,
+   "title": "تيشيرت نص سوسته شتوي — عرض خاص والدفع عند الاستلام",
    "php_error": false,
-   "head": "",
+   "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "000|0",
+   "status": "302|0",
    "time_s": null,
    "title": null,
    "php_error": false,
@@ -171,5 +163,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-18T01:43:56+00:00"
+ "checked_at": "2026-11-18T01:45:47+00:00"
 }
