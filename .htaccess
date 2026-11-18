@@ -104,6 +104,15 @@ DirectoryIndex index.php
     </FilesMatch>
 </IfModule>
 
+# صفحات HTML الديناميكية: ممنوع الكاش نهائيًا — عشان الإغلاق/502 يبان فورًا
+<IfModule mod_headers.c>
+    <FilesMatch "\.php$">
+        Header always set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header always set Pragma "no-cache"
+        Header always set Expires "0"
+    </FilesMatch>
+</IfModule>
+
 # صفحات أخطاء مخصصة
 ErrorDocument 403 /error.php?c=403
 ErrorDocument 404 /error.php?c=404

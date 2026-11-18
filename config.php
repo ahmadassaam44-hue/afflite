@@ -1,6 +1,13 @@
 <?php
 // سقف ذاكرة أعلى قدر ما تسمح به الاستضافة — بيقلل الأخطاء الفادحة (OOM) المسجلة في «آخر أخطاء الموقع»
 @ini_set('memory_limit', '256M');
+// 🚫 ممنوع أي كاش لصفحات HTML: الكاش كان بيعرض نسخة قديمة من المتجر بعد ما يتقفل،
+// والزائر بيفضل يشوف المتجر مفتوح وهو مقفول. (الملفات الثابتة css/js/صور بتفضل متكاشة عادي)
+if (PHP_SAPI !== 'cli' && !headers_sent()) {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}
 // منصات مقفولة: منتجاتها متشالة من الكتالوج ومش بتظهر حتى لو الملف رجع من المحدّث.
 // لإرجاعها: شيل اسمها من القايمة دي.
 if (!defined('WF_DISABLED_PLATFORMS')) define('WF_DISABLED_PLATFORMS', ['shopmart']);
@@ -6990,6 +6997,8 @@ function wf_closure_page() {
         header('Content-Type: text/html; charset=utf-8');
         header('Cache-Control: no-store, max-age=0, must-revalidate');
         header('X-Robots-Tag: noindex');
+        // امسح كاش المتصفح للصفحات القديمة اللي اتخزنت قبل الإغلاق (كروم/إيدج)
+        header('Clear-Site-Data: "cache"');
     }
     echo '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8">'
        . '<meta name="viewport" content="width=device-width,initial-scale=1">'

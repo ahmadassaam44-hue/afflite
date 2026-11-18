@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-12T04:45Z — صفحة 502 بدون رقم/واتساب
+# trigger-bump: 2026-11-12T05:15Z — منع كاش HTML (no-store) في .htaccess و config
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -31,7 +31,7 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
-          INPUT_FILES: ${{ github.event.inputs.files || 'assets/style.css dashboard/layout.php config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php' }}
+          INPUT_FILES: ${{ github.event.inputs.files || 'assets/style.css dashboard/layout.php config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php .htaccess' }}
         run: |
           python3 - <<'PY'
           import os, json, ftplib, hashlib, datetime, socket, time
@@ -206,6 +206,15 @@ jobs:
 
           home = curl(['-D', '/tmp/h.txt'], BASE + '/')
           rep['raw_status'] = (open('/tmp/h.txt', encoding='utf-8', errors='replace').read().splitlines() or [''])[0] if True else ''
+          try:
+              hdrs = {}
+              for line in open('/tmp/h.txt', encoding='utf-8', errors='replace').read().splitlines():
+                  if ':' in line and not line.lower().startswith('http/'):
+                      k, v = line.split(':', 1)
+                      hdrs[k.strip().lower()] = v.strip()
+              rep['home_headers'] = {k: hdrs.get(k) for k in ('cache-control', 'pragma', 'expires', 'server')}
+          except Exception as e:
+              rep['home_headers'] = {'error': str(e)}
 
           cookie = ''
           m = re.search(r'var a=toNumbers\("([0-9a-f]+)"\),b=toNumbers\("([0-9a-f]+)"\),c=toNumbers\("([0-9a-f]+)"\)', home)
