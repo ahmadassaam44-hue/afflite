@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-19T12:45Z — اختبار لوحة التاجر
+# trigger-bump: 2026-11-19T13:00Z — لوحة التاجر متحقَّقة
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -31,7 +31,7 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
-          INPUT_FILES: ${{ github.event.inputs.files || 'assets/style.css dashboard/layout.php config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php dashboard/vendor.php dashboard/stores_admin.php stores_lib.php vendor.php vendor_product.php login.php google_finish.php diag_panel_test.php .htaccess' }}
+          INPUT_FILES: ${{ github.event.inputs.files || 'assets/style.css dashboard/layout.php config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php dashboard/vendor.php dashboard/stores_admin.php stores_lib.php vendor.php vendor_product.php login.php google_finish.php .htaccess' }}
         run: |
           python3 - <<'PY'
           import os, json, ftplib, hashlib, datetime, socket, time
