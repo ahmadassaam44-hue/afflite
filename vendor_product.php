@@ -3,6 +3,7 @@
 $PUBLIC_PAGE = true;
 $NO_SIDEBAR = true;
 $GLOBALS['WF_PUBLIC_CHROME'] = true;
+$GLOBALS['WF_NO_EASYORDER'] = true;   // فورم الطلب الخاص بالمتجر بدل النافذة العامة
 require __DIR__ . '/dashboard/layout.php';
 
 $slug = strtolower(trim((string)($_GET['store'] ?? $_POST['store'] ?? '')));

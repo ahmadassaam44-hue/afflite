@@ -5047,6 +5047,8 @@ function order_variant_label($order) {
 // ===== نافذة إتمام الطلب الفوري للعميل =====
 // خانة «سعر الاتفاق مع العميل» اتشالت من الموقع كله: سعر العميل دايمًا هو سعر الرابط المحسوب على السيرفر.
 function render_easyorder_dialog_html($default_ref = '', $default_plat = '', $default_currency = null, $default_country = '') {
+    // صفحات متاجر التجار ليها فورم طلب خاص بيها — النافذة العامة بتاعة المتجر الأساسي متظهرش فيها
+    if (!empty($GLOBALS['WF_NO_EASYORDER'])) return;
     require_once __DIR__ . '/ui-components.php';
     static $rendered = false;
     if ($rendered) return;
