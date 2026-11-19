@@ -1,5 +1,5 @@
 {
- "at": "2026-11-19T07:45:09+00:00",
+ "at": "2026-11-19T21:01:37+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -58,6 +58,7 @@
   "sitemap.php",
   "social.php",
   "store.php",
+  "stores_lib.php",
   "style-guide.php",
   "supabase.php",
   "supabase_docs.php",
@@ -67,7 +68,9 @@
   "test2.php",
   "ui-components.php",
   "ui-runtime.php",
-  "updater"
+  "updater",
+  "vendor.php",
+  "vendor_product.php"
  ],
  "files": {
   "index.php": {
@@ -124,16 +127,21 @@
   },
   "data/catalog_counts.json": {
    "remote_size": 861,
-   "remote_md5": "ea0cf3f38ac5429d8e1240fe11c0be29",
+   "remote_md5": "7968b5a7eea9102607f7f3a1308ba3f5",
    "local_size": 861,
-   "local_md5": "ea0cf3f38ac5429d8e1240fe11c0be29",
+   "local_md5": "7968b5a7eea9102607f7f3a1308ba3f5",
    "same_as_git": true
   }
  },
  "detail_images": {
   "local_count": 77,
-  "remote_count": 77,
-  "missing_on_server": [],
+  "remote_count": 73,
+  "missing_on_server": [
+   "checoo-love-women.jpg",
+   "cialis-20mg.jpg",
+   "ferrari-chocolate.jpg",
+   "viagra-100mg.jpg"
+  ],
   "extra_on_server": []
  },
  "all_same_as_git": false
