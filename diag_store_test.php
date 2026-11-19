@@ -5,6 +5,33 @@ require __DIR__ . '/config.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 if (($_GET['t'] ?? '') !== 'st5q') { http_response_code(404); echo '{"ok":false}'; exit; }
+
+// وضع الحذف الذاتي
+if (!empty($_GET['cleanup'])) {
+    $self = basename(__FILE__);
+    $ok = @unlink(__FILE__);
+    echo json_encode(['ok' => $ok, 'deleted' => $self], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// اختبار إنشاء حساب تاجر + الدور + الدخول، وبعدها حذف الحساب
+if (!empty($_GET['test_vendor_account'])) {
+    $email = 'vendor-test-' . substr(md5((string)microtime(true)), 0, 6) . '@wafirinhalk.ct.ws';
+    $pass = 'Vt' . bin2hex(random_bytes(3)) . 'a1';
+    $created = function_exists('usr_create_account') ? usr_create_account($email, $pass, ['name' => 'تاجر تجربة', 'role' => 'vendor', 'created' => date('c')]) : false;
+    $role_after = '';
+    $login_ok = false;
+    if ($created) {
+        $u = find_user($email);
+        $role_after = $u ? wf_user_role($u) : '(no user)';
+        $lg = function_exists('auth_login_profile') ? auth_login_profile($email, $pass) : null;
+        $login_ok = !empty($lg);
+        if (function_exists('usr_delete_account')) usr_delete_account($email);
+    }
+    echo json_encode(['created' => $created, 'role' => $role_after, 'login_ok' => $login_ok, 'email' => $email], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $out = ['ok' => true];
 $slug = 'demo-shop';
 
