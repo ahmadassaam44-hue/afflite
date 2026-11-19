@@ -25,7 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_bind();                          // تثبيت الجلسة على IP/المتصفح
             // «تذكرني»: كوكي دائم 30 يوم — يدخل تلقائيًا من غير ما يطلب الإيميل والباسورد تاني
             if (!empty($_POST['remember'])) remember_issue((string)$found['email']);
-            $login_dest = $login_role === 'admin' ? 'dashboard/admin.php' : 'dashboard/marketer.php';
+            if ($login_role === 'admin') $login_dest = 'dashboard/admin.php';
+            elseif ($login_role === 'vendor') $login_dest = 'dashboard/vendor.php';
+            else $login_dest = 'dashboard/marketer.php';
             header('Location: ' . $login_dest);
             exit;
         }

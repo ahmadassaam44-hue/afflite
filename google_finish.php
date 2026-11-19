@@ -24,6 +24,8 @@ unset($_SESSION['is_admin'], $_SESSION['admin_role'], $_SESSION['admin_gate'], $
 $role = wf_user_role($found);   // حساب العميل اتلغى: أي حساب مش أدمن = مسوق
 $_SESSION['user'] = ['name' => $found['name'], 'email' => $found['email'], 'role' => $role];
 session_bind();
-$dest = $role === 'admin' ? 'dashboard/admin.php' : 'dashboard/marketer.php';
+if ($role === 'admin') $dest = 'dashboard/admin.php';
+elseif ($role === 'vendor') $dest = 'dashboard/vendor.php';
+else $dest = 'dashboard/marketer.php';
 header('Location: ' . $dest);
 exit;

@@ -1333,6 +1333,7 @@ $tabs = [
     'payments'      => [' مراجعة المدفوعات', count(array_filter($orders, function ($o) { return ($o['payment_status'] ?? '') === 'proof_uploaded'; }))],
     'audit'         => [' سجل النشاط', count($audit_logs)],
     'notifications' => [' الإشعارات', ''],
+    'stores'        => ['🏬 المتاجر', (function_exists('wfv_stores_all') ? count(wfv_stores_all()) : 0)],
     'settings'      => [' الإعدادات', ''],
 ];
 echo '<details class="admin-extra-nav"><summary>أقسام متابعة إضافية</summary><nav class="adm-tabs" aria-label="أقسام الإدارة الإضافية">';
@@ -4627,6 +4628,27 @@ elseif ($tab === 'jumia' && function_exists('jmi_stats')) {
     }
 }
 
+elseif ($tab === 'stores') {
+    $all_stores = function_exists('wfv_stores_all') ? wfv_stores_all() : [];
+    echo '<div class="adm-box"><h2>🏬 المتاجر</h2><p class="mut">كل متجر له تصميم الموقع نفسه، ومنتجات وطلبات ورابط خاص.</p>';
+    echo '<p><a class="btn pri" href="stores_admin.php">إدارة المتاجر / إنشاء متجر جديد</a></p>';
+    if ($all_stores) {
+        echo '<table class="data-table rtable"><tr><th>المتجر</th><th>صاحب المتجر</th><th>منتجات</th><th>طلبات</th><th>مبيعات</th><th></th></tr>';
+        foreach ($all_stores as $sl => $row) {
+            $stt = wfv_store_stats((string)$sl);
+            echo '<tr><td><b>' . esc((string)($row['name'] ?? $sl)) . '</b></td>'
+                . '<td>' . esc((string)($row['owner_email'] ?? '—')) . '</td>'
+                . '<td>' . (int)$stt['items'] . '</td><td>' . (int)$stt['orders'] . '</td>'
+                . '<td>' . number_format($stt['revenue'], 0) . ' ج.م</td>'
+                . '<td><a class="btn sm" href="vendor.php?store=' . urlencode((string)$sl) . '">إدارة</a> '
+                . '<a class="btn sm" href="../vendor.php?store=' . urlencode((string)$sl) . '" target="_blank" rel="noopener">المتجر</a></td></tr>';
+        }
+        echo '</table>';
+    } else {
+        echo '<p class="mut">مفيش متاجر لسه.</p>';
+    }
+    echo '</div>';
+}
 elseif ($tab === 'settings') {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
         $allowed = []; foreach (site_settings_schema() as $grp) foreach ($grp as $k => $d) $allowed[$k] = 1;

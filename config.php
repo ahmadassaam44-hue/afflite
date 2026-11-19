@@ -3626,7 +3626,7 @@ function wf_user_role($u = null) {
     if ($role === '') $role = 'marketer';
     // حساب العميل اتلغى: buyer/customer = مسوق
     if (in_array($role, ['buyer', 'customer'], true)) $role = 'marketer';
-    if (!in_array($role, ['marketer', 'admin'], true)) $role = 'marketer';
+    if (!in_array($role, ['marketer', 'admin', 'vendor'], true)) $role = 'marketer';
     $memo[$key] = $role;
     return $role;
 }
@@ -7040,6 +7040,9 @@ function wf_closure_page() {
        . '</div></body></html>';
     exit;
 }
+
+// 🏬 المتاجر المتعددة (مكتبة المتاجر) — بتتحمّل هنا لغاية بعد كل الدوال
+require_once __DIR__ . '/stores_lib.php';
 
 // ⚠️ لا تحرّك الشيك ده لفوق: لازم يبقى في آخر الملف بعد تحميل كل الملفات والدوال
 // (أي استدعاء لـ jload/site_setting قبل supabase_docs.php بيكسر كل الصفحات).
