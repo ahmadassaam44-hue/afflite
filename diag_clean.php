@@ -47,6 +47,11 @@ foreach (glob($D . '/zz_cezma_index/*') ?: [] as $f) if (is_file($f)) $del['فه
 foreach (glob($D . '/visual_cezma*') ?: [] as $f) if (is_file($f)) $del['فهرس سيزما'][] = $f;
 foreach (glob($D . '/(lite_)?(cezma|storedooo)*.json', GLOB_BRACE) ?: [] as $f) if (is_file($f)) $del['سيزما'][] = $f;
 
+// 1.b) باقي سيزما: باكتس البحث + كاش التفاصيل + الكاش العام
+foreach (glob($D . '/cezma_buckets/*') ?: [] as $f) if (is_file($f)) $del['باكتس سيزما'][] = $f;
+foreach (glob($D . '/cezma_details/*') ?: [] as $f) if (is_file($f)) $del['تفاصيل سيزما'][] = $f;
+foreach (glob($D . '/cache/*') ?: [] as $f) if (is_file($f)) $del['كاش'][] = $f;
+
 // 2) أرشيفات الأحداث: سيب آخر ملفين بس
 $ev = cg_files($D . '/wf_events_archive_*.json');
 sort($ev);
