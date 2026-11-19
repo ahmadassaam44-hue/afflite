@@ -1,5 +1,5 @@
 {
- "at": "2026-11-19T14:02:03+00:00",
+ "at": "2026-11-19T14:04:11+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -137,10 +137,10 @@
   },
   {
    "file": "diag_clean.php",
-   "local_md5": "af50008f593d0f3ac20d6e16928aaaf5",
-   "local_size": 5930,
-   "remote_size": 5930,
-   "remote_md5": "af50008f593d0f3ac20d6e16928aaaf5"
+   "local_md5": "31034f115a6b8a393cd85f16d73a338e",
+   "local_size": 6332,
+   "remote_size": 6332,
+   "remote_md5": "31034f115a6b8a393cd85f16d73a338e"
   },
   {
    "file": "diag_dirs.php",
@@ -163,8 +163,8 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|226783|5.579135",
-   "time_s": 5.579135,
+   "status": "200|228050|3.916920",
+   "time_s": 3.91692,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -172,8 +172,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.691061",
-   "time_s": 0.691061,
+   "status": "200|10167|0.635547",
+   "time_s": 0.635547,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -181,8 +181,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.758967",
-   "time_s": 0.758967,
+   "status": "200|50218|0.872203",
+   "time_s": 0.872203,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
@@ -190,8 +190,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.564447",
-   "time_s": 0.564447,
+   "status": "302|0|0.619724",
+   "time_s": 0.619724,
    "title": null,
    "php_error": false,
    "head": "",
@@ -199,8 +199,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=soyt-shyrt-aokland-DcpHNY": {
-   "status": "200|67554|1.077260",
-   "time_s": 1.07726,
+   "status": "200|67554|1.130294",
+   "time_s": 1.130294,
    "title": "سويت شيرت اوكلاند — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -208,8 +208,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.603490",
-   "time_s": 0.60349,
+   "status": "302|0|0.682191",
+   "time_s": 0.682191,
    "title": null,
    "php_error": false,
    "head": "",
@@ -217,5 +217,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-19T14:03:10+00:00"
+ "checked_at": "2026-11-19T14:05:19+00:00"
 }
