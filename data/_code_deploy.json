@@ -1,5 +1,5 @@
 {
- "at": "2026-11-19T15:43:14+00:00",
+ "at": "2026-11-19T15:45:43+00:00",
  "files_requested": [
   "assets/style.css",
   "dashboard/layout.php",
@@ -44,10 +44,10 @@
   },
   {
    "file": "config.php",
-   "local_md5": "9fe45d171d2bdf5aa0bc136d7198d1af",
-   "local_size": 423555,
-   "remote_size": 423555,
-   "remote_md5": "9fe45d171d2bdf5aa0bc136d7198d1af"
+   "local_md5": "0e9ff6b99cd16015f8d9d52f3e9191f8",
+   "local_size": 423784,
+   "remote_size": 423784,
+   "remote_md5": "0e9ff6b99cd16015f8d9d52f3e9191f8"
   },
   {
    "file": "safka_order_lib.php",
@@ -149,17 +149,17 @@
   },
   {
    "file": "vendor.php",
-   "local_md5": "25a94a4e57803eaa3de174b151f41c0d",
-   "local_size": 6020,
-   "remote_size": 6020,
-   "remote_md5": "25a94a4e57803eaa3de174b151f41c0d"
+   "local_md5": "aa18bb708534f3029a3abddd84c4205c",
+   "local_size": 6142,
+   "remote_size": 6142,
+   "remote_md5": "aa18bb708534f3029a3abddd84c4205c"
   },
   {
    "file": "vendor_product.php",
-   "local_md5": "c5e0e8ef2d6710c265f0410cb1644067",
-   "local_size": 11611,
-   "remote_size": 11611,
-   "remote_md5": "c5e0e8ef2d6710c265f0410cb1644067"
+   "local_md5": "e492573751ed308d7ca83775d3fdb55d",
+   "local_size": 11733,
+   "remote_size": 11733,
+   "remote_md5": "e492573751ed308d7ca83775d3fdb55d"
   },
   {
    "file": "login.php",
@@ -203,8 +203,8 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|227304|3.426494",
-   "time_s": 3.426494,
+   "status": "200|228755|2.103602",
+   "time_s": 2.103602,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -212,8 +212,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.682071",
-   "time_s": 0.682071,
+   "status": "200|10167|0.458610",
+   "time_s": 0.45861,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -221,8 +221,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.822401",
-   "time_s": 0.822401,
+   "status": "200|50218|0.564690",
+   "time_s": 0.56469,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
@@ -230,8 +230,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.727078",
-   "time_s": 0.727078,
+   "status": "302|0|0.596855",
+   "time_s": 0.596855,
    "title": null,
    "php_error": false,
    "head": "",
@@ -239,8 +239,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=soyt-shyrt-aokland-DcpHNY": {
-   "status": "200|67554|1.060834",
-   "time_s": 1.060834,
+   "status": "200|67554|1.497238",
+   "time_s": 1.497238,
    "title": "سويت شيرت اوكلاند — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -248,8 +248,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.709649",
-   "time_s": 0.709649,
+   "status": "302|0|0.455205",
+   "time_s": 0.455205,
    "title": null,
    "php_error": false,
    "head": "",
@@ -257,5 +257,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-19T15:44:34+00:00"
+ "checked_at": "2026-11-19T15:46:46+00:00"
 }
