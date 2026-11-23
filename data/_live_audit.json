@@ -1,5 +1,5 @@
 {
- "at": "2026-11-23T01:24:29+00:00",
+ "at": "2026-11-23T01:55:47+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -34,6 +34,7 @@
   "htaccess.before-fix.bak",
   "index.php",
   "jmi.php",
+  "json_store.php",
   "jumia_check.php",
   "jumia_lib.php",
   "landing.php",
@@ -101,10 +102,10 @@
    "same_as_git": true
   },
   ".htaccess": {
-   "remote_size": 6268,
-   "remote_md5": "d7f0b18c7616fc4413b66baf828807f0",
-   "local_size": 6268,
-   "local_md5": "d7f0b18c7616fc4413b66baf828807f0",
+   "remote_size": 6295,
+   "remote_md5": "7bb58039f7d3ea9cae99b81c656b59e3",
+   "local_size": 6295,
+   "local_md5": "7bb58039f7d3ea9cae99b81c656b59e3",
    "same_as_git": true
   },
   "assets/style.css": {
