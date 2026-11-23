@@ -1,5 +1,5 @@
 {
- "at": "2026-11-22T20:04:01+00:00",
+ "at": "2026-11-23T01:24:29+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -23,7 +23,6 @@
   "customer_req_lib.php",
   "dashboard",
   "data",
-  "debug.php",
   "digital.php",
   "error.php",
   "forgot.php",
@@ -31,7 +30,6 @@
   "google_callback.php",
   "google_finish.php",
   "google_start.php",
-  "hello.html",
   "hevo_api.php",
   "htaccess.before-fix.bak",
   "index.php",
@@ -64,8 +62,6 @@
   "supabase_docs.php",
   "supabase_schema.sql",
   "supabase_users.php",
-  "test.php",
-  "test2.php",
   "ui-components.php",
   "ui-runtime.php",
   "updater",
@@ -84,11 +80,11 @@
    "error": "550 Can't open index.html: No such file or directory"
   },
   "store.php": {
-   "remote_size": 31782,
-   "remote_md5": "cc6e343e76f286c65b28fbbd71dc392c",
+   "remote_size": 31477,
+   "remote_md5": "d54ea53fbc852aa16890d9e243ef1b09",
    "local_size": 31477,
    "local_md5": "d54ea53fbc852aa16890d9e243ef1b09",
-   "same_as_git": false
+   "same_as_git": true
   },
   "digital.php": {
    "remote_size": 120,
@@ -98,25 +94,25 @@
    "same_as_git": true
   },
   "landing.php": {
-   "remote_size": 25543,
-   "remote_md5": "69c9364e63d6f41555be38d98e652499",
+   "remote_size": 24956,
+   "remote_md5": "e185db3a28eff700cfcc7bd526bbf633",
    "local_size": 24956,
    "local_md5": "e185db3a28eff700cfcc7bd526bbf633",
-   "same_as_git": false
+   "same_as_git": true
   },
   ".htaccess": {
-   "remote_size": 6202,
-   "remote_md5": "7027ade05b0367a3309201ad0a053228",
-   "local_size": 5818,
-   "local_md5": "a477ae61be7c4e2e9e075a5ecdc09512",
-   "same_as_git": false
+   "remote_size": 6268,
+   "remote_md5": "d7f0b18c7616fc4413b66baf828807f0",
+   "local_size": 6268,
+   "local_md5": "d7f0b18c7616fc4413b66baf828807f0",
+   "same_as_git": true
   },
   "assets/style.css": {
-   "remote_size": 161171,
-   "remote_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0",
+   "remote_size": 160662,
+   "remote_md5": "231cfa935b723ae232790f8399750715",
    "local_size": 160662,
    "local_md5": "231cfa935b723ae232790f8399750715",
-   "same_as_git": false
+   "same_as_git": true
   },
   "assets/icon-512.png": {
    "remote_size": 8286,
