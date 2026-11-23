@@ -44,6 +44,10 @@ data/jumia_requests.json
 # الكاش
 data/cache_*.json
 
+# أقفال وملفات مؤقتة لتخزين JSON الذرّي (تتولّد على السيرفر فقط)
+data/*.lock
+data/*.tmp.*
+
 # الرفع
 assets/uploads/*
 !assets/uploads/.htaccess

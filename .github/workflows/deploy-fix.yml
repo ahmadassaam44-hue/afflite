@@ -18,7 +18,7 @@ jobs:
           import ftplib, os
           host=os.environ['FTP_HOST']; user=os.environ['FTP_USER']; pw=os.environ['FTP_PASS']; root=os.environ.get('FTP_ROOT','/htdocs')
           f=ftplib.FTP(host); f.login(user,pw); f.cwd(root)
-          for fn in ['hello.html','test2.php','test.php','config.php','index.php']:
+          for fn in ['config.php','index.php']:
               try:
                   print(f"upload {fn}")
                   f.storbinary(f'STOR {fn}', open(fn,'rb'))

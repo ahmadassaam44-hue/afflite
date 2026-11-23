@@ -5,5 +5,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: php -l config.php
-      - run: php -l index.php
+      - name: PHP lint (every tracked PHP file)
+        run: |
+          set -e
+          count=0
+          while IFS= read -r f; do
+            php -l "$f" > /dev/null
+            count=$((count + 1))
+          done < <(git ls-files '*.php')
+          echo "linted $count PHP files OK"
+      - name: JS syntax check
+        run: node --check assets/ui.js
+      - name: JSON store atomicity tests (real PHP)
+        run: php tests/storage_atomic.php
+      - name: Python tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -t .

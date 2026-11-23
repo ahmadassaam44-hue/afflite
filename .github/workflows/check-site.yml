@@ -22,7 +22,7 @@ jobs:
           cat /tmp/cookie.txt
           COOKIE=$(grep COOKIE /tmp/cookie.txt | cut -d: -f2 | tr -d '[:space:]')
           echo "cookie $COOKIE"
-          curl -A "Mozilla/5.0" -b "__test=$COOKIE" -s -D /tmp/h2.txt -o /tmp/b2.txt "https://wafirinhalk.ct.ws/test2.php?i=2" || echo "curl fail"
+          curl -A "Mozilla/5.0" -b "__test=$COOKIE" -s -D /tmp/h2.txt -o /tmp/b2.txt "https://wafirinhalk.ct.ws/ping.php" || echo "curl fail"
           cat /tmp/h2.txt | head -n 20
           cat /tmp/b2.txt | head -n 50
           echo "::notice::B2 $(head -c 500 /tmp/b2.txt | tr '\n' ' ')"

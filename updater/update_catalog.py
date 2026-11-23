@@ -2411,6 +2411,14 @@ def ftp_upload(files, cleanup_source_shards=True):
         log('? deleted stale data/cache_sitemap.xml')
     except Exception as e:
         log('cache_sitemap cleanup (skip if missing):', str(e)[:120])
+    # Remove retired debug/test files from the webroot; they were deleted from the repo
+    # and the root .htaccess also blocks them, so this is belt-and-braces cleanup.
+    for _retired in ('debug.php', 'test.php', 'test2.php', 'hello.html'):
+        try:
+            ftp.delete(_retired)
+            log('🗑️ removed retired file from webroot:', _retired)
+        except Exception:
+            pass
     # Index-only must not delete source or visual-index files; normal runs retain their cleanup.
     if cleanup_source_shards:
         try:

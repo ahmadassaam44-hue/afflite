@@ -13,6 +13,17 @@
     </IfModule>
 </FilesMatch>
 
+# ── 1ب. منع ملفات التشخيص والتجارب حتى لو اترفعت على السيرفر بالخطأ ──────────
+<FilesMatch "(?i)^((debug|test|test2|phpinfo|info|_ui_fixture_login|_ui_fatal)\.php|hello\.html)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 # ── 2. منع عرض أي ملف JSON / SQL / LOG / نسخة قديمة ─────────────────────────
 <FilesMatch "(?i)^(?!manifest\.json$).*\.(json|sql|log|bak|old|swp|~|ini|yml|yaml|env|git|lock|md|zip|rar|7z|tar|gz)$">
     <IfModule mod_authz_core.c>
@@ -36,7 +47,7 @@ Options +FollowSymLinks
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^assets/uploads/.*\.(php[0-9]?|phtml|pht|phar|cgi|pl|py|sh|asp|aspx|jsp)$ - [F,L,NC]
+    RewriteRule ^assets/(uploads|manual)/.*\.(php[0-9]?|phtml|pht|phar|cgi|pl|py|sh|asp|aspx|jsp)$ - [F,L,NC]
 
     # ── 6. فرض HTTPS ────────────────────────────────────────────────────────
     RewriteCond %{HTTPS} !=on

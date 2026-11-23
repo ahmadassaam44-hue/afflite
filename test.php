@@ -1,1 +1,0 @@
-<?php echo "hello test ".date('c');

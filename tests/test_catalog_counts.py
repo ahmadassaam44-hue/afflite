@@ -22,34 +22,30 @@ class CatalogCountSummaryTests(unittest.TestCase):
                 'lite_vendoor.json': [],
                 'lite_angazny.json': [{'id': 'az-1', 'images': []}],
                 'lite_shopmart.json': [],
+                'lite_mnfean.json': [
+                    {'id': 'mn-1', 'category': 'أجهزة منزلية'},
+                ],
                 'detail_index.json': {'angazny#az-1': ['assets/detail/angazny.jpg']},
             }
             for name, rows in fixtures.items():
                 with open(os.path.join(data_dir, name), 'w', encoding='utf-8') as stream:
                     json.dump(rows, stream)
-            shard_dir = os.path.join(data_dir, 'cezma_shards')
-            os.makedirs(shard_dir)
-            with open(os.path.join(shard_dir, 'lite_cezma_01.json'), 'w', encoding='utf-8') as stream:
-                json.dump([
-                    {'id': 'cz-1', 'category': 'أجهزة منزلية', 'images': ['https://img.example/cezma.jpg']},
-                    {'id': 'cz-2', 'category': 'أجهزة منزلية', 'images': ['https://img.example/no-image.png']},
-                    {'id': 'cz-3', 'category': 'ملابس', 'images': []},
-                ], stream)
-
             with patch.object(update_catalog, 'DATA', data_dir):
                 counts = update_catalog.build_catalog_counts()
 
+        # السلوك الحالي الموثّق في build_catalog_counts: منصات فيزيائية + mnfean/storedooo
+        # (شظايا cezma القديمة لم تعد تدخل في العدّ).
         self.assertEqual(counts['physical_platforms'], {
             'timehand': 1,
             'safqa': 1,
             'vendoor': 0,
             'angazny': 1,
             'shopmart': 0,
-            'cezma': 1,
+            'mnfean': 0,
         })
-        self.assertEqual(counts['physical_with_images'], 4)
+        self.assertEqual(counts['physical_with_images'], 3)
         self.assertEqual(counts['physical_categories'], {'أحذية': 1})
-        self.assertEqual(counts['cezma_categories'], {'أجهزة منزلية': 1})
+        self.assertEqual(counts['mnfean_categories'], {'أجهزة منزلية': 1})
 
 
 if __name__ == '__main__':

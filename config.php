@@ -1015,8 +1015,10 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITU
 $GLOBALS['_JMEM'] = [];
 $GLOBALS['_JLOAD_MS'] = [];
 
-if (!defined('WF_PERF_TOKEN')) define('WF_PERF_TOKEN', 'perft0k17');
+// توكن قياس الأداء يُعرَّف في secrets.php على السيرفر فقط (define('WF_PERF_TOKEN', '...')).
+// لا يوجد توكن افتراضي داخل Git: بدون تعريفه تكون نقطة ?perf= مقفولة تماماً.
 (function () {
+    if (!defined('WF_PERF_TOKEN') || WF_PERF_TOKEN === '') return;
     if (($_GET['perf'] ?? '') !== WF_PERF_TOKEN) return;
     $GLOBALS['_WFP_TIMES'] = [];
     $GLOBALS['_WFP_T0'] = microtime(true);
@@ -1053,47 +1055,77 @@ function jload($f, $def = [], $memoize = true) {
     return $res;
 }
 
-function jsave($f, $data) {
-    if (docs_is_remote($f)) return docs_jsave($f, $data);
-    $GLOBALS['_JMEM'][$f] = $data;
-    $p = DATA_DIR . '/' . $f;
-    $json = json_encode($data, JSON_UNESCAPED_UNICODE);
-    $fp = @fopen($p, 'c+b');
+// كتابة ذرّية: المحتوى يُكتب لملف مؤقت ثم يُستبدل بالاسم النهائي عبر rename
+// (عملية ذرّية على لينكس)، فلا يرى أي قارئ ملفاً نصف مكتوب لو العملية اتقتلت
+// في منتصف الكتابة (حدود الاستضافة المشتركة: وقت التنفيذ/الذاكرة).
+function jatomic_write($p, $json) {
+    $tmp = $p . '.tmp.' . getmypid();
+    $fp = @fopen($tmp, 'wb');
     if (!$fp) return false;
-    if (@flock($fp, LOCK_EX)) {
-        ftruncate($fp, 0);
-        rewind($fp);
-        fwrite($fp, $json);
-        fflush($fp);
-        @flock($fp, LOCK_UN);
-    }
+    $ok = true;
+    $len = strlen($json);
+    $w = @fwrite($fp, $json);
+    if ($w === false || $w < $len) $ok = false;
+    if ($ok && @fflush($fp) === false) $ok = false;
     @fclose($fp);
+    if (!$ok || !@rename($tmp, $p)) { @unlink($tmp); return false; }
     return true;
 }
 
-// قراءة-تعديل-كتابة داخل قفل واحد (LOCK_EX) — يمنع ضياع الرصيد/الطلبات
+// تنظيف نادر لملفات مؤقتة قديمة خلّفتها عملية اتقتلت قبل الـ rename
+function jatomic_gc($dir, $force = false) {
+    if (!$force && mt_rand(1, 200) !== 1) return;
+    foreach ((array)@glob($dir . '/*.tmp.*') as $t) {
+        if ((time() - (int)@filemtime($t)) > 3600) @unlink($t);
+    }
+}
+
+// قفل جانبي لكل ملف بيانات: يثبّت تسلسل قراءة-تعديل-كتابة jupdate رغم الـ rename
+function jlock_acquire($p) {
+    $lp = @fopen($p . '.lock', 'c+b');
+    if (!$lp) return false;
+    if (!@flock($lp, LOCK_EX)) { @fclose($lp); return false; }
+    return $lp;
+}
+function jlock_release($lp) {
+    if ($lp) { @flock($lp, LOCK_UN); @fclose($lp); }
+}
+
+function jsave($f, $data) {
+    if (docs_is_remote($f)) return docs_jsave($f, $data);
+    $p = DATA_DIR . '/' . $f;
+    jatomic_gc(DATA_DIR);
+    $lp = jlock_acquire($p);
+    $ok = jatomic_write($p, json_encode($data, JSON_UNESCAPED_UNICODE));
+    jlock_release($lp);
+    if ($ok) $GLOBALS['_JMEM'][$f] = $data;
+    return $ok;
+}
+
+// قراءة-تعديل-كتابة تحت قفل واحد — يمنع ضياع الرصيد/الطلبات.
+// لو القفل أو الكتابة اتعذّرا نفشل بوضوح بدل الكتابة بدون قفل (السلوك القديم
+// كان يكتب مكشوفاً لو fopen فشل).
 function jupdate($f, $fn, $def = []) {
     if (docs_is_remote($f)) return docs_jupdate($f, $fn, $def);
     $p = DATA_DIR . '/' . $f;
-    if (!file_exists($p)) @file_put_contents($p, json_encode($def, JSON_UNESCAPED_UNICODE));
-    $fp = @fopen($p, 'c+b');
-    if (!$fp) { // fallback بدون قفل
-        $d = jload($f, $def); $r = $fn($d); jsave($f, $d); return $r;
+    jatomic_gc(DATA_DIR);
+    $lp = jlock_acquire($p);
+    if (!$lp) { error_log('jupdate ' . $f . ': lock unavailable'); return false; }
+    $d = $def;
+    if (is_file($p)) {
+        $raw = @file_get_contents($p);
+        $dec = (is_string($raw) && $raw !== '') ? json_decode($raw, true) : null;
+        if (is_array($dec)) $d = $dec;
     }
-    @flock($fp, LOCK_EX);
-    rewind($fp);
-    $raw = stream_get_contents($fp);
-    $d = json_decode($raw ?: '', true);
-    if (!is_array($d)) $d = $def;
     $r = $fn($d);
     if ($r !== false) {
-        ftruncate($fp, 0);
-        rewind($fp);
-        fwrite($fp, json_encode($d, JSON_UNESCAPED_UNICODE));
-        fflush($fp);
+        if (!jatomic_write($p, json_encode($d, JSON_UNESCAPED_UNICODE))) {
+            jlock_release($lp);
+            error_log('jupdate ' . $f . ': atomic write failed');
+            return false;
+        }
     }
-    @flock($fp, LOCK_UN);
-    @fclose($fp);
+    jlock_release($lp);
     $GLOBALS['_JMEM'][$f] = $d;
     return $r;
 }
@@ -4056,6 +4088,13 @@ function save_uploaded_image($file_key, $prefix = 'img') {
     if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
         $ext = 'jpg';
     }
+    // تحقق MIME حقيقي: نرفض أي ملف مش صورة فعلاً (حتى لو امتداده .jpg)
+    // ونحدد الامتداد من نوع الصورة الفعلي مش من اسم الملف المرسل.
+    if (($sz = @getimagesize($tmp)) === false) return '';
+    $mime_ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+    if (empty($mime_ext[$sz['mime'] ?? ''])) return '';
+    $ext = $mime_ext[$sz['mime']];
+    if ((int)($_FILES[$file_key]['size'] ?? 0) > 4 * 1024 * 1024) return '';
     $dir = __DIR__ . '/assets/uploads';
     if (!is_dir($dir)) @mkdir($dir, 0775, true);
     $fname = $prefix . '_' . date('Ymd_His') . '_' . substr(md5(uniqid('', true)), 0, 8) . '.' . $ext;

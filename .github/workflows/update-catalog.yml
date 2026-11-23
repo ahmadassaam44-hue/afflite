@@ -48,6 +48,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: فحص صياغة كل ملفات PHP قبل أي رفع (يفشل الرفع لو في خطأ صياغة)
+        run: |
+          set -e
+          while IFS= read -r f; do
+            php -l "$f" > /dev/null
+          done < <(git ls-files '*.php')
+          echo 'PHP syntax OK'
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
