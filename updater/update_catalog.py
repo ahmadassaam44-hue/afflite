@@ -2348,7 +2348,7 @@ def ftp_upload(files, cleanup_source_shards=True):
     uploaded_files = set()
     # Shared PHP helpers must arrive before controllers; publish the index manifest last.
     def _upload_order(rel):
-        priority = 0 if rel in ('ui-components.php', 'ui-runtime.php') else (2 if rel.startswith('data/') else 1)
+        priority = 0 if rel in ('ui-components.php', 'ui-runtime.php', 'json_store.php') else (2 if rel.startswith('data/') else 1)
         manifest_last = 0
         return priority, manifest_last, rel
     ordered_files = sorted(files, key=_upload_order)

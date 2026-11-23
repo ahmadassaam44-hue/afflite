@@ -12,10 +12,10 @@ $tmp  = sys_get_temp_dir() . '/afflite_storage_test_' . getmypid();
 @mkdir($tmp . '/data', 0777, true);
 
 // انسخ الملفات اللي config.php بيحتاجها عشان DATA_DIR يتحسب داخل المجلد المؤقت
-foreach (['config.php', 'supabase.php', 'supabase_users.php', 'supabase_docs.php',
+foreach (['config.php', 'json_store.php', 'supabase.php', 'supabase_users.php', 'supabase_docs.php',
           'hevo_api.php', 'customer_req_lib.php', 'manual_products_lib.php'] as $f) {
     if (!copy($root . '/' . $f, $tmp . '/' . $f)) {
-        fwrite(STDERR, "FAIL: cannot copy $f\n");
+        fwrite(defined('STDERR') ? STDERR : fopen('php://output', 'w'), "FAIL: cannot copy $f\n");
         exit(1);
     }
 }
@@ -102,5 +102,5 @@ $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tmp, Filesy
 foreach ($rii as $file) { $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname()); }
 @rmdir($tmp);
 
-if ($failures > 0) { fwrite(STDERR, "storage_atomic: $failures failure(s)\n"); exit(1); }
+if ($failures > 0) { fwrite(defined('STDERR') ? STDERR : fopen('php://output', 'w'), "storage_atomic: $failures failure(s)\n"); exit(1); }
 echo "storage_atomic: all checks passed\n";

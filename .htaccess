@@ -3,7 +3,7 @@
 # ============================================================================
 
 # ── 1. منع الوصول المباشر لأي ملف بيانات أو إعدادات ──────────────────────────
-<FilesMatch "(?i)^(config|supabase|secrets|amazon_lib|jumia_lib|db|env)\.(php|inc|bak|old|txt)$">
+<FilesMatch "(?i)^(config|supabase|secrets|amazon_lib|jumia_lib|json_store|db|env)\.(php|inc|bak|old|txt)$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>
@@ -55,7 +55,7 @@ Options +FollowSymLinks
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # ── 7. حجب محاولات الوصول للملفات الحساسة ──────────────────────────────
-    RewriteRule ^(data|config\.php|supabase\.php|secrets\.php) - [F,L]
+    RewriteRule ^(data|config\.php|supabase\.php|secrets\.php|json_store\.php) - [F,L]
 </IfModule>
 
 # ── 8. Headers أمنية ───────────────────────────────────────────────────────

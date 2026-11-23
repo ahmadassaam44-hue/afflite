@@ -18,5 +18,7 @@ jobs:
         run: node --check assets/ui.js
       - name: JSON store atomicity tests (real PHP)
         run: php tests/storage_atomic.php
+      - name: Money flow tests (real PHP)
+        run: php tests/money_flows.php
       - name: Python tests
         run: python3 -m unittest discover -s tests -p 'test_*.py' -t .
