@@ -3,9 +3,9 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 410423,
+   "remote_size": 405553,
    "on_server": true,
-   "local_size": 410423,
+   "local_size": 405553,
    "match": true
   },
   "index.php": {
@@ -21,9 +21,9 @@
    "match": true
   },
   ".htaccess": {
-   "remote_size": 6268,
+   "remote_size": 6295,
    "on_server": true,
-   "local_size": 6268,
+   "local_size": 6295,
    "match": true
   },
   "amazon_lib.php": {
