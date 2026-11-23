@@ -1,6 +1,7 @@
 <?php
 // ===== طبقة البيانات الموحدة (تعمل محلياً بسرعة فائقة + دعم اختياري لـ Supabase) =====
-define('SB_URL', 'https://hbhuxhphlpgwqynstytw.supabase.co');
+// الحارس يسمح للاختبارات بتعريف SB_URL مسبقًا وتوجيه الطبقة لمخدم محلي وهمي (بدون أي اتصال حقيقي)
+if (!defined('SB_URL')) define('SB_URL', 'https://hbhuxhphlpgwqynstytw.supabase.co');
 define('SB_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhiaHV4aHBobHBnd3F5bnN0eXR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4OTA3NTAsImV4cCI6MjA5MjQ2Njc1MH0.THAVZoJvoZYAqDUFCk3JCuRXq2-gPa0gvtRbzrZHkqg');
 define('SB_CACHE_TTL', 3600);
 if (!defined('SB_SERVICE')) define('SB_SERVICE', '');

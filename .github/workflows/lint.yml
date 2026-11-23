@@ -20,5 +20,17 @@ jobs:
         run: php tests/storage_atomic.php
       - name: Money flow tests (real PHP)
         run: php tests/money_flows.php
+      - name: Commission lifecycle tests (mock Supabase on localhost only)
+        run: |
+          SB_MOCK_PORT=18099 node tests/mock_supabase.cjs &
+          MOCK_PID=$!
+          for i in $(seq 1 40); do
+            curl -sf 'http://127.0.0.1:18099/rest/v1/app_docs?select=data&name=eq.__ping__' > /dev/null && break
+            sleep 0.5
+          done
+          php tests/commission_lifecycle.php
+          STATUS=$?
+          kill $MOCK_PID 2>/dev/null || true
+          exit $STATUS
       - name: Python tests
         run: python3 -m unittest discover -s tests -p 'test_*.py' -t .
