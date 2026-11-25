@@ -410,6 +410,11 @@ function wf_order_commission($o) {
     if (status_reverses_commission($o['status'] ?? '')) return 0.0;
     return (float)($o['m_earn'] ?? 0);
 }
+// العمولة المستحقة فعلاً: الطلبات المسلّمة فقط (مش المعلقة ولا الملغية)
+function wf_order_earned($o) {
+    if (!is_array($o) || status_key($o['status'] ?? '') !== 'delivered') return 0.0;
+    return (float)($o['m_earn'] ?? 0);
+}
 // تفصيل عمولة مسوق من طلباته: معلقة (لسه ماتسلمتش) + مؤكدة (اتسلمت) + المسحوب بموافقة الأدمن
 function wf_marketer_comm_totals($orders, $email = '') {
     $t = ['pending' => 0.0, 'delivered' => 0.0, 'total' => 0.0, 'withdrawn' => 0.0, 'remaining' => 0.0];
@@ -423,7 +428,7 @@ function wf_marketer_comm_totals($orders, $email = '') {
             if (strcasecmp((string)($po['email'] ?? $po['user'] ?? ''), (string)$email) === 0 && in_array($po['status'] ?? '', ['موافق عليه', 'approved', 'paid'], true)) $t['withdrawn'] += (float)($po['amount'] ?? 0);
         }
     }
-    $t['total'] = round($t['pending'] + $t['delivered'], 2);
+    $t['total'] = round($t['delivered'], 2); // الإجمالي = المستحق (المسلّم) فقط؛ المعلق منفصل وغير داخل فيه
     $t['remaining'] = round(max(0, $t['delivered'] - $t['withdrawn']), 2);
     foreach (['pending','delivered','withdrawn'] as $k) $t[$k] = round($t[$k], 2);
     return $t;

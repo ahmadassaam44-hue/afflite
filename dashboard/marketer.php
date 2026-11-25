@@ -154,7 +154,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv' && $code !== '') {
 $all_orders = jload('orders.json', []);
 $clicks = array_values(array_filter(jload('clicks.json', []), function ($c) use ($code) { return $c['ref'] === $code; }));
 $orders = array_values(array_filter($all_orders, function ($o) use ($code) { return ($o['ref'] ?? '') === $code; }));
-$myearn = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $orders));
+$myearn = array_sum(array_map(function ($o) { return wf_order_earned($o); }, $orders)); // الأرباح المستحقة = الطلبات المسلّمة فقط
 $team = array_values(array_filter(users(), function ($u) use ($code) { return ($u['referred_by'] ?? '') === $code; }));
 // أرباح الفريق = العمولات اللي اتسجلت فعلاً في السجل (عمولة فريق (إحالة))، مش تقدير من أوردرات الفريق
 $team_earn = 0.0;
@@ -266,7 +266,7 @@ if ($mtab === 'performance') { wfp('MTAB performance');
         $ets = strtotime($eo['at'] ?? '');
         if ($esk === 'shipped') $shipped_commission_all += $eamt;
         if ($esk === 'delivered') $delivered_units += max(0, (int)($eo['qty'] ?? 1));
-        if (!in_array($esk, ['cancelled', 'returned'], true) && $ets !== false) {
+        if ($esk === 'delivered' && $ets !== false) { // الأرباح المستحقة = المسلّم فقط
             $earned_total += $eamt;
             if (date('Y', $ets) === $current_year) {
                 $year_earned += $eamt;
@@ -645,7 +645,7 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
         echo '<td><b>' . esc(mb_substr($o['pname'] ?? '', 0, 35)) . '</b><br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية')
            . ($mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), '📝 ملاحظة إدارة') : '') . '</td>';
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
-        echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format(wf_order_commission($o), 2) . ' ج.م</td>';
+        echo '<td class="comm" data-ui="u-b135454c d1 d1x">' . (status_reverses_commission($o['status'] ?? '') ? '—' : '+' . number_format(wf_order_commission($o), 2) . ' ج.م') . '</td>';
         echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';
         // التعديل متاح قبل الشحن (قيد التأكيد/مؤكد) — الإلغاء والإرجاع متاحين على أي حالة لسه منتهية
         $mk_can_ed = wf_marketer_can_edit_order($o, $user);
@@ -945,6 +945,7 @@ elseif ($mtab === 'earnings') { wfp('MTAB earnings');
     echo '<div class="card" data-ui="u-89901732 dp"><h2><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chart></use></svg> كشف حساب تفصيلي</h2>';
     echo '<table class="data-table rtable" data-ui-table="pending" aria-busy="true"><tr><th>المنتج</th><th>الكمية</th><th>الإجمالي</th><th>العمولة</th><th>الحالة</th></tr>';
     foreach (array_reverse($forders) as $o) {
+        if (status_reverses_commission($o['status'] ?? '')) continue; // الملغي/المرتجع مش بيتكتب في كشف العمولات
         $osk = status_key($o['status'] ?? '');
         $color = $osk === 'delivered' ? 'var(--success)' : (in_array($osk, ['cancelled', 'returned'], true) ? 'var(--danger-text)' : 'var(--warning-text)');
         echo '<tr><td>' . esc(mb_substr($o['pname'] ?? '', 0, 40)) . '</td><td>' . esc($o['qty'] ?? 1) . '</td><td>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</td><td class="comm">+' . number_format($o['m_earn'] ?? 0) . ' ج.م</td><td>' . wf_order_badge($o['status'] ?? '') . '</td></tr>';
