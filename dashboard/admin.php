@@ -1653,7 +1653,7 @@ elseif ($tab === 'marketers') {
             echo '<div class="kpis" data-ui="u-f2235598 d1r">';
             echo '<div class="kpi" data-ui="u-bc691366 d6"><b>' . number_format($mclicks) . '</b><span> نقرات على رابطه</span></div>';
             echo '<div class="kpi" data-ui="u-85fe13fb d2q"><b>' . number_format($muv) . '</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-user></use></svg> زوار فريدين</span></div>';
-            echo '<div class="kpi" data-ui="u-97b96627 d5"><b>' . count($mo) . '</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> الطلبات</span></div>';
+            echo '<div class="kpi" data-ui="u-97b96627 d5"><b>' . count($mo) . '</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> كل الطلبات (بما فيها الملغي/المرتجع)</span></div>';
             echo '<div class="kpi" data-ui="u-3824e45f d4"><b>' . $mconv . '%</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chart></use></svg> نسبة التحويل</span></div>';
             echo '<div class="kpi" data-ui="u-3824e45f d4"><b>' . number_format($mcomm, 2) . ' ج.م</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> إجمالي العمولة</span></div>';
             echo '<div class="kpi" data-ui="u-61cbd4d0 d3o"><b>' . count($mteam) . '</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-users></use></svg> فريقه</span></div>';
@@ -1678,7 +1678,7 @@ elseif ($tab === 'marketers') {
             echo '</div>';
             echo '</div>';
 
-            echo '<div data-ui="u-aec60660 dl du d1 d2d"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> كل طلبات المسوق بكل تفاصيلها (' . count($mo_rev) . ')</div>';
+            echo '<div data-ui="u-aec60660 dl du d1 d2d"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-orders></use></svg> الطلبات المحسوبة في العمولة (' . count($mo_rev) . ' من ' . count($mo) . ' — الملغي/المرتجع مخفي)</div>';
             if ($mo_rev) {
                 echo '<div data-ui="u-1ae67359 d13"><table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>رقم الطلب/التاريخ</th><th>المنتج</th><th>العميل</th><th>المنطقة والعنوان</th><th>الإجمالي</th><th>عمولته</th><th>الحالة</th><th>التفاصيل</th></tr>';
                 foreach ($mo_rev as $oo) {
@@ -2032,8 +2032,8 @@ elseif ($tab === 'commissions') {
     foreach ($marketers as $u) {
         $mo = array_filter($orders, function ($o) use ($u) { return ($o['ref'] ?? '') === ($u['ref_code'] ?? ''); });
         $mc = array_sum(array_map(function ($o) { return wf_order_earned($o); }, $mo));
-        if ($mc <= 0 && (float)($u['balance'] ?? 0) <= 0 && wf_marketer_comm_totals($mo)['pending'] <= 0) continue;
         $tt_row = wf_marketer_comm_totals($mo, (string)($u['email'] ?? ''));
+        if ($mc <= 0 && (float)($u['balance'] ?? 0) <= 0 && $tt_row['pending'] <= 0 && $tt_row['withdrawn'] <= 0) continue;
         // الحالة المعروضة مشتقة من الطلبات الفعلية والسحوبات مش من علامة الحساب القديمة
         $st_comm = $tt_row['pending'] > 0 ? 'pending' : ($tt_row['remaining'] > 0 ? 'confirmed' : ($tt_row['withdrawn'] > 0 ? 'paid' : ($u['comm_status'] ?? 'pending')));
         $comm_rows[] = [
@@ -2049,17 +2049,20 @@ elseif ($tab === 'commissions') {
     $tot_pending = array_sum(array_map(function ($r) { return $r['tot']['pending']; }, $comm_rows));
     $tot_conf = array_sum(array_map(function ($r) { return $r['tot']['remaining']; }, $comm_rows));
     $tot_paid = array_sum(array_map(function ($r) { return $r['tot']['withdrawn']; }, $comm_rows));
+    $tot_delivered = array_sum(array_map(function ($r) { return $r['tot']['delivered']; }, $comm_rows));
+    $tot_over = array_sum(array_map(function ($r) { return $r['tot']['overdrawn']; }, $comm_rows));
 
     echo '<div class="kpis" data-ui="u-25724057 d0">';
     echo '<div class="kpi" data-ui="u-97b96627 d5"><b>' . number_format($tot_pending, 2) . ' ج.م</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-clock></use></svg> عمولات قيد التسليم (غير مستحقة، خارج الإجمالي)</span></div>';
     echo '<div class="kpi" data-ui="u-bc691366 d6"><b>' . number_format($tot_conf, 2) . ' ج.م</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-check></use></svg> عمولات مؤكدة (Confirmed)</span></div>';
     echo '<div class="kpi" data-ui="u-3824e45f d4"><b>' . number_format($tot_paid, 2) . ' ج.م</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> عمولات مدفوعة (Paid)</span></div>';
-    echo '<div class="kpi" data-ui="u-85fe13fb d2q"><b>' . number_format($tot_conf + $tot_paid, 2) . ' ج.م</b><span>إجمالي العمولات المستحقة (المسلّمة فقط)</span></div>';
+    echo '<div class="kpi" data-ui="u-85fe13fb d2q"><b>' . number_format($tot_delivered, 2) . ' ج.م</b><span>إجمالي العمولات المستحقة (المسلّمة فقط)</span></div>';
+    echo '<div class="kpi"><b>' . number_format($tot_over, 2) . ' ج.م</b><span>سحوبات معتمدة زيادة عن المستحق (تنبيه، بدون تعديل أرصدة)</span></div>';
     echo '</div>';
 
     echo '<div class="adm-box"><h2><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> إدارة عمولات المسوقين (الحالة والدفع)</h2>';
     if ($comm_rows) {
-        echo '<table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>المسوق</th><th>كود الإحالة</th><th>الطلبات</th><th>إجمالي العمولة</th><th>الرصيد المتاح</th><th>حالة العمولة</th><th>تغيير الحالة</th></tr>';
+        echo '<table class="data-table rtable" data-ui-table="pending" aria-busy="true" data-ui="u-5d985ec3 do"><tr><th>المسوق</th><th>كود الإحالة</th><th>الطلبات المحسوبة (غير الملغي/المرتجع)</th><th>إجمالي العمولة المستحقة</th><th>الرصيد المتاح</th><th>حالة العمولة</th><th>تغيير الحالة</th></tr>';
         foreach ($comm_rows as $cr) {
             echo '<tr>';
             echo '<td><b>' . esc($cr['name']) . '</b><br><span dir="ltr" class="mut">' . esc($cr['email']) . '</span></td>';

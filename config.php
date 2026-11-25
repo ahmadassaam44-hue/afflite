@@ -430,6 +430,7 @@ function wf_marketer_comm_totals($orders, $email = '') {
     }
     $t['total'] = round($t['delivered'], 2); // الإجمالي = المستحق (المسلّم) فقط؛ المعلق منفصل وغير داخل فيه
     $t['remaining'] = round(max(0, $t['delivered'] - $t['withdrawn']), 2);
+    $t['overdrawn'] = round(max(0, $t['withdrawn'] - $t['delivered']), 2); // سحوبات معتمدة أكتر من المستحق (للتنبيه فقط، مفيش تعديل في الأرصدة)
     foreach (['pending','delivered','withdrawn'] as $k) $t[$k] = round($t[$k], 2);
     return $t;
 }
