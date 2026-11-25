@@ -793,19 +793,47 @@ function commission_credit_pending($mk_email, $amount, $order_idx, $reason = '')
                        ['order_idx' => $order_idx, 'state' => 'pending']);
     return true;
 }
-function commission_release($mk_email, $amount, $order_idx, $reason = 'تأكيد تسليم الأوردر') {
+// أقصى مبلغ يُضاف للمتاح عند تسليم أوردر بعد ما عمولته اتعكست قبل كده (المعلق مابقاش فيه المبلغ):
+// المسموح = (عمولة الطلبات المسلّمة شاملة الأوردر ده) − (السحوبات غير المرفوضة) − (الرصيد المتاح الحالي).
+// لو الرصيد فيه أصلاً اللي يغطي الاستحقاق (أو سُحب أكتر منه) الناتج صفر؛ مفيش تعويض تلقائي ولا رصيد سالب.
+function wf_release_headroom($mk_email, $order_idx, $amount, $balance_after_move) {
+    $mk = find_user($mk_email);
+    if (!$mk || empty($mk['ref_code'])) return 0.0;
+    $delivered = (float)$amount;
+    foreach ((array)jload('orders.json', [], false) as $i => $o) {
+        if (!is_array($o) || (string)$i === (string)(int)$order_idx) continue;
+        if (strcasecmp((string)($o['ref'] ?? ''), (string)$mk['ref_code']) !== 0) continue;
+        $delivered += wf_order_earned($o);
+    }
+    $taken = 0.0;
+    foreach ((array)jload('payouts.json', [], false) as $po) {
+        if (!is_array($po)) continue;
+        if (strcasecmp((string)($po['email'] ?? $po['user'] ?? ''), (string)$mk_email) !== 0) continue;
+        if (trim((string)($po['status'] ?? 'قيد المراجعة')) === 'مرفوض') continue;
+        $taken += (float)($po['amount'] ?? 0);
+    }
+    return round(max(0, $delivered - $taken - (float)$balance_after_move), 2);
+}
+// $order_shortfall = true لتأكيد تسليم أوردر: لو المعلق مش كفاية (عمولة اتعكست قبل كده ثم الأوردر اتسلّم تاني)
+// بنكمّل الفرق للمتاح في حدود استحقاق الطلبات المسلّمة فقط.
+function commission_release($mk_email, $amount, $order_idx, $reason = 'تأكيد تسليم الأوردر', $order_shortfall = false) {
     $amount = round((float)$amount, 2);
     if ($amount <= 0 || $mk_email === '') return false;
     $mk = find_user($mk_email);
     if (!$mk) return false;
     $move = min($amount, (float)($mk['pending_balance'] ?? 0));
-    if ($move <= 0) return false;
-    update_user($mk_email, function (&$u) use ($move) {
+    $extra = 0.0;
+    if ($order_shortfall && $order_idx !== null && $order_idx !== '' && $amount > $move) {
+        $extra = round(min($amount - $move, wf_release_headroom($mk_email, $order_idx, $amount, (float)($mk['balance'] ?? 0) + $move)), 2);
+    }
+    $total = round($move + $extra, 2);
+    if ($total <= 0) return false;
+    update_user($mk_email, function (&$u) use ($move, $total) {
         $u['pending_balance'] = round(max(0, (float)($u['pending_balance'] ?? 0) - $move), 2);
-        $u['balance']         = round((float)($u['balance'] ?? 0) + $move, 2);
+        $u['balance']         = round((float)($u['balance'] ?? 0) + $total, 2);
     });
-    balance_ledger_add($mk_email, 'release', $move, $reason, ['order_idx' => $order_idx, 'state' => 'confirmed']);
-    notify_user($mk_email, '✅ تم تأكيد عمولة ' . number_format($move, 2) . ' ج.م وأصبحت قابلة للسحب', 'dashboard/balance.php');
+    balance_ledger_add($mk_email, 'release', $total, $reason . ($extra > 0 ? ' (منها ' . number_format($extra, 2) . ' استكمال بعد عكس سابق)' : ''), ['order_idx' => $order_idx, 'state' => 'confirmed']);
+    notify_user($mk_email, '✅ تم تأكيد عمولة ' . number_format($total, 2) . ' ج.م وأصبحت قابلة للسحب', 'dashboard/balance.php');
     return true;
 }
 function commission_reverse($mk_email, $amount, $order_idx, $reason = 'إلغاء/إرجاع الأوردر') {
@@ -823,6 +851,53 @@ function commission_reverse($mk_email, $amount, $order_idx, $reason = 'إلغا�
     balance_ledger_add($mk_email, 'reversal', -$amount, $reason, ['order_idx' => $order_idx, 'state' => 'reversed']);
     notify_user($mk_email, '↩️ تم سحب عمولة ' . number_format($amount, 2) . ' ج.م (' . $reason . ')', 'dashboard/balance.php');
     return true;
+}
+// ===== تسوية لمرة واحدة (بموافقة صاحب الموقع على واتساب 2026-11-25) =====
+// الرصيد المتاح المخزّن يرجع لاستحقاق الطلبات المسلّمة بعد خصم السحوبات. كل صف بقيمة متوقعة حالية؛ لو القيمة الحالية
+// اختلفت (حد غيّرها) بنتخطى الصف ومنعدّلوش. كل صف بيتنفذ مرة واحدة (علامة recon في السجل) ومعاه سطر adjust ظاهر في السجل.
+function wf_recon_targets() {
+    return [
+        ['email' => 'kokytoto000@gmail.com',      'name' => 'كارولين شاكر',  'expect_balance' => 0.0,  'expect_pending' => null, 'delta' => 520.0],
+        ['email' => 'mervatmena145@gmail.com',    'name' => 'كيرمينا كيرلس', 'expect_balance' => 0.0,  'expect_pending' => null, 'delta' => 370.0],
+        ['email' => 'sslmy5689@gmail.com',        'name' => 'فاطمة السيد',   'expect_balance' => 0.0,  'expect_pending' => 55.0, 'delta' => 15.0],
+        ['email' => 'ahmadassaam44@gmail.com',    'name' => 'Ahmed Essam',   'expect_balance' => 90.0, 'expect_pending' => null, 'delta' => -50.0],
+    ];
+}
+function wf_recon_done($email) {
+    foreach ((array)jload('balance_ledger.json', [], false) as $r) {
+        if (is_array($r) && ($r['recon'] ?? '') === 'wf-2026-11-25' && strcasecmp((string)($r['email'] ?? ''), (string)$email) === 0) return true;
+    }
+    return false;
+}
+// $apply=false: معاينة فقط (بدون أي تعديل). يرجع صف لكل مسوق فيه الحالة: ready | done | mismatch | pending_payout | missing
+function wf_recon_run($apply = false) {
+    $out = [];
+    $payouts = (array)jload('payouts.json', [], false);
+    foreach (wf_recon_targets() as $t) {
+        $row = $t + ['status' => '', 'balance' => null, 'pending' => null];
+        $u = find_user($t['email']);
+        if (!$u) { $row['status'] = 'missing'; $out[] = $row; continue; }
+        $row['balance'] = round((float)($u['balance'] ?? 0), 2);
+        $row['pending'] = round((float)($u['pending_balance'] ?? 0), 2);
+        if (wf_recon_done($t['email'])) { $row['status'] = 'done'; $out[] = $row; continue; }
+        $open = false;
+        foreach ($payouts as $po) {
+            if (is_array($po) && strcasecmp((string)($po['email'] ?? $po['user'] ?? ''), $t['email']) === 0 && trim((string)($po['status'] ?? 'قيد المراجعة')) === 'قيد المراجعة') $open = true;
+        }
+        if ($open) { $row['status'] = 'pending_payout'; $out[] = $row; continue; }
+        if (abs($row['balance'] - $t['expect_balance']) > 0.004 || ($t['expect_pending'] !== null && abs($row['pending'] - $t['expect_pending']) > 0.004)) {
+            $row['status'] = 'mismatch'; $out[] = $row; continue;
+        }
+        $row['status'] = 'ready';
+        if ($apply) {
+            update_user($t['email'], function (&$x) use ($t) { $x['balance'] = round((float)($x['balance'] ?? 0) + $t['delta'], 2); });
+            balance_ledger_add($t['email'], 'adjust', $t['delta'], 'تسوية الرصيد لاستحقاق الطلبات المسلّمة بقرار صاحب الموقع (2026-11-25)', ['state' => 'confirmed', 'recon' => 'wf-2026-11-25']);
+            $row['status'] = 'applied';
+            $u2 = find_user($t['email']); $row['balance'] = round((float)($u2['balance'] ?? 0), 2);
+        }
+        $out[] = $row;
+    }
+    return $out;
 }
 // عمولة الفريق (إحالة) المرتبطة بأوردر: بنقرأ السجل ونجمع لكل مسوق (من غير ما نكرر أي عملية):
 //   credited = اللي اتسجل للفريق، undone = اللي اتعكس، released = اللي اتأكد قبل كده
@@ -3158,7 +3233,7 @@ function wf_admin_apply_order_edit($order_no, $in) {
             if (status_releases_commission($new_key)) {
                 $nmk = find_marketer_by_code($new_ref);
                 if ($nmk) {
-                    commission_release((string)$nmk['email'], $new_earn, $old_idx, 'طلب محوّل مُسلَّم بالفعل');
+                    commission_release((string)$nmk['email'], $new_earn, $old_idx, 'طلب محوّل مُسلَّم بالفعل', true);
                     team_commission_release_for_order($old_idx, 'طلب محوّل مُسلَّم بالفعل');
                 }
             }
@@ -3168,7 +3243,7 @@ function wf_admin_apply_order_edit($order_no, $in) {
         if ($new_key !== $old_key && $old_mk_email !== '' && $old_earn > 0) {
             // دورة حياة الحالة على القيمة القديمة (زي معالج الحالة بالظبط)
             if (status_releases_commission($new_key) && !status_releases_commission($old_key)) {
-                commission_release($old_mk_email, $old_earn, $old_idx, 'تأكيد تسليم الأوردر');
+                commission_release($old_mk_email, $old_earn, $old_idx, 'تأكيد تسليم الأوردر', true);
                 team_commission_release_for_order($old_idx, 'تأكيد تسليم الأوردر');
                 $extra = '✅ تم تحرير عمولة ' . number_format($old_earn, 2) . ' ج.م للمسوق';
             } elseif (status_reverses_commission($new_key) && !status_reverses_commission($old_key)) {

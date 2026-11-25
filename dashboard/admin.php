@@ -153,7 +153,7 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
 
         if ($mk_email !== '' && $o_ern > 0) {
             if (status_releases_commission($new_key) && !status_releases_commission($old_key)) {
-                commission_release($mk_email, $o_ern, $i, 'تأكيد تسليم الأوردر');
+                commission_release($mk_email, $o_ern, $i, 'تأكيد تسليم الأوردر', true);
                 team_commission_release_for_order($i, 'تأكيد تسليم الأوردر');
                 $msg_extra = '✅ تم تحرير عمولة ' . number_format($o_ern, 2) . ' ج.م للمسوق';
             } elseif (status_reverses_commission($new_key) && !status_reverses_commission($old_key)) {
@@ -574,6 +574,17 @@ if (isset($_POST['comm_email'], $_POST['comm_new_status'])) {
     update_user($_POST['comm_email'], function (&$u) use ($new_cs) { $u['comm_status'] = $new_cs; });
     log_audit('change_commission_status', $_POST['comm_email'], ['status' => $new_cs]);
     $msg = 'تم تحديث حالة عمولة المسوق ✅';
+}
+// ===== تسوية الأرصدة لمرة واحدة (بقرار صاحب الموقع) =====
+if (isset($_POST['wf_recon_apply'])) {
+    if (!csrf_ok()) $msg = '⛔ انتهت صلاحية الجلسة — حدّث الصفحة وحاول مرة أخرى';
+    else {
+        $rr = wf_recon_run(true);
+        $summ = [];
+        foreach ($rr as $x) $summ[] = $x['name'] . ':' . $x['status'];
+        log_audit('wf_recon_apply', 'wf-2026-11-25', ['rows' => $summ]);
+        $msg = 'تمت التسوية: ' . implode(' | ', $summ);
+    }
 }
 // ===== رفض طلب سحب (مع إرجاع المبلغ لرصيد المسوق) =====
 if (isset($_POST['payout_reject'])) {
@@ -2028,6 +2039,14 @@ elseif ($tab === 'chats') {
 // 16. TAB: COMMISSIONS (العمولات والمدفوعات: pending → confirmed → paid)
 // =========================================================================
 elseif ($tab === 'commissions') {
+    $wf_rc = wf_recon_run(false);
+    $wf_rc_ready = 0; foreach ($wf_rc as $x) if ($x['status'] === 'ready') $wf_rc_ready++;
+    echo '<div class="card" style="margin-bottom:14px"><h2>تسوية الأرصدة لاستحقاق الطلبات المسلّمة</h2><table><tr><th>المسوق</th><th>الرصيد المتاح الحالي</th><th>التعديل</th><th>الحالة</th></tr>';
+    $wf_lbl = ['ready' => 'جاهز', 'done' => 'تمت', 'applied' => 'تمت', 'mismatch' => 'القيمة اتغيرت — متخطّى', 'pending_payout' => 'فيه سحب معلق — متخطّى', 'missing' => 'غير موجود'];
+    foreach ($wf_rc as $x) echo '<tr><td>' . esc($x['name']) . '</td><td>' . number_format((float)$x['balance'], 2) . '</td><td dir="ltr">' . ($x['delta'] > 0 ? '+' : '') . number_format($x['delta'], 2) . '</td><td>' . esc($wf_lbl[$x['status']] ?? $x['status']) . '</td></tr>';
+    echo '</table>';
+    if ($wf_rc_ready > 0) echo '<form method="post" style="margin-top:10px">' . csrf_field() . '<button class="btn" name="wf_recon_apply" value="1" type="submit">تنفيذ التسوية (مرة واحدة)</button></form>';
+    echo '</div>';
     $comm_rows = [];
     foreach ($marketers as $u) {
         $mo = array_filter($orders, function ($o) use ($u) { return ($o['ref'] ?? '') === ($u['ref_code'] ?? ''); });

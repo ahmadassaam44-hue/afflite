@@ -124,6 +124,45 @@ check('m1 ledger trail is complete and ordered', $types === [
     'commission:100', 'release:100', 'reversal:-40', 'commission:50', 'reversal:-20', 'reversal:-1000',
 ]);
 
+// ── 9) إعادة تسليم أوردر بعد عكسه: التكملة في حدود الاستحقاق فقط، بلا تكرار ولا رصيد سالب ──
+seed_profile('mk-3', 'm3@test.local', ['name' => 'مسوق ثالث', 'role' => 'marketer', 'ref_code' => 'MK-T3', 'balance' => 50, 'pending_balance' => 0]);
+seed_profile('mk-4', 'm4@test.local', ['name' => 'مسوق رابع', 'role' => 'marketer', 'ref_code' => 'MK-T4', 'balance' => 0, 'pending_balance' => 0]);
+jsave('orders.json', [
+    0 => ['ref' => 'MK-T3', 'status' => 'delivered', 'm_earn' => 100],
+    1 => ['ref' => 'MK-T3', 'status' => 'delivered', 'm_earn' => 50],
+    2 => ['ref' => 'MK-T4', 'status' => 'delivered', 'm_earn' => 100],
+]);
+jsave('payouts.json', [['email' => 'm4@test.local', 'amount' => 100, 'status' => 'موافق عليه']]);
+check('plain release without shortfall flag does nothing when pending is empty', commission_release('m3@test.local', 100, 0, 'x') === false);
+check('re-delivery tops up balance from delivered entitlement', commission_release('m3@test.local', 100, 0, 'x', true) === true);
+$u = find_user('m3@test.local');
+check('m3 balance is 150 after top-up', feq($u['balance'], 150) && feq($u['pending_balance'], 0));
+check('second re-delivery call does not credit again', commission_release('m3@test.local', 100, 0, 'x', true) === false);
+check('top-up refused when already withdrawn in full (no double pay)', commission_release('m4@test.local', 100, 2, 'x', true) === false);
+$u = find_user('m4@test.local');
+check('m4 balance untouched', feq($u['balance'], 0));
+
+// ── 10) التسوية لمرة واحدة: معاينة بلا تعديل، تنفيذ مرة واحدة، تخطّي لو القيمة اتغيرت ──
+seed_profile('rc-1', 'kokytoto000@gmail.com', ['name' => 'c', 'role' => 'marketer', 'balance' => 0, 'pending_balance' => 0]);
+seed_profile('rc-2', 'mervatmena145@gmail.com', ['name' => 'k', 'role' => 'marketer', 'balance' => 0, 'pending_balance' => 0]);
+seed_profile('rc-3', 'sslmy5689@gmail.com', ['name' => 'f', 'role' => 'marketer', 'balance' => 0, 'pending_balance' => 55]);
+seed_profile('rc-4', 'ahmadassaam44@gmail.com', ['name' => 'a', 'role' => 'marketer', 'balance' => 90, 'pending_balance' => 0]);
+jsave('payouts.json', []);
+$pv = wf_recon_run(false);
+check('recon preview marks all four ready', count($pv) === 4 && count(array_filter($pv, function ($r) { return $r['status'] === 'ready'; })) === 4);
+$u = find_user('kokytoto000@gmail.com');
+check('recon preview changes nothing', feq($u['balance'], 0));
+$ap = wf_recon_run(true);
+check('recon applied to all four', count(array_filter($ap, function ($r) { return $r['status'] === 'applied'; })) === 4);
+check('Carolyn 520', feq(find_user('kokytoto000@gmail.com')['balance'], 520));
+check('Kirmina 370', feq(find_user('mervatmena145@gmail.com')['balance'], 370));
+$f = find_user('sslmy5689@gmail.com');
+check('Fatma 15 and pending 55 untouched', feq($f['balance'], 15) && feq($f['pending_balance'], 55));
+check('Ahmed 40', feq(find_user('ahmadassaam44@gmail.com')['balance'], 40));
+$ap2 = wf_recon_run(true);
+check('recon second run is a no-op', count(array_filter($ap2, function ($r) { return $r['status'] === 'done'; })) === 4 && feq(find_user('kokytoto000@gmail.com')['balance'], 520));
+check('recon leaves one adjust row per marketer', count(balance_ledger_for('kokytoto000@gmail.com')) === 1 && balance_ledger_for('kokytoto000@gmail.com')[0]['type'] === 'adjust');
+
 // تنظيف
 $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tmp, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
 foreach ($rii as $file) { $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname()); }
