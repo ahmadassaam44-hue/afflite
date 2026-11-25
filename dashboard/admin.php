@@ -745,7 +745,7 @@ $love_total_count = max($active_wish_total, count(array_filter($love_log, functi
 $orders = jload('orders.json', []);
 if (!is_array($orders)) $orders = [];
 $rev = array_sum(array_map(function ($o) { return (float)($o['total'] ?? 0); }, $orders));
-$mout = array_sum(array_map(function ($o) { return (float)($o['m_earn'] ?? 0); }, $orders));
+$mout = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $orders));
 $delivered = count(array_filter($orders, function ($o) { return ($o['status'] ?? '') === 'تم التوصيل'; }));
 $pending = count(array_filter($orders, function ($o) { return status_key($o['status'] ?? '') === 'pending'; }));
 $all_users = users();
@@ -1617,15 +1617,16 @@ elseif ($tab === 'marketers') {
             $mo = function_exists('wf_orders_by_ref') ? wf_orders_by_ref($orders, $mref) : array_values(array_filter($orders, function ($o) use ($mref) { return ($o['ref'] ?? '') === $mref; }));
             $mo_rev = array_reverse($mo, true);
             $mrev = array_sum(array_map(function ($o) { return (float)($o['total'] ?? 0); }, $mo));
-            $mcomm = array_sum(array_map(function ($o) { return (float)($o['m_earn'] ?? 0); }, $mo));
+            $mcomm = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $mo));
             $mclicks = (int)($mk_clicks[$mref]['total_clicks'] ?? 0);
             $muv = is_array($mk_clicks[$mref]['unique_visitors'] ?? null) ? count($mk_clicks[$mref]['unique_visitors']) : 0;
             $mconv = $mclicks > 0 ? round(count($mo) / $mclicks * 100, 2) : 0;
             $mteam = array_filter($all_users, function ($x) use ($mref) { return ($x['referred_by'] ?? '') === $mref; });
-            $mstatus = $mu['comm_status'] ?? 'pending';
-            $mpending = $mstatus === 'pending' ? $mcomm : 0;
-            $mconfirmed = $mstatus === 'confirmed' ? $mcomm : 0;
-            $mpaid = $mstatus === 'paid' ? $mcomm : 0;
+            // الحساب من الطلبات الفعلية (الملغي/المرتجع مش محسوب) والسحوبات المعتمدة — مش من حالة الحساب العامة
+            $mtot = wf_marketer_comm_totals($mo, (string)($mu['email'] ?? ''));
+            $mpending = $mtot['pending'];
+            $mconfirmed = $mtot['remaining'];
+            $mpaid = $mtot['withdrawn'];
 
             // أفضل منتجاته مبيعاً
             $mprods = [];
@@ -1635,7 +1636,7 @@ elseif ($tab === 'marketers') {
                 if (!isset($mprods[$k])) $mprods[$k] = ['name' => $oo['pname'] ?? '', 'qty' => 0, 'total' => 0, 'comm' => 0];
                 $mprods[$k]['qty'] += (int)($oo['qty'] ?? 1);
                 $mprods[$k]['total'] += (float)($oo['total'] ?? 0);
-                $mprods[$k]['comm'] += (float)($oo['m_earn'] ?? 0);
+                $mprods[$k]['comm'] += wf_order_commission($oo);
             }
             uasort($mprods, function ($a, $b) { return $b['comm'] <=> $a['comm']; });
 
@@ -1690,7 +1691,7 @@ elseif ($tab === 'marketers') {
                     echo '<td>' . esc($oo['cname'] ?? '') . '<br><span dir="ltr">' . esc($oo['cphone'] ?? '') . '</span>' . (trim((string)($oo['cphone2'] ?? '')) !== '' ? '<br><span dir="ltr" class="mut">' . esc($oo['cphone2']) . '</span>' : '') . '</td>';
                     echo '<td>' . esc($oo['city'] ?? '') . ' — ' . esc($oo['district'] ?? '') . '<br><span class="mut">' . esc(mb_substr((string)($oo['address'] ?? ''), 0, 40)) . '</span></td>';
                     echo '<td><b>' . number_format((float)($oo['total'] ?? 0), 2) . ' ' . esc(function_exists('wf_ui_currency') ? wf_ui_currency($oo) : 'ج.م') . '</b>' . ((float)($oo['discount'] ?? 0) > 0 ? '<br><span class="mut" style="color:var(--success)">خصم ' . number_format((float)($oo['discount'] ?? 0), 2) . ' ج.م</span>' : '') . '</td>';
-                    echo '<td data-ui="u-8b877a44 d1x dc">+' . number_format((float)($oo['m_earn'] ?? 0), 2) . ' ج.م<br><span class="mut">' . esc($cs_lbl19) . '</span></td>';
+                    echo '<td data-ui="u-8b877a44 d1x dc">+' . number_format(wf_order_commission($oo), 2) . ' ج.م<br><span class="mut">' . esc($cs_lbl19) . '</span></td>';
                     echo '<td>' . wf_order_badge($oo['status'] ?? '') . '</td>';
                     echo '<td>' . wf_details_btn('كل تفاصيل الطلب ' . $oo_no, wf_order_details_rows($oo, true), 'تفاصيل إضافية') . ' <a class="btn sm outline" href="?tab=orders&edit=' . urlencode($oo_no) . '">تعديل كامل</a></td>';
                     echo '</tr>';
@@ -1705,7 +1706,7 @@ elseif ($tab === 'marketers') {
     $lb = [];
     foreach ($marketers as $u) {
         $mo = array_filter($orders, function ($o) use ($u) { return ($o['ref'] ?? '') === ($u['ref_code'] ?? ''); });
-        $mc = array_sum(array_map(function ($o) { return (float)($o['m_earn'] ?? 0); }, $mo));
+        $mc = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $mo));
         if ($mc > 0) $lb[] = ['name' => $u['name'] ?? '', 'ref' => $u['ref_code'] ?? '', 'earn' => $mc, 'orders' => count($mo)];
     }
     usort($lb, function ($a, $b) { return $b['earn'] <=> $a['earn']; });
@@ -1730,7 +1731,7 @@ elseif ($tab === 'marketers') {
     foreach ($marketers as $u) {
         $mo = array_filter($orders, function ($o) use ($u) { return ($o['ref'] ?? '') === ($u['ref_code'] ?? ''); });
         $ms = array_sum(array_map(function ($o) { return (float)($o['total'] ?? 0); }, $mo));
-        $mc = array_sum(array_map(function ($o) { return (float)($o['m_earn'] ?? 0); }, $mo));
+        $mc = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $mo));
         $tm = count(array_filter($all_users, function ($x) use ($u) { return ($x['referred_by'] ?? '') === ($u['ref_code'] ?? ''); }));
         $mkst = $u['status'] ?? 'approved';
         $st_badge = $mkst === 'approved' ? '<span class="badge green"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-check></use></svg> مفعل</span>' : ($mkst === 'suspended' ? '<span class="badge neutral"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-close></use></svg> موقوف</span>' : '<span class="badge amber"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-clock></use></svg> قيد المراجعة</span>');
@@ -2030,21 +2031,22 @@ elseif ($tab === 'commissions') {
     $comm_rows = [];
     foreach ($marketers as $u) {
         $mo = array_filter($orders, function ($o) use ($u) { return ($o['ref'] ?? '') === ($u['ref_code'] ?? ''); });
-        $mc = array_sum(array_map(function ($o) { return (float)($o['m_earn'] ?? 0); }, $mo));
+        $mc = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $mo));
         if ($mc <= 0 && (float)($u['balance'] ?? 0) <= 0) continue;
         $st_comm = $u['comm_status'] ?? 'pending';
         $comm_rows[] = [
             'name' => $u['name'] ?? '', 'email' => $u['email'] ?? '', 'ref' => $u['ref_code'] ?? '',
             'orders' => count($mo), 'total' => $mc, 'balance' => (float)($u['balance'] ?? 0),
-            'pending_bal' => (float)($u['pending_balance'] ?? 0), 'status' => $st_comm,
+            'pending_bal' => (float)($u['pending_balance'] ?? 0), 'status' => $st_comm, 'tot' => wf_marketer_comm_totals($mo, (string)($u['email'] ?? '')),
             'custom_pct' => (float)($u['custom_comm_pct'] ?? 0),
         ];
     }
     usort($comm_rows, function ($a, $b) { return $b['total'] <=> $a['total']; });
 
-    $tot_pending = array_sum(array_map(function ($r) { return $r['status'] === 'pending' ? $r['total'] : 0; }, $comm_rows));
-    $tot_conf = array_sum(array_map(function ($r) { return $r['status'] === 'confirmed' ? $r['total'] : 0; }, $comm_rows));
-    $tot_paid = array_sum(array_map(function ($r) { return $r['status'] === 'paid' ? $r['total'] : 0; }, $comm_rows));
+    // الإجماليات من الطلبات الفعلية: معلقة = لسه ماتسلمتش، مؤكدة = اتسلمت وماتسحبتش، مدفوعة = سحوبات معتمدة (الملغي/المرتجع خارج الحساب)
+    $tot_pending = array_sum(array_map(function ($r) { return $r['tot']['pending']; }, $comm_rows));
+    $tot_conf = array_sum(array_map(function ($r) { return $r['tot']['remaining']; }, $comm_rows));
+    $tot_paid = array_sum(array_map(function ($r) { return $r['tot']['withdrawn']; }, $comm_rows));
 
     echo '<div class="kpis" data-ui="u-25724057 d0">';
     echo '<div class="kpi" data-ui="u-97b96627 d5"><b>' . number_format($tot_pending, 2) . ' ج.م</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-clock></use></svg> عمولات معلقة (Pending)</span></div>';

@@ -154,7 +154,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv' && $code !== '') {
 $all_orders = jload('orders.json', []);
 $clicks = array_values(array_filter(jload('clicks.json', []), function ($c) use ($code) { return $c['ref'] === $code; }));
 $orders = array_values(array_filter($all_orders, function ($o) use ($code) { return ($o['ref'] ?? '') === $code; }));
-$myearn = array_sum(array_map(function ($o) { return $o['m_earn'] ?? 0; }, $orders));
+$myearn = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $orders));
 $team = array_values(array_filter(users(), function ($u) use ($code) { return ($u['referred_by'] ?? '') === $code; }));
 // أرباح الفريق = العمولات اللي اتسجلت فعلاً في السجل (عمولة فريق (إحالة))، مش تقدير من أوردرات الفريق
 $team_earn = 0.0;
@@ -235,7 +235,7 @@ if ($mtab === 'performance') { wfp('MTAB performance');
     foreach ($forders as $o) {
         $ok = status_key($o['status'] ?? '');
         if ($ok === 'delivered') $ern += ($o['m_earn'] ?? 0);
-        elseif (!in_array($ok, ['cancelled', 'returned'], true)) $exp += ($o['m_earn'] ?? 0);
+        elseif (!status_reverses_commission($ok)) $exp += ($o['m_earn'] ?? 0);
     }
     // ملخص مالي مباشر من سجلات الموقع، وليس أرقاماً ثابتة أو بيانات خارجية.
     $payout_rows = jload('payouts.json', []);
@@ -292,7 +292,7 @@ if ($mtab === 'performance') { wfp('MTAB performance');
     for ($d = 6; $d >= 0; $d--) {
         $dt = date('Y-m-d', time() - $d * 86400);
         $day_orders = array_filter($forders, function ($o) use ($dt) { return substr($o['at'] ?? '', 0, 10) === $dt; });
-        $chart_data[] = ['date' => date('d/m', strtotime($dt)), 'orders' => count($day_orders), 'revenue' => array_sum(array_map(function ($o) { return $o['m_earn'] ?? 0; }, $day_orders))];
+        $chart_data[] = ['date' => date('d/m', strtotime($dt)), 'orders' => count($day_orders), 'revenue' => array_sum(array_map(function ($o) { return wf_order_commission($o); }, $day_orders))];
     }
     echo '<div data-ui="u-81c46419 dh d1p d1o d1q dj d54"><h2 data-ui="u-c1940140 de d1 d19"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-chart></use></svg> ملخص الأداء والأرباح</h2><a class="btn sm" href="?mtab=store"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-arrow-left></use></svg> صفحات الهبوط ومتجري</a></div>';
     echo '<div class="kpis">';
@@ -385,7 +385,7 @@ if ($mtab === 'performance') { wfp('MTAB performance');
     for ($d = $days - 1; $d >= 0; $d--) $daily[date('Y-m-d', time() - $d * 86400)] = ['clicks' => 0, 'orders' => 0, 'earn' => 0];
     foreach ($clk_all as $c) { $dk = substr($c['at'], 0, 10); if (isset($daily[$dk])) $daily[$dk]['clicks']++; $uniq_ips[$c['ip'] ?? ''] = 1; $sb = $c['sub'] ?? ''; if ($sb !== '') { $camp[$sb]['clicks'] = ($camp[$sb]['clicks'] ?? 0) + 1; } }
     $p_orders = array_filter($forders, function ($o) use ($since) { return strtotime($o['at'] ?? '') >= $since; });
-    foreach ($p_orders as $o) { $dk = substr($o['at'], 0, 10); if (isset($daily[$dk])) { $daily[$dk]['orders']++; $daily[$dk]['earn'] += (float)($o['m_earn'] ?? 0); } $sb = $o['sub'] ?? ''; if ($sb !== '') { $camp[$sb]['orders'] = ($camp[$sb]['orders'] ?? 0) + 1; $camp[$sb]['earn'] = ($camp[$sb]['earn'] ?? 0) + (float)($o['m_earn'] ?? 0); } }
+    foreach ($p_orders as $o) { $dk = substr($o['at'], 0, 10); if (isset($daily[$dk])) { $daily[$dk]['orders']++; $daily[$dk]['earn'] += wf_order_commission($o); } $sb = $o['sub'] ?? ''; if ($sb !== '') { $camp[$sb]['orders'] = ($camp[$sb]['orders'] ?? 0) + 1; $camp[$sb]['earn'] = ($camp[$sb]['earn'] ?? 0) + wf_order_commission($o); } }
     $tot_clicks = count($clk_all); $uniq_clicks = count($uniq_ips); $tot_ord = count($p_orders);
     $conv = $uniq_clicks > 0 ? round($tot_ord / $uniq_clicks * 100, 2) : 0;
     $epc = $tot_clicks > 0 ? round(array_sum(array_column($daily, 'earn')) / $tot_clicks, 2) : 0;
@@ -430,7 +430,7 @@ if ($mtab === 'performance') { wfp('MTAB performance');
     foreach ($forders as $o) {
         $k = ($o['pname'] ?? $o['id']);
         if (!isset($psales[$k])) $psales[$k] = ['n' => 0, 'q' => 0, 'e' => 0];
-        $psales[$k]['n']++; $psales[$k]['q'] += ($o['qty'] ?? 1); $psales[$k]['e'] += ($o['m_earn'] ?? 0);
+        $psales[$k]['n']++; $psales[$k]['q'] += ($o['qty'] ?? 1); $psales[$k]['e'] += wf_order_commission($o);
     }
     uasort($psales, function ($a, $b) { return $b['q'] - $a['q']; });
     if ($psales) {
@@ -645,7 +645,7 @@ elseif ($mtab === 'orders') { wfp('MTAB orders');
         echo '<td><b>' . esc(mb_substr($o['pname'] ?? '', 0, 35)) . '</b><br>' . wf_details_btn('كل تفاصيل الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), 'تفاصيل إضافية')
            . ($mk_has_note ? ' ' . wf_details_btn('ملاحظات الإدارة على الطلب ' . ($o['order_no'] ?? ''), wf_order_details_rows($o, true), '📝 ملاحظة إدارة') : '') . '</td>';
         echo '<td><b>' . number_format($o['total'] ?? 0) . ' ' . esc(wf_ui_currency($o)) . '</b></td>';
-        echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format($o['m_earn'] ?? 0, 2) . ' ج.م</td>';
+        echo '<td class="comm" data-ui="u-b135454c d1 d1x">+' . number_format(wf_order_commission($o), 2) . ' ج.م</td>';
         echo '<td>' . wf_order_badge($o['status'] ?? '') . '</td>';
         // التعديل متاح قبل الشحن (قيد التأكيد/مؤكد) — الإلغاء والإرجاع متاحين على أي حالة لسه منتهية
         $mk_can_ed = wf_marketer_can_edit_order($o, $user);
@@ -929,7 +929,7 @@ elseif ($mtab === 'earnings') { wfp('MTAB earnings');
     foreach ($forders as $o) {
         $ok = status_key($o['status'] ?? '');
         if ($ok === 'delivered') $ern += ($o['m_earn'] ?? 0);
-        elseif (!in_array($ok, ['cancelled', 'returned'], true)) $exp += ($o['m_earn'] ?? 0);
+        elseif (!status_reverses_commission($ok)) $exp += ($o['m_earn'] ?? 0);
     }
     $myout = array_sum(array_map(function ($p) use ($user) { return ($p['user'] === $user['email'] && ($p['status'] ?? '') !== 'مرفوض') ? $p['amount'] : 0; }, jload('payouts.json', [])));
     echo '<div data-ui="u-9e82dcff d54"><h2 data-ui="u-769590a6 d26 d1"><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> الأرباح والسحوبات</h2></div>';
@@ -972,7 +972,7 @@ elseif ($mtab === 'team') { wfp('MTAB team');
         foreach ($team as $t) {
             $left = max(0, 243 - floor((time() - strtotime($t['at'] ?? 'now')) / 86400));
             $tm_orders = array_filter($all_orders, function ($o) use ($t) { return ($o['ref'] ?? '') === ($t['ref_code'] ?? ''); });
-            $tm_earn = array_sum(array_map(function ($o) { return $o['m_earn'] ?? 0; }, $tm_orders));
+            $tm_earn = array_sum(array_map(function ($o) { return wf_order_commission($o); }, $tm_orders));
             $my_from_tm = round($tm_earn * REF_TEAM_RATE, 2);
             echo '<tr><td>' . esc($t['name']) . '</td><td dir="ltr">' . esc($t['email']) . '</td><td dir="ltr">' . esc(substr($t['at'] ?? '', 0, 10)) . '</td><td>' . ($left > 0 ? $left . ' يوم' : 'انتهت') . '</td><td>' . count($tm_orders) . '</td><td class="comm">+' . number_format($my_from_tm) . ' ج.م</td></tr>';
         }

@@ -404,6 +404,30 @@ function status_key($v) {
     $k = strtolower($v);
     return isset(order_status_list()[$k]) ? $k : 'pending';
 }
+// العمولة المحسوبة للطلب: الملغي/المرتجع/لا يرد = كأنه ما حصلش (صفر) — الرقم اللي المسوق بيشوفه هو اللي يتحسب له
+function wf_order_commission($o) {
+    if (!is_array($o)) return 0.0;
+    if (status_reverses_commission($o['status'] ?? '')) return 0.0;
+    return (float)($o['m_earn'] ?? 0);
+}
+// تفصيل عمولة مسوق من طلباته: معلقة (لسه ماتسلمتش) + مؤكدة (اتسلمت) + المسحوب بموافقة الأدمن
+function wf_marketer_comm_totals($orders, $email = '') {
+    $t = ['pending' => 0.0, 'delivered' => 0.0, 'total' => 0.0, 'withdrawn' => 0.0, 'remaining' => 0.0];
+    foreach ((array)$orders as $o) {
+        $e = wf_order_commission($o);
+        if ($e <= 0) continue;
+        if (status_key($o['status'] ?? '') === 'delivered') $t['delivered'] += $e; else $t['pending'] += $e;
+    }
+    if ($email !== '') {
+        foreach ((array)jload('payouts.json', []) as $po) {
+            if (strcasecmp((string)($po['email'] ?? $po['user'] ?? ''), (string)$email) === 0 && in_array($po['status'] ?? '', ['موافق عليه', 'approved', 'paid'], true)) $t['withdrawn'] += (float)($po['amount'] ?? 0);
+        }
+    }
+    $t['total'] = round($t['pending'] + $t['delivered'], 2);
+    $t['remaining'] = round(max(0, $t['delivered'] - $t['withdrawn']), 2);
+    foreach (['pending','delivered','withdrawn'] as $k) $t[$k] = round($t[$k], 2);
+    return $t;
+}
 // الحالات التي تُعتبر "نهائية إيجابية" (تُحرَّر فيها العمولة)
 function status_releases_commission($k) { return in_array(status_key($k), ['delivered'], true); }
 // الحالات التي تُلغي العمولة
