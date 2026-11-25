@@ -163,6 +163,49 @@ $ap2 = wf_recon_run(true);
 check('recon second run is a no-op', count(array_filter($ap2, function ($r) { return $r['status'] === 'done'; })) === 4 && feq(find_user('kokytoto000@gmail.com')['balance'], 520));
 check('recon leaves one adjust row per marketer', count(balance_ledger_for('kokytoto000@gmail.com')) === 1 && balance_ledger_for('kokytoto000@gmail.com')[0]['type'] === 'adjust');
 
+// ── 11) دورة كاملة لأوردرين معلقين: تسليم/إرجاع/إعادة تسليم/تبديلات بدون لمس معلق أوردر تاني ──
+seed_profile('mk-5', 'm5@test.local', ['name' => 'مسوق خامس', 'role' => 'marketer', 'ref_code' => 'MK-T5', 'balance' => 0, 'pending_balance' => 0]);
+jsave('payouts.json', []);
+$set = function ($a, $b, $c = 'cancelled') { jsave('orders.json', [10 => ['ref' => 'MK-T5', 'status' => $a, 'm_earn' => 100], 11 => ['ref' => 'MK-T5', 'status' => $b, 'm_earn' => 50], 12 => ['ref' => 'MK-T5', 'status' => $c, 'm_earn' => 30]]); };
+$st = function () { $u = find_user('m5@test.local'); return [round((float)$u['balance'], 2), round((float)$u['pending_balance'], 2)]; };
+$set('pending', 'pending');
+commission_credit_pending('m5@test.local', 100, 10); commission_credit_pending('m5@test.local', 50, 11);
+check('two pending orders: pending 150', $st() === [0.0, 150.0]);
+check('deliver A moves its own 100', commission_release('m5@test.local', 100, 10, 'x', true) && $st() === [100.0, 50.0]);
+$set('delivered', 'pending');
+check('return delivered A takes from balance, B pending untouched', commission_reverse('m5@test.local', 100, 10, 'x', true) && $st() === [0.0, 50.0]);
+check('double reversal refused by caller guard: balance already 0 => no negative and no pending drain', commission_reverse('m5@test.local', 100, 10, 'x', true) === true && $st() === [0.0, 50.0]);
+$set('confirmed', 'pending');
+check('returned->confirmed->delivered A: tops up 100, B pending still 50', commission_release('m5@test.local', 100, 10, 'x', true) && $st() === [100.0, 50.0]);
+$set('delivered', 'pending');
+check('repeat delivered call credits nothing more', commission_release('m5@test.local', 100, 10, 'x', true) === false && $st() === [100.0, 50.0]);
+check('delivered->shipped revert takes 100 from balance only', commission_reverse('m5@test.local', 100, 10, 'x', true) && $st() === [0.0, 50.0]);
+$set('shipped', 'pending');
+check('shipped->delivered again restores 100, B pending intact', commission_release('m5@test.local', 100, 10, 'x', true) && $st() === [100.0, 50.0]);
+$set('delivered', 'pending');
+check('deliver B moves its own 50', commission_release('m5@test.local', 50, 11, 'x', true) && $st() === [150.0, 0.0]);
+$set('delivered', 'delivered');
+check('return B after delivery: balance 100', commission_reverse('m5@test.local', 50, 11, 'x', true) && $st() === [100.0, 0.0]);
+$set('delivered', 'returned');
+commission_credit_pending('m5@test.local', 30, 12);
+check('cancel pending order C drains its pending only', commission_reverse('m5@test.local', 30, 12, 'x') && $st() === [100.0, 0.0]);
+$set('delivered', 'returned', 'confirmed');
+check('cancelled->confirmed->delivered C tops up 30', commission_release('m5@test.local', 30, 12, 'x', true) && $st() === [130.0, 0.0]);
+check('balance never exceeds delivered minus payouts here (A100 + C30)', $st()[0] <= 130.0);
+
+// ── 12) بعد السحب: إرجاع أوردر مسلَّم لا يخلّي رصيد سالب وإعادة التسليم لا تدفع مرتين ──
+seed_profile('mk-6', 'm6@test.local', ['name' => 'مسوق سادس', 'role' => 'marketer', 'ref_code' => 'MK-T6', 'balance' => 100, 'pending_balance' => 40]);
+jsave('payouts.json', [['email' => 'm6@test.local', 'amount' => 100, 'status' => 'موافق عليه']]);
+jsave('orders.json', [20 => ['ref' => 'MK-T6', 'status' => 'delivered', 'm_earn' => 100], 21 => ['ref' => 'MK-T6', 'status' => 'pending', 'm_earn' => 40]]);
+// الرصيد المخزّن 100 لسه فيه (محاكاة): السحب اتسجّل لكن الرصيد لم يُخصم في الاختبار؛ المهم عدم تعويض زائد
+check('return after payout: no negative, other pending untouched', commission_reverse('m6@test.local', 100, 20, 'x', true) === true);
+$u = find_user('m6@test.local');
+check('m6 balance not negative and pending 40 intact', (float)$u['balance'] >= 0 && feq($u['pending_balance'], 40));
+jsave('orders.json', [20 => ['ref' => 'MK-T6', 'status' => 'confirmed', 'm_earn' => 100], 21 => ['ref' => 'MK-T6', 'status' => 'pending', 'm_earn' => 40]]);
+check('redelivery after full payout credits nothing (no double pay)', commission_release('m6@test.local', 100, 20, 'x', true) === false);
+$u = find_user('m6@test.local');
+check('m6 still not credited, pending 40 intact', feq($u['balance'], 0) && feq($u['pending_balance'], 40));
+
 // تنظيف
 $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($tmp, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST);
 foreach ($rii as $file) { $file->isDir() ? @rmdir($file->getPathname()) : @unlink($file->getPathname()); }

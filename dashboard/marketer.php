@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($mk_res['ok']) {
                 $mo = $mk_res['o'];
                 if ((float)($mo['m_earn'] ?? 0) > 0) {
-                    commission_reverse($user['email'], (float)$mo['m_earn'], $mk_res['idx'], $mk_lbl . ' المسوق للطلب');
+                    commission_reverse($user['email'], (float)$mo['m_earn'], $mk_res['idx'], $mk_lbl . ' المسوق للطلب', status_releases_commission($mo['status'] ?? ''));
                     team_commission_reverse_for_order($mk_res['idx'], $mk_lbl . ' المسوق للطلب');
                 }
                 notify('admin', '❌ المسوق ' . ($user['name'] ?? $user['email']) . ' (' . $code . ') ' . ($mk_to === 'returned' ? 'أرجع' : 'ألغى') . ' الطلب ' . $mk_ono, 'dashboard/admin.php?tab=orders');

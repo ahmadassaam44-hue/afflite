@@ -157,11 +157,11 @@ if (isset($_POST['order_idx'], $_POST['new_status'])) {
                 team_commission_release_for_order($i, 'تأكيد تسليم الأوردر');
                 $msg_extra = '✅ تم تحرير عمولة ' . number_format($o_ern, 2) . ' ج.م للمسوق';
             } elseif (status_reverses_commission($new_key) && !status_reverses_commission($old_key)) {
-                commission_reverse($mk_email, $o_ern, $i, status_label($new_key));
+                commission_reverse($mk_email, $o_ern, $i, status_label($new_key), status_releases_commission($old_key));
                 team_commission_reverse_for_order($i, status_label($new_key));
                 $msg_extra = '↩️ تم سحب عمولة ' . number_format($o_ern, 2) . ' ج.م من المسوق';
             } elseif (status_releases_commission($old_key) && !status_releases_commission($new_key)) {
-                commission_reverse($mk_email, $o_ern, $i, 'تراجع عن التسليم: ' . status_label($new_key));
+                commission_reverse($mk_email, $o_ern, $i, 'تراجع عن التسليم: ' . status_label($new_key), true);
                 team_commission_reverse_for_order($i, 'تراجع عن التسليم: ' . status_label($new_key));
                 $msg_extra = '↩️ تم سحب العمولة بعد تغيير الحالة';
             }

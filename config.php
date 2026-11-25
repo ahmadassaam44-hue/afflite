@@ -814,14 +814,31 @@ function wf_release_headroom($mk_email, $order_idx, $amount, $balance_after_move
     }
     return round(max(0, $delivered - $taken - (float)$balance_after_move), 2);
 }
-// $order_shortfall = true لتأكيد تسليم أوردر: لو المعلق مش كفاية (عمولة اتعكست قبل كده ثم الأوردر اتسلّم تاني)
-// بنكمّل الفرق للمتاح في حدود استحقاق الطلبات المسلّمة فقط.
+// كام من المعلق الحالي بيخص الأوردر ده فعلاً (من السجل): معلق اتسجّل − اللي اتحرر منه − اللي اتعكس منه.
+// ده بيمنع إن تسليم أوردر اتعكس قبل كده يستهلك معلق أوردر تاني. أوردر مالوش أي سجل (قبل السجل) = كل المبلغ (السلوك القديم).
+function wf_order_pending_held($mk_email, $order_idx, $fallback) {
+    $idx = (string)(int)$order_idx; $seen = false; $held = 0.0;
+    foreach ((array)jload('balance_ledger.json', [], false) as $r) {
+        if (!is_array($r) || !isset($r['order_idx']) || (string)(int)$r['order_idx'] !== $idx) continue;
+        if (strcasecmp((string)($r['email'] ?? ''), (string)$mk_email) !== 0) continue;
+        $type = (string)($r['type'] ?? ''); $amt = (float)($r['amount'] ?? 0);
+        if ($type === 'commission') { $held += $amt; $seen = true; }
+        elseif ($type === 'release')  { $held -= isset($r['from_pending']) ? (float)$r['from_pending'] : $amt; $seen = true; }
+        elseif ($type === 'reversal') { $held -= isset($r['from_pending']) ? (float)$r['from_pending'] : -$amt; $seen = true; }
+        if ($held < 0) $held = 0.0;
+    }
+    return $seen ? round($held, 2) : round((float)$fallback, 2);
+}
+// $order_shortfall = true لتأكيد تسليم أوردر: بنحرّر من المعلق بس الجزء بتاع الأوردر ده، ولو ناقص (عمولة اتعكست قبل كده
+// ثم الأوردر اتسلّم تاني) بنكمّل الفرق للمتاح في حدود استحقاق الطلبات المسلّمة فقط.
 function commission_release($mk_email, $amount, $order_idx, $reason = 'تأكيد تسليم الأوردر', $order_shortfall = false) {
     $amount = round((float)$amount, 2);
     if ($amount <= 0 || $mk_email === '') return false;
     $mk = find_user($mk_email);
     if (!$mk) return false;
-    $move = min($amount, (float)($mk['pending_balance'] ?? 0));
+    $avail_pending = (float)($mk['pending_balance'] ?? 0);
+    $own = ($order_shortfall && $order_idx !== null && $order_idx !== '') ? wf_order_pending_held($mk_email, $order_idx, $amount) : $amount;
+    $move = round(min($amount, $avail_pending, $own), 2);
     $extra = 0.0;
     if ($order_shortfall && $order_idx !== null && $order_idx !== '' && $amount > $move) {
         $extra = round(min($amount - $move, wf_release_headroom($mk_email, $order_idx, $amount, (float)($mk['balance'] ?? 0) + $move)), 2);
@@ -832,24 +849,34 @@ function commission_release($mk_email, $amount, $order_idx, $reason = 'تأكي�
         $u['pending_balance'] = round(max(0, (float)($u['pending_balance'] ?? 0) - $move), 2);
         $u['balance']         = round((float)($u['balance'] ?? 0) + $total, 2);
     });
-    balance_ledger_add($mk_email, 'release', $total, $reason . ($extra > 0 ? ' (منها ' . number_format($extra, 2) . ' استكمال بعد عكس سابق)' : ''), ['order_idx' => $order_idx, 'state' => 'confirmed']);
+    balance_ledger_add($mk_email, 'release', $total, $reason . ($extra > 0 ? ' (منها ' . number_format($extra, 2) . ' استكمال بعد عكس سابق)' : ''), ['order_idx' => $order_idx, 'state' => 'confirmed', 'from_pending' => $move]);
     notify_user($mk_email, '✅ تم تأكيد عمولة ' . number_format($total, 2) . ' ج.م وأصبحت قابلة للسحب', 'dashboard/balance.php');
     return true;
 }
-function commission_reverse($mk_email, $amount, $order_idx, $reason = 'إلغاء/إرجاع الأوردر') {
+// $from_balance_only = true لعكس أوردر كان مسلَّم (عمولته في المتاح): بنخصم من المتاح فقط (لحد ما فيه) ولا نلمس المعلق بتاع أوردرات تانية.
+function commission_reverse($mk_email, $amount, $order_idx, $reason = 'إلغاء/إرجاع الأوردر', $from_balance_only = false) {
     $amount = round((float)$amount, 2);
     if ($amount <= 0 || $mk_email === '') return false;
     $mk = find_user($mk_email);
     if (!$mk) return false;
-    // خصم من المعلق أولاً، ثم من المتاح
-    $from_pending = min($amount, (float)($mk['pending_balance'] ?? 0));
-    $from_balance = round($amount - $from_pending, 2);
+    if ($from_balance_only) {
+        $from_pending = 0.0;
+        $from_balance = round(min($amount, max(0, (float)($mk['balance'] ?? 0))), 2);
+        $logged = $from_balance;
+        if ($logged < $amount) $reason .= ' (المخصوم فعلاً ' . number_format($logged, 2) . ' من ' . number_format($amount, 2) . ' — الباقي كان اتسحب)';
+        if ($logged <= 0) return true;
+    } else {
+        // خصم من المعلق أولاً، ثم من المتاح
+        $from_pending = min($amount, (float)($mk['pending_balance'] ?? 0));
+        $from_balance = round($amount - $from_pending, 2);
+        $logged = $amount;
+    }
     update_user($mk_email, function (&$u) use ($from_pending, $from_balance) {
         $u['pending_balance'] = round(max(0, (float)($u['pending_balance'] ?? 0) - $from_pending), 2);
         $u['balance']         = round(max(0, (float)($u['balance'] ?? 0) - $from_balance), 2);
     });
-    balance_ledger_add($mk_email, 'reversal', -$amount, $reason, ['order_idx' => $order_idx, 'state' => 'reversed']);
-    notify_user($mk_email, '↩️ تم سحب عمولة ' . number_format($amount, 2) . ' ج.م (' . $reason . ')', 'dashboard/balance.php');
+    balance_ledger_add($mk_email, 'reversal', -$logged, $reason, ['order_idx' => $order_idx, 'state' => 'reversed', 'from_pending' => round($from_pending, 2)]);
+    notify_user($mk_email, '↩️ تم سحب عمولة ' . number_format($logged, 2) . ' ج.م (' . $reason . ')', 'dashboard/balance.php');
     return true;
 }
 // ===== تسوية لمرة واحدة (بموافقة صاحب الموقع على واتساب 2026-11-25) =====
@@ -3224,7 +3251,7 @@ function wf_admin_apply_order_edit($order_no, $in) {
     if ($ref_changed) {
         // سحب عمولة المسوق القديم (مباشرة + فريق) بحسب حالتها
         if ($old_mk_email !== '' && $old_earn > 0 && in_array($old_comm, ['pending', 'confirmed'], true)) {
-            commission_reverse($old_mk_email, $old_earn, $old_idx, 'تحويل الطلب لمسوق آخر بقرار الإدارة');
+            commission_reverse($old_mk_email, $old_earn, $old_idx, 'تحويل الطلب لمسوق آخر بقرار الإدارة', $old_comm === 'confirmed');
             team_commission_reverse_for_order($old_idx, 'تحويل الطلب لمسوق آخر بقرار الإدارة');
         }
         // تسجيل العمولة الجديدة كاملة للمسوق الجديد (فريقه بيتسجل تلقائيًا جوه الدالة)
@@ -3247,11 +3274,11 @@ function wf_admin_apply_order_edit($order_no, $in) {
                 team_commission_release_for_order($old_idx, 'تأكيد تسليم الأوردر');
                 $extra = '✅ تم تحرير عمولة ' . number_format($old_earn, 2) . ' ج.م للمسوق';
             } elseif (status_reverses_commission($new_key) && !status_reverses_commission($old_key)) {
-                commission_reverse($old_mk_email, $old_earn, $old_idx, status_label($new_key));
+                commission_reverse($old_mk_email, $old_earn, $old_idx, status_label($new_key), status_releases_commission($old_key));
                 team_commission_reverse_for_order($old_idx, status_label($new_key));
                 $extra = '↩️ تم سحب عمولة ' . number_format($old_earn, 2) . ' ج.م من المسوق';
             } elseif (status_releases_commission($old_key) && !status_releases_commission($new_key)) {
-                commission_reverse($old_mk_email, $old_earn, $old_idx, 'تراجع عن التسليم: ' . status_label($new_key));
+                commission_reverse($old_mk_email, $old_earn, $old_idx, 'تراجع عن التسليم: ' . status_label($new_key), true);
                 team_commission_reverse_for_order($old_idx, 'تراجع عن التسليم: ' . status_label($new_key));
                 $extra = '↩️ تم سحب العمولة بعد تغيير الحالة';
             }
