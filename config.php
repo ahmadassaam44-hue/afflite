@@ -410,6 +410,8 @@ function wf_order_commission($o) {
     if (status_reverses_commission($o['status'] ?? '')) return 0.0;
     return (float)($o['m_earn'] ?? 0);
 }
+// تسويات زيادة السحب المتنازل عنها بقرار صاحب الموقع (واتساب 2026-11-25: «اعملها كأنه أخدهم ٧٧٠٥»): محمد جمال 56 ج.م
+function wf_overdraw_waivers() { return ['am0475688@gmail.com' => 56.0]; }
 // العمولة المستحقة فعلاً: الطلبات المسلّمة فقط (مش المعلقة ولا الملغية)
 function wf_order_earned($o) {
     if (!is_array($o) || status_key($o['status'] ?? '') !== 'delivered') return 0.0;
@@ -430,7 +432,12 @@ function wf_marketer_comm_totals($orders, $email = '') {
     }
     $t['total'] = round($t['delivered'], 2); // الإجمالي = المستحق (المسلّم) فقط؛ المعلق منفصل وغير داخل فيه
     $t['remaining'] = round(max(0, $t['delivered'] - $t['withdrawn']), 2);
-    $t['overdrawn'] = round(max(0, $t['withdrawn'] - $t['delivered']), 2); // سحوبات معتمدة أكتر من المستحق (للتنبيه فقط، مفيش تعديل في الأرصدة)
+    $t['overdrawn'] = round(max(0, $t['withdrawn'] - $t['delivered']), 2);
+    // تسوية بقرار صاحب الموقع: زيادة سحب متنازل عنها (مش دين ولا خصم من مستقبل). الحد الأقصى للمبلغ المتنازل عنه ثابت؛ أي زيادة فوقه تفضل تنبيه.
+    $t['waived'] = 0.0;
+    $wv = wf_overdraw_waivers();
+    $ek = strtolower(trim((string)$email));
+    if ($ek !== '' && isset($wv[$ek]) && $t['overdrawn'] > 0) { $t['waived'] = round(min($t['overdrawn'], (float)$wv[$ek]), 2); $t['overdrawn'] = round($t['overdrawn'] - $t['waived'], 2); }
     foreach (['pending','delivered','withdrawn'] as $k) $t[$k] = round($t[$k], 2);
     return $t;
 }

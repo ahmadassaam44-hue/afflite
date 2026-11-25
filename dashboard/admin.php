@@ -2051,6 +2051,7 @@ elseif ($tab === 'commissions') {
     $tot_paid = array_sum(array_map(function ($r) { return $r['tot']['withdrawn']; }, $comm_rows));
     $tot_delivered = array_sum(array_map(function ($r) { return $r['tot']['delivered']; }, $comm_rows));
     $tot_over = array_sum(array_map(function ($r) { return $r['tot']['overdrawn']; }, $comm_rows));
+    $tot_waived = array_sum(array_map(function ($r) { return $r['tot']['waived']; }, $comm_rows));
 
     echo '<div class="kpis" data-ui="u-25724057 d0">';
     echo '<div class="kpi" data-ui="u-97b96627 d5"><b>' . number_format($tot_pending, 2) . ' ج.م</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-clock></use></svg> عمولات قيد التسليم (غير مستحقة، خارج الإجمالي)</span></div>';
@@ -2058,6 +2059,7 @@ elseif ($tab === 'commissions') {
     echo '<div class="kpi" data-ui="u-3824e45f d4"><b>' . number_format($tot_paid, 2) . ' ج.م</b><span><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> عمولات مدفوعة (Paid)</span></div>';
     echo '<div class="kpi" data-ui="u-85fe13fb d2q"><b>' . number_format($tot_delivered, 2) . ' ج.م</b><span>إجمالي العمولات المستحقة (المسلّمة فقط)</span></div>';
     echo '<div class="kpi"><b>' . number_format($tot_over, 2) . ' ج.م</b><span>سحوبات معتمدة زيادة عن المستحق (تنبيه، بدون تعديل أرصدة)</span></div>';
+    if ($tot_waived > 0) echo '<div class="kpi"><b>' . number_format($tot_waived, 2) . ' ج.م</b><span>زيادة سحب متنازل عنها بقرار صاحب الموقع (ليست دين)</span></div>';
     echo '</div>';
 
     echo '<div class="adm-box"><h2><svg class=wf-ico aria-hidden=true focusable=false><use href=#icon-wallet></use></svg> إدارة عمولات المسوقين (الحالة والدفع)</h2>';
