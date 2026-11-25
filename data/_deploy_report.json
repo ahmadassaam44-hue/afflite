@@ -3,9 +3,9 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 405553,
+   "remote_size": 407426,
    "on_server": true,
-   "local_size": 405553,
+   "local_size": 407426,
    "match": true
   },
   "index.php": {
@@ -75,9 +75,9 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 343209,
+   "remote_size": 343935,
    "on_server": true,
-   "local_size": 343209,
+   "local_size": 343935,
    "match": true
   },
   "dashboard/layout.php": {
@@ -87,9 +87,9 @@
    "match": true
   },
   "dashboard/marketer.php": {
-   "remote_size": 123612,
+   "remote_size": 123924,
    "on_server": true,
-   "local_size": 123612,
+   "local_size": 123924,
    "match": true
   },
   "assets/style.css": {
