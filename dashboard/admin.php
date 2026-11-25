@@ -2033,11 +2033,13 @@ elseif ($tab === 'commissions') {
         $mo = array_filter($orders, function ($o) use ($u) { return ($o['ref'] ?? '') === ($u['ref_code'] ?? ''); });
         $mc = array_sum(array_map(function ($o) { return wf_order_earned($o); }, $mo));
         if ($mc <= 0 && (float)($u['balance'] ?? 0) <= 0 && wf_marketer_comm_totals($mo)['pending'] <= 0) continue;
-        $st_comm = $u['comm_status'] ?? 'pending';
+        $tt_row = wf_marketer_comm_totals($mo, (string)($u['email'] ?? ''));
+        // الحالة المعروضة مشتقة من الطلبات الفعلية والسحوبات مش من علامة الحساب القديمة
+        $st_comm = $tt_row['pending'] > 0 ? 'pending' : ($tt_row['remaining'] > 0 ? 'confirmed' : ($tt_row['withdrawn'] > 0 ? 'paid' : ($u['comm_status'] ?? 'pending')));
         $comm_rows[] = [
             'name' => $u['name'] ?? '', 'email' => $u['email'] ?? '', 'ref' => $u['ref_code'] ?? '',
-            'orders' => count($mo), 'total' => $mc, 'balance' => (float)($u['balance'] ?? 0),
-            'pending_bal' => (float)($u['pending_balance'] ?? 0), 'status' => $st_comm, 'tot' => wf_marketer_comm_totals($mo, (string)($u['email'] ?? '')),
+            'orders' => count(array_filter($mo, function ($o) { return !status_reverses_commission($o['status'] ?? ''); })), 'total' => $mc, 'balance' => (float)($u['balance'] ?? 0),
+            'pending_bal' => (float)($u['pending_balance'] ?? 0), 'status' => $st_comm, 'tot' => $tt_row,
             'custom_pct' => (float)($u['custom_comm_pct'] ?? 0),
         ];
     }
