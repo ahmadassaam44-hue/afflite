@@ -1,5 +1,5 @@
 {
- "at": "2026-11-26T17:59:53+00:00",
+ "at": "2026-11-26T19:10:23+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -20,6 +20,20 @@
   "assets",
   "config.local.php",
   "config.php",
+  "config_admin.php",
+  "config_affiliate.php",
+  "config_analytics.php",
+  "config_auth.php",
+  "config_catalog.php",
+  "config_checkout.php",
+  "config_geo.php",
+  "config_ledger.php",
+  "config_order_ops.php",
+  "config_orders.php",
+  "config_pricing.php",
+  "config_security.php",
+  "config_storefront.php",
+  "config_users.php",
   "customer_req_lib.php",
   "dashboard",
   "data",
@@ -71,10 +85,10 @@
  ],
  "files": {
   "index.php": {
-   "remote_size": 53254,
-   "remote_md5": "a8d5eb3c8cf86c42b96e8b9172006016",
-   "local_size": 53254,
-   "local_md5": "a8d5eb3c8cf86c42b96e8b9172006016",
+   "remote_size": 53256,
+   "remote_md5": "2a5b0b2768524c2996f865ef1230b0c1",
+   "local_size": 53256,
+   "local_md5": "2a5b0b2768524c2996f865ef1230b0c1",
    "same_as_git": true
   },
   "index.html": {
@@ -109,10 +123,10 @@
    "same_as_git": true
   },
   "assets/style.css": {
-   "remote_size": 160662,
-   "remote_md5": "231cfa935b723ae232790f8399750715",
-   "local_size": 160662,
-   "local_md5": "231cfa935b723ae232790f8399750715",
+   "remote_size": 160732,
+   "remote_md5": "09811906c260ab41e81696c401e2036e",
+   "local_size": 160732,
+   "local_md5": "09811906c260ab41e81696c401e2036e",
    "same_as_git": true
   },
   "assets/icon-512.png": {
