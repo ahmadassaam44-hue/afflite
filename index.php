@@ -470,8 +470,8 @@ echo wf_store_navbar($nav_items, ['lead' => $nav_lead]);
 <section class="aff-row" aria-label="برامج التسويق بالعمولة">
 <?php foreach (aff_programs() as $k => $c): ?>
 <a class="aff-card" href="affiliate-program.php?p=<?php echo esc($k); ?>">
-  <img class="aff-bg" src="assets/aff-<?php echo esc($k); ?>.png" alt="" aria-hidden="true" loading="lazy" decoding="async">
-  <img class="aff-img" src="assets/aff-<?php echo esc($k); ?>.png" alt="<?php echo esc($c['title']); ?>" width="960" height="540" loading="lazy" decoding="async">
+  <img class="aff-bg" src="assets/aff-<?php echo esc($k); ?>.webp" alt="" aria-hidden="true" loading="lazy" decoding="async">
+  <img class="aff-img" src="assets/aff-<?php echo esc($k); ?>.webp" alt="<?php echo esc($c['title']); ?>" width="960" height="540" loading="lazy" decoding="async">
   <span class="aff-cap"><b><?php echo esc($c['title']); ?></b><span><?php echo esc($c['teaser']); ?></span></span>
 </a>
 <?php endforeach; ?>

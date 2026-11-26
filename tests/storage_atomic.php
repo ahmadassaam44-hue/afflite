@@ -13,7 +13,8 @@ $tmp  = sys_get_temp_dir() . '/afflite_storage_test_' . getmypid();
 
 // انسخ الملفات اللي config.php بيحتاجها عشان DATA_DIR يتحسب داخل المجلد المؤقت
 foreach (['config.php', 'json_store.php', 'supabase.php', 'supabase_users.php', 'supabase_docs.php',
-          'hevo_api.php', 'customer_req_lib.php', 'manual_products_lib.php'] as $f) {
+          'hevo_api.php', 'customer_req_lib.php', 'manual_products_lib.php',
+          'config_pricing.php', 'config_orders.php', 'config_ledger.php', 'config_security.php', 'config_admin.php', 'config_catalog.php', 'config_geo.php', 'config_users.php', 'config_order_ops.php', 'config_affiliate.php', 'config_storefront.php', 'config_checkout.php', 'config_analytics.php', 'config_auth.php'] as $f) {
     if (!copy($root . '/' . $f, $tmp . '/' . $f)) {
         fwrite(defined('STDERR') ? STDERR : fopen('php://output', 'w'), "FAIL: cannot copy $f\n");
         exit(1);

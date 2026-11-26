@@ -4,13 +4,18 @@
 //   npm install --prefix .cache/ui-tools @php-wasm/node php-parser
 //   node tests/ui/manual-country-currency.cjs
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert');
-const repo=path.resolve(__dirname,'../..');const NM=path.join(repo,'.cache/ui-tools/node_modules');
+const repo=path.resolve(__dirname,'../..');
+// config.php اتقسّم لأجزاء config_*.php (نفس الكود، نفس الترتيب): أي فحص بيقرأ
+// مصدر config.php لازم يقرأ الأجزاء + المُحمِّل مع بعض. المُحمِّل آخر واحد عشان
+// النص المجمّع ينتهي بـ remember_login(); زي ما كان config.php بينتهي بيه.
+const CONFIG_PARTS=['config_pricing.php','config_orders.php','config_ledger.php','config_security.php','config_admin.php','config_catalog.php','config_geo.php','config_users.php','config_order_ops.php','config_affiliate.php','config_storefront.php','config_checkout.php','config_analytics.php','config_auth.php'];
+const cfgAll=()=>CONFIG_PARTS.map(f=>fs.readFileSync(path.join(repo,f),'utf8')).join('\n')+'\n'+fs.readFileSync(path.join(repo,'config.php'),'utf8');const NM=path.join(repo,'.cache/ui-tools/node_modules');
 const wasmDir=path.join(NM,'@php-wasm/node-8-3/asyncify');
 if(!fs.existsSync(path.join(NM,'@php-wasm/node')))throw new Error('Missing @php-wasm/node — run: npm install --prefix .cache/ui-tools @php-wasm/node php-parser');
 const {PHP}=require(path.join(NM,'@php-wasm/universal'));
 const {loadNodeRuntime}=require(path.join(NM,'@php-wasm/node'));
 // config.php requires these siblings at include time (amazon/jumia/noon are file_exists-guarded and skipped).
-const FILES=['config.php','manual_products_lib.php','customer_req_lib.php','supabase.php','supabase_users.php','supabase_docs.php','hevo_api.php','ui-components.php','amazon_lib.php','manual_products_import.csv'];
+const FILES=['config.php','config_pricing.php','config_orders.php','config_ledger.php','config_security.php','config_admin.php','config_catalog.php','config_geo.php','config_users.php','config_order_ops.php','config_affiliate.php','config_storefront.php','config_checkout.php','config_analytics.php','config_auth.php','manual_products_lib.php','customer_req_lib.php','supabase.php','supabase_users.php','supabase_docs.php','hevo_api.php','ui-components.php','amazon_lib.php','manual_products_import.csv'];
 // جداول الشحن بتتحمل من DATA_DIR (/app/data) — بننسخها عشان الاختبار يشتغل على البيانات الحقيقية
 const DATA_FILES=['data/shipping.json','data/shipping_cities_shopmart.json','data/shipping_cities_gulf.json'];
 // بيانات وهمية لاختبارات Task-11 (إشعارات المسوقين + تعديل/إلغاء الطلبات + عدّادات الأدمن) — جوه WASM بس
@@ -878,7 +883,7 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
     assert.ok(!/(style\.css|ui\.js|tracker\.js)\?v=2026[0-9a-z-]+/.test(srcx),f+' must not hardcode a stale asset version');
     assert.ok(/wf_asset_v\(|filemtime/.test(srcx),f+' must version assets automatically');
   }
-  assert.ok(/function wf_asset_v\(/.test(fs.readFileSync(path.join(repo,'config.php'),'utf8')),'wf_asset_v helper must exist in config.php');
+  assert.ok(/function wf_asset_v\(/.test(cfgAll()),'wf_asset_v helper must exist in config.php');
 }
 // Task-15 wiring: ديالوج تفاصيل عام — التفاصيل الطويلة وأسباب الرفض/الإلغاء في ديالوج بدل الحشر في خلايا صغيرة
 {
@@ -916,11 +921,11 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   const qCalls=(ordSrc23.match(/wf_order_notify_queue\(/g)||[]).length;
   const qGuarded=(ordSrc23.match(/function_exists\('wf_order_notify_queue'\)\)? wf_order_notify_queue\(/g)||[]).length;
   assert.ok(qCalls>0&&qCalls===qGuarded,'every deferred-notify queue call must be function_exists-guarded (rolling-upload fatal safety)');
-  const cfg23=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  const cfg23=cfgAll();
   assert.ok(cfg23.includes(String.fromCharCode(64)+"ini_set('memory_limit', '256M')"),'config.php must raise the memory limit to cut OOM fatals');
   const rt23=fs.readFileSync(path.join(repo,'ui-runtime.php'),'utf8');
   assert.ok(rt23.includes('memory_get_peak_usage'),'fatal log must record peak memory for triage');
-  const cfg21=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  const cfg21=cfgAll();
   assert.ok(cfg21.includes('function wf_support_admin_message'),'config.php must define the support push helper');
   assert.ok(/'no_answer'\s*=>\s*'لا يرد'/.test(cfg21),'the no-answer status must carry the label لا يرد');
   assert.ok(/payment_reject_reason/.test(adm),'payment reject reason must be visible to admin');
@@ -954,7 +959,7 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   const heroIdx=fs.readFileSync(path.join(repo,'index.php'),'utf8');
   assert.ok(heroIdx.includes('youtube-nocookie.com/embed'),'home hero must embed the platform explainer video via the privacy-friendly youtube player');
   assert.ok(heroIdx.includes("$hero_vid = wf_youtube_id(site_setting('hero_video'"),'the hero video id must come from the hero_video setting (sanitized)');
-  const cfgV=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  const cfgV=cfgAll();
   assert.ok(cfgV.includes("'hero_video' =>"),'admin home-page settings must expose the hero video field next to hero_products');
   assert.ok(cfgV.includes('function wf_youtube_id'),'config must sanitize any youtube url down to a bare 11-char id');
   const cssV=fs.readFileSync(path.join(repo,'assets/style.css'),'utf8');
@@ -963,7 +968,7 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   const sbSrc=fs.readFileSync(path.join(repo,'supabase.php'),'utf8');
   assert.ok(sbSrc.includes('select=platform,country,region,fee,currency,notes'),'supabase shipping read must fetch the country column');
   assert.ok(sbSrc.includes("$groups[$pl . '@' . $co][]"),'supabase rows must be grouped by platform+country so per-country tables never mix');
-  const cfgSb=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  const cfgSb=cfgAll();
   assert.ok(cfgSb.includes("if (!defined('USE_SUPABASE')) define('USE_SUPABASE', false);"),'USE_SUPABASE must be overridable from secrets.php');
   const shipAdm=fs.readFileSync(path.join(repo,'dashboard/admin_shipping.php'),'utf8');
   assert.ok(shipAdm.includes('$ship_live_mode'),'admin shipping page must state the actual live-update mode');
@@ -994,7 +999,7 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(/fail_reason/.test(adm13)&&/تعذر الحفظ' \. \(\$fail_reason/.test(adm13),'the failure message must carry the specific reason');
   assert.ok(/\/\[\\r\\n\]\+\/u/.test(adm13),'image lines must split on newlines only (CDN filenames may contain commas)');
   assert.ok(/\$category !== \$cur_cat/.test(adm13)&&/find_product_by_id\(\$raw_id, \$plat\)/.test(adm13),"the product's own current category must stay acceptable");
-  const cfg13=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  const cfg13=cfgAll();
   assert.ok(/function wf_image_url_allowed\(/.test(cfg13)&&/strpos\(\$u, 'assets\/'\) === 0/.test(cfg13),'local assets/detail images must be accepted');
   const ovr=cfg13.match(/function apply_product_override_record\([\s\S]*?\n\}/);
   assert.ok(ovr&&/_price_override/.test(ovr[0]),'price overrides must flag the row');
@@ -1003,7 +1008,7 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
 }
 // Task-12 wiring: تخفيض 12% مركزي + «أحدث المنتجات» = ختم added_at فعلًا
 {
-  const cfg12=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  const cfg12=cfgAll();
   assert.ok(/define\('PRICE_GLOBAL_DISCOUNT', 0\.12\)/.test(cfg12),'the 12% discount constant must exist');
   const upl=cfg12.match(/function wf_price_uplift\([\s\S]*?\n\}/);
   assert.ok(upl&&/round\(\$v \* \(1 - PRICE_GLOBAL_DISCOUNT\), 2\)/.test(upl[0]),'wf_price_uplift (the single physical sale-price funnel) must apply the 12% cut');
@@ -1018,7 +1023,7 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
 }
 // Task-11 wiring: إشعارات لكل المسوقين + تعديل/إلغاء المسوق لطلباته + عدّادات سايدبار الأدمن
 {
-  const cfg11=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+  const cfg11=cfgAll();
   assert.ok(/function wf_notify_marketers\(/.test(cfg11)&&/notify\('marketers'/.test(cfg11),'config must broadcast to the marketers group');
   assert.ok(/\$for === 'marketers' && \$is_mk/.test(cfg11),'my_notifications must include the marketers group for marketer role');
   assert.ok(/function wf_admin_pending_counts\(/.test(cfg11)&&/function wf_marketer_can_edit_order\(/.test(cfg11)&&/function wf_marketer_apply_order_edit\(/.test(cfg11)&&/function wf_marketer_cancel_order\(/.test(cfg11),'config must expose admin counters + marketer order edit/cancel helpers');
@@ -1041,7 +1046,7 @@ echo json_encode($out,JSON_UNESCAPED_UNICODE);
   assert.ok(/wf_user_role\(\$user\)/.test(notp),'notifications page must pass the role');
 }
 // ربط الواجهة: منتجات يدوية تظهر في تبويب دول الخليج + تبويبات الدول من نفس المصدر
-const cfg=fs.readFileSync(path.join(repo,'config.php'),'utf8');
+const cfg=cfgAll();
 function fn(name){const m=cfg.match(new RegExp('function '+name+'\\([\\s\\S]*?\\n\\}'));assert.ok(m,'missing function '+name);return m[0];}
 assert.ok(/wf_gulf_countries\(\)/.test(fn('physical_collection')),'physical_collection must use wf_gulf_countries()');
 assert.ok(/\$plats = \['m5zoon', 'manual'\];/.test(fn('physical_collection')),'Gulf physical view must include manual products');
@@ -1067,7 +1072,7 @@ assert.ok(/شحن /.test(admin),'the products list must show the stored shipping
 const csvTemplate=fs.readFileSync(path.join(repo,'manual_products_import.csv'),'utf8').replace(/^\uFEFF/,'');
 assert.deepStrictEqual(csvTemplate.split('\n')[0].split(','),['name','price','country','ship_fee','commission','category','stock','sku','description','colors','sizes','material','weight','dimensions','images','faqs'],'CSV template header must include country, ship_fee and commission after price');
 // خصم الكمية (70 ج.م) بقى للجنيه بس: كل مكان بيحسب الخصم لازم يمرّر العملة/المنتج
-const src=file=>fs.readFileSync(path.join(repo,file),'utf8');
+const src=file=>file==='config.php'?cfgAll():fs.readFileSync(path.join(repo,file),'utf8');
 const bulkCallers=[
   ['dashboard/orders.php',/wf_bulk_discount\(\$qty, \$plat, \$prod\)/],
   ['dashboard/checkout_cart.php',/wf_bulk_discount\(\$qty, \$pl, \$prod\)/],
