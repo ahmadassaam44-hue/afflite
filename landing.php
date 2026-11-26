@@ -136,9 +136,15 @@ $eo_payload = json_encode([
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#059669">
 <title><?php echo esc($clean_name); ?> — عرض خاص والدفع عند الاستلام</title>
+<meta name="description" content="<?php echo esc(mb_substr($clean_desc ?: $clean_name, 0, 160)); ?>">
+<meta property="og:type" content="product">
 <meta property="og:title" content="<?php echo esc($clean_name); ?> — <?php echo wf_ui_money($final_price); ?> <?php echo esc(wf_ui_currency($p)); ?>">
 <meta property="og:description" content="<?php echo esc(mb_substr($clean_desc ?: $clean_name, 0, 160)); ?>">
 <meta property="og:image" content="<?php echo esc(asset_url($imgs[0])); ?>">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?php echo esc($clean_name); ?> — <?php echo wf_ui_money($final_price); ?> <?php echo esc(wf_ui_currency($p)); ?>">
+<meta name="twitter:description" content="<?php echo esc(mb_substr($clean_desc ?: $clean_name, 0, 160)); ?>">
+<meta name="twitter:image" content="<?php echo esc(asset_url($imgs[0])); ?>">
 
 
 
