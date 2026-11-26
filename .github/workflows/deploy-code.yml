@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-19T16:10Z — إصلاح صفحة المسوق
+# trigger-bump: 2026-11-19T16:40Z — توحيد الموقع على نسخة واحدة (رفع كل ملفات الكود)
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -31,7 +31,7 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
           FTP_ROOT: /htdocs
-          INPUT_FILES: ${{ github.event.inputs.files || 'assets/style.css dashboard/layout.php config.php safka_order_lib.php ui-components.php landing.php affiliate-register.php dashboard/orders.php dashboard/checkout_cart.php dashboard/admin.php dashboard/product.php dashboard/products.php dashboard/cart.php dashboard/wishlist.php dashboard/vendor.php dashboard/stores_admin.php stores_lib.php vendor.php vendor_product.php login.php google_finish.php compat_v61.php .htaccess' }}
+          INPUT_FILES: ${{ github.event.inputs.files || 'ALL' }}
         run: |
           python3 - <<'PY'
           import os, json, ftplib, hashlib, datetime, socket, time
@@ -41,7 +41,16 @@ jobs:
           user = (os.environ.get('FTP_USER') or '').strip()
           pw   = os.environ.get('FTP_PASS') or ''
           root = (os.environ.get('FTP_ROOT') or '/htdocs').strip()
-          files = (os.environ.get('INPUT_FILES') or '').split() or 'config.php'.split()
+          raw = (os.environ.get('INPUT_FILES') or '').strip()
+          if raw.upper() == 'ALL' or raw.upper() == 'SYNC':
+              import subprocess
+              tracked = subprocess.run(['git', 'ls-files', '*.php'], capture_output=True, text=True).stdout.split()
+              skip_prefix = ('tests/', 'updater/', 'docs/', 'data/', 'node_modules/')
+              files = [f for f in tracked if not f.startswith(skip_prefix)]
+              files += ['assets/style.css', 'assets/ui.js', '.htaccess']
+              print('🔁 وضع التوحيد: رفع كل ملفات الكود —', len(files), 'ملف')
+          else:
+              files = raw.split() or ['config.php']
           report['files_requested'] = files
 
           ftp = None
