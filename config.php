@@ -7046,6 +7046,9 @@ function wf_closure_page() {
 // 🏬 المتاجر المتعددة (مكتبة المتاجر) — بتتحمّل هنا لغاية بعد كل الدوال
 require_once __DIR__ . '/stores_lib.php';
 
+// 🧩 توافق مع دوال النسخة الأحدث (عمولات/سحب) اللي بعض الصفحات بتنادي عليها
+require_once __DIR__ . '/compat_v61.php';
+
 // ⚠️ لا تحرّك الشيك ده لفوق: لازم يبقى في آخر الملف بعد تحميل كل الملفات والدوال
 // (أي استدعاء لـ jload/site_setting قبل supabase_docs.php بيكسر كل الصفحات).
 if (PHP_SAPI !== 'cli' && !defined('WF_NO_CLOSURE') && wf_site_closed()) {
