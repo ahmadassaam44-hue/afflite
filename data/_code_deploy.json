@@ -1,74 +1,97 @@
 {
- "at": "2026-11-26T22:22:56+00:00",
+ "at": "2026-11-26T23:01:18+00:00",
  "files_requested": [
-  "assets/style.css",
-  "dashboard/layout.php",
-  "config.php",
-  "safka_order_lib.php",
-  "ui-components.php",
-  "landing.php",
+  "affiliate-program.php",
   "affiliate-register.php",
-  "dashboard/orders.php",
-  "dashboard/checkout_cart.php",
+  "affiliate_programs.php",
+  "amazon_check.php",
+  "amazon_lib.php",
+  "amz.php",
+  "api_chat.php",
+  "api_events.php",
+  "api_image_search.php",
+  "compat_v61.php",
+  "config.php",
+  "customer_req_lib.php",
+  "dashboard/_payout.php",
   "dashboard/admin.php",
-  "dashboard/product.php",
-  "dashboard/products.php",
+  "dashboard/admin_shipping.php",
+  "dashboard/amazon.php",
+  "dashboard/balance.php",
+  "dashboard/buyer_lead_modal.php",
+  "dashboard/calculator.php",
   "dashboard/cart.php",
-  "dashboard/wishlist.php",
-  "dashboard/vendor.php",
+  "dashboard/checkout_cart.php",
+  "dashboard/index.php",
+  "dashboard/jumia.php",
+  "dashboard/layout.php",
+  "dashboard/manual_products.php",
+  "dashboard/marketer.php",
+  "dashboard/noon.php",
+  "dashboard/notifications.php",
+  "dashboard/orders.php",
+  "dashboard/pay.php",
+  "dashboard/product.php",
+  "dashboard/product_requests.php",
+  "dashboard/products.php",
+  "dashboard/quick_order.php",
+  "dashboard/shipping.php",
   "dashboard/stores_admin.php",
+  "dashboard/support.php",
+  "dashboard/vendor.php",
+  "dashboard/wishlist.php",
+  "debug.php",
+  "digital.php",
+  "error.php",
+  "forgot.php",
+  "go.php",
+  "google_callback.php",
+  "google_finish.php",
+  "google_start.php",
+  "hevo_api.php",
+  "index.php",
+  "jmi.php",
+  "jumia_check.php",
+  "jumia_lib.php",
+  "landing.php",
+  "login.php",
+  "logout.php",
+  "manual_products_lib.php",
+  "marketer_complete.php",
+  "noon_lib.php",
+  "pages.php",
+  "ping.php",
+  "register.php",
+  "reset.php",
+  "safka_order_lib.php",
+  "sections.php",
+  "sitemap.php",
+  "social.php",
+  "store.php",
   "stores_lib.php",
+  "style-guide.php",
+  "supabase.php",
+  "supabase_docs.php",
+  "supabase_users.php",
+  "test.php",
+  "test2.php",
+  "ui-components.php",
+  "ui-runtime.php",
   "vendor.php",
   "vendor_product.php",
-  "login.php",
-  "google_finish.php",
-  "compat_v61.php",
+  "assets/style.css",
+  "assets/ui.js",
   ".htaccess"
  ],
  "host": "ftpupload.net",
  "connection": "ok",
  "uploaded": [
   {
-   "file": "assets/style.css",
-   "local_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0",
-   "local_size": 161171,
-   "remote_size": 161171,
-   "remote_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0"
-  },
-  {
-   "file": "dashboard/layout.php",
-   "local_md5": "91b966603a3373fe6eda2634879886c6",
-   "local_size": 40742,
-   "remote_size": 40742,
-   "remote_md5": "91b966603a3373fe6eda2634879886c6"
-  },
-  {
-   "file": "config.php",
-   "local_md5": "e7fae52068c2413e5d2552b6cd0e7338",
-   "local_size": 423963,
-   "remote_size": 423963,
-   "remote_md5": "e7fae52068c2413e5d2552b6cd0e7338"
-  },
-  {
-   "file": "safka_order_lib.php",
-   "local_md5": "5b3bf9b2af8567487a84182886a82b17",
-   "local_size": 31254,
-   "remote_size": 31254,
-   "remote_md5": "5b3bf9b2af8567487a84182886a82b17"
-  },
-  {
-   "file": "ui-components.php",
-   "local_md5": "2de43f612a2f896f8d080349c6ac2b61",
-   "local_size": 57827,
-   "remote_size": 57827,
-   "remote_md5": "2de43f612a2f896f8d080349c6ac2b61"
-  },
-  {
-   "file": "landing.php",
-   "local_md5": "69c9364e63d6f41555be38d98e652499",
-   "local_size": 25543,
-   "remote_size": 25543,
-   "remote_md5": "69c9364e63d6f41555be38d98e652499"
+   "file": "affiliate-program.php",
+   "local_md5": "4efacb755531b831591dddf31171dbba",
+   "local_size": 3514,
+   "remote_size": 3514,
+   "remote_md5": "4efacb755531b831591dddf31171dbba"
   },
   {
    "file": "affiliate-register.php",
@@ -78,18 +101,81 @@
    "remote_md5": "d722704f9ce599d68b8adc781856066c"
   },
   {
-   "file": "dashboard/orders.php",
-   "local_md5": "2a894eb84a0e6069bac48769db92f196",
-   "local_size": 33707,
-   "remote_size": 33707,
-   "remote_md5": "2a894eb84a0e6069bac48769db92f196"
+   "file": "affiliate_programs.php",
+   "local_md5": "29a0c70c35854f72542dc05b5531e7ab",
+   "local_size": 6994,
+   "remote_size": 6994,
+   "remote_md5": "29a0c70c35854f72542dc05b5531e7ab"
   },
   {
-   "file": "dashboard/checkout_cart.php",
-   "local_md5": "f9473d2aec176f94e8a77f52964c5898",
-   "local_size": 15038,
-   "remote_size": 15038,
-   "remote_md5": "f9473d2aec176f94e8a77f52964c5898"
+   "file": "amazon_check.php",
+   "local_md5": "82c350988520c5c7642312f7a1d414e3",
+   "local_size": 5936,
+   "remote_size": 5936,
+   "remote_md5": "82c350988520c5c7642312f7a1d414e3"
+  },
+  {
+   "file": "amazon_lib.php",
+   "local_md5": "f4c1007a15e01853f689ee66af947957",
+   "local_size": 92144,
+   "remote_size": 92144,
+   "remote_md5": "f4c1007a15e01853f689ee66af947957"
+  },
+  {
+   "file": "amz.php",
+   "local_md5": "b55db086021c7c76ba8a3ed84c5b0ea1",
+   "local_size": 2184,
+   "remote_size": 2184,
+   "remote_md5": "b55db086021c7c76ba8a3ed84c5b0ea1"
+  },
+  {
+   "file": "api_chat.php",
+   "local_md5": "cb2b7ef5378be93b46fa63f1bcab1a32",
+   "local_size": 14800,
+   "remote_size": 14800,
+   "remote_md5": "cb2b7ef5378be93b46fa63f1bcab1a32"
+  },
+  {
+   "file": "api_events.php",
+   "local_md5": "15019e99dd9530b8ea329c37c088ed07",
+   "local_size": 7059,
+   "remote_size": 7059,
+   "remote_md5": "15019e99dd9530b8ea329c37c088ed07"
+  },
+  {
+   "file": "api_image_search.php",
+   "local_md5": "ac8ca46d6b11554820974aa36842c7b8",
+   "local_size": 23797,
+   "remote_size": 23797,
+   "remote_md5": "ac8ca46d6b11554820974aa36842c7b8"
+  },
+  {
+   "file": "compat_v61.php",
+   "local_md5": "2a05a389c93347d1d1f2143fdf891e5b",
+   "local_size": 2757,
+   "remote_size": 2757,
+   "remote_md5": "2a05a389c93347d1d1f2143fdf891e5b"
+  },
+  {
+   "file": "config.php",
+   "local_md5": "e7fae52068c2413e5d2552b6cd0e7338",
+   "local_size": 423963,
+   "remote_size": 423963,
+   "remote_md5": "e7fae52068c2413e5d2552b6cd0e7338"
+  },
+  {
+   "file": "customer_req_lib.php",
+   "local_md5": "ab6609160701e1873684f313f6a25be9",
+   "local_size": 21101,
+   "remote_size": 21101,
+   "remote_md5": "ab6609160701e1873684f313f6a25be9"
+  },
+  {
+   "file": "dashboard/_payout.php",
+   "local_md5": "7aaa43d07996c8271e6652b0a96b9789",
+   "local_size": 11981,
+   "remote_size": 11981,
+   "remote_md5": "7aaa43d07996c8271e6652b0a96b9789"
   },
   {
    "file": "dashboard/admin.php",
@@ -99,18 +185,39 @@
    "remote_md5": "d3ce30c0397ec4c1f88b10b374fde84c"
   },
   {
-   "file": "dashboard/product.php",
-   "local_md5": "0d4642a03b5e65a979cd503de16f1a59",
-   "local_size": 57407,
-   "remote_size": 57407,
-   "remote_md5": "0d4642a03b5e65a979cd503de16f1a59"
+   "file": "dashboard/admin_shipping.php",
+   "local_md5": "b690970cef403537517e5e247ca0ae0f",
+   "local_size": 6700,
+   "remote_size": 6700,
+   "remote_md5": "b690970cef403537517e5e247ca0ae0f"
   },
   {
-   "file": "dashboard/products.php",
-   "local_md5": "a569d83eae8f54051ed6bc171e73d78d",
-   "local_size": 8086,
-   "remote_size": 8086,
-   "remote_md5": "a569d83eae8f54051ed6bc171e73d78d"
+   "file": "dashboard/amazon.php",
+   "local_md5": "5e444fb0d0a9b2f7313b661a723d73a5",
+   "local_size": 38708,
+   "remote_size": 38708,
+   "remote_md5": "5e444fb0d0a9b2f7313b661a723d73a5"
+  },
+  {
+   "file": "dashboard/balance.php",
+   "local_md5": "80de01c8bd32fb29470ce3b067b9a5ea",
+   "local_size": 5401,
+   "remote_size": 5401,
+   "remote_md5": "80de01c8bd32fb29470ce3b067b9a5ea"
+  },
+  {
+   "file": "dashboard/buyer_lead_modal.php",
+   "local_md5": "43d66f7616b13b2d20a18a3d141572e8",
+   "local_size": 234,
+   "remote_size": 234,
+   "remote_md5": "43d66f7616b13b2d20a18a3d141572e8"
+  },
+  {
+   "file": "dashboard/calculator.php",
+   "local_md5": "98c1a9100a902ee8bc83924adf875fd5",
+   "local_size": 1212,
+   "remote_size": 1212,
+   "remote_md5": "98c1a9100a902ee8bc83924adf875fd5"
   },
   {
    "file": "dashboard/cart.php",
@@ -120,18 +227,109 @@
    "remote_md5": "b8e16bede90b6879b3c6765f61892e8b"
   },
   {
-   "file": "dashboard/wishlist.php",
-   "local_md5": "4a00647cb7f68970f489f7c046728a10",
-   "local_size": 6969,
-   "remote_size": 6969,
-   "remote_md5": "4a00647cb7f68970f489f7c046728a10"
+   "file": "dashboard/checkout_cart.php",
+   "local_md5": "f9473d2aec176f94e8a77f52964c5898",
+   "local_size": 15038,
+   "remote_size": 15038,
+   "remote_md5": "f9473d2aec176f94e8a77f52964c5898"
   },
   {
-   "file": "dashboard/vendor.php",
-   "local_md5": "1e039b673a23785ac5851d23862b6463",
-   "local_size": 20320,
-   "remote_size": 20320,
-   "remote_md5": "1e039b673a23785ac5851d23862b6463"
+   "file": "dashboard/index.php",
+   "local_md5": "6d82c45ba87fd20be78860d49a7ca6c4",
+   "local_size": 10359,
+   "remote_size": 10359,
+   "remote_md5": "6d82c45ba87fd20be78860d49a7ca6c4"
+  },
+  {
+   "file": "dashboard/jumia.php",
+   "local_md5": "89a6f33efa7b03794aa1e1a24d2a258b",
+   "local_size": 38736,
+   "remote_size": 38736,
+   "remote_md5": "89a6f33efa7b03794aa1e1a24d2a258b"
+  },
+  {
+   "file": "dashboard/layout.php",
+   "local_md5": "91b966603a3373fe6eda2634879886c6",
+   "local_size": 40742,
+   "remote_size": 40742,
+   "remote_md5": "91b966603a3373fe6eda2634879886c6"
+  },
+  {
+   "file": "dashboard/manual_products.php",
+   "local_md5": "71733ec04d9233d14cc07c3b00d6eb37",
+   "local_size": 20870,
+   "remote_size": 20870,
+   "remote_md5": "71733ec04d9233d14cc07c3b00d6eb37"
+  },
+  {
+   "file": "dashboard/marketer.php",
+   "local_md5": "72a33635888094abd6ff29cc8da59033",
+   "local_size": 124835,
+   "remote_size": 124835,
+   "remote_md5": "72a33635888094abd6ff29cc8da59033"
+  },
+  {
+   "file": "dashboard/noon.php",
+   "local_md5": "75f8e97bf655473e6ad6c525c8070588",
+   "local_size": 25246,
+   "remote_size": 25246,
+   "remote_md5": "75f8e97bf655473e6ad6c525c8070588"
+  },
+  {
+   "file": "dashboard/notifications.php",
+   "local_md5": "5082f0c87bd859040afe184f113eec17",
+   "local_size": 1313,
+   "remote_size": 1313,
+   "remote_md5": "5082f0c87bd859040afe184f113eec17"
+  },
+  {
+   "file": "dashboard/orders.php",
+   "local_md5": "2a894eb84a0e6069bac48769db92f196",
+   "local_size": 33707,
+   "remote_size": 33707,
+   "remote_md5": "2a894eb84a0e6069bac48769db92f196"
+  },
+  {
+   "file": "dashboard/pay.php",
+   "local_md5": "6fc1194cd6579b22218deebe7e90e7a7",
+   "local_size": 8615,
+   "remote_size": 8615,
+   "remote_md5": "6fc1194cd6579b22218deebe7e90e7a7"
+  },
+  {
+   "file": "dashboard/product.php",
+   "local_md5": "0d4642a03b5e65a979cd503de16f1a59",
+   "local_size": 57407,
+   "remote_size": 57407,
+   "remote_md5": "0d4642a03b5e65a979cd503de16f1a59"
+  },
+  {
+   "file": "dashboard/product_requests.php",
+   "local_md5": "4004895b6f621330d1b20c7e5c186a27",
+   "local_size": 17220,
+   "remote_size": 17220,
+   "remote_md5": "4004895b6f621330d1b20c7e5c186a27"
+  },
+  {
+   "file": "dashboard/products.php",
+   "local_md5": "a569d83eae8f54051ed6bc171e73d78d",
+   "local_size": 8086,
+   "remote_size": 8086,
+   "remote_md5": "a569d83eae8f54051ed6bc171e73d78d"
+  },
+  {
+   "file": "dashboard/quick_order.php",
+   "local_md5": "f1db765d8a96732ec275d21794204295",
+   "local_size": 36407,
+   "remote_size": 36407,
+   "remote_md5": "f1db765d8a96732ec275d21794204295"
+  },
+  {
+   "file": "dashboard/shipping.php",
+   "local_md5": "76efa0770652f3c1fa33a00ada33774c",
+   "local_size": 2094,
+   "remote_size": 2094,
+   "remote_md5": "76efa0770652f3c1fa33a00ada33774c"
   },
   {
    "file": "dashboard/stores_admin.php",
@@ -141,11 +339,284 @@
    "remote_md5": "39a843bae569862c7eca4825d609b74b"
   },
   {
+   "file": "dashboard/support.php",
+   "local_md5": "4c19feb3328dc60180e0fd312f1b6397",
+   "local_size": 13641,
+   "remote_size": 13641,
+   "remote_md5": "4c19feb3328dc60180e0fd312f1b6397"
+  },
+  {
+   "file": "dashboard/vendor.php",
+   "local_md5": "1e039b673a23785ac5851d23862b6463",
+   "local_size": 20320,
+   "remote_size": 20320,
+   "remote_md5": "1e039b673a23785ac5851d23862b6463"
+  },
+  {
+   "file": "dashboard/wishlist.php",
+   "local_md5": "4a00647cb7f68970f489f7c046728a10",
+   "local_size": 6969,
+   "remote_size": 6969,
+   "remote_md5": "4a00647cb7f68970f489f7c046728a10"
+  },
+  {
+   "file": "debug.php",
+   "local_md5": "f7b9b7490f656d061c6085b0babf96de",
+   "local_size": 564,
+   "remote_size": 564,
+   "remote_md5": "f7b9b7490f656d061c6085b0babf96de"
+  },
+  {
+   "file": "digital.php",
+   "local_md5": "b364c9e49e11e72b51afc2b2b8382f22",
+   "local_size": 120,
+   "remote_size": 120,
+   "remote_md5": "b364c9e49e11e72b51afc2b2b8382f22"
+  },
+  {
+   "file": "error.php",
+   "local_md5": "b04eb04f9774094e2e98b58b1df0ef58",
+   "local_size": 2231,
+   "remote_size": 2231,
+   "remote_md5": "b04eb04f9774094e2e98b58b1df0ef58"
+  },
+  {
+   "file": "forgot.php",
+   "local_md5": "56329b130834523ea6a646ec7929c9d9",
+   "local_size": 2698,
+   "remote_size": 2698,
+   "remote_md5": "56329b130834523ea6a646ec7929c9d9"
+  },
+  {
+   "file": "go.php",
+   "local_md5": "e8e567f3e2b5176b6a17f0ee7c286809",
+   "local_size": 3728,
+   "remote_size": 3728,
+   "remote_md5": "e8e567f3e2b5176b6a17f0ee7c286809"
+  },
+  {
+   "file": "google_callback.php",
+   "local_md5": "9c57902ac854857acad261c8dc284cad",
+   "local_size": 1961,
+   "remote_size": 1961,
+   "remote_md5": "9c57902ac854857acad261c8dc284cad"
+  },
+  {
+   "file": "google_finish.php",
+   "local_md5": "3b709225d1fef3223902bd9b7daa3445",
+   "local_size": 2008,
+   "remote_size": 2008,
+   "remote_md5": "3b709225d1fef3223902bd9b7daa3445"
+  },
+  {
+   "file": "google_start.php",
+   "local_md5": "930543b2075cc59be57812d1238d5439",
+   "local_size": 987,
+   "remote_size": 987,
+   "remote_md5": "930543b2075cc59be57812d1238d5439"
+  },
+  {
+   "file": "hevo_api.php",
+   "local_md5": "c506fab5e49a8eb5c22f5e51f9020d71",
+   "local_size": 1506,
+   "remote_size": 1506,
+   "remote_md5": "c506fab5e49a8eb5c22f5e51f9020d71"
+  },
+  {
+   "file": "index.php",
+   "local_md5": "a55a513f085c2719f07163e25941e8b5",
+   "local_size": 52656,
+   "remote_size": 52656,
+   "remote_md5": "a55a513f085c2719f07163e25941e8b5"
+  },
+  {
+   "file": "jmi.php",
+   "local_md5": "c33c9e8114a26dc6e6bee11f6fdcc552",
+   "local_size": 2209,
+   "remote_size": 2209,
+   "remote_md5": "c33c9e8114a26dc6e6bee11f6fdcc552"
+  },
+  {
+   "file": "jumia_check.php",
+   "local_md5": "9f9dccbbfdf4bf96affc806f0f63ad69",
+   "local_size": 5913,
+   "remote_size": 5913,
+   "remote_md5": "9f9dccbbfdf4bf96affc806f0f63ad69"
+  },
+  {
+   "file": "jumia_lib.php",
+   "local_md5": "ee496633af89f307a74ef4ab761f3444",
+   "local_size": 85109,
+   "remote_size": 85109,
+   "remote_md5": "ee496633af89f307a74ef4ab761f3444"
+  },
+  {
+   "file": "landing.php",
+   "local_md5": "69c9364e63d6f41555be38d98e652499",
+   "local_size": 25543,
+   "remote_size": 25543,
+   "remote_md5": "69c9364e63d6f41555be38d98e652499"
+  },
+  {
+   "file": "login.php",
+   "local_md5": "ae7fe8f173ee09fb1689c953fe2b053e",
+   "local_size": 5855,
+   "remote_size": 5855,
+   "remote_md5": "ae7fe8f173ee09fb1689c953fe2b053e"
+  },
+  {
+   "file": "logout.php",
+   "local_md5": "eb0d4f5492374f4fee04f9e63749616c",
+   "local_size": 1113,
+   "remote_size": 1113,
+   "remote_md5": "eb0d4f5492374f4fee04f9e63749616c"
+  },
+  {
+   "file": "manual_products_lib.php",
+   "local_md5": "85e05e0b7c74813c44207ae854a8a313",
+   "local_size": 29685,
+   "remote_size": 29685,
+   "remote_md5": "85e05e0b7c74813c44207ae854a8a313"
+  },
+  {
+   "file": "marketer_complete.php",
+   "local_md5": "ccbcc4aa6efc5cef77acc7cbcd886327",
+   "local_size": 6852,
+   "remote_size": 6852,
+   "remote_md5": "ccbcc4aa6efc5cef77acc7cbcd886327"
+  },
+  {
+   "file": "noon_lib.php",
+   "local_md5": "c0153d98c33f5d843b67f17b2ca97d22",
+   "local_size": 52423,
+   "remote_size": 52423,
+   "remote_md5": "c0153d98c33f5d843b67f17b2ca97d22"
+  },
+  {
+   "file": "pages.php",
+   "local_md5": "e3d6f6e84a645e3a1afec69c39698d24",
+   "local_size": 6243,
+   "remote_size": 6243,
+   "remote_md5": "e3d6f6e84a645e3a1afec69c39698d24"
+  },
+  {
+   "file": "ping.php",
+   "local_md5": "019eca8f71ddec6b357f55c177a932a6",
+   "local_size": 73,
+   "remote_size": 73,
+   "remote_md5": "019eca8f71ddec6b357f55c177a932a6"
+  },
+  {
+   "file": "register.php",
+   "local_md5": "8d8d876c21095d055074f5c88853c535",
+   "local_size": 14588,
+   "remote_size": 14588,
+   "remote_md5": "8d8d876c21095d055074f5c88853c535"
+  },
+  {
+   "file": "reset.php",
+   "local_md5": "800b8b06c987c2ffeb89a8f600774396",
+   "local_size": 5437,
+   "remote_size": 5437,
+   "remote_md5": "800b8b06c987c2ffeb89a8f600774396"
+  },
+  {
+   "file": "safka_order_lib.php",
+   "local_md5": "5b3bf9b2af8567487a84182886a82b17",
+   "local_size": 31254,
+   "remote_size": 31254,
+   "remote_md5": "5b3bf9b2af8567487a84182886a82b17"
+  },
+  {
+   "file": "sections.php",
+   "local_md5": "7ea8a3e643f03b11b2f7866d5a30c7dd",
+   "local_size": 1544,
+   "remote_size": 1544,
+   "remote_md5": "7ea8a3e643f03b11b2f7866d5a30c7dd"
+  },
+  {
+   "file": "sitemap.php",
+   "local_md5": "ac9516113e6c868f9fcfe47e5402f194",
+   "local_size": 1897,
+   "remote_size": 1897,
+   "remote_md5": "ac9516113e6c868f9fcfe47e5402f194"
+  },
+  {
+   "file": "social.php",
+   "local_md5": "a3742f8fbe0dbdc13a1cbc4617ea2534",
+   "local_size": 119,
+   "remote_size": 119,
+   "remote_md5": "a3742f8fbe0dbdc13a1cbc4617ea2534"
+  },
+  {
+   "file": "store.php",
+   "local_md5": "cc6e343e76f286c65b28fbbd71dc392c",
+   "local_size": 31782,
+   "remote_size": 31782,
+   "remote_md5": "cc6e343e76f286c65b28fbbd71dc392c"
+  },
+  {
    "file": "stores_lib.php",
    "local_md5": "9b5c5c01a7f0eaa918ad08a69694824d",
    "local_size": 18323,
    "remote_size": 18323,
    "remote_md5": "9b5c5c01a7f0eaa918ad08a69694824d"
+  },
+  {
+   "file": "style-guide.php",
+   "local_md5": "2723faaf114eb8404d96b9cfe70bf6b4",
+   "local_size": 5737,
+   "remote_size": 5737,
+   "remote_md5": "2723faaf114eb8404d96b9cfe70bf6b4"
+  },
+  {
+   "file": "supabase.php",
+   "local_md5": "e0accf5f809d360de797d8261a03de88",
+   "local_size": 14516,
+   "remote_size": 14516,
+   "remote_md5": "e0accf5f809d360de797d8261a03de88"
+  },
+  {
+   "file": "supabase_docs.php",
+   "local_md5": "3181e7e1162f4df94808ce8420453b9e",
+   "local_size": 8220,
+   "remote_size": 8220,
+   "remote_md5": "3181e7e1162f4df94808ce8420453b9e"
+  },
+  {
+   "file": "supabase_users.php",
+   "local_md5": "7be68ac5c21a3a727ee9e04c9359495c",
+   "local_size": 14071,
+   "remote_size": 14071,
+   "remote_md5": "7be68ac5c21a3a727ee9e04c9359495c"
+  },
+  {
+   "file": "test.php",
+   "local_md5": "dc9384f2ed5b6a98c6c17adfcfe57dbd",
+   "local_size": 35,
+   "remote_size": 35,
+   "remote_md5": "dc9384f2ed5b6a98c6c17adfcfe57dbd"
+  },
+  {
+   "file": "test2.php",
+   "local_md5": "4b23cc7cdb0078ec126a102bc6f6927c",
+   "local_size": 20,
+   "remote_size": 20,
+   "remote_md5": "4b23cc7cdb0078ec126a102bc6f6927c"
+  },
+  {
+   "file": "ui-components.php",
+   "local_md5": "2de43f612a2f896f8d080349c6ac2b61",
+   "local_size": 57827,
+   "remote_size": 57827,
+   "remote_md5": "2de43f612a2f896f8d080349c6ac2b61"
+  },
+  {
+   "file": "ui-runtime.php",
+   "local_md5": "a6b9335eb54bbd909fafc571ad355397",
+   "local_size": 5043,
+   "remote_size": 5043,
+   "remote_md5": "a6b9335eb54bbd909fafc571ad355397"
   },
   {
    "file": "vendor.php",
@@ -162,25 +633,18 @@
    "remote_md5": "e492573751ed308d7ca83775d3fdb55d"
   },
   {
-   "file": "login.php",
-   "local_md5": "ae7fe8f173ee09fb1689c953fe2b053e",
-   "local_size": 5855,
-   "remote_size": 5855,
-   "remote_md5": "ae7fe8f173ee09fb1689c953fe2b053e"
+   "file": "assets/style.css",
+   "local_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0",
+   "local_size": 161171,
+   "remote_size": 161171,
+   "remote_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0"
   },
   {
-   "file": "google_finish.php",
-   "local_md5": "3b709225d1fef3223902bd9b7daa3445",
-   "local_size": 2008,
-   "remote_size": 2008,
-   "remote_md5": "3b709225d1fef3223902bd9b7daa3445"
-  },
-  {
-   "file": "compat_v61.php",
-   "local_md5": "2a05a389c93347d1d1f2143fdf891e5b",
-   "local_size": 2757,
-   "remote_size": 2757,
-   "remote_md5": "2a05a389c93347d1d1f2143fdf891e5b"
+   "file": "assets/ui.js",
+   "local_md5": "def864707676a0943ef4812e52ca5048",
+   "local_size": 98507,
+   "remote_size": 98507,
+   "remote_md5": "def864707676a0943ef4812e52ca5048"
   },
   {
    "file": ".htaccess",
@@ -203,8 +667,8 @@
  "challenge": "solved",
  "live": {
   "/": {
-   "status": "200|229709|3.088495",
-   "time_s": 3.088495,
+   "status": "200|227443|3.236142",
+   "time_s": 3.236142,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
@@ -212,8 +676,8 @@
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.630347",
-   "time_s": 0.630347,
+   "status": "200|10167|0.533937",
+   "time_s": 0.533937,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
@@ -221,8 +685,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50218|0.792580",
-   "time_s": 0.79258,
+   "status": "200|50218|0.772489",
+   "time_s": 0.772489,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
@@ -230,8 +694,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.532123",
-   "time_s": 0.532123,
+   "status": "302|0|0.531382",
+   "time_s": 0.531382,
    "title": null,
    "php_error": false,
    "head": "",
@@ -239,8 +703,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=soyt-shyrt-aokland-DcpHNY": {
-   "status": "200|67554|0.887562",
-   "time_s": 0.887562,
+   "status": "200|67554|0.839064",
+   "time_s": 0.839064,
    "title": "سويت شيرت اوكلاند — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -248,8 +712,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.562565",
-   "time_s": 0.562565,
+   "status": "302|0|0.532942",
+   "time_s": 0.532942,
    "title": null,
    "php_error": false,
    "head": "",
@@ -257,5 +721,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-26T22:24:16+00:00"
+ "checked_at": "2026-11-26T23:05:16+00:00"
 }
