@@ -291,7 +291,12 @@ $vis_mk = ($vis_ref !== '' && function_exists('find_marketer_by_code')) ? find_m
 <meta property="og:description" content="منصة وفرنهالك أفلييت للتسوق والتسويق بالعمولة في مصر. اكتشف المنتجات والخدمات الرقمية أو ابدأ كمسوق وأنشئ متجرك ورابطك الخاص.">
 <meta property="og:url" content="https://wafirinhalk.com/">
 <meta property="og:image" content="https://wafirinhalk.com/assets/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="<?php echo esc(BRAND); ?> أفلييت | التسويق بالعمولة والربح من الإنترنت">
+<meta name="twitter:description" content="منصة وفرنهالك أفلييت للتسوق والتسويق بالعمولة في مصر. اكتشف المنتجات والخدمات الرقمية أو ابدأ كمسوق وأنشئ متجرك ورابطك الخاص.">
+<meta name="twitter:image" content="https://wafirinhalk.com/assets/icon-512.png">
 <script type="application/ld+json"><?php echo json_encode(['@context' => 'https://schema.org', '@graph' => [['@type' => 'Organization', '@id' => 'https://wafirinhalk.com/#organization', 'name' => BRAND, 'url' => 'https://wafirinhalk.com/', 'logo' => ['@type' => 'ImageObject', 'url' => 'https://wafirinhalk.com/assets/icon-512.png'], 'email' => $top_email, 'telephone' => $top_phone, 'address' => ['@type' => 'PostalAddress', 'addressCountry' => 'EG']], ['@type' => 'WebSite', '@id' => 'https://wafirinhalk.com/#website', 'url' => 'https://wafirinhalk.com/', 'name' => BRAND, 'inLanguage' => 'ar-EG', 'publisher' => ['@id' => 'https://wafirinhalk.com/#organization'], 'potentialAction' => ['@type' => 'SearchAction', 'target' => 'https://wafirinhalk.com/?q={search_term_string}', 'query-input' => 'required name=search_term_string']]]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
 
 <link rel="preload" href="assets/cairo-arabic.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="assets/cairo-basic.woff2" as="font" type="font/woff2" crossorigin>
