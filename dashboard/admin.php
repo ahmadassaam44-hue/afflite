@@ -29,7 +29,7 @@ if (empty($_SESSION['admin_seen_at']) || (time() - (int)$_SESSION['admin_seen_at
 }
 
 $tab = $_GET['tab'] ?? 'overview';
-if (!is_string($tab) || !in_array($tab, ['overview', 'visitors', 'cart', 'loves', 'views', 'orders', 'products', 'marketers', 'users', 'money', 'reviews', 'notifications', 'requests', 'amazon', 'jumia', 'noon', 'chats', 'commissions', 'payments', 'audit', 'settings'], true)) {
+if (!is_string($tab) || !in_array($tab, ['overview', 'visitors', 'cart', 'loves', 'views', 'orders', 'products', 'marketers', 'users', 'money', 'reviews', 'notifications', 'requests', 'amazon', 'jumia', 'noon', 'chats', 'commissions', 'payments', 'audit', 'stores', 'settings'], true)) {
     $tab = 'overview';
 }
 $msg = '';
@@ -46,6 +46,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['impersonate_email']))
             exit;
         }
         $msg = '⛔ ' . ($imp_res['error'] ?? 'تعذر الدخول بحساب المستخدم');
+    }
+}
+// 🔑 إدارة كلمة سر الحسابات: الباسورد القديم مستحيل يظهر (متشفّر) — بنحط باسورد مؤقت أو نبعت كود استعادة
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['wf_pw_act'])) {
+    if (!csrf_ok()) {
+        $msg = '⛔ انتهت صلاحية الجلسة — حدّث الصفحة وحاول مرة أخرى';
+    } else {
+        $pw_email = strtolower(trim((string)($_POST['wf_pw_email'] ?? '')));
+        $pw_act = (string)$_POST['wf_pw_act'];
+        if (!filter_var($pw_email, FILTER_VALIDATE_EMAIL)) {
+            $msg = '⚠️ اكتب بريد إلكتروني صحيح';
+        } elseif ($pw_act === 'send_reset') {
+            $sent = function_exists('usr_recover') && usr_recover($pw_email);
+            $msg = $sent
+                ? '📧 اتبعت كود استعادة كلمة السر على <b dir="ltr">' . esc($pw_email) . '</b>'
+                : '⚠️ مش قدرنا نبعت الكود — جرّب تاني أو راجع إعدادات البريد';
+            if (function_exists('log_audit')) log_audit('user_reset_link', $pw_email, []);
+        } elseif ($pw_act === 'temp_pass') {
+            $tmp = 'Wf' . strtoupper(substr(bin2hex(random_bytes(3)), 0, 6)) . '!' . random_int(10, 99);
+            if (function_exists('usr_set_password') && usr_set_password($pw_email, $tmp)) {
+                $msg = '🔑 باسورد مؤقت لحساب <b dir="ltr">' . esc($pw_email) . '</b>: <code dir="ltr" style="font-size:17px;background:#fef9c3;padding:2px 8px;border-radius:6px">' . esc($tmp) . '</code>'
+                     . '<br><small>سلّمه لصاحب الحساب وخلّيه يغيّره بعد الدخول. الباسورد القديم مستحيل استرجاعه (متشفّر one-way).</small>';
+                if (function_exists('log_audit')) log_audit('user_temp_password', $pw_email, []);
+            } else {
+                $msg = '⚠️ الحساب مش موجود في قاعدة المستخدمين';
+            }
+        }
     }
 }
 // 👤 طلبات العملاء (نون وأمازون): الإدارة بتعلّم «تم» أو «رفض» مع ملاحظة اختيارية للمسوق
@@ -2272,6 +2299,17 @@ elseif ($tab === 'marketers') {
 
     // ===== صفحة تفاصيل مسوق محدد =====
     $mk_view = trim((string)($_GET['mk'] ?? ''));
+    if ($mk_view === '') {
+        echo '<div class="adm-box" style="margin-bottom:14px">'
+           . '<h3 style="margin:0 0 6px">🔑 كلمة سر أي حساب</h3>'
+           . '<p class="mut" style="margin:0 0 10px;font-size:13px">الباسوردات متشفّرة ومستحيل تظهر — من هنا تقدر تحط <b>باسورد مؤقت</b> تسلّمه لصاحب الحساب (يتغيّر بعد الدخول)، أو تبعتله <b>كود استعادة</b> على بريده.</p>'
+           . '<form method="post" action="admin.php?tab=marketers" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">'
+           . '<input type="hidden" name="csrf_token" value="' . esc(csrf_token()) . '">'
+           . '<label style="flex:1;min-width:240px">بريد الحساب<input class="input" type="email" name="wf_pw_email" dir="ltr" required placeholder="user@mail.com"></label>'
+           . '<button class="btn sm" type="submit" name="wf_pw_act" value="send_reset">📧 إرسال كود استعادة</button>'
+           . '<button class="btn sm pri" type="submit" name="wf_pw_act" value="temp_pass" onclick="return confirm(\'هتحط باسورد مؤقت جديد للحساب ده. متأكد؟\')">🔑 باسورد مؤقت جديد</button>'
+           . '</form></div>';
+    }
     if ($mk_view !== '') {
         $mu = null;
         foreach ($marketers as $x) { if (($x['email'] ?? '') === $mk_view) { $mu = $x; break; } }
