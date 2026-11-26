@@ -3,10 +3,10 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 3166,
+   "remote_size": 423784,
    "on_server": true,
    "local_size": 3166,
-   "match": true
+   "match": false
   },
   "index.php": {
    "remote_size": 53256,
@@ -21,10 +21,10 @@
    "match": true
   },
   ".htaccess": {
-   "remote_size": 6295,
+   "remote_size": 6202,
    "on_server": true,
    "local_size": 6295,
-   "match": true
+   "match": false
   },
   "amazon_lib.php": {
    "remote_size": 92144,
@@ -75,16 +75,16 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 346995,
+   "remote_size": 397280,
    "on_server": true,
    "local_size": 346995,
-   "match": true
+   "match": false
   },
   "dashboard/layout.php": {
-   "remote_size": 38685,
+   "remote_size": 40742,
    "on_server": true,
    "local_size": 38685,
-   "match": true
+   "match": false
   },
   "dashboard/marketer.php": {
    "remote_size": 123973,
@@ -93,10 +93,10 @@
    "match": true
   },
   "assets/style.css": {
-   "remote_size": 160732,
+   "remote_size": 161171,
    "on_server": true,
    "local_size": 160732,
-   "match": true
+   "match": false
   }
  }
 }
