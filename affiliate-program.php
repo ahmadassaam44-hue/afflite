@@ -48,7 +48,7 @@ $cta = $pr['cta_href'] . ($ref_param !== '' ? (strpos($pr['cta_href'], '?') !== 
       <h1><?php echo esc($pr['title']); ?></h1>
       <p class="mut"><?php echo esc($pr['intro']); ?></p>
     </div>
-    <img src="assets/aff-<?php echo esc($key); ?>.png" alt="<?php echo esc($pr['title']); ?>" width="960" height="540" style="width:100%;height:auto;border-radius:14px;margin-top:12px">
+    <img src="assets/aff-<?php echo esc($key); ?>.webp" alt="<?php echo esc($pr['title']); ?>" width="960" height="540" style="width:100%;height:auto;border-radius:14px;margin-top:12px">
   </section>
 
   <section class="card">

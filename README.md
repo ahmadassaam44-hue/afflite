@@ -16,7 +16,7 @@
 
 ## التقنيات
 
-- **PHP** بدون فريمورك (بدون Composer) — ملفات PHP مباشرة مع `config.php` المركزي.
+- **PHP** بدون فريمورك (بدون Composer) — ملفات PHP مباشرة مع `config.php` كمُحمِّل رفيع لأجزاء `config_*.php` (نفس الكود، مقسّم حسب المجال — انظر «بنية المشروع»).
 - تخزين **JSON** في مجلد `data/` للطلبات والمستخدمين والكتالوج.
 - **Supabase** (اختياري، عبر `USE_SUPABASE`) — انظر `supabase_schema.sql` و `supabase.php`.
 - واجهة عربية RTL بخط Cairo، وملف `assets/style.css` و `assets/ui.js`.
@@ -64,7 +64,9 @@ php -S 127.0.0.1:8000
 
 ```text
 index.php / landing.php / store.php   الصفحات الرئيسية (متجر، هبوط، منتج)
-config.php                            إعدادات وثوابت (الأسرار في secrets.php فقط)
+config.php                            مُحمِّل رفيع: أسرار + ثوابت أساسية، ثم يطلب أجزاء
+config_*.php                          إعدادات وثوابت مقسّمة حسب المجال (تسعير، طلبات، أمان،
+                                      كتالوج، جغرافيا، أفلييت، تحليلات… — الأسرار في secrets.php فقط)
 ui-components.php / ui-runtime.php    مكوّنات الواجهة المشتركة
 assets/                               CSS/JS والخطوط والصور
 dashboard/                            لوحات العميل والمسوّق والإدارة
