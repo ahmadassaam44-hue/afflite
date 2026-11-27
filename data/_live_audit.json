@@ -1,5 +1,5 @@
 {
- "at": "2026-11-27T08:51:05+00:00",
+ "at": "2026-11-27T21:38:14+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -86,8 +86,8 @@
  ],
  "files": {
   "index.php": {
-   "remote_size": 52656,
-   "remote_md5": "a55a513f085c2719f07163e25941e8b5",
+   "remote_size": 52623,
+   "remote_md5": "e3466c536d0b6dc3a4af7c0b129b2db9",
    "local_size": 53256,
    "local_md5": "2a5b0b2768524c2996f865ef1230b0c1",
    "same_as_git": false
@@ -96,8 +96,8 @@
    "error": "550 Can't open index.html: No such file or directory"
   },
   "store.php": {
-   "remote_size": 31782,
-   "remote_md5": "cc6e343e76f286c65b28fbbd71dc392c",
+   "remote_size": 31749,
+   "remote_md5": "babaab20648724cd5b2762f142115421",
    "local_size": 31477,
    "local_md5": "d54ea53fbc852aa16890d9e243ef1b09",
    "same_as_git": false
