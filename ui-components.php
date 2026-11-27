@@ -113,7 +113,7 @@ function wf_support_wa_number() {
     $n = '';
     if (function_exists('site_setting')) {
         $n = trim((string)site_setting('whatsapp'));
-        if ($n === '') $n = trim((string)site_setting('phone', '01202954952'));
+        if ($n === '') $n = trim((string)site_setting('phone', ''));
     }
     $n = preg_replace('/\D+/', '', (string)$n);
     return strlen($n) >= 10 ? $n : '';
@@ -255,7 +255,7 @@ function wf_site_topbar_links($args = []) {
 function wf_site_topbar($args = []) {
     if (!array_key_exists('wa', $args)) $args['wa'] = true; // الموقع الأساسي: زر واتساب خدمة العملاء في الشريط العلوي
     if (!isset($args['phone'])) {
-        $args['phone'] = function_exists('site_setting') ? (site_setting('phone', '01202954952') ?: '01202954952') : '01202954952';
+        $args['phone'] = function_exists('site_setting') ? (string)site_setting('phone', '') : '';
     }
     if (!isset($args['links'])) $args['links'] = wf_site_topbar_links($args);
     return wf_store_topbar($args);

@@ -329,7 +329,7 @@ if ($cu) {
     $top_links[] = ['href' => 'affiliate-register.php', 'label' => 'برنامج المسوقين', 'class' => 'hidden sm:inline'];
 }
 // متجر المسوق: بدون رقم الموقع في الشريط العلوي (العميل بيتعامل مع المسوق نفسه)
-echo wf_store_topbar(['phone' => $is_mk_store ? '' : (function_exists('site_setting') ? (site_setting('phone', '01202954952') ?: '01202954952') : '01202954952'), 'links' => $top_links]);
+echo wf_store_topbar(['phone' => $is_mk_store ? '' : (function_exists('site_setting') ? (string)site_setting('phone', '') : ''), 'links' => $top_links]);
 
 $store_header_extra = '';
 if ($is_owner) {

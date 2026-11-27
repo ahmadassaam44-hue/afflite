@@ -252,7 +252,7 @@ function layout_top($title, $active = 'home') {
             echo wf_impersonation_banner_html(wf_impersonation_banner_state($dash_pre));
         }
         // الشريط العلوي (الهاتف / واتساب / روابط) مش بيظهر للعميل المسجّل في صفحات لوحة الحساب
-        if ($layout_role !== 'customer') echo wf_store_topbar(['phone' => (function_exists('site_setting') ? (site_setting('phone', '01202954952') ?: '01202954952') : '01202954952'), 'wa' => !$pc_mk, 'links' => $pc_links]);
+        if ($layout_role !== 'customer') echo wf_store_topbar(['phone' => (function_exists('site_setting') ? (string)site_setting('phone', '') : ''), 'wa' => !$pc_mk, 'links' => $pc_links]);
         echo wf_store_header([
             'brand' => BRAND,
             'home' => $pc_home,
