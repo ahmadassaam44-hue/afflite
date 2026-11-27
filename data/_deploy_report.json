@@ -9,7 +9,7 @@
    "match": false
   },
   "index.php": {
-   "remote_size": 52656,
+   "remote_size": 52623,
    "on_server": true,
    "local_size": 53256,
    "match": false
@@ -81,7 +81,7 @@
    "match": false
   },
   "dashboard/layout.php": {
-   "remote_size": 40742,
+   "remote_size": 40709,
    "on_server": true,
    "local_size": 38685,
    "match": false
