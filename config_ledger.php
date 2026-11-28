@@ -428,6 +428,8 @@ define('PHYS_PRICE_UPLIFT', 0.02);
 // (المنصات في wf_is_physical_plat — اليدوي والرقمي g2g/social/smm/hevo خارج القاعدة).
 // بيُطبَّق في wf_price_uplift وقت القراءة، فملفات المصدر بتفضل زي ما هي وكل تحديث cron بياخده تلقائي.
 if (!defined('PRICE_GLOBAL_DISCOUNT')) define('PRICE_GLOBAL_DISCOUNT', 0.12);
+if (!defined('PRICE_RAISE_PCT')) define('PRICE_RAISE_PCT', 0.10);
+if (!defined('PRICE_RAISE_FLAT')) define('PRICE_RAISE_FLAT', 5);
 function wf_is_physical_plat($plat) {
     return in_array(strtolower(trim((string)$plat)), ['vendoor', 'timehand', 'safqa', 'angazny', 'm5zoon', 'shopmart', 'mnfean'], true);
 }
@@ -437,7 +439,10 @@ function wf_price_uplift($plat, $v) {
     $v = round($v * (1 + PHYS_PRICE_UPLIFT), 2);
     // التخفيض الدائم 12% بعد هامش الربح — السعر النهائي ≈ السعر القديم × 0.88 (بتقريب 5/0 المعتاد)
     $v = round($v * (1 - PRICE_GLOBAL_DISCOUNT), 2);
-    return wf_round_price($v);
+    $v = wf_round_price($v);
+    // طلب صاحب الموقع (2026-11-28): +10% على الأسعار الفيزيكال الحالية، تقريب لأقرب 5 أو 0، وبعدها +5 ج.م.
+    // المنتجات اللي سعرها متحدد يدويًا (override) بتتسحب قبل الدالة دي ومش بتتأثر.
+    return wf_round_price($v * (1 + PRICE_RAISE_PCT)) + PRICE_RAISE_FLAT;
 }
 function round_half_or_one($v) {
     $v = (float)$v;

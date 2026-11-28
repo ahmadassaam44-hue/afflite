@@ -394,7 +394,7 @@ chk($out,$fail,'owner cancel reason prefix',mb_strpos($ords3[2]['cancel_reason']
 // ---- 13) تخفيض 12% على الفيزيائي (نقطة مركزية واحدة) + «أحدث المنتجات» بختم added_at ----
 chk($out,$fail,'global discount constant',PRICE_GLOBAL_DISCOUNT,0.12);
 // timehand: 1000 ×1.02 = 1020 ×0.88 = 897.6 → تقريب 5/0 (ceil) = 900
-chk($out,$fail,'uplift timehand discounted',wf_price_uplift('timehand',1000.0),900.0);
+chk($out,$fail,'uplift timehand discounted',wf_price_uplift('timehand',1000.0),995.0);
 chk($out,$fail,'uplift cezma discounted',wf_price_uplift('cezma',500.0),450.0);
 chk($out,$fail,'uplift digital untouched',wf_price_uplift('g2g',560.0),560.0);
 chk($out,$fail,'uplift social untouched',wf_price_uplift('social',75.0),75.0);
