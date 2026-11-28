@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-19T18:30Z — ميتا توثيق impact.com + فحصها
+# trigger-bump: 2026-11-19T19:00Z — فحص شامل لأي أرقام ظاهرة
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -266,6 +266,18 @@ jobs:
               }
           except Exception as e:
               rep['impact_verification'] = {'error': str(e)[:120]}
+          # فحص شامل: هل فيه أي رقم دعم/واتساب ظاهر في الصفحات العامة؟
+          phone_re = re.compile(r'(0120\d{7}|2012\d{8}|wa\.me/2\d{10})')
+          scan_paths = ['/', '/login.php', '/register.php', '/pages.php?p=contact', '/pages.php?p=privacy',
+                        '/affiliate-program.php', '/affiliate-register.php', '/dashboard/cart.php',
+                        '/dashboard/product.php?id=soyt-shyrt-aokland-DcpHNY', '/store.php']
+          hits = {}
+          for sp in scan_paths:
+              body = curl((['-b', '__test=' + cookie] if cookie else []), BASE + sp)
+              found = phone_re.findall(body or '')
+              hits[sp] = {'hits': len(found), 'samples': sorted(set(found))[:3]}
+              print('SCAN', sp, hits[sp])
+          rep['phone_scan'] = hits
           rep['live'] = live
           rep['checked_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
           json.dump(rep, open('data/_code_deploy.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
