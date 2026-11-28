@@ -277,7 +277,7 @@ $top_wa_img = $top_wa !== '' && function_exists('wf_support_wa_href') ? wf_suppo
 $vis_ref = function_exists('active_ref') ? active_ref() : '';
 $vis_mk = ($vis_ref !== '' && function_exists('find_marketer_by_code')) ? find_marketer_by_code($vis_ref) : null;
 ?>
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="b55678b9-03c7-458d-9783-d688a27d41bd"><link rel="manifest" href="manifest.json"><?php echo tracking_pixels_html(); ?>
+<!doctype html><html lang="ar" dir="rtl"><head><meta name="impact-site-verification" value="b55678b9-03c7-458d-9783-d688a27d41bd"><meta charset="utf-8"><link rel="manifest" href="manifest.json"><?php echo tracking_pixels_html(); ?>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0f172a">
 <title><?php echo esc(BRAND); ?> أفلييت | التسويق بالعمولة والربح من الإنترنت</title>
