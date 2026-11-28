@@ -1,5 +1,5 @@
 {
- "at": "2026-11-28T00:46:07+00:00",
+ "at": "2026-11-28T01:05:49+00:00",
  "root": "/htdocs",
  "listing": [
   ".",
@@ -86,21 +86,21 @@
  ],
  "files": {
   "index.php": {
-   "remote_size": 52826,
-   "remote_md5": "262decd3bd1f8af895040aacd965f792",
-   "local_size": 53339,
-   "local_md5": "04b2e2f8ebd66c3d16921a429dd3d9e6",
-   "same_as_git": false
+   "remote_size": 53379,
+   "remote_md5": "6ca854b7ae53a655da9e5345c89f67d0",
+   "local_size": 53379,
+   "local_md5": "6ca854b7ae53a655da9e5345c89f67d0",
+   "same_as_git": true
   },
   "index.html": {
    "error": "550 Can't open index.html: No such file or directory"
   },
   "store.php": {
-   "remote_size": 31832,
-   "remote_md5": "aa7213f36100b7dfb4b7f4a750a62218",
+   "remote_size": 31477,
+   "remote_md5": "d54ea53fbc852aa16890d9e243ef1b09",
    "local_size": 31477,
    "local_md5": "d54ea53fbc852aa16890d9e243ef1b09",
-   "same_as_git": false
+   "same_as_git": true
   },
   "digital.php": {
    "remote_size": 120,
@@ -110,25 +110,25 @@
    "same_as_git": true
   },
   "landing.php": {
-   "remote_size": 25626,
-   "remote_md5": "29bc332f13d82651a9467b176a447354",
+   "remote_size": 25501,
+   "remote_md5": "3a86cea58b4fd1e8685054052e7d6c22",
    "local_size": 25501,
    "local_md5": "3a86cea58b4fd1e8685054052e7d6c22",
-   "same_as_git": false
+   "same_as_git": true
   },
   ".htaccess": {
-   "remote_size": 6202,
-   "remote_md5": "7027ade05b0367a3309201ad0a053228",
+   "remote_size": 6295,
+   "remote_md5": "7bb58039f7d3ea9cae99b81c656b59e3",
    "local_size": 6295,
    "local_md5": "7bb58039f7d3ea9cae99b81c656b59e3",
-   "same_as_git": false
+   "same_as_git": true
   },
   "assets/style.css": {
-   "remote_size": 161171,
-   "remote_md5": "18f988a84b9f1eb6045dafd1a4bf6ff0",
+   "remote_size": 160732,
+   "remote_md5": "09811906c260ab41e81696c401e2036e",
    "local_size": 160732,
    "local_md5": "09811906c260ab41e81696c401e2036e",
-   "same_as_git": false
+   "same_as_git": true
   },
   "assets/icon-512.png": {
    "remote_size": 8286,
