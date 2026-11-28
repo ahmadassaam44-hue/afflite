@@ -3,16 +3,16 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 3166,
+   "remote_size": 424309,
    "on_server": true,
    "local_size": 3166,
-   "match": true
+   "match": false
   },
   "index.php": {
-   "remote_size": 53339,
+   "remote_size": 52826,
    "on_server": true,
    "local_size": 53339,
-   "match": true
+   "match": false
   },
   "data/catalog_counts.json": {
    "remote_size": 861,
@@ -39,10 +39,10 @@
    "match": true
   },
   "amazon_check.php": {
-   "remote_size": 5936,
+   "remote_size": 6019,
    "on_server": true,
    "local_size": 5936,
-   "match": true
+   "match": false
   },
   "jumia_lib.php": {
    "remote_size": 85109,
@@ -57,10 +57,10 @@
    "match": true
   },
   "jumia_check.php": {
-   "remote_size": 5913,
+   "remote_size": 5996,
    "on_server": true,
    "local_size": 5913,
-   "match": true
+   "match": false
   },
   "dashboard/jumia.php": {
    "remote_size": 38736,
@@ -75,22 +75,22 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 346995,
+   "remote_size": 397280,
    "on_server": true,
    "local_size": 346995,
-   "match": true
+   "match": false
   },
   "dashboard/layout.php": {
-   "remote_size": 38685,
+   "remote_size": 40792,
    "on_server": true,
    "local_size": 38685,
-   "match": true
+   "match": false
   },
   "dashboard/marketer.php": {
-   "remote_size": 123973,
+   "remote_size": 124835,
    "on_server": true,
    "local_size": 123973,
-   "match": true
+   "match": false
   },
   "assets/style.css": {
    "remote_size": 160732,
