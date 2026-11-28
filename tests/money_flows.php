@@ -104,8 +104,8 @@ check('digital price falls back to product-level usd', wf_digital_source_price([
 check('digital price zero without usd', wf_digital_source_price([]) === 0.0);
 
 // ── 8) سعر العميل للفيزيكال: هامش 2% ثم تخفيض 12% ثم تقريب 5/0 ──────────────
-// منتج vendoor مخزن سعره الصافي 100 → 100 × 1.02 × 0.88 = 89.76 → أقرب 5 للأعلى = 90
-check('physical store price pipeline (uplift+discount+round)', store_price(['id' => 'p1', 'price' => 100, 'extra' => []], 'vendoor') === 90.0);
+// منتج vendoor مخزن سعره الصافي 100 → 100 × 1.02 × 0.88 = 89.76 → 90 → +10% = 99 → أقرب 5 = 100 → +5 = 105
+check('physical store price pipeline (uplift+discount+round)', store_price(['id' => 'p1', 'price' => 100, 'extra' => []], 'vendoor') === 105.0);
 
 // ── 9) عمولة المسوق للمنتج اليدوي: ثابتة + أي زيادة فوق سعر الأساس ──────────
 $p_manual = ['id' => 'm1', 'price' => 100, 'extra' => ['manual_commission' => 15]];
