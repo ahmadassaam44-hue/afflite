@@ -1,5 +1,5 @@
 {
- "at": "2026-11-28T00:21:55+00:00",
+ "at": "2026-11-28T00:28:54+00:00",
  "files_requested": [
   "affiliate-program.php",
   "affiliate-register.php",
@@ -41,6 +41,7 @@
   "dashboard/vendor.php",
   "dashboard/wishlist.php",
   "debug.php",
+  "diag_src.php",
   "digital.php",
   "error.php",
   "forgot.php",
@@ -367,6 +368,13 @@
    "remote_md5": "f7b9b7490f656d061c6085b0babf96de"
   },
   {
+   "file": "diag_src.php",
+   "local_md5": "7bff4d4ddf29cafa40f06840c6c0b2b6",
+   "local_size": 2440,
+   "remote_size": 2440,
+   "remote_md5": "7bff4d4ddf29cafa40f06840c6c0b2b6"
+  },
+  {
    "file": "digital.php",
    "local_md5": "b364c9e49e11e72b51afc2b2b8382f22",
    "local_size": 120,
@@ -667,14 +675,12 @@
  "challenge": "solved",
  "impact_verification": {
   "tag_present": true,
-  "value_ok": false
+  "value_ok": true
  },
  "phone_scan": {
   "/": {
-   "hits": 4,
-   "samples": [
-    "01202954952"
-   ]
+   "hits": 0,
+   "samples": []
   },
   "/login.php": {
    "hits": 0,
@@ -715,17 +721,17 @@
  },
  "live": {
   "/": {
-   "status": "200|223378|3.324411",
-   "time_s": 3.324411,
+   "status": "200|226416|2.259393",
+   "time_s": 2.259393,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"impact-site-verification\" value=\"b55678b9-03c7-458d-9783-d688a27d41bd\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" cont",
-   "shopmart_mentions": 38,
-   "shopmart_imgs": 24
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"impact-site-verification\" value=\"fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" cont",
+   "shopmart_mentions": 0,
+   "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10250|0.596299",
-   "time_s": 0.596299,
+   "status": "200|10250|1.193725",
+   "time_s": 1.193725,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"impact-site-verification\" value=\"fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><",
@@ -733,17 +739,17 @@
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|50113|0.615920",
-   "time_s": 0.61592,
+   "status": "200|49548|0.615663",
+   "time_s": 0.615663,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
    "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"impact-site-verification\" value=\"fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><",
-   "shopmart_mentions": 2,
+   "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.749139",
-   "time_s": 0.749139,
+   "status": "302|0|0.406634",
+   "time_s": 0.406634,
    "title": null,
    "php_error": false,
    "head": "",
@@ -751,17 +757,17 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=soyt-shyrt-aokland-DcpHNY": {
-   "status": "200|68119|0.697829",
-   "time_s": 0.697829,
+   "status": "200|67554|0.856904",
+   "time_s": 0.856904,
    "title": "سويت شيرت اوكلاند — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
-   "shopmart_mentions": 2,
+   "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.683022",
-   "time_s": 0.683022,
+   "status": "302|0|0.645817",
+   "time_s": 0.645817,
    "title": null,
    "php_error": false,
    "head": "",
@@ -769,5 +775,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-28T00:25:55+00:00"
+ "checked_at": "2026-11-28T00:32:30+00:00"
 }
