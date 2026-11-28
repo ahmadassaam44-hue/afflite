@@ -1205,7 +1205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_exempt() && !csrf_ok()) {
         // Presentation only: preserve the exact 403/CSRF decision above.
         require_once __DIR__ . '/ui-components.php';
         $ui_asset_pre = strpos(str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''), '/dashboard/') !== false ? '../' : '';
-        echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>طلب مرفوض | ' . esc(BRAND) . '</title><link rel="stylesheet" href="' . $ui_asset_pre . 'assets/style.css?v=' . wf_asset_v('style.css') . '"></head><body><a class="skip-link" href="#csrfErrorContent">تخطي إلى الرسالة</a><main class="auth" id="csrfErrorContent">';
+        echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3"><meta name="viewport" content="width=device-width,initial-scale=1"><title>طلب مرفوض | ' . esc(BRAND) . '</title><link rel="stylesheet" href="' . $ui_asset_pre . 'assets/style.css?v=' . wf_asset_v('style.css') . '"></head><body><a class="skip-link" href="#csrfErrorContent">تخطي إلى الرسالة</a><main class="auth" id="csrfErrorContent">';
         wf_ui_sprite();
         echo '<div class="alert danger">' . wf_icon('shield') . '<div><h1>طلب مرفوض (CSRF)</h1><p>التوكن الأمني غير صالح أو انتهت صلاحيته. ارجع للصفحة، حدّثها وحاول مرة أخرى.</p></div></div><a class="btn outline" href="javascript:history.back()">رجوع</a></main></body></html>';
     }

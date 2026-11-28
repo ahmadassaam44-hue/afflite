@@ -8,7 +8,7 @@ $reg_url = 'register.php?role=marketer' . ($ref_param !== '' ? '&ref=' . urlenco
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0f172a">
 <title>التسويق بالعمولة والربح من الإنترنت | <?php echo esc(BRAND); ?> أفلييت</title>

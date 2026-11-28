@@ -1,6 +1,6 @@
 <?php require 'config.php';
 // صفحة الاستقبال بعد جوجل: التوكن بييجي في الـ fragment، فالـ JS بياخده ويبعته لصفحة الإنهاء بـ POST
-?><!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+?><!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
 <title>تسجيل الدخول | <?php echo BRAND; ?></title>
 <link rel="stylesheet" href="assets/style.css?v=<?= wf_asset_v('style.css') ?>"></head>
 <body>

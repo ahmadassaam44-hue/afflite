@@ -272,7 +272,7 @@ function wf_store_card_html($p, $store_code) {
 <!doctype html>
 <html lang="ar" dir="rtl" class="<?php echo $store_dark ? 'store-dark' : ''; ?>" style="--shop: <?php echo esc($theme_color); ?>; --shop-fg: <?php echo esc($theme_fg); ?>; --shop-ink: <?php echo esc($theme_ink); ?>; --shop-ann: <?php echo esc($store_cfg['announcement_color']); ?>; --eo-primary: var(--shop); --eo-primary-fg: <?php echo esc($theme_fg); ?>">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="<?php echo esc($theme_color); ?>">
 <title><?php echo esc($store_cfg['title'] ?: BRAND); ?> | تسوق الآن والدفع عند الاستلام</title>

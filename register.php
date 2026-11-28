@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fed701">
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fed701">
 <title>تسجيل مسوق جديد | <?php echo BRAND; ?></title>
 
 

@@ -8,7 +8,7 @@ $m = [
 ][$code];
 $ui_base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/error.php')), '/.');
 $ui_esc = function ($value) { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); };
-?><!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $code ?> — <?= $ui_esc($m[1]) ?></title>
+?><!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $code ?> — <?= $ui_esc($m[1]) ?></title>
 
 
 <link rel="stylesheet" href="<?= $ui_esc($ui_base) ?>/assets/style.css?v=<?= (int)@filemtime(__DIR__ . '/assets/style.css') ?: 20261021 ?>"></head>

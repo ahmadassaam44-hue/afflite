@@ -6,7 +6,7 @@ elseif ($email === '' || !(function_exists('valid_email') && valid_email($email)
 elseif (!usr_recover($email)) { $msg = 'تعذر إرسال الكود دلوقتي، جرّب تاني بعد دقيقة'; }
 else { $_SESSION['pw_reset'] = ['email' => $email, 'at' => time()]; header('Location: reset.php'); exit; }
 } ?>
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fed701">
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fed701">
 <title>استعادة كلمة السر | <?php echo BRAND; ?></title>
 
 

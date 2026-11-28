@@ -10,7 +10,7 @@ if (!function_exists('is_admin_user') || !is_admin_user()) {
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>دليل نظام التصميم (Style Guide) | <?php echo esc(BRAND); ?></title>
 

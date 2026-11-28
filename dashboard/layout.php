@@ -45,7 +45,7 @@ function layout_top($title, $active = 'home') {
     $mk_ctx = ($mk_ctx_ref !== '');
     $GLOBALS['WF_MK_CTX'] = $mk_ctx; // الفوتر بيتنادى من دالة تانية (layout_end) فبنمرر السياق من خلال الجلوبال
 
-    echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="var(--electro-yellow)">';
+    echo '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="var(--electro-yellow)">';
     echo '<title>' . esc(wf_ui_plain($title)) . ' | ' . esc(BRAND) . '</title>';
     echo tracking_pixels_html();
     $og = $GLOBALS['OG'] ?? [];

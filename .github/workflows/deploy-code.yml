@@ -1,5 +1,5 @@
 name: رفع ملفات الكود للاستضافة
-# trigger-bump: 2026-11-19T18:10Z — تم حذف رقم/واتساب الدعم
+# trigger-bump: 2026-11-19T18:30Z — ميتا توثيق impact.com + فحصها
 
 # رفع مخصوص لملفات الكود اللي اتغيّرت (من غير تشغيل تحديث الكتالوج كله)،
 # مع تأكيد إن الملف على السيرفر مطابق بالـ MD5، وفحص إن الموقع بيرجّع محتواه الحقيقي.
@@ -257,6 +257,15 @@ jobs:
                   'shopmart_imgs': len(re.findall(r'(?i)aff-shopmart[^"\' ]*', body)),
               }
               print(path, '->', meta.strip(), '|', live[path]['title'])
+          # تأكيد وجود ميتا توثيق impact.com في الصفحة الرئيسية
+          try:
+              raw_home = curl(['-b', '__test=' + cookie] if cookie else [], BASE + '/')
+              rep['impact_verification'] = {
+                  'tag_present': 'impact-site-verification' in raw_home,
+                  'value_ok': 'fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3' in raw_home,
+              }
+          except Exception as e:
+              rep['impact_verification'] = {'error': str(e)[:120]}
           rep['live'] = live
           rep['checked_at'] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
           json.dump(rep, open('data/_code_deploy.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)

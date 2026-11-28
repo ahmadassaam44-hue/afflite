@@ -61,7 +61,7 @@ $add('رابط تتبع تجريبي', $sample !== '', $sample !== '' ? '<a dir=
 $all_ok = true; foreach ($checks as $c) { if (!$c['ok']) $all_ok = false; }
 ?>
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>فحص تحديث أفلييت أمازون</title>
 <link rel="stylesheet" href="assets/style.css"></head>
 <body style="background:#f8fafc">

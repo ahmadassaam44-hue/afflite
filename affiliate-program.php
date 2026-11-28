@@ -11,7 +11,7 @@ $cta = $pr['cta_href'] . ($ref_param !== '' ? (strpos($pr['cta_href'], '?') !== 
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><meta name="impact-site-verification" value="fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#0f172a">
 <title><?php echo esc($pr['title']); ?> | <?php echo esc(BRAND); ?> أفلييت</title>
