@@ -728,6 +728,7 @@ echo wf_catalog_toolbar([
 <div class="bottom">
 <a href="affiliate-register.php">برنامج التسويق بالعمولة</a>
 <span>© <?php echo date('Y') . ' ' . esc(BRAND); ?> — جميع الحقوق محفوظة</span>
+<span>Admitad verification: d416</span>
 <span>الدفع عند الاستلام • شحن سريع • ضمان 14 يوماً</span>
 </div>
 </footer>
