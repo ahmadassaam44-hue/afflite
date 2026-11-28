@@ -110,6 +110,7 @@ function wf_ui_sprite() {
 
 /** رقم واتساب الدعم (من إعدادات الموقع ← رقم الموبايل كبديل) — أرقام فقط، وفااضي لو مفيش. */
 function wf_support_wa_number() {
+    if (defined('WF_HIDE_SUPPORT_CONTACT') && WF_HIDE_SUPPORT_CONTACT) return ''; // الرقم/الواتساب مخفيين من الموقع
     $n = '';
     if (function_exists('site_setting')) {
         $n = trim((string)site_setting('whatsapp'));
@@ -197,6 +198,10 @@ function wf_impersonation_banner_html($state = null) {
 
 /** الشريط العلوي الصغير (تواصل + روابط سريعة) — موحّد في كل الصفحات العامة. */
 function wf_store_topbar($args = []) {
+    if (defined('WF_HIDE_SUPPORT_CONTACT') && WF_HIDE_SUPPORT_CONTACT) {
+        $args['phone'] = '';
+        $args['wa'] = false;
+    }
     $phone = trim((string)($args['phone'] ?? ''));
     $note  = trim((string)($args['note'] ?? 'الدفع عند الاستلام وتوصيل سريع لجميع المحافظات'));
     $html  = wf_impersonation_banner_html();

@@ -270,7 +270,7 @@ function pcard2($p, $soldmap) {
     echo '</div>';
     echo '</article>';
 }
-$top_phone = function_exists('site_setting') ? (string)site_setting('phone', '') : '';
+$top_phone = (defined('WF_HIDE_SUPPORT_CONTACT') && WF_HIDE_SUPPORT_CONTACT) ? '' : (function_exists('site_setting') ? (string)site_setting('phone', '') : '');
 $top_email = function_exists('site_setting') ? (site_setting('email', 'support@wafirinhalk.ct.ws') ?: 'support@wafirinhalk.ct.ws') : 'support@wafirinhalk.ct.ws';
 $top_wa = function_exists('wf_support_wa_href') ? wf_support_wa_href() : ''; // واتساب خدمة العملاء (من الإعدادات، ورقم الموبايل كبديل)
 $top_wa_img = $top_wa !== '' && function_exists('wf_support_wa_href') ? wf_support_wa_href('السلام عليكم، عايز أطلب منتج مش موجود في الموقع — هبعت صورته هنا') : '';

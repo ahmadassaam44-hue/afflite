@@ -27,6 +27,9 @@ require_once __DIR__ . '/safka_order_lib.php';
 // تسجيل الدخول بجوجل: يتفعل (true) بعد ما تتضبط بيانات جوجل في Supabase (GitHub Secrets)
 if (!defined('GOOGLE_LOGIN_ON')) define('GOOGLE_LOGIN_ON', false);
 
+// 📵 إخفاء رقم الدعم والواتساب من كل صفحات الموقع (بطلب صاحب الموقع) — بيتجاهل أي قيمة في الإعدادات
+if (!defined('WF_HIDE_SUPPORT_CONTACT')) define('WF_HIDE_SUPPORT_CONTACT', true);
+
 define('BRAND', 'وفرنهالك');
 define('SITE_VER', 'v61');
 define('DEAL_PCT', 10);
