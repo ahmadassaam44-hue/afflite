@@ -3,16 +3,16 @@
  "root": "/htdocs",
  "files": {
   "config.php": {
-   "remote_size": 423963,
+   "remote_size": 3166,
    "on_server": true,
    "local_size": 3166,
-   "match": false
+   "match": true
   },
   "index.php": {
-   "remote_size": 52623,
+   "remote_size": 53339,
    "on_server": true,
-   "local_size": 53256,
-   "match": false
+   "local_size": 53339,
+   "match": true
   },
   "data/catalog_counts.json": {
    "remote_size": 861,
@@ -21,10 +21,10 @@
    "match": true
   },
   ".htaccess": {
-   "remote_size": 6202,
+   "remote_size": 6295,
    "on_server": true,
    "local_size": 6295,
-   "match": false
+   "match": true
   },
   "amazon_lib.php": {
    "remote_size": 92144,
@@ -75,28 +75,28 @@
    "match": true
   },
   "dashboard/admin.php": {
-   "remote_size": 397280,
+   "remote_size": 346995,
    "on_server": true,
    "local_size": 346995,
-   "match": false
+   "match": true
   },
   "dashboard/layout.php": {
-   "remote_size": 40709,
+   "remote_size": 38685,
    "on_server": true,
    "local_size": 38685,
-   "match": false
+   "match": true
   },
   "dashboard/marketer.php": {
-   "remote_size": 124835,
+   "remote_size": 123973,
    "on_server": true,
    "local_size": 123973,
-   "match": false
+   "match": true
   },
   "assets/style.css": {
-   "remote_size": 161171,
+   "remote_size": 160732,
    "on_server": true,
    "local_size": 160732,
-   "match": false
+   "match": true
   }
  }
 }
