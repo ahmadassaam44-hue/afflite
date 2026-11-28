@@ -1,5 +1,5 @@
 {
- "at": "2026-11-27T17:33:04+00:00",
+ "at": "2026-11-28T00:11:41+00:00",
  "files_requested": [
   "affiliate-program.php",
   "affiliate-register.php",
@@ -88,17 +88,17 @@
  "uploaded": [
   {
    "file": "affiliate-program.php",
-   "local_md5": "4efacb755531b831591dddf31171dbba",
-   "local_size": 3514,
-   "remote_size": 3514,
-   "remote_md5": "4efacb755531b831591dddf31171dbba"
+   "local_md5": "7855ecd941fe29d9871ccbd5b506ebb3",
+   "local_size": 3597,
+   "remote_size": 3597,
+   "remote_md5": "7855ecd941fe29d9871ccbd5b506ebb3"
   },
   {
    "file": "affiliate-register.php",
-   "local_md5": "d722704f9ce599d68b8adc781856066c",
-   "local_size": 13277,
-   "remote_size": 13277,
-   "remote_md5": "d722704f9ce599d68b8adc781856066c"
+   "local_md5": "050de96e3a9df5307ebb1069a98fd0fb",
+   "local_size": 13360,
+   "remote_size": 13360,
+   "remote_md5": "050de96e3a9df5307ebb1069a98fd0fb"
   },
   {
    "file": "affiliate_programs.php",
@@ -109,10 +109,10 @@
   },
   {
    "file": "amazon_check.php",
-   "local_md5": "82c350988520c5c7642312f7a1d414e3",
-   "local_size": 5936,
-   "remote_size": 5936,
-   "remote_md5": "82c350988520c5c7642312f7a1d414e3"
+   "local_md5": "cdaaf062f96214ddbfa2b67da5b4a447",
+   "local_size": 6019,
+   "remote_size": 6019,
+   "remote_md5": "cdaaf062f96214ddbfa2b67da5b4a447"
   },
   {
    "file": "amazon_lib.php",
@@ -158,10 +158,10 @@
   },
   {
    "file": "config.php",
-   "local_md5": "e7fae52068c2413e5d2552b6cd0e7338",
-   "local_size": 423963,
-   "remote_size": 423963,
-   "remote_md5": "e7fae52068c2413e5d2552b6cd0e7338"
+   "local_md5": "e25532c37f67a6746c24c2fcf9ceb11a",
+   "local_size": 424046,
+   "remote_size": 424046,
+   "remote_md5": "e25532c37f67a6746c24c2fcf9ceb11a"
   },
   {
    "file": "customer_req_lib.php",
@@ -249,10 +249,10 @@
   },
   {
    "file": "dashboard/layout.php",
-   "local_md5": "78da0c1a025570abe352e08bfd8174cd",
-   "local_size": 40709,
-   "remote_size": 40709,
-   "remote_md5": "78da0c1a025570abe352e08bfd8174cd"
+   "local_md5": "a6085b0965133a4a961fe3daa664edbf",
+   "local_size": 40792,
+   "remote_size": 40792,
+   "remote_md5": "a6085b0965133a4a961fe3daa664edbf"
   },
   {
    "file": "dashboard/manual_products.php",
@@ -375,17 +375,17 @@
   },
   {
    "file": "error.php",
-   "local_md5": "b04eb04f9774094e2e98b58b1df0ef58",
-   "local_size": 2231,
-   "remote_size": 2231,
-   "remote_md5": "b04eb04f9774094e2e98b58b1df0ef58"
+   "local_md5": "e738e084d32933adad510bf777001ac8",
+   "local_size": 2314,
+   "remote_size": 2314,
+   "remote_md5": "e738e084d32933adad510bf777001ac8"
   },
   {
    "file": "forgot.php",
-   "local_md5": "56329b130834523ea6a646ec7929c9d9",
-   "local_size": 2698,
-   "remote_size": 2698,
-   "remote_md5": "56329b130834523ea6a646ec7929c9d9"
+   "local_md5": "bddcf88278891f35361f620d028b0174",
+   "local_size": 2781,
+   "remote_size": 2781,
+   "remote_md5": "bddcf88278891f35361f620d028b0174"
   },
   {
    "file": "go.php",
@@ -396,10 +396,10 @@
   },
   {
    "file": "google_callback.php",
-   "local_md5": "9c57902ac854857acad261c8dc284cad",
-   "local_size": 1961,
-   "remote_size": 1961,
-   "remote_md5": "9c57902ac854857acad261c8dc284cad"
+   "local_md5": "1ee95be474f3e7af1e04af39029ee628",
+   "local_size": 2044,
+   "remote_size": 2044,
+   "remote_md5": "1ee95be474f3e7af1e04af39029ee628"
   },
   {
    "file": "google_finish.php",
@@ -424,10 +424,10 @@
   },
   {
    "file": "index.php",
-   "local_md5": "e3466c536d0b6dc3a4af7c0b129b2db9",
-   "local_size": 52623,
-   "remote_size": 52623,
-   "remote_md5": "e3466c536d0b6dc3a4af7c0b129b2db9"
+   "local_md5": "b07f2b8e260b692deca761c66e61005a",
+   "local_size": 52706,
+   "remote_size": 52706,
+   "remote_md5": "b07f2b8e260b692deca761c66e61005a"
   },
   {
    "file": "jmi.php",
@@ -438,10 +438,10 @@
   },
   {
    "file": "jumia_check.php",
-   "local_md5": "9f9dccbbfdf4bf96affc806f0f63ad69",
-   "local_size": 5913,
-   "remote_size": 5913,
-   "remote_md5": "9f9dccbbfdf4bf96affc806f0f63ad69"
+   "local_md5": "8594e70e1a93814199817933d148da2e",
+   "local_size": 5996,
+   "remote_size": 5996,
+   "remote_md5": "8594e70e1a93814199817933d148da2e"
   },
   {
    "file": "jumia_lib.php",
@@ -452,17 +452,17 @@
   },
   {
    "file": "landing.php",
-   "local_md5": "69c9364e63d6f41555be38d98e652499",
-   "local_size": 25543,
-   "remote_size": 25543,
-   "remote_md5": "69c9364e63d6f41555be38d98e652499"
+   "local_md5": "29bc332f13d82651a9467b176a447354",
+   "local_size": 25626,
+   "remote_size": 25626,
+   "remote_md5": "29bc332f13d82651a9467b176a447354"
   },
   {
    "file": "login.php",
-   "local_md5": "ae7fe8f173ee09fb1689c953fe2b053e",
-   "local_size": 5855,
-   "remote_size": 5855,
-   "remote_md5": "ae7fe8f173ee09fb1689c953fe2b053e"
+   "local_md5": "52094850a59ca0c9c9a5ecf5699e13ff",
+   "local_size": 5938,
+   "remote_size": 5938,
+   "remote_md5": "52094850a59ca0c9c9a5ecf5699e13ff"
   },
   {
    "file": "logout.php",
@@ -480,10 +480,10 @@
   },
   {
    "file": "marketer_complete.php",
-   "local_md5": "ccbcc4aa6efc5cef77acc7cbcd886327",
-   "local_size": 6852,
-   "remote_size": 6852,
-   "remote_md5": "ccbcc4aa6efc5cef77acc7cbcd886327"
+   "local_md5": "8ac60fbd8b13163a707b3d64cef43f2b",
+   "local_size": 6935,
+   "remote_size": 6935,
+   "remote_md5": "8ac60fbd8b13163a707b3d64cef43f2b"
   },
   {
    "file": "noon_lib.php",
@@ -508,17 +508,17 @@
   },
   {
    "file": "register.php",
-   "local_md5": "8d8d876c21095d055074f5c88853c535",
-   "local_size": 14588,
-   "remote_size": 14588,
-   "remote_md5": "8d8d876c21095d055074f5c88853c535"
+   "local_md5": "fed5c0691eed47938e221f2beb2751ae",
+   "local_size": 14671,
+   "remote_size": 14671,
+   "remote_md5": "fed5c0691eed47938e221f2beb2751ae"
   },
   {
    "file": "reset.php",
-   "local_md5": "800b8b06c987c2ffeb89a8f600774396",
-   "local_size": 5437,
-   "remote_size": 5437,
-   "remote_md5": "800b8b06c987c2ffeb89a8f600774396"
+   "local_md5": "443c354b102e707eb7d87ca9589e1833",
+   "local_size": 5520,
+   "remote_size": 5520,
+   "remote_md5": "443c354b102e707eb7d87ca9589e1833"
   },
   {
    "file": "safka_order_lib.php",
@@ -550,10 +550,10 @@
   },
   {
    "file": "store.php",
-   "local_md5": "babaab20648724cd5b2762f142115421",
-   "local_size": 31749,
-   "remote_size": 31749,
-   "remote_md5": "babaab20648724cd5b2762f142115421"
+   "local_md5": "aa7213f36100b7dfb4b7f4a750a62218",
+   "local_size": 31832,
+   "remote_size": 31832,
+   "remote_md5": "aa7213f36100b7dfb4b7f4a750a62218"
   },
   {
    "file": "stores_lib.php",
@@ -564,10 +564,10 @@
   },
   {
    "file": "style-guide.php",
-   "local_md5": "2723faaf114eb8404d96b9cfe70bf6b4",
-   "local_size": 5737,
-   "remote_size": 5737,
-   "remote_md5": "2723faaf114eb8404d96b9cfe70bf6b4"
+   "local_md5": "b9e5c71833dba7e45b454b03e0f4a4b5",
+   "local_size": 5820,
+   "remote_size": 5820,
+   "remote_md5": "b9e5c71833dba7e45b454b03e0f4a4b5"
   },
   {
    "file": "supabase.php",
@@ -613,10 +613,10 @@
   },
   {
    "file": "ui-runtime.php",
-   "local_md5": "a6b9335eb54bbd909fafc571ad355397",
-   "local_size": 5043,
-   "remote_size": 5043,
-   "remote_md5": "a6b9335eb54bbd909fafc571ad355397"
+   "local_md5": "32670f51adb851d11ea25ddbd39c25fb",
+   "local_size": 5126,
+   "remote_size": 5126,
+   "remote_md5": "32670f51adb851d11ea25ddbd39c25fb"
   },
   {
    "file": "vendor.php",
@@ -665,37 +665,41 @@
   "server": "openresty"
  },
  "challenge": "solved",
+ "impact_verification": {
+  "tag_present": true,
+  "value_ok": true
+ },
  "live": {
   "/": {
-   "status": "200|225906|3.140459",
-   "time_s": 3.140459,
+   "status": "200|225433|2.435935",
+   "time_s": 2.435935,
    "title": "وفرنهالك أفلييت | التسويق بالعمولة والربح من الإنترنت",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-color\" content=\"#0f172a",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"impact-site-verification\" value=\"fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3\"><link rel=\"manifest\" href=\"manifest.json\"><meta name=\"viewport\" cont",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/login.php": {
-   "status": "200|10167|0.736016",
-   "time_s": 0.736016,
+   "status": "200|10250|0.566620",
+   "time_s": 0.56662,
    "title": "تسجيل الدخول | وفرنهالك",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#fed701\"> <title>تسجيل الدخول | وفرنهالك</title> <",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"impact-site-verification\" value=\"fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/cart.php": {
-   "status": "200|49465|0.700989",
-   "time_s": 0.700989,
+   "status": "200|49548|0.687779",
+   "time_s": 0.687779,
    "title": "سلة التسوق | وفرنهالك",
    "php_error": false,
-   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"var(--electro-yellow)\"><title>سلة التسوق | وفرنهال",
+   "head": "<!doctype html><html lang=\"ar\" dir=\"rtl\"><head><meta charset=\"utf-8\"><meta name=\"impact-site-verification\" value=\"fe2ca6e6-4ebc-4149-9bde-ea5075ddf2e3\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><",
    "shopmart_mentions": 0,
    "shopmart_imgs": 0
   },
   "/dashboard/checkout_cart.php": {
-   "status": "302|0|0.710169",
-   "time_s": 0.710169,
+   "status": "302|0|0.403581",
+   "time_s": 0.403581,
    "title": null,
    "php_error": false,
    "head": "",
@@ -703,8 +707,8 @@
    "shopmart_imgs": 0
   },
   "/landing.php?id=soyt-shyrt-aokland-DcpHNY": {
-   "status": "200|67554|0.759479",
-   "time_s": 0.759479,
+   "status": "200|67554|0.814032",
+   "time_s": 0.814032,
    "title": "سويت شيرت اوكلاند — عرض خاص والدفع عند الاستلام",
    "php_error": false,
    "head": "<!doctype html> <html lang=\"ar\" dir=\"rtl\" style=\"--lp: #059669; --lp-fg: #ffffff; --lp-ink: #059669\"> <head> <meta charset=\"utf-8\"> <meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"> <meta name=\"theme-co",
@@ -712,8 +716,8 @@
    "shopmart_imgs": 0
   },
   "/dashboard/products.php": {
-   "status": "302|0|0.766308",
-   "time_s": 0.766308,
+   "status": "302|0|1.048718",
+   "time_s": 1.048718,
    "title": null,
    "php_error": false,
    "head": "",
@@ -721,5 +725,5 @@
    "shopmart_imgs": 0
   }
  },
- "checked_at": "2026-11-27T17:36:46+00:00"
+ "checked_at": "2026-11-28T00:14:45+00:00"
 }
